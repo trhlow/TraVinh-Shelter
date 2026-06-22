@@ -26,6 +26,8 @@ mvn spring-boot:run
 
 Backend chạy tại `http://localhost:8080`.
 
+API được phục vụ dưới tiền tố `http://localhost:8080/api/v1`.
+
 ## Chạy frontend
 
 ```bash
@@ -40,4 +42,11 @@ Frontend chạy tại `http://localhost:5173`.
 
 ```bash
 docker compose down
+```
+
+## Kiểm thử backend
+
+```bash
+cd backend-springboot
+mvn test
 ```
