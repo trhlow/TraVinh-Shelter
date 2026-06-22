@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: travinh-realty-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: travinh_realty
+      POSTGRES_USER: travinh_user
+      POSTGRES_PASSWORD: travinh_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+
