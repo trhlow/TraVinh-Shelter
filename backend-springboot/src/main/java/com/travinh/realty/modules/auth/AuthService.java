@@ -6,6 +6,7 @@ import com.travinh.realty.modules.auth.dto.LoginRequest;
 import com.travinh.realty.modules.auth.dto.RegisterRequest;
 import com.travinh.realty.modules.auth.security.JwtService;
 import com.travinh.realty.modules.auth.security.UserPrincipal;
+import com.travinh.realty.modules.user.UserIdentityConstraints;
 import com.travinh.realty.modules.user.model.User;
 import com.travinh.realty.modules.user.repository.UserRepository;
 import org.springframework.http.HttpStatus;
@@ -16,7 +17,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import org.hibernate.exception.ConstraintViolationException;
 
 @Service
 public class AuthService {
@@ -33,7 +33,7 @@ public class AuthService {
             User saved = users.save(User.register(username, email, encoder.encode(request.password()), request.fullName().trim(), blankToNull(request.phone())));
             return AuthResponse.of(jwt.generateToken(saved), properties.expiration(), saved);
         } catch (DataIntegrityViolationException exception) {
-            if (isDuplicateUserIdentity(exception)) {
+            if (UserIdentityConstraints.isDuplicateEmailOrUsername(exception)) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Email or username is already registered", exception);
             }
             throw exception;
@@ -47,15 +47,4 @@ public class AuthService {
     }
     private String blankToNull(String value) { return value == null || value.isBlank() ? null : value.trim(); }
 
-    private boolean isDuplicateUserIdentity(DataIntegrityViolationException exception) {
-        Throwable cause = exception;
-        while (cause != null) {
-            if (cause instanceof ConstraintViolationException violation) {
-                String constraintName = violation.getConstraintName();
-                return "users_email_key".equals(constraintName) || "users_username_key".equals(constraintName);
-            }
-            cause = cause.getCause();
-        }
-        return false;
-    }
 }
