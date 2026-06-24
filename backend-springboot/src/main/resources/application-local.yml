@@ -1,0 +1,4 @@
+app:
+  jwt:
+    # Local development only. Production must provide JWT_SECRET explicitly.
+    secret: ${JWT_SECRET:replace-this-local-development-secret-with-a-long-random-value}
