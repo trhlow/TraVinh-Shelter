@@ -30,7 +30,7 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:replace-this-local-development-secret-with-a-long-random-value}
+    secret: ${JWT_SECRET:}
     expiration: ${JWT_EXPIRATION:86400000}
   storage:
     local-path: ${MEDIA_STORAGE_PATH:./media}
