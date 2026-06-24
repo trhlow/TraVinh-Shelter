@@ -57,6 +57,19 @@ public class User {
     protected User() {
     }
 
+    public static User register(String username, String email, String passwordHash,
+                                String fullName, String phone) {
+        User user = new User();
+        user.username = username;
+        user.email = email;
+        user.passwordHash = passwordHash;
+        user.fullName = fullName;
+        user.phone = phone;
+        user.role = UserRole.USER;
+        user.status = UserStatus.ACTIVE;
+        return user;
+    }
+
     public UUID getId() { return id; }
     public String getUsername() { return username; }
     public String getPasswordHash() { return passwordHash; }
