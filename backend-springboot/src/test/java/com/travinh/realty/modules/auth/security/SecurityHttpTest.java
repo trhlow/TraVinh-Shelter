@@ -15,6 +15,7 @@ import com.travinh.realty.common.exception.GlobalExceptionHandler;
 import com.travinh.realty.modules.auth.AuthController;
 import com.travinh.realty.modules.auth.AuthService;
 import com.travinh.realty.modules.property.PropertyController;
+import com.travinh.realty.modules.property.PropertyService;
 import com.travinh.realty.modules.user.model.User;
 import com.travinh.realty.modules.user.model.UserStatus;
 import java.util.UUID;
@@ -44,6 +45,7 @@ class SecurityHttpTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private JwtService jwtService;
     @MockBean private AuthService authService;
+    @MockBean private PropertyService propertyService;
     @MockBean private JpaUserDetailsService userDetailsService;
     @MockBean private JpaMetamodelMappingContext jpaMappingContext;
 

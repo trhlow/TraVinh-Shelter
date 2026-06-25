@@ -1,10 +1,70 @@
 package com.travinh.realty.modules.property;
 
+import com.travinh.realty.common.dto.PagedResponse;
+import com.travinh.realty.modules.auth.security.UserPrincipal;
+import com.travinh.realty.modules.property.dto.CreatePropertyRequest;
+import com.travinh.realty.modules.property.dto.PropertyResponse;
+import com.travinh.realty.modules.property.dto.UpdatePropertyRequest;
+import com.travinh.realty.modules.property.dto.UpdatePropertyStatusRequest;
+import jakarta.validation.Valid;
+import java.util.UUID;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/properties")
+@RequestMapping("/properties")
 public class PropertyController {
-}
+    private final PropertyService properties;
 
+    public PropertyController(PropertyService properties) {
+        this.properties = properties;
+    }
+
+    @GetMapping
+    public PagedResponse<PropertyResponse> search(@RequestParam MultiValueMap<String, String> params,
+                                                  @PageableDefault(size = 20) Pageable pageable) {
+        return PagedResponse.from(properties.search(params, pageable));
+    }
+
+    @GetMapping("/{propertyId}")
+    public PropertyResponse detail(@PathVariable UUID propertyId) {
+        return properties.publicDetail(propertyId);
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('BROKER')")
+    public PropertyResponse create(@AuthenticationPrincipal UserPrincipal principal,
+                                   @Valid @RequestBody CreatePropertyRequest request) {
+        return properties.create(principal, request);
+    }
+
+    @PatchMapping("/{propertyId}")
+    @PreAuthorize("hasRole('BROKER')")
+    public PropertyResponse update(@AuthenticationPrincipal UserPrincipal principal,
+                                   @PathVariable UUID propertyId,
+                                   @Valid @RequestBody UpdatePropertyRequest request) {
+        return properties.update(principal, propertyId, request);
+    }
+
+    @PatchMapping("/{propertyId}/status")
+    @PreAuthorize("hasRole('BROKER')")
+    public PropertyResponse updateStatus(@AuthenticationPrincipal UserPrincipal principal,
+                                         @PathVariable UUID propertyId,
+                                         @Valid @RequestBody UpdatePropertyStatusRequest request) {
+        return properties.updateStatus(principal, propertyId, request.status());
+    }
+}

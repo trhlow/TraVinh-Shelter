@@ -67,6 +67,32 @@ public class Property {
     protected Property() {
     }
 
+    public static Property create(User broker, Category category, String title, String address,
+                                  BigDecimal price, Map<String, Object> attributes) {
+        Property property = new Property();
+        property.broker = broker;
+        property.category = category;
+        property.title = title;
+        property.address = address;
+        property.price = price;
+        property.status = PropertyStatus.AVAILABLE;
+        property.attributes = attributes == null ? new LinkedHashMap<>() : new LinkedHashMap<>(attributes);
+        return property;
+    }
+
+    public void updateDetails(Category category, String title, String address,
+                              BigDecimal price, Map<String, Object> attributes) {
+        this.category = category;
+        this.title = title;
+        this.address = address;
+        this.price = price;
+        this.attributes = attributes == null ? new LinkedHashMap<>() : new LinkedHashMap<>(attributes);
+    }
+
+    public void changeStatus(PropertyStatus status) {
+        this.status = status;
+    }
+
     public UUID getId() { return id; }
     public User getBroker() { return broker; }
     public Category getCategory() { return category; }
