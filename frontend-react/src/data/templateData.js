@@ -1,0 +1,100 @@
+export const featuredProperties = [
+  {
+    title: 'Nhà phố thương mại trung tâm TP. Trà Vinh, thiết kế hiện đại',
+    price: '2.5 Tỷ',
+    status: 'Đang bán',
+    area: '120m²',
+    beds: '3',
+    baths: '2',
+    location: 'Phường 1, TP. Trà Vinh',
+    broker: 'Nguyễn Văn A',
+    brokerInitial: 'N',
+    postedAt: 'Hôm nay',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBkH3AYX5MrpWjt0snzYlgK8fLPrupR3ibSoxYSTJKFbDlusQS2_kfuaOpkSz0uYIdnBbfjmxOwDhXPfuNBK-5KR3p8oSYTzjvw0gTVGR4tzvN8f-9m-xbchIasS93NSEAxh634Ay8tX9GZbPo7KUtWFCZLZn70n5mVT5S4zs7OwXRfiWigHZtPY_3Tm9-oZkDSPrFPAxUd4vXrDG-gR-GW3R1IjKlZM8xJVmv0WUmk7FV8WLDIU3VX39UCLRoRpPA_modL10Ugt20',
+    dataAlt: 'A modern two-story townhouse in Tra Vinh, Vietnam, featuring clean architectural lines and a white facade.',
+  },
+  {
+    title: 'Căn hộ mini cao cấp đầy đủ nội thất, khu an ninh',
+    price: '4.5 Triệu/tháng',
+    area: '45m²',
+    beds: '1',
+    location: 'Phường 7, TP. Trà Vinh',
+    broker: 'Trần Thị B',
+    brokerInitial: 'T',
+    postedAt: '2 ngày trước',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDLz0fygggfJEX97_rHvyhhUk3zAeoUwC_AiCbqksI-nxjDTx5q0nAeAgXuivU_1IK0kl6bsy7Km1PbChmW4NfgtozDeLDde7a5_84mxrHFNzU684eGKuxTvfrkw0TXNTXet5NWXckrj887Q8eSXgQ22fF3UySC6loORC48mdubkcGb8kcO6brmGRCyor1ASHaDIHDontBb3I44JUMwQjvA3CdQ7qrsSbzbRW4ECYeBa7hZZpB2Z2tX2laDGuQGiqmk3yTnAIIVFtk',
+    dataAlt: 'A bright, modern living room interior of an apartment in Vietnam.',
+  },
+  {
+    title: 'Đất nền khu dân cư mới, mặt tiền đường nhựa 8m',
+    price: '950 Triệu',
+    area: '5×20m',
+    legal: 'Thổ cư 100%',
+    location: 'Châu Thành, Trà Vinh',
+    broker: 'Lê Văn C',
+    brokerInitial: 'L',
+    postedAt: '1 tuần trước',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAUpxqUcNkJwe5SMvsATCUzNqKop1xaUKndLnxuDUCFODFiC0RbTczw45KfAAG6grxL3YLjd6TBF8tpAVViSGZsZYFIRb2uO902fO8ubE3YiybbfKyL_XlicFvzF-I6bVugqKQ1gaTc17i68sFAXbzY4cB_BhMYo8QDYmC-Dt9SLwdeaRHXJnlLQTNo0Bbj_PqybuMtecsv5GXtriadj-J9MMZtW1xnNZgKVDvCW-4dixEjQViaIpOu4Vnrm4Yu0aX-dYmM-GxlAiU',
+    dataAlt: 'A wide angle shot of a flat, ready-to-build residential land plot in Tra Vinh.',
+  },
+];
+
+export const searchProperties = [
+  {
+    title: 'Bán nhà phố liên kế đường Võ Nguyên Giáp, TP Trà Vinh',
+    price: '2.5 Tỷ',
+    area: '100m²',
+    beds: '3',
+    baths: '2',
+    location: 'Phường 7, TP Trà Vinh',
+    image: featuredProperties[0].image,
+    dataAlt: featuredProperties[0].dataAlt,
+  },
+  {
+    title: 'Đất nền dự án khu dân cư mới, Cầu Ngang',
+    price: '1.2 Tỷ',
+    area: '150m²',
+    location: 'Thị trấn Cầu Ngang, Cầu Ngang',
+    image: featuredProperties[2].image,
+    dataAlt: featuredProperties[2].dataAlt,
+  },
+  {
+    title: 'Biệt thự vườn Châu Thành, không gian sống xanh',
+    price: '5.8 Tỷ',
+    area: '300m²',
+    beds: '4',
+    baths: '3',
+    location: 'Huyện Châu Thành, Trà Vinh',
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDYOdV4bdtSU-4-Ylji4cmB8o6xxGFTyOrAaiYykcYUTTCzabO9O8C5wPjid-V5NU35NjyR8vomgKz87MV5MHcUSewTnf3lACv6B639G427QHpidNX4hSX0e4Z_F2AhJRhLaQ_LBYY-GR9N7BdvE5hnnzj4f2p80lAhQfy-NOGybmq5VpqUrWTt6Z08o-GrO7zwGRfkjXpcMgT3V2l5q3SOHhz_rVqMAEBnV2fYzootTBMB-fZGZPwo1h41fNOi6AxNsvcSsUMjV_8',
+    dataAlt: 'A luxurious villa in Tra Vinh featuring a large landscaped garden and a private driveway.',
+  },
+];
+
+export const detailImages = [
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuB9ef8-dberHibnQphjmNBcX1CWvOns0v5CdHRMuieROkgN1ruRBH2m5orpxiltXWsrnYy4OjnAJ1ZDFYlyQIbP4-RpZHN28Khpy_tKrWj48uWxXo3z0raX0j_Yw-hzjaQbDAMJVTQNw4new2hiLaRpz2K-hgHan5YDKB0gq-R7hCoqX9TJBOa77SfQamcPqd0ohYASG88UF5u8qHBg6OYZQmQxOV3Uk5omAtmxm2r5thmGWdkFhaDEqK086M4HiygSHqsCVYdRq4E',
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuBIAcM5EXq66zZ2Dd1fwQtYQSBUZg7ByXsvdkdPJ4dZn7-KpTDGm-ob0OQYmTIdEO2q4NJKt5LAse1Vg0OYVMOig4bCC7oVDB-mwldI5noKNB6345nvbHXTWnfsRugrwN-WW4tQiqkDZsM5jHtOIUAS5las1GY_ggbM60iELf0Cgzf9r99b5Ltp_65yJXCnivfwuZucGrqpIiGkSDlb7DgF_jlg9HVWClDiNna8YtNdeg0BS9MWLABgNdUvw62KqI-B5Xz1OrKBlPE',
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuBOOjBkdMDsRBP-dCHADsJ0BmBOcrPQBgd_HIww9lnehZNc_zffqsPnNuCn8wLTYocnU_bLgtSw9Cvca8KWu6hQmB8VfhGbkp-dbRiEExjRNZP3Ame13MfqbZMG749Ic2vCRx97Ng2hBpAZqRAChDyL7f0nBAiJUbU7aboMeRq8R8T2B-0m-qdKtmH3sbgNDpg5JAhP3IblDtIuX2LXMjdjFXmMZLfSaINm7-lJ-v-NaL4QbgVQWpu9BB7UesdJHLV3ebYeJ99gUrQ',
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuDrE3d9vxzzzLjWRbwZ0tpPxTe2ENHbS0ggrFj9v5jERfc-R3vMf-phmDZ_Zb_6OhwoGDWdYstM1OrHI7Iq9Jtlglha9U56ggpSrmsq41UXqhweoJScjE2cXMGf3v56Dr2lI5oQjA6vHg1081HXfD24BPG1IjXCLIRV-GwZhchyPQ4dpqYbbOVgcSLVGfXlHY9yT9vG4voZoXnI129j10GdYH7FxojSaeOLz1wT3k7tMtgxobvtRP0Vx_5vuwy6NIMot3LKErQZgqQ',
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuBCDyLZHKB6zDMi9klai-crWcZszAtcQeEAGXA3zEY1I3xA_eCFakaUrJMfDAj9Rdi2oLJaYiF864S_7NX24qM4kxXGEqnEd_uJY-laA9TYOjG_2gYi8REdnHsYXN8mgpBnizDVE6JTeQmRdLQhcN6srITSS0AAiSLBg_VKwbXCLXWKcAL_5PCGt1P3Nta9q5KJOWogGLkdZFx6yqC5_nc6i6zExQFj2zqcaWl2fkoTR43RLyxI5G8yUYX2MlctpUn_mWh-bQOoVVU',
+];
+
+export const dashboardListings = [
+  {
+    title: 'Căn hộ cao cấp 2 phòng ngủ, TT Trà Vinh',
+    location: 'Phường 1, Thành phố Trà Vinh, Tỉnh Trà Vinh',
+    price: '8.5 Triệu / tháng',
+    status: 'Cho thuê',
+    views: '450',
+    favorites: '24',
+    visible: true,
+    image: featuredProperties[1].image,
+  },
+  {
+    title: 'Nhà phố thương mại, Mặt tiền đường Hùng Vương',
+    location: 'Phường 3, Thành phố Trà Vinh, Tỉnh Trà Vinh',
+    price: '4.2 Tỷ',
+    status: 'Đã bán',
+    visible: false,
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBYVJZ7oQH-7Qm2OVjGmAM4omsUtUSa9FfC642NGrA7-3oz1wCIMElZBbJ5SAApqvlhsunZb-QVT8rLXlo3zu4zAE-nxKgeUIcaQ7bZFT3ASqvKgY4tBdP1ssYDvcMtqVSXcVLR9BOmu2rVgZn9t5b3onvSG2LdLiS80nSDrHHtCQ9w_HUbDwYMJrJU9GWtEVKmptI_JYewwAYyPba1aohikkXeHk5D4sggYwvLaUFw7cKmwihRZtAKCTfihDh4cUCppMWt9QwJQX4',
+  },
+];
