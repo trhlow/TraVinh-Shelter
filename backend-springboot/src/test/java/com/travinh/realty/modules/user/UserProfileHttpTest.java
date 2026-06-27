@@ -68,8 +68,8 @@ class UserProfileHttpTest {
                 .andExpect(jsonPath("$.id").value(user.getId().toString()))
                 .andExpect(jsonPath("$.email").value("user@example.com"))
                 .andExpect(jsonPath("$.passwordHash").doesNotExist())
-                .andExpect(jsonPath("$.role").doesNotExist())
-                .andExpect(jsonPath("$.status").doesNotExist());
+                .andExpect(jsonPath("$.role").value("USER"))
+                .andExpect(jsonPath("$.status").value("ACTIVE"));
     }
 
     @Test
@@ -101,8 +101,8 @@ class UserProfileHttpTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.fullName").value("New Name"))
                 .andExpect(jsonPath("$.phone").value("0911111111"))
-                .andExpect(jsonPath("$.role").doesNotExist())
-                .andExpect(jsonPath("$.status").doesNotExist())
+                .andExpect(jsonPath("$.role").value("USER"))
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
                 .andExpect(jsonPath("$.passwordHash").doesNotExist());
         org.assertj.core.api.Assertions.assertThat(user.getRole()).isEqualTo(UserRole.USER);
         org.assertj.core.api.Assertions.assertThat(user.getStatus()).isEqualTo(UserStatus.ACTIVE);

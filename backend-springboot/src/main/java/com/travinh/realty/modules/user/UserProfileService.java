@@ -11,6 +11,8 @@ import com.travinh.realty.modules.user.model.UserRole;
 import com.travinh.realty.modules.user.model.UserStatus;
 import com.travinh.realty.modules.user.repository.UserRepository;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -80,6 +82,16 @@ public class UserProfileService {
         User user = findUser(userId);
         user.updateStatus(status);
         return UserProfileResponse.from(user);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<UserProfileResponse> listUsers(Pageable pageable) {
+        return users.findAll(pageable).map(UserProfileResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<UserProfileResponse> listBrokers(Pageable pageable) {
+        return users.findByRole(UserRole.BROKER, pageable).map(UserProfileResponse::from);
     }
 
     private User findUser(UUID userId) {
