@@ -13,5 +13,8 @@ export const routes = {
 };
 
 export function resolveRoute(path) {
-  return routes[path] ?? HomePage;
+  if (path.startsWith('/property/')) {
+    return { Page: PropertyDetailPage, params: { propertyId: path.replace('/property/', '') } };
+  }
+  return { Page: routes[path] ?? HomePage, params: {} };
 }

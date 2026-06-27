@@ -1,9 +1,27 @@
+import { useEffect, useState } from 'react';
 import PropertyCard from '../components/PropertyCard.jsx';
 import SearchBar from '../components/SearchBar.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
 import { featuredProperties } from '../data/templateData.js';
+import { fetchProperties } from '../services/api.js';
 
 export default function HomePage() {
+  const [properties, setProperties] = useState(featuredProperties);
+
+  useEffect(() => {
+    let alive = true;
+    fetchProperties({ category: 'all', transaction: 'all' })
+      .then((items) => {
+        if (alive && items.length > 0) setProperties(items.slice(0, 3));
+      })
+      .catch(() => {
+        if (alive) setProperties(featuredProperties);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   return (
     <MainLayout>
       <main className="flex-grow">
@@ -34,7 +52,7 @@ export default function HomePage() {
             </a>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
-            {featuredProperties.map((property) => (
+            {properties.map((property) => (
               <PropertyCard key={property.title} property={property} />
             ))}
           </div>

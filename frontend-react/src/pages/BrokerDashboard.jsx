@@ -1,8 +1,39 @@
+import { useEffect, useState } from 'react';
 import MaterialIcon from '../components/MaterialIcon.jsx';
 import { dashboardListings } from '../data/templateData.js';
 import AdminLayout from '../layouts/AdminLayout.jsx';
+import { fetchBrokerDashboard } from '../services/api.js';
 
 export default function BrokerDashboard() {
+  const [stats, setStats] = useState({ activeListings: 42, pendingLeads: 89, appointments: 4, listings: dashboardListings });
+
+  useEffect(() => {
+    let alive = true;
+    fetchBrokerDashboard()
+      .then((data) => {
+        if (!alive) return;
+        const listings = data.listings?.length
+          ? data.listings.map((item) => ({
+            title: item.title,
+            location: item.address,
+            price: item.priceLabel,
+            status: item.statusLabel,
+            views: '450',
+            favorites: '24',
+            visible: item.statusLabel !== 'SOLD' && item.statusLabel !== 'HIDDEN',
+            image: item.image,
+          }))
+          : dashboardListings;
+        setStats({ ...data, listings });
+      })
+      .catch(() => {
+        if (alive) setStats({ activeListings: 42, pendingLeads: 89, appointments: 4, listings: dashboardListings });
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   return (
     <AdminLayout>
       <main className="flex-1 md:ml-64 p-margin-mobile md:p-margin-desktop w-full max-w-container-max mx-auto">
@@ -18,9 +49,9 @@ export default function BrokerDashboard() {
         </header>
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-stack-lg">
-          <StatCard icon="list_alt" label="Tổng tin đăng" value="42" className="text-primary bg-primary-fixed" />
+          <StatCard icon="list_alt" label="Tổng tin đăng" value={stats.activeListings} className="text-primary bg-primary-fixed" />
           <StatCard icon="visibility" label="Lượt xem (30 ngày)" value="12,450" className="text-primary bg-surface-tint/20" />
-          <StatCard icon="group" label="Khách hàng tiềm năng" value="89" valueClassName="text-success-green" className="text-success-green bg-success-green/20" />
+          <StatCard icon="group" label="Khách hàng tiềm năng" value={stats.pendingLeads} valueClassName="text-success-green" className="text-success-green bg-success-green/20" />
         </section>
 
         <section className="bg-white rounded-xl shadow-sm border border-surface-variant overflow-hidden">
@@ -31,7 +62,7 @@ export default function BrokerDashboard() {
             </div>
           </div>
           <div className="divide-y divide-surface-variant">
-            {dashboardListings.map((listing) => (
+            {stats.listings.map((listing) => (
               <ListingRow key={listing.title} listing={listing} />
             ))}
           </div>

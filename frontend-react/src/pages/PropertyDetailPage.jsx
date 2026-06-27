@@ -1,8 +1,55 @@
+import { useEffect, useState } from 'react';
 import MaterialIcon from '../components/MaterialIcon.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
 import { detailImages } from '../data/templateData.js';
+import { fetchPropertyDetail } from '../services/api.js';
 
-export default function PropertyDetailPage() {
+const fallbackProperty = {
+  title: 'NHÀ TRỌ THANH TRÚC - TRỐNG 2 PHÒNG',
+  address: 'Hẻm 42, Đường Điện Biên Phủ, Phường 6, TP Trà Vinh',
+  priceLabel: '1.2 Triệu / Tháng',
+  statusLabel: 'Cho thuê',
+  category: 'tro',
+  area: 20,
+  bedrooms: 1,
+  bathrooms: 1,
+  direction: 'Đông Nam',
+  description: `Hiện tại nhà trọ Thanh Trúc đang trống 2 phòng, cần tìm người thuê ưu tiên sinh viên hoặc người đi làm văn phòng.
+
+- Vị trí: Gần Đại học Trà Vinh (cách 5 phút đi xe), hẻm rộng an ninh, xe ba gác vào tận nơi.
+- Tiện ích: Phòng sạch sẽ, có gác lửng đúc kiên cố, toilet riêng trong phòng, có chỗ nấu ăn, wifi tốc độ cao miễn phí.
+- An ninh: Khu vực yên tĩnh, có camera an ninh 24/24, cổng rào chắc chắn.
+- Điện nước tính theo giá nhà nước.
+
+Liên hệ xem phòng gọi trước 30 phút.`,
+  broker: {
+    name: 'Nguyễn Văn A',
+    phone: '0901 234 567',
+    email: 'broker@travinhrealty.vn',
+  },
+};
+
+export default function PropertyDetailPage({ propertyId }) {
+  const [property, setProperty] = useState(fallbackProperty);
+
+  useEffect(() => {
+    let alive = true;
+    fetchPropertyDetail(propertyId)
+      .then((item) => {
+        if (alive && item) setProperty(item);
+      })
+      .catch(() => {
+        if (alive) setProperty(fallbackProperty);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [propertyId]);
+
+  const mainImage = property.image || detailImages[0];
+  const categoryLabel = property.category === 'tro' ? 'Phòng trọ' : property.category === 'dat' ? 'Đất' : 'Nhà';
+  const brokerPhone = property.broker?.phone || '0901 234 567';
+
   return (
     <MainLayout>
       <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
@@ -11,7 +58,7 @@ export default function PropertyDetailPage() {
           <MaterialIcon className="text-[16px]">chevron_right</MaterialIcon>
           <a className="hover:text-primary transition-colors" href="#/search">Cho thuê</a>
           <MaterialIcon className="text-[16px]">chevron_right</MaterialIcon>
-          <span className="text-on-surface">NHÀ TRỌ THANH TRÚC - TRỐNG 2 PHÒNG</span>
+          <span className="text-on-surface">{property.title}</span>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-gutter">
@@ -23,7 +70,7 @@ export default function PropertyDetailPage() {
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   data-alt="A bright, high-quality wide photograph of a clean, modern rental room interior in Tra Vinh."
                   id="main-gallery-image"
-                  src={detailImages[0]}
+                  src={mainImage}
                 />
                 <div className="absolute bottom-4 right-4 bg-surface/90 backdrop-blur-sm px-3 py-1 rounded-full font-label-bold text-label-bold flex items-center gap-2 shadow-sm border border-outline-variant">
                   <MaterialIcon className="text-[16px]">photo_library</MaterialIcon> 1/5
@@ -47,16 +94,16 @@ export default function PropertyDetailPage() {
 
             <div className="bg-surface-container-lowest p-stack-md rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-outline-variant/30 flex flex-col gap-4">
               <div className="flex flex-wrap gap-2 mb-1">
-                <span className="bg-primary/10 text-primary px-2 py-1 rounded font-label-bold text-label-bold text-[12px]">Cho thuê</span>
-                <span className="bg-surface-container text-on-surface-variant px-2 py-1 rounded font-label-bold text-label-bold text-[12px]">Phòng trọ</span>
+                <span className="bg-primary/10 text-primary px-2 py-1 rounded font-label-bold text-label-bold text-[12px]">{property.statusLabel}</span>
+                <span className="bg-surface-container text-on-surface-variant px-2 py-1 rounded font-label-bold text-label-bold text-[12px]">{categoryLabel}</span>
               </div>
-              <h1 className="font-headline-lg md:font-headline-xl text-headline-lg md:text-headline-xl text-on-surface">NHÀ TRỌ THANH TRÚC - TRỐNG 2 PHÒNG</h1>
+              <h1 className="font-headline-lg md:font-headline-xl text-headline-lg md:text-headline-xl text-on-surface">{property.title}</h1>
               <div className="flex items-start gap-2 text-on-surface-variant font-body-md text-body-md">
                 <MaterialIcon className="mt-0.5">location_on</MaterialIcon>
-                <p>Hẻm 42, Đường Điện Biên Phủ, Phường 6, TP Trà Vinh</p>
+                <p>{property.address}</p>
               </div>
               <div className="font-price-display text-price-display text-action-orange pt-2 border-t border-outline-variant/30">
-                1.2 Triệu / Tháng
+                {property.priceLabel}
               </div>
             </div>
 
@@ -64,10 +111,10 @@ export default function PropertyDetailPage() {
               <h2 className="font-headline-md text-headline-md text-on-surface mb-stack-md">Thông tin chi tiết</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  ['straighten', 'Diện tích', '20 m²'],
-                  ['bed', 'Phòng ngủ', '1'],
-                  ['bathroom', 'Phòng tắm', '1'],
-                  ['explore', 'Hướng', 'Đông Nam'],
+                  ['straighten', 'Diện tích', `${property.area || 0} m²`],
+                  ['bed', 'Phòng ngủ', property.bedrooms || 0],
+                  ['bathroom', 'Phòng tắm', property.bathrooms || 0],
+                  ['explore', 'Hướng', property.direction || 'Đang cập nhật'],
                 ].map(([icon, label, value]) => (
                   <div key={label} className="flex flex-col gap-1 p-3 bg-surface-container-low rounded-lg">
                     <MaterialIcon className="text-on-surface-variant">{icon}</MaterialIcon>
@@ -81,14 +128,7 @@ export default function PropertyDetailPage() {
             <div className="bg-surface-container-lowest p-stack-md rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-outline-variant/30">
               <h2 className="font-headline-md text-headline-md text-on-surface mb-stack-md">Mô tả</h2>
               <div className="font-body-md text-body-md text-on-surface-variant flex flex-col gap-4 whitespace-pre-line">
-                {`Hiện tại nhà trọ Thanh Trúc đang trống 2 phòng, cần tìm người thuê ưu tiên sinh viên hoặc người đi làm văn phòng.
-
-- Vị trí: Gần Đại học Trà Vinh (cách 5 phút đi xe), hẻm rộng an ninh, xe ba gác vào tận nơi.
-- Tiện ích: Phòng sạch sẽ, có gác lửng đúc kiên cố, toilet riêng trong phòng, có chỗ nấu ăn, wifi tốc độ cao miễn phí.
-- An ninh: Khu vực yên tĩnh, có camera an ninh 24/24, cổng rào chắc chắn.
-- Điện nước tính theo giá nhà nước.
-
-Liên hệ xem phòng gọi trước 30 phút.`}
+                {property.description}
               </div>
             </div>
           </div>
@@ -103,7 +143,7 @@ Liên hệ xem phòng gọi trước 30 phút.`}
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEReDPyvxSHAVlhe1urURWQSyldaV_T3XjYM4rz4nKtUwT9wclDkrhfasFGDEwscw7wXKhBx1E_Qf522aOCWVgWsgIr-Bc8Lh2xkPRH40w9LU08bCEGMU0qmWZL5cJ5dclae4gVSaGH_WOwJdam9ZcC2C0A6ajL-ZH092yqt7Fo9sGwHdoYPzKIvkjpzg84PQrHHGCGX-wOfFtip3XDjjbGoSQLyMRXEFMMDfjy-VCRv0f8nqFtp9G8GsFTvYWXKMgmAJgsflllhI"
                 />
                 <div className="flex flex-col">
-                  <span className="font-label-bold text-label-bold text-on-surface text-[16px]">Nguyễn Văn A</span>
+                  <span className="font-label-bold text-label-bold text-on-surface text-[16px]">{property.broker?.name || 'Nguyễn Văn A'}</span>
                   <span className="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-1">
                     <MaterialIcon className="text-[14px]">verified</MaterialIcon> Môi giới uy tín
                   </span>
@@ -112,7 +152,7 @@ Liên hệ xem phòng gọi trước 30 phút.`}
               <div className="flex flex-col gap-3">
                 <button className="w-full bg-success-green hover:bg-success-green/90 text-white font-label-bold text-label-bold py-3 rounded-lg flex justify-center items-center gap-2 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
                   <MaterialIcon>call</MaterialIcon>
-                  Gọi ngay: 0901 234 567
+                  Gọi ngay: {brokerPhone}
                 </button>
                 <button className="w-full bg-[#0068FF] hover:bg-[#0068FF]/90 text-white font-label-bold text-label-bold py-3 rounded-lg flex justify-center items-center gap-2 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
                   <MaterialIcon>chat</MaterialIcon>

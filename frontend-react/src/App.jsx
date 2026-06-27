@@ -7,7 +7,7 @@ function readHashPath() {
 
 export default function App() {
   const [path, setPath] = useState(readHashPath);
-  const Page = resolveRoute(path);
+  const { Page, params } = resolveRoute(path);
 
   useEffect(() => {
     const onHashChange = () => setPath(readHashPath());
@@ -15,5 +15,5 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
-  return <Page />;
+  return <Page {...params} />;
 }

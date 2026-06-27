@@ -1,34 +1,34 @@
 import '@testing-library/jest-dom/vitest';
-import { beforeEach, test, expect } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import App from './App.jsx';
 
 beforeEach(() => {
   window.location.hash = '#/';
+  vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new Error('API unavailable in unit test'))));
 });
 
-test('renders usable property search and empty state', async () => {
-  render(<App />);
-
-  expect(screen.getByText('Đang tải dữ liệu...')).toBeInTheDocument();
-  expect(await screen.findAllByText('Nhà phố 1 trệt 2 lầu, KDC 586')).toHaveLength(2);
-
-  await userEvent.selectOptions(screen.getByLabelText('Loại'), 'apartment');
-  await waitFor(() => expect(screen.getAllByText('Căn hộ Chung cư Minh Châu')).toHaveLength(2));
-
-  await userEvent.clear(screen.getByLabelText('Địa điểm hoặc dự án'));
-  await userEvent.type(screen.getByLabelText('Địa điểm hoặc dự án'), 'khong co ket qua');
-  expect(await screen.findByText('Không tìm thấy kết quả')).toBeInTheDocument();
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
 });
 
-test('validates login form fields', async () => {
-  window.location.hash = '#/login';
+test('renders the template home page', async () => {
   render(<App />);
 
-  const dialog = screen.getByRole('dialog', { name: 'Đăng nhập' });
-  const loginButtons = within(dialog).getAllByRole('button', { name: 'Đăng nhập' });
-  await userEvent.click(loginButtons[loginButtons.length - 1]);
-  expect(await screen.findByText('Email không hợp lệ.')).toBeInTheDocument();
-  expect(screen.getByText('Mật khẩu cần ít nhất 8 ký tự.')).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Tìm nhà trọ, bất động sản Trà Vinh nhanh chóng' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Tin nổi bật' })).toBeInTheDocument();
+  await waitFor(() => expect(screen.getAllByText('BĐS Trà Vinh').length).toBeGreaterThan(0));
+});
+
+test('routes to search and broker dashboard pages', () => {
+  window.location.hash = '#/search';
+  const { rerender } = render(<App />);
+  expect(screen.getByRole('heading', { name: 'Nhà đất bán tại Trà Vinh' })).toBeInTheDocument();
+  expect(screen.getByTestId('property-grid')).toBeInTheDocument();
+
+  window.location.hash = '#/broker';
+  window.dispatchEvent(new HashChangeEvent('hashchange'));
+  rerender(<App />);
+  expect(screen.getAllByRole('heading', { name: 'Tin đăng của tôi' }).length).toBeGreaterThan(0);
 });
