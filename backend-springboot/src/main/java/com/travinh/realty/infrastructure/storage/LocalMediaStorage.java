@@ -3,6 +3,7 @@ package com.travinh.realty.infrastructure.storage;
 import com.travinh.realty.modules.media.model.MediaType;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -42,6 +43,7 @@ public class LocalMediaStorage {
         }
         String contentType = file.getContentType() == null ? "" : file.getContentType().toLowerCase(Locale.ROOT);
         validateContentType(mediaType, contentType);
+        validateFileSignature(file, contentType);
 
         Path propertyDirectory = storageRoot.resolve("properties").resolve(propertyId.toString()).normalize();
         if (!propertyDirectory.startsWith(storageRoot)) {
@@ -96,6 +98,62 @@ public class LocalMediaStorage {
         if (mediaType == MediaType.VIDEO_FILE && !VIDEO_CONTENT_TYPES.contains(contentType)) {
             throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Only video uploads are allowed");
         }
+    }
+
+    private void validateFileSignature(MultipartFile file, String contentType) {
+        byte[] header = new byte[16];
+        int read;
+        try (InputStream input = file.getInputStream()) {
+            read = input.read(header);
+        } catch (IOException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not read media file", exception);
+        }
+        if (read <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Media file is required");
+        }
+
+        String detected = detectKnownContentType(header, read);
+        if (detected != null && !detected.equals(contentType)) {
+            throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                    "Media content does not match the declared content type");
+        }
+        if (looksLikeActiveContent(header, read)) {
+            throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                    "Media content does not match allowed upload types");
+        }
+    }
+
+    private String detectKnownContentType(byte[] header, int read) {
+        if (read >= 3 && (header[0] & 0xff) == 0xff && (header[1] & 0xff) == 0xd8 && (header[2] & 0xff) == 0xff) {
+            return "image/jpeg";
+        }
+        if (read >= 8 && header[0] == (byte) 0x89 && header[1] == 0x50 && header[2] == 0x4e
+                && header[3] == 0x47 && header[4] == 0x0d && header[5] == 0x0a
+                && header[6] == 0x1a && header[7] == 0x0a) {
+            return "image/png";
+        }
+        if (read >= 6 && header[0] == 0x47 && header[1] == 0x49 && header[2] == 0x46
+                && header[3] == 0x38 && (header[4] == 0x37 || header[4] == 0x39) && header[5] == 0x61) {
+            return "image/gif";
+        }
+        if (read >= 12 && header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46
+                && header[8] == 0x57 && header[9] == 0x45 && header[10] == 0x42 && header[11] == 0x50) {
+            return "image/webp";
+        }
+        return null;
+    }
+
+    private boolean looksLikeActiveContent(byte[] header, int read) {
+        String prefix = new String(header, 0, read, StandardCharsets.ISO_8859_1)
+                .trim()
+                .toLowerCase(Locale.ROOT);
+        return prefix.startsWith("<html")
+                || prefix.startsWith("<script")
+                || prefix.startsWith("<?xml")
+                || prefix.startsWith("%pdf")
+                || prefix.startsWith("pk")
+                || prefix.startsWith("mz")
+                || prefix.startsWith("#!");
     }
 
     private String localPathFromPublicUrl(String url) {

@@ -71,7 +71,7 @@ class MediaConcurrencyIntegrationTest {
 
         List<Boolean> outcomes = runConcurrently(attempts, attempt -> {
             try {
-                service.uploadImage(fixture.principal(), fixture.property().getId(),
+                service.uploadImage(fixture.principal().id(), fixture.property().getId(),
                         new MockMultipartFile("file", "room-%d.png".formatted(attempt),
                                 "image/png", ("image-" + attempt).getBytes()), false);
                 return true;
@@ -94,7 +94,7 @@ class MediaConcurrencyIntegrationTest {
         List<Boolean> outcomes = runConcurrently(List.of(
                 () -> {
                     try {
-                        service.uploadVideoFile(fixture.principal(), fixture.property().getId(),
+                        service.uploadVideoFile(fixture.principal().id(), fixture.property().getId(),
                                 new MockMultipartFile("file", "tour.mp4", "video/mp4", "video".getBytes()));
                         return true;
                     } catch (ResponseStatusException exception) {
@@ -104,7 +104,7 @@ class MediaConcurrencyIntegrationTest {
                 },
                 () -> {
                     try {
-                        service.addVideoLink(fixture.principal(), fixture.property().getId(),
+                        service.addVideoLink(fixture.principal().id(), fixture.property().getId(),
                                 new CreateVideoLinkRequest("https://example.com/video/" + UUID.randomUUID()));
                         return true;
                     } catch (ResponseStatusException exception) {

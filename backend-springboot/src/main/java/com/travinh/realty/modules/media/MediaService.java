@@ -1,7 +1,6 @@
 package com.travinh.realty.modules.media;
 
 import com.travinh.realty.infrastructure.storage.LocalMediaStorage;
-import com.travinh.realty.modules.auth.security.UserPrincipal;
 import com.travinh.realty.modules.media.dto.CreateVideoLinkRequest;
 import com.travinh.realty.modules.media.dto.MediaResponse;
 import com.travinh.realty.modules.media.model.Media;
@@ -54,8 +53,8 @@ public class MediaService {
     }
 
     @Transactional
-    public MediaResponse uploadImage(UserPrincipal principal, UUID propertyId, MultipartFile file, boolean thumbnail) {
-        Property property = requireOwnedPropertyForUpdate(principal, propertyId);
+    public MediaResponse uploadImage(UUID brokerId, UUID propertyId, MultipartFile file, boolean thumbnail) {
+        Property property = requireOwnedPropertyForUpdate(brokerId, propertyId);
         if (media.countByPropertyIdAndMediaType(propertyId, MediaType.IMAGE) >= MAX_IMAGES_PER_PROPERTY) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "A property can have at most 7 images");
         }
@@ -64,24 +63,24 @@ public class MediaService {
     }
 
     @Transactional
-    public MediaResponse uploadVideoFile(UserPrincipal principal, UUID propertyId, MultipartFile file) {
-        Property property = requireOwnedPropertyForUpdate(principal, propertyId);
+    public MediaResponse uploadVideoFile(UUID brokerId, UUID propertyId, MultipartFile file) {
+        Property property = requireOwnedPropertyForUpdate(brokerId, propertyId);
         ensureNoVideo(propertyId);
         String url = storage.store(propertyId, file, MediaType.VIDEO_FILE);
         return saveWithFileCleanup(Media.create(property, MediaType.VIDEO_FILE, url, false), url);
     }
 
     @Transactional
-    public MediaResponse addVideoLink(UserPrincipal principal, UUID propertyId, CreateVideoLinkRequest request) {
-        Property property = requireOwnedPropertyForUpdate(principal, propertyId);
+    public MediaResponse addVideoLink(UUID brokerId, UUID propertyId, CreateVideoLinkRequest request) {
+        Property property = requireOwnedPropertyForUpdate(brokerId, propertyId);
         ensureNoVideo(propertyId);
         String url = normalizeVideoLink(request.url());
         return saveMedia(Media.create(property, MediaType.VIDEO_LINK, url, false));
     }
 
     @Transactional
-    public void delete(UserPrincipal principal, UUID propertyId, UUID mediaId) {
-        requireOwnedPropertyForUpdate(principal, propertyId);
+    public void delete(UUID brokerId, UUID propertyId, UUID mediaId) {
+        requireOwnedPropertyForUpdate(brokerId, propertyId);
         Media existing = media.findByIdAndPropertyId(mediaId, propertyId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Media not found"));
         media.delete(existing);
@@ -94,16 +93,16 @@ public class MediaService {
         }
     }
 
-    private Property requireOwnedProperty(UserPrincipal principal, UUID propertyId) {
-        return requireOwnedProperty(principal, propertyId, false);
+    private Property requireOwnedProperty(UUID brokerId, UUID propertyId) {
+        return requireOwnedProperty(brokerId, propertyId, false);
     }
 
-    private Property requireOwnedPropertyForUpdate(UserPrincipal principal, UUID propertyId) {
-        return requireOwnedProperty(principal, propertyId, true);
+    private Property requireOwnedPropertyForUpdate(UUID brokerId, UUID propertyId) {
+        return requireOwnedProperty(brokerId, propertyId, true);
     }
 
-    private Property requireOwnedProperty(UserPrincipal principal, UUID propertyId, boolean lockForUpdate) {
-        User user = users.findById(principal.id())
+    private Property requireOwnedProperty(UUID brokerId, UUID propertyId, boolean lockForUpdate) {
+        User user = users.findById(brokerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication is required"));
         if (user.getStatus() != UserStatus.ACTIVE) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication is required");

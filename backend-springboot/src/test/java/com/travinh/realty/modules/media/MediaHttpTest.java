@@ -190,6 +190,13 @@ class MediaHttpTest {
         mockMvc.perform(multipart("/properties/{propertyId}/media/images", property.getId()).file(text)
                         .header("Authorization", bearer(owner)))
                 .andExpect(status().isUnsupportedMediaType());
+
+        MockMultipartFile activeContent = new MockMultipartFile("file", "room.png", "image/png",
+                "<script>alert(1)</script>".getBytes());
+        mockMvc.perform(multipart("/properties/{propertyId}/media/images", property.getId()).file(activeContent)
+                        .header("Authorization", bearer(owner)))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.message").value("Media content does not match allowed upload types"));
     }
 
     @Test
