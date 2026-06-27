@@ -28,7 +28,7 @@ const EMPTY_FORM = {
   image: '',
 };
 
-export default function BrokerDashboard({ session, onLogin, onLogout }) {
+export default function BrokerDashboard({ session, onLogin, onLogout, currentPath = '/broker/dashboard', section = 'dashboard' }) {
   const [profile, setProfile] = useState(null);
   const [profileForm, setProfileForm] = useState({ fullName: '', phone: '' });
   const [stats, setStats] = useState({ activeListings: 0, totalListings: 0, pendingLeads: 0, listings: [] });
@@ -70,7 +70,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout }) {
 
   if (!session) return <LoginPage onLogin={onLogin} />;
   if (session.role !== 'BROKER') {
-    return <AccessDenied session={session} onLogout={onLogout} />;
+    return <AccessDenied session={session} onLogout={onLogout} activePath={currentPath} />;
   }
 
   async function reloadDashboard() {
@@ -171,30 +171,74 @@ export default function BrokerDashboard({ session, onLogin, onLogout }) {
   }
 
   return (
-    <AdminLayout session={session} onLogout={onLogout} variant="broker">
+    <AdminLayout session={session} onLogout={onLogout} variant="broker" activePath={currentPath}>
       <main className="flex-1 md:ml-64 p-margin-mobile md:p-margin-desktop w-full max-w-container-max mx-auto">
         <header className="mb-stack-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-headline-xl text-trust-navy">Tin đăng của tôi</h1>
-            <p className="font-body-md text-body-md text-on-surface-variant mt-2">Quản lý hồ sơ môi giới, đăng tin mới, chỉnh sửa và xóa tin của bạn.</p>
+            <h1 className="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-headline-xl text-trust-navy">{brokerTitle(section)}</h1>
+            <p className="font-body-md text-body-md text-on-surface-variant mt-2">{brokerSubtitle(section)}</p>
           </div>
-          <button className="bg-primary text-white font-label-bold text-label-bold px-6 py-3 rounded flex items-center gap-2 hover:bg-primary-container transition-colors shadow-sm" onClick={() => document.getElementById('listing-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
-            <MaterialIcon className="text-sm">add</MaterialIcon>
-            Đăng tin mới
-          </button>
+          {section === 'properties' && (
+            <button className="bg-primary text-white font-label-bold text-label-bold px-6 py-3 rounded flex items-center gap-2 hover:bg-primary-container transition-colors shadow-sm" onClick={() => document.getElementById('listing-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+              <MaterialIcon className="text-sm">add</MaterialIcon>
+              Đăng tin mới
+            </button>
+          )}
+          {section === 'profile' && (
+            <a className="bg-primary text-white font-label-bold text-label-bold px-6 py-3 rounded flex items-center gap-2 hover:bg-primary-container transition-colors shadow-sm" href="#/broker/properties">
+              <MaterialIcon className="text-sm">description</MaterialIcon>
+              Tin đăng của tôi
+            </a>
+          )}
         </header>
 
         {notice && <div className="mb-stack-md rounded border border-success-green/40 bg-success-green/10 text-trust-navy p-3 font-body-sm text-body-sm">{notice}</div>}
         {error && <div className="mb-stack-md rounded border border-error-container bg-error-container/50 text-on-error-container p-3 font-body-sm text-body-sm">{error}</div>}
 
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-stack-lg">
-          <StatCard icon="list_alt" label="Tin đang hiển thị" value={stats.activeListings} className="text-primary bg-primary-fixed" />
-          <StatCard icon="inventory_2" label="Tổng tin của tôi" value={stats.totalListings} className="text-primary bg-surface-tint/20" />
-          <StatCard icon="visibility" label="Lượt xem ước tính" value={totalViews.toLocaleString('vi-VN')} className="text-success-green bg-success-green/20" />
-        </section>
+        {section === 'dashboard' && (
+          <>
+            <section className="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-stack-lg">
+              <StatCard icon="list_alt" label="Tin đang hiển thị" value={stats.activeListings} className="text-primary bg-primary-fixed" />
+              <StatCard icon="inventory_2" label="Tổng tin của tôi" value={stats.totalListings} className="text-primary bg-surface-tint/20" />
+              <StatCard icon="visibility" label="Lượt xem ước tính" value={totalViews.toLocaleString('vi-VN')} className="text-success-green bg-success-green/20" />
+            </section>
 
-        <section className="grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-gutter mb-stack-lg">
-          <form className="bg-white rounded-xl shadow-sm border border-surface-variant p-6 h-fit" onSubmit={saveProfile}>
+            <section className="grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-gutter">
+              <div className="bg-white rounded-xl shadow-sm border border-surface-variant p-6">
+                <h2 className="font-headline-md text-headline-md text-trust-navy mb-2">Trạng thái hồ sơ</h2>
+                <p className="font-body-sm text-body-sm text-on-surface-variant mb-stack-md">{profileReady ? 'Hồ sơ môi giới đã sẵn sàng để hiển thị trên tin đăng.' : 'Bạn cần hoàn tất họ tên và số điện thoại trước khi đăng tin.'}</p>
+                <a className="inline-flex items-center gap-2 bg-trust-navy text-on-primary font-label-bold text-label-bold px-4 py-2 rounded hover:bg-primary-container transition-colors" href="#/broker/profile">
+                  <MaterialIcon className="text-sm">account_circle</MaterialIcon>
+                  Mở hồ sơ
+                </a>
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-surface-variant overflow-hidden">
+                <div className="px-6 py-4 border-b border-surface-variant flex justify-between items-center bg-surface-bright">
+                  <h3 className="font-headline-md text-headline-md text-trust-navy">Tin gần đây</h3>
+                  <a className="font-label-bold text-label-bold text-primary hover:text-action-orange" href="#/broker/properties">Xem tất cả</a>
+                </div>
+                <div className="divide-y divide-surface-variant">
+                  {stats.listings.length === 0 && (
+                    <div className="p-8 text-center text-on-surface-variant font-body-sm text-body-sm">Bạn chưa có tin đăng nào.</div>
+                  )}
+                  {stats.listings.slice(0, 3).map((listing) => (
+                    <a key={listing.id} className="p-4 flex items-center gap-4 hover:bg-surface-container-low" href="#/broker/properties">
+                      <img className="w-20 h-16 rounded object-cover shrink-0" src={listing.image} alt={listing.title} />
+                      <div className="min-w-0 flex-1">
+                        <div className="font-label-bold text-label-bold text-trust-navy truncate">{listing.title}</div>
+                        <div className="font-body-sm text-body-sm text-on-surface-variant truncate">{listing.priceLabel}</div>
+                      </div>
+                      <span className="font-body-sm text-body-sm text-on-surface-variant">{listing.statusLabel}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+
+        {section === 'profile' && (
+          <form className="bg-white rounded-xl shadow-sm border border-surface-variant p-6 max-w-xl" onSubmit={saveProfile}>
             <h2 className="font-headline-md text-headline-md text-trust-navy mb-2">Hồ sơ môi giới</h2>
             <p className="font-body-sm text-body-sm text-on-surface-variant mb-stack-md">Cập nhật hồ sơ trước khi đăng tin. Số điện thoại sẽ hiển thị để khách liên hệ trực tiếp.</p>
             <div className="space-y-stack-md">
@@ -209,106 +253,110 @@ export default function BrokerDashboard({ session, onLogin, onLogout }) {
               </button>
             </div>
           </form>
+        )}
 
-          <form id="listing-form" className={`bg-white rounded-xl shadow-sm border p-6 ${profileReady ? 'border-surface-variant' : 'border-action-orange/60'}`} onSubmit={saveListing}>
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-stack-md">
-              <div>
-                <h2 className="font-headline-md text-headline-md text-trust-navy">{editing ? 'Chỉnh sửa tin' : 'Đăng tin mới'}</h2>
-                <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Tin sẽ lấy số điện thoại từ hồ sơ môi giới của bạn.</p>
+        {section === 'properties' && (
+          <>
+            <form id="listing-form" className={`bg-white rounded-xl shadow-sm border p-6 mb-stack-lg ${profileReady ? 'border-surface-variant' : 'border-action-orange/60'}`} onSubmit={saveListing}>
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-stack-md">
+                <div>
+                  <h2 className="font-headline-md text-headline-md text-trust-navy">{editing ? 'Chỉnh sửa tin' : 'Đăng tin mới'}</h2>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Tin sẽ lấy số điện thoại từ hồ sơ môi giới của bạn.</p>
+                </div>
+                {editing && (
+                  <button className="text-primary border border-primary px-4 py-2 rounded font-label-bold text-label-bold hover:bg-surface-container-low" type="button" onClick={() => setListingForm(EMPTY_FORM)}>
+                    Hủy sửa
+                  </button>
+                )}
               </div>
-              {editing && (
-                <button className="text-primary border border-primary px-4 py-2 rounded font-label-bold text-label-bold hover:bg-surface-container-low" type="button" onClick={() => setListingForm(EMPTY_FORM)}>
-                  Hủy sửa
-                </button>
+              {!profileReady && (
+                <div className="mb-stack-md rounded border border-action-orange/40 bg-secondary-fixed/40 text-on-secondary-container p-3 font-body-sm text-body-sm">
+                  Vui lòng hoàn tất hồ sơ môi giới trước khi đăng tin. <a className="font-label-bold text-primary" href="#/broker/profile">Mở hồ sơ</a>
+                </div>
               )}
-            </div>
-            {!profileReady && (
-              <div className="mb-stack-md rounded border border-action-orange/40 bg-secondary-fixed/40 text-on-secondary-container p-3 font-body-sm text-body-sm">
-                Vui lòng hoàn tất hồ sơ môi giới trước khi đăng tin.
-              </div>
-            )}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="Tiêu đề">
-                <input className="input" value={listingForm.title} onChange={(event) => setListingValue('title', event.target.value, setListingForm)} required />
-              </Field>
-              <Field label="Danh mục">
-                <select className="input" value={listingForm.categorySlug} onChange={(event) => {
-                  const categorySlug = event.target.value;
-                  setListingForm((current) => ({ ...current, categorySlug, transaction: categorySlug === 'tro' ? 'rent' : current.transaction }));
-                }}>
-                  <option value="tro">Trọ</option>
-                  <option value="nha">Nhà</option>
-                  <option value="dat">Đất</option>
-                </select>
-              </Field>
-              {listingForm.categorySlug !== 'tro' && (
-                <Field label="Nhu cầu">
-                  <select className="input" value={listingForm.transaction} onChange={(event) => setListingValue('transaction', event.target.value, setListingForm)}>
-                    <option value="sale">Mua bán</option>
-                    <option value="rent">Cho thuê</option>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Field label="Tiêu đề">
+                  <input className="input" value={listingForm.title} onChange={(event) => setListingValue('title', event.target.value, setListingForm)} required />
+                </Field>
+                <Field label="Danh mục">
+                  <select className="input" value={listingForm.categorySlug} onChange={(event) => {
+                    const categorySlug = event.target.value;
+                    setListingForm((current) => ({ ...current, categorySlug, transaction: categorySlug === 'tro' ? 'rent' : current.transaction }));
+                  }}>
+                    <option value="tro">Trọ</option>
+                    <option value="nha">Nhà</option>
+                    <option value="dat">Đất</option>
                   </select>
                 </Field>
-              )}
-              <Field label="Khu vực">
-                <select className="input" value={listingForm.ward} onChange={(event) => setListingValue('ward', event.target.value, setListingForm)}>
-                  <option value="phuong-6">Phường 6</option>
-                  <option value="phuong-7">Phường 7</option>
-                  <option value="cau-ngang">Cầu Ngang</option>
-                  <option value="chau-thanh">Châu Thành</option>
-                  <option value="long-duc">Long Đức</option>
-                </select>
-              </Field>
-              <Field label="Địa chỉ">
-                <input className="input" value={listingForm.address} onChange={(event) => setListingValue('address', event.target.value, setListingForm)} required />
-              </Field>
-              <Field label="Giá (VNĐ)">
-                <input className="input" type="number" min="0" value={listingForm.price} onChange={(event) => setListingValue('price', event.target.value, setListingForm)} required />
-              </Field>
-              <Field label="Diện tích (m²)">
-                <input className="input" type="number" min="0" value={listingForm.area} onChange={(event) => setListingValue('area', event.target.value, setListingForm)} />
-              </Field>
-              {listingForm.categorySlug === 'nha' && listingForm.transaction === 'rent' && (
-                <Field label="Loại nhà">
-                  <select className="input" value={listingForm.houseType} onChange={(event) => setListingValue('houseType', event.target.value, setListingForm)}>
-                    <option value="tret">Trệt</option>
-                    <option value="lau">Lầu</option>
+                {listingForm.categorySlug !== 'tro' && (
+                  <Field label="Nhu cầu">
+                    <select className="input" value={listingForm.transaction} onChange={(event) => setListingValue('transaction', event.target.value, setListingForm)}>
+                      <option value="sale">Mua bán</option>
+                      <option value="rent">Cho thuê</option>
+                    </select>
+                  </Field>
+                )}
+                <Field label="Khu vực">
+                  <select className="input" value={listingForm.ward} onChange={(event) => setListingValue('ward', event.target.value, setListingForm)}>
+                    <option value="phuong-6">Phường 6</option>
+                    <option value="phuong-7">Phường 7</option>
+                    <option value="cau-ngang">Cầu Ngang</option>
+                    <option value="chau-thanh">Châu Thành</option>
+                    <option value="long-duc">Long Đức</option>
                   </select>
                 </Field>
-              )}
-              <Field label="Phòng ngủ">
-                <input className="input" type="number" min="0" value={listingForm.bedrooms} onChange={(event) => setListingValue('bedrooms', event.target.value, setListingForm)} />
-              </Field>
-              <Field label="Phòng tắm">
-                <input className="input" type="number" min="0" value={listingForm.bathrooms} onChange={(event) => setListingValue('bathrooms', event.target.value, setListingForm)} />
-              </Field>
-              <Field label="Ảnh đại diện">
-                <input className="input" value={listingForm.image} onChange={(event) => setListingValue('image', event.target.value, setListingForm)} />
-              </Field>
-              <Field label="Mô tả" className="md:col-span-2">
-                <textarea className="input min-h-28" value={listingForm.description} onChange={(event) => setListingValue('description', event.target.value, setListingForm)} />
-              </Field>
-            </div>
-            <button className="mt-stack-md bg-primary text-white font-label-bold text-label-bold px-6 py-3 rounded flex items-center gap-2 hover:bg-primary-container transition-colors shadow-sm disabled:opacity-60" disabled={saving || !profileReady}>
-              <MaterialIcon className="text-sm">{editing ? 'save' : 'add'}</MaterialIcon>
-              {editing ? 'Lưu chỉnh sửa' : 'Đăng tin'}
-            </button>
-          </form>
-        </section>
+                <Field label="Địa chỉ">
+                  <input className="input" value={listingForm.address} onChange={(event) => setListingValue('address', event.target.value, setListingForm)} required />
+                </Field>
+                <Field label="Giá (VNĐ)">
+                  <input className="input" type="number" min="0" value={listingForm.price} onChange={(event) => setListingValue('price', event.target.value, setListingForm)} required />
+                </Field>
+                <Field label="Diện tích (m²)">
+                  <input className="input" type="number" min="0" value={listingForm.area} onChange={(event) => setListingValue('area', event.target.value, setListingForm)} />
+                </Field>
+                {listingForm.categorySlug === 'nha' && listingForm.transaction === 'rent' && (
+                  <Field label="Loại nhà">
+                    <select className="input" value={listingForm.houseType} onChange={(event) => setListingValue('houseType', event.target.value, setListingForm)}>
+                      <option value="tret">Trệt</option>
+                      <option value="lau">Lầu</option>
+                    </select>
+                  </Field>
+                )}
+                <Field label="Phòng ngủ">
+                  <input className="input" type="number" min="0" value={listingForm.bedrooms} onChange={(event) => setListingValue('bedrooms', event.target.value, setListingForm)} />
+                </Field>
+                <Field label="Phòng tắm">
+                  <input className="input" type="number" min="0" value={listingForm.bathrooms} onChange={(event) => setListingValue('bathrooms', event.target.value, setListingForm)} />
+                </Field>
+                <Field label="Ảnh đại diện">
+                  <input className="input" value={listingForm.image} onChange={(event) => setListingValue('image', event.target.value, setListingForm)} />
+                </Field>
+                <Field label="Mô tả" className="md:col-span-2">
+                  <textarea className="input min-h-28" value={listingForm.description} onChange={(event) => setListingValue('description', event.target.value, setListingForm)} />
+                </Field>
+              </div>
+              <button className="mt-stack-md bg-primary text-white font-label-bold text-label-bold px-6 py-3 rounded flex items-center gap-2 hover:bg-primary-container transition-colors shadow-sm disabled:opacity-60" disabled={saving || !profileReady}>
+                <MaterialIcon className="text-sm">{editing ? 'save' : 'add'}</MaterialIcon>
+                {editing ? 'Lưu chỉnh sửa' : 'Đăng tin'}
+              </button>
+            </form>
 
-        <section className="bg-white rounded-xl shadow-sm border border-surface-variant overflow-hidden">
-          <div className="px-6 py-4 border-b border-surface-variant flex justify-between items-center bg-surface-bright">
-            <h3 className="font-headline-md text-headline-md text-trust-navy">Danh sách hiện tại</h3>
-            <span className="font-body-sm text-body-sm text-on-surface-variant">{loading ? 'Đang tải' : `${stats.listings.length} tin`}</span>
-          </div>
-          <div className="divide-y divide-surface-variant">
-            {stats.listings.length === 0 && (
-              <div className="p-8 text-center text-on-surface-variant font-body-sm text-body-sm">Bạn chưa có tin đăng nào.</div>
-            )}
-            {stats.listings.map((listing) => (
-              <ListingRow key={listing.id} listing={listing} onEdit={editListing} onDelete={removeListing} onStatus={changeStatus} saving={saving} />
-            ))}
-          </div>
-        </section>
+            <section className="bg-white rounded-xl shadow-sm border border-surface-variant overflow-hidden">
+              <div className="px-6 py-4 border-b border-surface-variant flex justify-between items-center bg-surface-bright">
+                <h3 className="font-headline-md text-headline-md text-trust-navy">Danh sách hiện tại</h3>
+                <span className="font-body-sm text-body-sm text-on-surface-variant">{loading ? 'Đang tải' : `${stats.listings.length} tin`}</span>
+              </div>
+              <div className="divide-y divide-surface-variant">
+                {stats.listings.length === 0 && (
+                  <div className="p-8 text-center text-on-surface-variant font-body-sm text-body-sm">Bạn chưa có tin đăng nào.</div>
+                )}
+                {stats.listings.map((listing) => (
+                  <ListingRow key={listing.id} listing={listing} onEdit={editListing} onDelete={removeListing} onStatus={changeStatus} saving={saving} />
+                ))}
+              </div>
+            </section>
+          </>
+        )}
       </main>
     </AdminLayout>
   );
@@ -321,6 +369,22 @@ function Field({ label, children, className = '' }) {
       {children}
     </label>
   );
+}
+
+function brokerTitle(section) {
+  return {
+    dashboard: 'Bảng điều khiển',
+    profile: 'Hồ sơ môi giới',
+    properties: 'Tin đăng của tôi',
+  }[section] || 'Bảng điều khiển';
+}
+
+function brokerSubtitle(section) {
+  return {
+    dashboard: 'Theo dõi nhanh số lượng tin, trạng thái hồ sơ và các tin gần đây.',
+    profile: 'Cập nhật thông tin liên hệ hiển thị trên các tin đăng của bạn.',
+    properties: 'Đăng tin mới, chỉnh sửa, xóa và cập nhật trạng thái tin của bạn.',
+  }[section] || 'Theo dõi nhanh hoạt động môi giới của bạn.';
 }
 
 function StatCard({ icon, label, value, className }) {
@@ -374,9 +438,9 @@ function ListingRow({ listing, onEdit, onDelete, onStatus, saving }) {
   );
 }
 
-function AccessDenied({ session, onLogout }) {
+function AccessDenied({ session, onLogout, activePath }) {
   return (
-    <AdminLayout session={session} onLogout={onLogout} variant="broker">
+    <AdminLayout session={session} onLogout={onLogout} variant="broker" activePath={activePath}>
       <main className="flex-1 md:ml-64 p-margin-mobile md:p-margin-desktop w-full max-w-container-max mx-auto">
         <section className="bg-white rounded-xl border border-outline-variant p-stack-lg">
           <h1 className="font-headline-lg text-headline-lg text-trust-navy mb-2">Không có quyền môi giới</h1>

@@ -39,5 +39,71 @@ test('routes to broker dashboard for broker sessions', () => {
   }));
   window.location.hash = '#/broker';
   render(<App />);
+  expect(screen.getAllByRole('heading', { name: 'Bảng điều khiển' }).length).toBeGreaterThan(0);
+});
+
+test('routes to separate broker pages for broker sessions', () => {
+  window.localStorage.setItem('travinh-realty-session', JSON.stringify({
+    token: 'test-token',
+    email: 'broker@travinhrealty.vn',
+    role: 'BROKER',
+    userId: 'broker-id',
+  }));
+  window.location.hash = '#/broker/profile';
+  render(<App />);
+  expect(screen.getAllByRole('heading', { name: 'Hồ sơ môi giới' }).length).toBeGreaterThan(0);
+});
+
+test('routes to broker properties page for broker sessions', () => {
+  window.localStorage.setItem('travinh-realty-session', JSON.stringify({
+    token: 'test-token',
+    email: 'broker@travinhrealty.vn',
+    role: 'BROKER',
+    userId: 'broker-id',
+  }));
+  window.location.hash = '#/broker/properties';
+  render(<App />);
   expect(screen.getAllByRole('heading', { name: 'Tin đăng của tôi' }).length).toBeGreaterThan(0);
+});
+
+test('routes to separate admin pages for admin sessions', () => {
+  window.localStorage.setItem('travinh-realty-session', JSON.stringify({
+    token: 'test-token',
+    email: 'admin@congtinland.vn',
+    role: 'ADMIN',
+    userId: 'admin-id',
+  }));
+  window.location.hash = '#/admin/users';
+  render(<App />);
+  expect(screen.getAllByRole('heading', { name: 'Tài khoản users' }).length).toBeGreaterThan(0);
+});
+
+test('routes to all required admin pages for admin sessions', () => {
+  const adminSession = {
+    token: 'test-token',
+    email: 'admin@congtinland.vn',
+    role: 'ADMIN',
+    userId: 'admin-id',
+  };
+  const cases = [
+    ['#/admin/overview', 'Tổng quan'],
+    ['#/admin/brokers', 'Môi giới'],
+    ['#/admin/properties', 'Bài đăng'],
+  ];
+
+  for (const [hash, heading] of cases) {
+    cleanup();
+    window.localStorage.setItem('travinh-realty-session', JSON.stringify(adminSession));
+    window.location.hash = hash;
+    render(<App />);
+    expect(screen.getAllByRole('heading', { name: heading }).length).toBeGreaterThan(0);
+  }
+});
+
+test('login page hides demo role account shortcuts', () => {
+  window.location.hash = '#/login';
+  render(<App />);
+  expect(screen.getByRole('button', { name: /Đăng nhập/ })).toBeInTheDocument();
+  expect(screen.queryByText('Tài khoản theo vai trò')).not.toBeInTheDocument();
+  expect(screen.queryByText(/mẫu/i)).not.toBeInTheDocument();
 });

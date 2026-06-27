@@ -18,7 +18,7 @@ const EMPTY_BROKER = {
   phone: '',
 };
 
-export default function AdminDashboard({ session, onLogin, onLogout }) {
+export default function AdminDashboard({ session, onLogin, onLogout, currentPath = '/admin/overview', section = 'overview' }) {
   const [users, setUsers] = useState([]);
   const [brokers, setBrokers] = useState([]);
   const [properties, setProperties] = useState([]);
@@ -60,7 +60,7 @@ export default function AdminDashboard({ session, onLogin, onLogout }) {
   if (!session) return <LoginPage onLogin={onLogin} />;
   if (session.role !== 'ADMIN') {
     return (
-      <AdminLayout session={session} onLogout={onLogout} variant="admin">
+      <AdminLayout session={session} onLogout={onLogout} variant="admin" activePath={currentPath}>
         <main className="flex-1 md:ml-64 p-margin-mobile md:p-margin-desktop w-full max-w-container-max mx-auto">
           <section className="bg-white rounded-xl border border-outline-variant p-stack-lg">
             <h1 className="font-headline-lg text-headline-lg text-trust-navy mb-2">Không có quyền admin</h1>
@@ -111,12 +111,12 @@ export default function AdminDashboard({ session, onLogin, onLogout }) {
   }
 
   return (
-    <AdminLayout session={session} onLogout={onLogout} variant="admin">
+    <AdminLayout session={session} onLogout={onLogout} variant="admin" activePath={currentPath}>
       <main className="flex-1 md:ml-64 p-margin-mobile md:p-margin-desktop w-full max-w-container-max mx-auto">
         <header className="mb-stack-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-headline-xl text-trust-navy">Dashboard Admin</h1>
-            <p className="font-body-md text-body-md text-on-surface-variant mt-2">Kiểm tra users, môi giới, bài đăng và cấp tài khoản môi giới.</p>
+            <h1 className="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-headline-xl text-trust-navy">{adminTitle(section)}</h1>
+            <p className="font-body-md text-body-md text-on-surface-variant mt-2">{adminSubtitle(section)}</p>
           </div>
           <span className="bg-primary-fixed text-trust-navy font-label-bold text-label-bold px-4 py-2 rounded">{loading ? 'Đang đồng bộ' : 'Dữ liệu mới nhất'}</span>
         </header>
@@ -124,29 +124,23 @@ export default function AdminDashboard({ session, onLogin, onLogout }) {
         {notice && <div className="mb-stack-md rounded border border-success-green/40 bg-success-green/10 text-trust-navy p-3 font-body-sm text-body-sm">{notice}</div>}
         {error && <div className="mb-stack-md rounded border border-error-container bg-error-container/50 text-on-error-container p-3 font-body-sm text-body-sm">{error}</div>}
 
-        <section className="grid grid-cols-1 md:grid-cols-4 gap-gutter mb-stack-lg">
-          <StatCard icon="group" label="Users" value={stats.users} />
-          <StatCard icon="badge" label="Môi giới" value={stats.brokers} />
-          <StatCard icon="description" label="Bài đăng" value={stats.posts} />
-          <StatCard icon="lock" label="Bị khóa" value={stats.locked} />
-        </section>
+        {section === 'overview' && (
+          <>
+            <section className="grid grid-cols-1 md:grid-cols-4 gap-gutter mb-stack-lg">
+              <StatCard icon="group" label="Users" value={stats.users} />
+              <StatCard icon="badge" label="Môi giới" value={stats.brokers} />
+              <StatCard icon="description" label="Bài đăng" value={stats.posts} />
+              <StatCard icon="lock" label="Bị khóa" value={stats.locked} />
+            </section>
+            <section className="grid grid-cols-1 xl:grid-cols-3 gap-gutter">
+              <OverviewLink icon="group" title="Tài khoản users" value={`${users.length} tài khoản`} href="#/admin/users" />
+              <OverviewLink icon="badge" title="Môi giới" value={`${brokers.length} môi giới`} href="#/admin/brokers" />
+              <OverviewLink icon="description" title="Bài đăng" value={`${properties.length} bài đăng`} href="#/admin/properties" />
+            </section>
+          </>
+        )}
 
-        <section className="grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-gutter mb-stack-lg">
-          <form className="bg-white rounded-xl shadow-sm border border-surface-variant p-6 h-fit" onSubmit={saveBroker}>
-            <h2 className="font-headline-md text-headline-md text-trust-navy mb-2">Cấp tài khoản môi giới</h2>
-            <p className="font-body-sm text-body-sm text-on-surface-variant mb-stack-md">Broker không tự đăng ký. Admin tạo tài khoản và gửi thông tin đăng nhập bên ngoài hệ thống.</p>
-            <div className="space-y-stack-md">
-              <Field label="Username"><input className="input" value={brokerForm.username} onChange={(event) => setBrokerValue('username', event.target.value, setBrokerForm)} required minLength={3} /></Field>
-              <Field label="Email"><input className="input" type="email" value={brokerForm.email} onChange={(event) => setBrokerValue('email', event.target.value, setBrokerForm)} required /></Field>
-              <Field label="Mật khẩu"><input className="input" type="password" value={brokerForm.password} onChange={(event) => setBrokerValue('password', event.target.value, setBrokerForm)} required minLength={8} /></Field>
-              <Field label="Họ tên"><input className="input" value={brokerForm.fullName} onChange={(event) => setBrokerValue('fullName', event.target.value, setBrokerForm)} required /></Field>
-              <Field label="Số điện thoại"><input className="input" value={brokerForm.phone} onChange={(event) => setBrokerValue('phone', event.target.value, setBrokerForm)} required /></Field>
-              <button className="w-full bg-trust-navy text-on-primary font-label-bold text-label-bold py-2 rounded hover:bg-primary-container transition-colors disabled:opacity-60" disabled={saving}>
-                Tạo môi giới
-              </button>
-            </div>
-          </form>
-
+        {section === 'users' && (
           <div className="bg-white rounded-xl shadow-sm border border-surface-variant overflow-hidden">
             <TableHeader title="Tài khoản users và môi giới" count={users.length} />
             <div className="overflow-x-auto">
@@ -179,24 +173,43 @@ export default function AdminDashboard({ session, onLogin, onLogout }) {
               </table>
             </div>
           </div>
-        </section>
+        )}
 
-        <section className="grid grid-cols-1 xl:grid-cols-2 gap-gutter">
-          <div className="bg-white rounded-xl shadow-sm border border-surface-variant overflow-hidden">
-            <TableHeader title="Môi giới đang quản lý" count={brokers.length} />
-            <div className="divide-y divide-surface-variant">
-              {brokers.map((broker) => (
-                <div key={broker.id} className="p-4 flex items-center justify-between gap-4 hover:bg-surface-container-low">
-                  <div>
-                    <div className="font-label-bold text-label-bold text-trust-navy">{broker.fullName}</div>
-                    <div className="font-body-sm text-body-sm text-on-surface-variant">{broker.phone} · {broker.email}</div>
+        {section === 'brokers' && (
+          <section className="grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-gutter">
+            <form className="bg-white rounded-xl shadow-sm border border-surface-variant p-6 h-fit" onSubmit={saveBroker}>
+              <h2 className="font-headline-md text-headline-md text-trust-navy mb-2">Cấp tài khoản môi giới</h2>
+              <p className="font-body-sm text-body-sm text-on-surface-variant mb-stack-md">Broker không tự đăng ký. Admin tạo tài khoản và gửi thông tin đăng nhập bên ngoài hệ thống.</p>
+              <div className="space-y-stack-md">
+                <Field label="Username"><input className="input" value={brokerForm.username} onChange={(event) => setBrokerValue('username', event.target.value, setBrokerForm)} required minLength={3} /></Field>
+                <Field label="Email"><input className="input" type="email" value={brokerForm.email} onChange={(event) => setBrokerValue('email', event.target.value, setBrokerForm)} required /></Field>
+                <Field label="Mật khẩu"><input className="input" type="password" value={brokerForm.password} onChange={(event) => setBrokerValue('password', event.target.value, setBrokerForm)} required minLength={8} /></Field>
+                <Field label="Họ tên"><input className="input" value={brokerForm.fullName} onChange={(event) => setBrokerValue('fullName', event.target.value, setBrokerForm)} required /></Field>
+                <Field label="Số điện thoại"><input className="input" value={brokerForm.phone} onChange={(event) => setBrokerValue('phone', event.target.value, setBrokerForm)} required /></Field>
+                <button className="w-full bg-trust-navy text-on-primary font-label-bold text-label-bold py-2 rounded hover:bg-primary-container transition-colors disabled:opacity-60" disabled={saving}>
+                  Tạo môi giới
+                </button>
+              </div>
+            </form>
+
+            <div className="bg-white rounded-xl shadow-sm border border-surface-variant overflow-hidden">
+              <TableHeader title="Môi giới đang quản lý" count={brokers.length} />
+              <div className="divide-y divide-surface-variant">
+                {brokers.map((broker) => (
+                  <div key={broker.id} className="p-4 flex items-center justify-between gap-4 hover:bg-surface-container-low">
+                    <div>
+                      <div className="font-label-bold text-label-bold text-trust-navy">{broker.fullName}</div>
+                      <div className="font-body-sm text-body-sm text-on-surface-variant">{broker.phone} · {broker.email}</div>
+                    </div>
+                    <span className="font-label-bold text-label-bold text-on-surface-variant">{statusLabel(broker.status)}</span>
                   </div>
-                  <span className="font-label-bold text-label-bold text-on-surface-variant">{statusLabel(broker.status)}</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          </section>
+        )}
 
+        {section === 'properties' && (
           <div className="bg-white rounded-xl shadow-sm border border-surface-variant overflow-hidden">
             <TableHeader title="Bài đăng trong hệ thống" count={properties.length} />
             <div className="divide-y divide-surface-variant">
@@ -212,7 +225,7 @@ export default function AdminDashboard({ session, onLogin, onLogout }) {
               ))}
             </div>
           </div>
-        </section>
+        )}
       </main>
     </AdminLayout>
   );
@@ -225,6 +238,38 @@ async function loadAdminData(token) {
     fetchAdminProperties(token),
   ]);
   return { nextUsers, nextBrokers, nextProperties };
+}
+
+function adminTitle(section) {
+  return {
+    overview: 'Tổng quan',
+    users: 'Tài khoản users',
+    brokers: 'Môi giới',
+    properties: 'Bài đăng',
+  }[section] || 'Tổng quan';
+}
+
+function adminSubtitle(section) {
+  return {
+    overview: 'Theo dõi nhanh users, môi giới, bài đăng và tài khoản bị khóa.',
+    users: 'Quản lý trạng thái tài khoản người dùng, môi giới và admin.',
+    brokers: 'Cấp tài khoản môi giới và theo dõi danh sách môi giới đang hoạt động.',
+    properties: 'Kiểm tra các bài đăng đang có trong hệ thống.',
+  }[section] || 'Theo dõi nhanh hệ thống.';
+}
+
+function OverviewLink({ icon, title, value, href }) {
+  return (
+    <a className="bg-white p-6 rounded-xl shadow-sm border border-surface-variant flex items-center justify-between hover:bg-surface-container-low transition-colors" href={href}>
+      <div>
+        <p className="font-headline-md text-headline-md text-trust-navy mb-1">{title}</p>
+        <p className="font-body-sm text-body-sm text-on-surface-variant">{value}</p>
+      </div>
+      <div className="w-12 h-12 rounded-full flex items-center justify-center text-primary bg-primary-fixed">
+        <MaterialIcon filled>{icon}</MaterialIcon>
+      </div>
+    </a>
+  );
 }
 
 function Field({ label, children }) {

@@ -3,6 +3,39 @@ import MaterialIcon from '../components/MaterialIcon.jsx';
 export function Header({ session, onLogout }) {
   const isBroker = session?.role === 'BROKER';
   const isAdmin = session?.role === 'ADMIN';
+  const saleSections = [
+    {
+      title: 'Nhà',
+      links: [
+        { label: 'Mua nhà', href: '#/search?category=nha&transaction=sale' },
+      ],
+    },
+    {
+      title: 'Đất',
+      links: [
+        { label: 'Mua đất', href: '#/search?category=dat&transaction=sale' },
+      ],
+    },
+  ];
+  const rentSections = [
+    {
+      links: [
+        { label: 'Trọ', href: '#/search?category=tro&transaction=rent' },
+      ],
+    },
+    {
+      title: 'Nhà',
+      links: [
+        { label: 'Thuê nhà', href: '#/search?category=nha&transaction=rent' },
+      ],
+    },
+    {
+      title: 'Đất',
+      links: [
+        { label: 'Thuê đất', href: '#/search?category=dat&transaction=rent' },
+      ],
+    },
+  ];
 
   return (
     <header className="bg-surface shadow-sm docked full-width top-0 sticky z-50 w-full transition-all duration-300">
@@ -13,25 +46,8 @@ export function Header({ session, onLogout }) {
         </a>
 
         <nav className="hidden md:flex items-center gap-8">
-          <div className="relative group">
-            <button className="flex items-center gap-1 text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors px-2 py-1 rounded font-label-bold text-label-bold">
-              Danh mục
-              <MaterialIcon className="text-sm">keyboard_arrow_down</MaterialIcon>
-            </button>
-            <div className="absolute top-full left-0 mt-1 w-56 bg-surface-container-lowest border border-outline-variant rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-              <a className="block px-4 py-2 text-body-sm hover:bg-surface-container-low text-on-surface" href="#/search?category=tro">Trọ</a>
-              <div className="border-t border-outline-variant py-1">
-                <div className="px-4 py-1 font-label-bold text-label-bold text-trust-navy">Nhà</div>
-                <a className="block px-4 py-2 text-body-sm hover:bg-surface-container-low text-on-surface" href="#/search?category=nha&transaction=rent">Thuê nhà</a>
-                <a className="block px-4 py-2 text-body-sm hover:bg-surface-container-low text-on-surface" href="#/search?category=nha&transaction=sale">Mua nhà</a>
-              </div>
-              <div className="border-t border-outline-variant py-1">
-                <div className="px-4 py-1 font-label-bold text-label-bold text-trust-navy">Đất</div>
-                <a className="block px-4 py-2 text-body-sm hover:bg-surface-container-low text-on-surface" href="#/search?category=dat&transaction=rent">Thuê đất</a>
-                <a className="block px-4 py-2 text-body-sm hover:bg-surface-container-low text-on-surface" href="#/search?category=dat&transaction=sale">Mua đất</a>
-              </div>
-            </div>
-          </div>
+          <NavDropdown label="Mua" sections={saleSections} />
+          <NavDropdown label="Thuê" sections={rentSections} />
         </nav>
 
         <div className="flex items-center gap-3">
@@ -41,12 +57,12 @@ export function Header({ session, onLogout }) {
             </a>
           )}
           {isAdmin && (
-            <a className="hidden md:flex items-center justify-center px-4 py-2 border border-primary text-primary font-label-bold text-label-bold rounded hover:bg-surface-container-low transition-colors" href="#/admin">
+            <a className="hidden md:flex items-center justify-center px-4 py-2 border border-primary text-primary font-label-bold text-label-bold rounded hover:bg-surface-container-low transition-colors" href="#/admin/overview">
               Admin
             </a>
           )}
           {isBroker && (
-            <a className="hidden md:flex items-center justify-center px-4 py-2 bg-action-orange text-on-primary font-label-bold text-label-bold rounded shadow-sm hover:opacity-90 transition-opacity" href="#/broker">
+            <a className="hidden md:flex items-center justify-center px-4 py-2 bg-action-orange text-on-primary font-label-bold text-label-bold rounded shadow-sm hover:opacity-90 transition-opacity" href="#/broker/properties">
               Đăng tin
             </a>
           )}
@@ -58,6 +74,41 @@ export function Header({ session, onLogout }) {
         </div>
       </div>
     </header>
+  );
+}
+
+function NavDropdown({ label, sections }) {
+  return (
+    <div className="relative group">
+      <button
+        className="flex items-center gap-1 text-on-surface-variant hover:text-action-orange group-hover:text-action-orange hover:bg-surface-container-low transition-colors px-2 py-1 rounded font-label-bold text-label-bold"
+        type="button"
+        aria-haspopup="true"
+      >
+        {label}
+        <MaterialIcon className="text-sm transition-transform duration-200 group-hover:rotate-180">keyboard_arrow_down</MaterialIcon>
+      </button>
+      <div className="absolute top-full left-0 mt-1 min-w-44 bg-surface-container-lowest border border-outline-variant rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all duration-200 z-50 overflow-hidden">
+        {sections.map((section, index) => (
+          <div key={section.title || section.links[0].href} className={`${index > 0 ? 'border-t border-outline-variant' : ''} py-2`}>
+            {section.title && (
+              <div className="px-4 pb-1 font-label-bold text-label-bold text-trust-navy">
+                {section.title}
+              </div>
+            )}
+            {section.links.map((link) => (
+              <a
+                key={link.href}
+                className="block whitespace-nowrap px-4 py-2 text-body-sm hover:bg-surface-container-low text-on-surface"
+                href={link.href}
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

@@ -4,13 +4,8 @@ import { fetchCurrentUser, login } from '../services/api.js';
 import { createSession } from '../services/session.js';
 import { validateLoginForm } from '../utils/validation.js';
 
-const DEMO_ACCOUNTS = {
-  broker: { email: 'broker@travinhrealty.vn', password: 'password' },
-  admin: { email: 'admin@travinhrealty.vn', password: 'password' },
-};
-
 export default function LoginPage({ session, onLogin }) {
-  const [values, setValues] = useState(DEMO_ACCOUNTS.broker);
+  const [values, setValues] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -28,7 +23,7 @@ export default function LoginPage({ session, onLogin }) {
       const profile = await fetchCurrentUser(auth.accessToken).catch(() => ({}));
       const nextSession = createSession(auth, profile);
       onLogin(nextSession);
-      window.location.hash = nextSession.role === 'ADMIN' ? '#/admin' : nextSession.role === 'BROKER' ? '#/broker' : '#/';
+      window.location.hash = nextSession.role === 'ADMIN' ? '#/admin/overview' : nextSession.role === 'BROKER' ? '#/broker/dashboard' : '#/';
     } catch (exception) {
       setServerError(exception.message || 'Đăng nhập thất bại.');
     } finally {
@@ -41,7 +36,7 @@ export default function LoginPage({ session, onLogin }) {
   }
 
   if (session) {
-    const href = session.role === 'ADMIN' ? '#/admin' : session.role === 'BROKER' ? '#/broker' : '#/';
+    const href = session.role === 'ADMIN' ? '#/admin/overview' : session.role === 'BROKER' ? '#/broker/dashboard' : '#/';
     return (
       <main className="bg-surface text-on-surface font-body-md min-h-screen flex items-center justify-center p-margin-mobile md:p-margin-desktop">
         <section className="w-full max-w-xl bg-surface-container-lowest border border-outline-variant rounded-xl p-stack-lg shadow-[0_10px_30px_rgba(0,0,0,0.08)] text-center">
@@ -60,7 +55,7 @@ export default function LoginPage({ session, onLogin }) {
     <div className="bg-surface text-on-surface font-body-md min-h-screen flex flex-col">
       <main className="flex-grow flex items-center justify-center p-margin-mobile md:p-margin-desktop relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-surface-container-low to-surface-container-highest z-0"></div>
-        <section className="relative z-10 w-full max-w-[1000px] grid grid-cols-1 md:grid-cols-2 gap-gutter rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] bg-on-primary overflow-hidden border border-surface-variant">
+        <section className="relative z-10 w-full max-w-md rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] bg-on-primary overflow-hidden border border-surface-variant">
           <div className="p-stack-lg flex flex-col justify-center">
             <div className="mb-stack-lg">
               <a className="inline-flex items-center gap-2 font-headline-md text-headline-md font-bold text-trust-navy mb-stack-md" href="#/">
@@ -112,33 +107,6 @@ export default function LoginPage({ session, onLogin }) {
               </button>
             </form>
           </div>
-
-          <aside className="p-stack-lg bg-surface-container-low flex flex-col justify-center border-l border-surface-variant relative overflow-hidden">
-            <div className="absolute inset-0 bg-cover bg-center opacity-10 mix-blend-multiply z-0" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCYSSyh_-xMegKv5s-Vnp3lGXz1K52ud1fMRkUEG4SrW0mnakQp6i8otFfgmvdbd-vbfF0DBryF9ilCqPvjtktncGnFfEcriqhh8zhtrxWnVWm5mrkQuRQU0-xKdqR6ZjuXfnPJ5Dy0NhhNijX4SZuOs9EBgG6XJKlp5mQ5xvxLvwCJzGLvKCq-w-LjxygPx9yNHRtcFjykDWbK7-Hl4_gKEtb2BvyzC81zKjCnUrof9iTHhvL-5eoKz2Fse2ejjxyxYzPP_YHCPiM')" }}></div>
-            <div className="relative z-10 flex flex-col h-full">
-              <div className="mb-stack-lg">
-                <h2 className="font-headline-lg text-headline-lg text-trust-navy mb-stack-sm">Tài khoản theo vai trò</h2>
-                <p className="font-body-md text-body-md text-on-surface-variant">Môi giới dùng tài khoản do admin cấp. Người dùng thường không thấy chức năng đăng tin.</p>
-              </div>
-              <div className="flex-grow flex flex-col justify-center space-y-stack-md">
-                <button className="w-full bg-on-primary text-trust-navy border border-trust-navy font-label-bold text-label-bold py-3 rounded hover:bg-surface-container-low transition-colors flex items-center justify-center gap-2" type="button" onClick={() => setValues(DEMO_ACCOUNTS.broker)}>
-                  <MaterialIcon>badge</MaterialIcon>
-                  Dùng tài khoản môi giới mẫu
-                </button>
-                <button className="w-full bg-on-primary text-trust-navy border border-trust-navy font-label-bold text-label-bold py-3 rounded hover:bg-surface-container-low transition-colors flex items-center justify-center gap-2" type="button" onClick={() => setValues(DEMO_ACCOUNTS.admin)}>
-                  <MaterialIcon>admin_panel_settings</MaterialIcon>
-                  Dùng tài khoản admin mẫu
-                </button>
-              </div>
-              <div className="mt-stack-lg pt-stack-md border-t border-outline-variant/30 flex items-start gap-3 bg-surface p-4 rounded shadow-sm">
-                <MaterialIcon filled className="text-action-orange">info</MaterialIcon>
-                <div>
-                  <span className="block font-label-bold text-label-bold text-on-surface mb-1">Mật khẩu mẫu</span>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">Cả hai tài khoản demo dùng mật khẩu: password.</p>
-                </div>
-              </div>
-            </div>
-          </aside>
         </section>
       </main>
     </div>

@@ -4,7 +4,8 @@ import { clearStoredSession, loadStoredSession, saveStoredSession } from './serv
 import { resolveRoute } from './routes/index.jsx';
 
 function readHashPath() {
-  return window.location.hash.replace(/^#/, '') || '/';
+  const hashPath = window.location.hash.replace(/^#/, '');
+  return hashPath || window.location.pathname || '/';
 }
 
 export default function App() {
@@ -33,5 +34,5 @@ export default function App() {
     window.location.hash = '#/';
   }
 
-  return <Page {...params} session={session} onLogin={handleLogin} onLogout={handleLogout} />;
+  return <Page {...params} currentPath={path} session={session} onLogin={handleLogin} onLogout={handleLogout} />;
 }
