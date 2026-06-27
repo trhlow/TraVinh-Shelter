@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BĐS Trà Vinh - Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary": "#00240b",
+                        "on-primary-container": "#799dd6",
+                        "tertiary-fixed": "#6bff8f",
+                        "surface-container": "#edeef0",
+                        "on-tertiary-fixed-variant": "#005321",
+                        "surface-bright": "#f8f9fb",
+                        "surface-dim": "#d9dadc",
+                        "primary-fixed": "#d5e3ff",
+                        "on-tertiary-fixed": "#002109",
+                        "on-primary-fixed": "#001b3c",
+                        "on-primary-fixed-variant": "#1f477b",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f3f4f6",
+                        "success-green": "#22C55E",
+                        "surface-container-high": "#e7e8ea",
+                        "on-secondary-container": "#5c2400",
+                        "inverse-surface": "#2e3132",
+                        "surface-gray": "#F3F4F6",
+                        "on-secondary-fixed-variant": "#783200",
+                        "error": "#ba1a1a",
+                        "text-main": "#1F2937",
+                        "secondary-fixed-dim": "#ffb690",
+                        "primary-fixed-dim": "#a7c8ff",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#191c1e",
+                        "surface-variant": "#e1e2e4",
+                        "tertiary-fixed-dim": "#4ae176",
+                        "secondary-fixed": "#ffdbca",
+                        "inverse-primary": "#a7c8ff",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#f0f1f3",
+                        "secondary-container": "#fd761a",
+                        "primary-container": "#003366",
+                        "outline-variant": "#c3c6d1",
+                        "primary": "#001e40",
+                        "surface-container-highest": "#e1e2e4",
+                        "tertiary-container": "#003c16",
+                        "action-orange": "#F97316",
+                        "surface": "#f8f9fb",
+                        "surface-tint": "#3a5f94",
+                        "on-surface-variant": "#43474f",
+                        "error-container": "#ffdad6",
+                        "on-error": "#ffffff",
+                        "trust-navy": "#003366",
+                        "outline": "#737780",
+                        "on-secondary-fixed": "#341100",
+                        "on-tertiary": "#ffffff",
+                        "background": "#f8f9fb",
+                        "on-secondary": "#ffffff",
+                        "text-muted": "#6B7280",
+                        "on-tertiary-container": "#00b351",
+                        "secondary": "#9d4300",
+                        "on-background": "#191c1e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "gutter": "24px",
+                        "stack-md": "16px",
+                        "container-max": "1280px",
+                        "stack-lg": "32px",
+                        "margin-desktop": "48px",
+                        "stack-sm": "8px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-bold": ["Inter"],
+                        "headline-xl-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "price-display": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-xl": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-bold": ["14px", { "lineHeight": "16px", "fontWeight": "600" }],
+                        "headline-xl-mobile": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "price-display": ["20px", { "lineHeight": "24px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface font-body-md text-body-md h-screen overflow-hidden flex">
+<!-- Top NavBar (Shared Component) - Rendered for context, but usually Admin dashboards rely mostly on SideNav -->
+<nav class="hidden"> <!-- Hidden as per instructions to focus on SideNav for Admin -->
+</nav>
+<!-- Side NavBar (Admin Specific Variation based on Shared Component structure) -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-surface-container-low dark:bg-surface-container-highest flex flex-col h-full py-stack-lg z-10 border-r border-outline-variant shadow-sm hidden md:flex">
+<div class="px-gutter mb-stack-lg">
+<h1 class="font-headline-md text-headline-md font-bold text-trust-navy dark:text-primary-fixed">BĐS Trà Vinh</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Admin Dashboard</p>
+</div>
+<nav class="flex-1 flex flex-col gap-2">
+<!-- Thống kê -->
+<a class="flex items-center gap-3 px-gutter py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-dim transition-all group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">bar_chart</span>
+<span class="font-label-bold text-label-bold">Thống kê</span>
+</a>
+<!-- Quản lý User -->
+<a class="flex items-center gap-3 px-gutter py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-dim transition-all group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">group</span>
+<span class="font-label-bold text-label-bold">Quản lý User</span>
+</a>
+<!-- Quản lý Môi giới -->
+<a class="flex items-center gap-3 px-gutter py-3 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-dim transition-all group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">real_estate_agent</span>
+<span class="font-label-bold text-label-bold">Quản lý Môi giới</span>
+</a>
+<!-- Kiểm duyệt bài đăng (ACTIVE STATE) -->
+<a class="flex items-center gap-3 px-gutter py-3 text-primary dark:text-primary-fixed font-bold border-r-4 border-primary dark:border-primary-fixed bg-surface-container dark:bg-surface-container-high transition-all active:opacity-80" href="#">
+<span class="material-symbols-outlined text-[20px] text-primary" style="font-variation-settings: 'FILL' 1;">gavel</span>
+<span class="font-label-bold text-label-bold">Kiểm duyệt bài đăng</span>
+</a>
+</nav>
+<div class="px-gutter mt-auto flex items-center gap-3">
+<img alt="Admin Profile Picture" class="w-10 h-10 rounded-full object-cover border-2 border-surface" data-alt="A professional headshot of a system administrator in a well-lit office, wearing business casual attire, conveying authority and competence, shot with shallow depth of field in a modern corporate setting with cool, daylight tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC18V1iAoAIaSdzM7ZOz_DKw9wFpZFc9a8O_oIDXIyEauI0XhRNA-KP25ghUc9_3p6gSC5b9VeR47V0jwPJLsepHoXSYFQEMgyppWhBIv6PCT2-3M4Vkjt4MbxspaVUrN9wfxZOFsugq4E2_qNcH9YE0ljScOhrFympH_dX2U2QXs38wyudQHp5ee6AiQxrY7-Bg_q0Yx413hxQXVRlMlDVe-G1IIaQ8YsZx3AM6h8S08ryoyTc8xW0VWTjgThBnF1LLGXPgrkjzhE"/>
+<div>
+<p class="font-label-bold text-label-bold text-on-surface">Admin System</p>
+<a class="font-body-sm text-body-sm text-error hover:underline mt-1 block" href="#">Đăng xuất</a>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-0 md:ml-64 p-margin-mobile md:p-margin-desktop overflow-y-auto bg-surface relative h-full">
+<!-- Header -->
+<header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-stack-lg gap-4">
+<div>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Kiểm duyệt bài đăng</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Manage and moderate property listings submitted by users and brokers.</p>
+</div>
+<div class="flex items-center gap-3 w-full md:w-auto">
+<div class="relative w-full md:w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-on-primary border border-outline-variant rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-on-surface" placeholder="Tìm kiếm bài đăng..." type="text"/>
+</div>
+<button class="bg-surface-container border border-outline-variant p-2 rounded-lg hover:bg-surface-container-high transition-colors flex items-center justify-center h-full">
+<span class="material-symbols-outlined text-on-surface-variant">filter_list</span>
+</button>
+</div>
+</header>
+<!-- Data Table Card -->
+<div class="bg-on-primary rounded-xl shadow-sm border border-outline-variant overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse min-w-[800px]">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant">
+<th class="py-3 px-4 font-label-bold text-label-bold text-on-surface-variant">Tên bài đăng</th>
+<th class="py-3 px-4 font-label-bold text-label-bold text-on-surface-variant">Người đăng</th>
+<th class="py-3 px-4 font-label-bold text-label-bold text-on-surface-variant">Ngày đăng</th>
+<th class="py-3 px-4 font-label-bold text-label-bold text-on-surface-variant">Trạng thái</th>
+<th class="py-3 px-4 font-label-bold text-label-bold text-on-surface-variant text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- Row 1: Pending -->
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="py-4 px-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded bg-surface-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-outline">image</span>
+</div>
+<div>
+<p class="font-label-bold text-label-bold text-on-surface line-clamp-1">Bán đất nền KDC Phường 7, TP Trà Vinh</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">ID: #TRV-8924</p>
+</div>
+</div>
+</td>
+<td class="py-4 px-4 font-body-sm text-body-sm text-on-surface">Nguyễn Văn A</td>
+<td class="py-4 px-4 font-body-sm text-body-sm text-on-surface-variant">10/10/2024</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-bold text-label-bold text-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary shrink-0"></span>
+                                    Chờ duyệt
+                                </span>
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center justify-end gap-2">
+<button class="p-1.5 rounded-md hover:bg-surface-container transition-colors text-primary" title="View Details">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+<button class="p-1.5 rounded-md hover:bg-success-green hover:text-on-primary transition-colors text-success-green" title="Approve">
+<span class="material-symbols-outlined text-[20px]">check</span>
+</button>
+<button class="p-1.5 rounded-md hover:bg-error hover:text-on-error transition-colors text-error" title="Delete">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Active -->
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="py-4 px-4">
+<div class="flex items-center gap-3">
+<img alt="Property Thumbnail" class="w-12 h-12 rounded object-cover shrink-0" data-alt="A modern townhouse exterior in Vietnam, daytime, clear sky, showing a neat facade with large windows and a small front yard, high-quality real estate photography, bright lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7attqy1rGQ_thTMCvgilNaLpcUd0lAtcMQTNm-HVTku7sbRtp3ysAfGjfD0LizjTEp0UgndGjMdfZiIAWJI_pj9q1HNBVVl-vs1nO2tm9_igoXz8RE0t2LWiU-68nPEDVWLbsJ1ru_3MyAw04VYBlVqQeC2OLk1Sy7rc5XqIemtkNvK7g1PhFVf2uPmlyk7fdCzvhU6RGyhNGMJm56wQcG4CCYKRFzsGe84OeMgbWdoRCIoF2hRjmsWJEOEyNXWkE4EYMUcHV2HY"/>
+<div>
+<p class="font-label-bold text-label-bold text-on-surface line-clamp-1">Cho thuê nhà nguyên căn mặt tiền Võ Nguyên Giáp</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">ID: #TRV-8923</p>
+</div>
+</div>
+</td>
+<td class="py-4 px-4 font-body-sm text-body-sm text-on-surface">Trần Thị B (Môi giới)</td>
+<td class="py-4 px-4 font-body-sm text-body-sm text-on-surface-variant">09/10/2024</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant font-label-bold text-label-bold text-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-container shrink-0"></span>
+                                    Hợp lệ
+                                </span>
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center justify-end gap-2">
+<button class="p-1.5 rounded-md hover:bg-surface-container transition-colors text-primary" title="View Details">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+<button class="p-1.5 rounded-md hover:bg-error hover:text-on-error transition-colors text-error" title="Delete">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Violation -->
+<tr class="hover:bg-surface-bright transition-colors bg-error-container/10">
+<td class="py-4 px-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded bg-surface-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-outline">image_not_supported</span>
+</div>
+<div>
+<p class="font-label-bold text-label-bold text-on-surface line-clamp-1">Bán gấp nhà xưởng giá rẻ bất ngờ</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">ID: #TRV-8921</p>
+</div>
+</div>
+</td>
+<td class="py-4 px-4 font-body-sm text-body-sm text-on-surface">Lê Văn C</td>
+<td class="py-4 px-4 font-body-sm text-body-sm text-on-surface-variant">08/10/2024</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error-container text-on-error-container font-label-bold text-label-bold text-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-error shrink-0"></span>
+                                    Vi phạm
+                                </span>
+</td>
+<td class="py-4 px-4">
+<div class="flex items-center justify-end gap-2">
+<button class="p-1.5 rounded-md hover:bg-surface-container transition-colors text-primary" title="View Details">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+<button class="p-1.5 rounded-md hover:bg-error hover:text-on-error transition-colors text-error" title="Delete Permanent">
+<span class="material-symbols-outlined text-[20px]">delete_forever</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Footer -->
+<div class="px-4 py-3 border-t border-outline-variant bg-surface-bright flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Hiển thị 1-3 trong số 45 bài đăng</span>
+<div class="flex items-center gap-1">
+<button class="p-1.5 rounded hover:bg-surface-container disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined text-[20px]">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded bg-primary text-on-primary font-label-bold text-label-bold flex items-center justify-center">1</button>
+<button class="w-8 h-8 rounded hover:bg-surface-container text-on-surface font-body-sm text-body-sm flex items-center justify-center">2</button>
+<button class="w-8 h-8 rounded hover:bg-surface-container text-on-surface font-body-sm text-body-sm flex items-center justify-center">3</button>
+<button class="p-1.5 rounded hover:bg-surface-container text-on-surface">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</body></html>
