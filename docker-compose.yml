@@ -7,6 +7,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-travinh_realty}
       POSTGRES_USER: ${POSTGRES_USER:-travinh_app}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-travinh_dev_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -14,6 +16,21 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: travinh-realty-pgadmin
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-change-this-pgadmin-password}
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
 
   backend:
     build:
@@ -66,6 +83,8 @@ services:
 volumes:
   postgres_data:
     name: ${POSTGRES_VOLUME_NAME:-travinh_realty_postgres_data}
+  pgadmin_data:
+    name: ${PGADMIN_VOLUME_NAME:-travinh_realty_pgadmin_data}
   backend_media:
     name: ${BACKEND_MEDIA_VOLUME_NAME:-travinh_realty_backend_media}
 

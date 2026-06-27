@@ -24,6 +24,10 @@ Các biến chính:
 | `POSTGRES_DB` | Có | Tên database dùng cho Compose. |
 | `POSTGRES_USER` | Có | User PostgreSQL dùng cho Compose/backend. |
 | `POSTGRES_PASSWORD` | Có | Password PostgreSQL. Không dùng giá trị mẫu ở staging/prod. |
+| `POSTGRES_PORT` | Không | Port PostgreSQL publish ra host để dùng DBeaver/psql, mặc định `5432`. |
+| `PGADMIN_DEFAULT_EMAIL` | Có khi dùng pgAdmin | Email đăng nhập pgAdmin 4 local. |
+| `PGADMIN_DEFAULT_PASSWORD` | Có khi dùng pgAdmin | Password đăng nhập pgAdmin 4 local. Không dùng giá trị mẫu ở staging/prod. |
+| `PGADMIN_PORT` | Không | Port pgAdmin 4 publish ra host, mặc định `5050`. |
 | `DB_URL` | Có khi chạy backend ngoài Compose | JDBC URL PostgreSQL. |
 | `DB_USERNAME` | Có khi chạy backend ngoài Compose | Database username. |
 | `DB_PASSWORD` | Có khi chạy backend ngoài Compose | Database password. |
@@ -114,7 +118,33 @@ Chạy backend + PostgreSQL:
 docker compose up --build
 ```
 
-Compose mặc định không publish Postgres ra host. Backend chạy profile `prod` và lắng nghe tại `http://localhost:8080/api/v1`.
+Compose chạy PostgreSQL, pgAdmin 4, backend và frontend. Backend chạy profile `prod` và lắng nghe tại `http://localhost:8080/api/v1`.
+
+pgAdmin 4:
+
+```text
+http://localhost:5050
+```
+
+Kết nối server trong pgAdmin:
+
+| Field | Giá trị |
+| --- | --- |
+| Host name/address | `postgres` |
+| Port | `5432` |
+| Maintenance database | giá trị `POSTGRES_DB` |
+| Username | giá trị `POSTGRES_USER` |
+| Password | giá trị `POSTGRES_PASSWORD` |
+
+DBeaver nên dùng để quản lý database hằng ngày từ máy host:
+
+| Field | Giá trị |
+| --- | --- |
+| Host | `localhost` |
+| Port | giá trị `POSTGRES_PORT`, mặc định `5432` |
+| Database | giá trị `POSTGRES_DB` |
+| Username | giá trị `POSTGRES_USER` |
+| Password | giá trị `POSTGRES_PASSWORD` |
 
 Dừng stack:
 
@@ -143,3 +173,4 @@ GitHub Actions workflow `.github/workflows/ci.yml` chạy:
 - Log backend có `traceId` qua MDC và response lỗi không expose stacktrace.
 - Auth dùng JWT stateless, có `jti`, logout/revocation nội bộ tiến trình và rate-limit cơ bản cho login/register.
 - Nếu chạy nhiều instance backend, cần thay `RevokedTokenStore` in-memory bằng Redis/database-backed store để revoke token đồng bộ giữa instance.
+- Tài liệu kỹ thuật nằm trong `docs/`; kế hoạch sản phẩm/dự án nằm trong `plans/`.
