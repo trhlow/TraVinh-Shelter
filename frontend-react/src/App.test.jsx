@@ -5,11 +5,13 @@ import App from './App.jsx';
 
 beforeEach(() => {
   window.location.hash = '#/';
+  window.localStorage.clear();
   vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new Error('API unavailable in unit test'))));
 });
 
 afterEach(() => {
   cleanup();
+  window.localStorage.clear();
   vi.unstubAllGlobals();
 });
 
@@ -21,14 +23,21 @@ test('renders the template home page', async () => {
   await waitFor(() => expect(screen.getAllByText('BĐS Trà Vinh').length).toBeGreaterThan(0));
 });
 
-test('routes to search and broker dashboard pages', () => {
+test('routes to search page', async () => {
   window.location.hash = '#/search';
-  const { rerender } = render(<App />);
+  render(<App />);
   expect(screen.getByRole('heading', { name: 'Nhà đất bán tại Trà Vinh' })).toBeInTheDocument();
-  expect(screen.getByTestId('property-grid')).toBeInTheDocument();
+  await waitFor(() => expect(screen.getByTestId('property-grid')).toBeInTheDocument());
+});
 
+test('routes to broker dashboard for broker sessions', () => {
+  window.localStorage.setItem('travinh-realty-session', JSON.stringify({
+    token: 'test-token',
+    email: 'broker@travinhrealty.vn',
+    role: 'BROKER',
+    userId: 'broker-id',
+  }));
   window.location.hash = '#/broker';
-  window.dispatchEvent(new HashChangeEvent('hashchange'));
-  rerender(<App />);
+  render(<App />);
   expect(screen.getAllByRole('heading', { name: 'Tin đăng của tôi' }).length).toBeGreaterThan(0);
 });

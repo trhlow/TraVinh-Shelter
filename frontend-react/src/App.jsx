@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { logout as logoutRequest } from './services/api.js';
+import { clearStoredSession, loadStoredSession, saveStoredSession } from './services/session.js';
 import { resolveRoute } from './routes/index.jsx';
 
 function readHashPath() {
@@ -7,6 +9,7 @@ function readHashPath() {
 
 export default function App() {
   const [path, setPath] = useState(readHashPath);
+  const [session, setSession] = useState(loadStoredSession);
   const { Page, params } = resolveRoute(path);
 
   useEffect(() => {
@@ -15,5 +18,20 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
-  return <Page {...params} />;
+  function handleLogin(nextSession) {
+    saveStoredSession(nextSession);
+    setSession(nextSession);
+  }
+
+  async function handleLogout() {
+    const token = session?.token;
+    clearStoredSession();
+    setSession(null);
+    if (token) {
+      await logoutRequest(token).catch(() => null);
+    }
+    window.location.hash = '#/';
+  }
+
+  return <Page {...params} session={session} onLogin={handleLogin} onLogout={handleLogout} />;
 }

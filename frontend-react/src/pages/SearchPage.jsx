@@ -1,23 +1,87 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import PropertyCard from '../components/PropertyCard.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
 import { searchProperties } from '../data/templateData.js';
 import { fetchCategories, fetchProperties } from '../services/api.js';
 
-export default function SearchPage() {
-  const [filters, setFilters] = useState({ category: 'all', minPrice: '', maxPrice: '', minArea: '', maxArea: '' });
-  const [appliedFilters, setAppliedFilters] = useState(filters);
-  const [categories, setCategories] = useState([]);
+const DEFAULT_CATEGORIES = [
+  { name: 'Trọ', slug: 'tro' },
+  { name: 'Nhà', slug: 'nha' },
+  { name: 'Đất', slug: 'dat' },
+];
+
+const WARDS = [
+  { label: 'Tất cả Trà Vinh', value: 'all' },
+  { label: 'Phường 6', value: 'phuong-6' },
+  { label: 'Phường 7', value: 'phuong-7' },
+  { label: 'Cầu Ngang', value: 'cau-ngang' },
+  { label: 'Châu Thành', value: 'chau-thanh' },
+  { label: 'Long Đức', value: 'long-duc' },
+];
+
+const PRICE_GROUPS = {
+  tro: [
+    ['Mọi mức giá', '', ''],
+    ['Dưới 1,5 triệu/tháng', '0', '1500000'],
+    ['1,5 - 3 triệu/tháng', '1500000', '3000000'],
+    ['Trên 3 triệu/tháng', '3000000', ''],
+  ],
+  rent: [
+    ['Mọi mức giá', '', ''],
+    ['Dưới 5 triệu/tháng', '0', '5000000'],
+    ['5 - 10 triệu/tháng', '5000000', '10000000'],
+    ['Trên 10 triệu/tháng', '10000000', ''],
+  ],
+  sale: [
+    ['Mọi mức giá', '', ''],
+    ['Dưới 1 tỷ', '0', '1000000000'],
+    ['1 - 3 tỷ', '1000000000', '3000000000'],
+    ['3 - 5 tỷ', '3000000000', '5000000000'],
+    ['Trên 5 tỷ', '5000000000', ''],
+  ],
+};
+
+function filtersFromQuery(queryParams = {}) {
+  const category = ['tro', 'nha', 'dat'].includes(queryParams.category) ? queryParams.category : 'all';
+  const transaction = category === 'tro'
+    ? 'rent'
+    : ['rent', 'sale'].includes(queryParams.transaction) ? queryParams.transaction : 'all';
+  return {
+    category,
+    transaction,
+    ward: queryParams.ward || 'all',
+    houseType: queryParams.houseType || 'all',
+    minPrice: '',
+    maxPrice: '',
+    minArea: '',
+    maxArea: '',
+  };
+}
+
+export default function SearchPage({ queryParams, session, onLogout }) {
+  const queryKey = JSON.stringify(queryParams || {});
+  const [filters, setFilters] = useState(() => filtersFromQuery(queryParams));
+  const [appliedFilters, setAppliedFilters] = useState(() => filtersFromQuery(queryParams));
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [properties, setProperties] = useState(searchProperties);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [sort, setSort] = useState('newest');
+
+  useEffect(() => {
+    const nextFilters = filtersFromQuery(queryParams);
+    setFilters(nextFilters);
+    setAppliedFilters(nextFilters);
+  }, [queryKey]);
 
   useEffect(() => {
     let alive = true;
     fetchCategories()
       .then((items) => {
-        if (alive) setCategories(items);
+        if (alive && items.length > 0) setCategories(items);
       })
       .catch(() => {
-        if (alive) setCategories([]);
+        if (alive) setCategories(DEFAULT_CATEGORIES);
       });
     return () => {
       alive = false;
@@ -26,101 +90,195 @@ export default function SearchPage() {
 
   useEffect(() => {
     let alive = true;
+    setLoading(true);
+    setError('');
     fetchProperties(appliedFilters)
       .then((items) => {
-        if (alive) setProperties(items.length > 0 ? items : searchProperties);
+        if (alive) setProperties(items);
       })
-      .catch(() => {
-        if (alive) setProperties(searchProperties);
+      .catch((exception) => {
+        if (!alive) return;
+        setError(exception.message || 'Không tải được danh sách tin.');
+        setProperties(searchProperties);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
       });
     return () => {
       alive = false;
     };
   }, [appliedFilters]);
 
+  const sortedProperties = useMemo(() => {
+    const items = [...properties];
+    if (sort === 'price-asc') return items.sort((a, b) => (a.rawPrice || 0) - (b.rawPrice || 0));
+    if (sort === 'price-desc') return items.sort((a, b) => (b.rawPrice || 0) - (a.rawPrice || 0));
+    return items;
+  }, [properties, sort]);
+
+  const title = titleFor(appliedFilters);
+  const priceOptions = priceOptionsFor(filters);
+
   function updateFilter(name, value) {
-    setFilters((current) => ({ ...current, [name]: value }));
+    setFilters((current) => {
+      if (name === 'category') {
+        return {
+          ...current,
+          category: value,
+          transaction: value === 'tro' ? 'rent' : value === 'all' ? 'all' : 'sale',
+          houseType: 'all',
+          minPrice: '',
+          maxPrice: '',
+          minArea: '',
+          maxArea: '',
+        };
+      }
+      return { ...current, [name]: value };
+    });
+  }
+
+  function updatePrice(value) {
+    const [minPrice = '', maxPrice = ''] = value.split('-');
+    setFilters((current) => ({ ...current, minPrice, maxPrice }));
   }
 
   return (
-    <MainLayout>
+    <MainLayout session={session} onLogout={onLogout}>
       <main className="flex-grow w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg flex flex-col md:flex-row gap-gutter">
         <aside className="w-full md:w-1/4 flex-shrink-0 bg-surface-container-lowest shadow-sm p-4 rounded-lg h-fit border border-outline-variant">
-          <h2 className="font-headline-md text-headline-md mb-stack-md text-trust-navy border-b border-outline-variant pb-2">Lọc Bất Động Sản</h2>
+          <h2 className="font-headline-md text-headline-md mb-stack-md text-trust-navy border-b border-outline-variant pb-2">Bộ lọc tìm kiếm</h2>
+
           <div className="mb-stack-md">
-            <label className="font-label-bold text-label-bold block mb-2">Khu vực</label>
-            <select className="w-full bg-surface-container-low border border-outline-variant rounded p-2 font-body-sm text-body-sm focus:border-trust-navy focus:ring-1 focus:ring-trust-navy">
-              <option>Tất cả Trà Vinh</option>
-              <option>Thành phố Trà Vinh</option>
-              <option>Huyện Châu Thành</option>
-              <option>Huyện Cầu Ngang</option>
-            </select>
-          </div>
-          <div className="mb-stack-md">
-            <label className="font-label-bold text-label-bold block mb-2">Loại hình</label>
+            <label className="font-label-bold text-label-bold block mb-2">Danh mục</label>
             <select
               className="w-full bg-surface-container-low border border-outline-variant rounded p-2 font-body-sm text-body-sm focus:border-trust-navy focus:ring-1 focus:ring-trust-navy"
               value={filters.category}
               onChange={(event) => updateFilter('category', event.target.value)}
             >
               <option value="all">Tất cả</option>
-              {(categories.length > 0 ? categories : [
-                { name: 'Trọ', slug: 'tro' },
-                { name: 'Nhà', slug: 'nha' },
-                { name: 'Đất', slug: 'dat' },
-              ]).map((category) => (
+              {categories.map((category) => (
                 <option key={category.slug} value={category.slug}>{category.name}</option>
               ))}
             </select>
           </div>
+
+          {['nha', 'dat'].includes(filters.category) && (
+            <div className="flex border-b border-outline-variant mb-4">
+              <button
+                className={`flex-1 py-2 text-label-bold ${filters.transaction === 'sale' ? 'font-bold border-b-2 border-trust-navy text-trust-navy' : 'text-on-surface-variant hover:text-trust-navy transition-colors'}`}
+                onClick={() => updateFilter('transaction', 'sale')}
+              >
+                Mua
+              </button>
+              <button
+                className={`flex-1 py-2 text-label-bold ${filters.transaction === 'rent' ? 'font-bold border-b-2 border-trust-navy text-trust-navy' : 'text-on-surface-variant hover:text-trust-navy transition-colors'}`}
+                onClick={() => updateFilter('transaction', 'rent')}
+              >
+                Thuê
+              </button>
+            </div>
+          )}
+
           <div className="mb-stack-md">
-            <label className="font-label-bold text-label-bold block mb-2">Mức giá</label>
+            <label className="font-label-bold text-label-bold block mb-2">Khu vực</label>
+            <select
+              className="w-full bg-surface-container-low border border-outline-variant rounded p-2 font-body-sm text-body-sm focus:border-trust-navy focus:ring-1 focus:ring-trust-navy"
+              value={filters.ward}
+              onChange={(event) => updateFilter('ward', event.target.value)}
+            >
+              {WARDS.map((ward) => (
+                <option key={ward.value} value={ward.value}>{ward.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="mb-stack-md">
+            <label className="font-label-bold text-label-bold block mb-2">{filters.category === 'tro' ? 'Giá trọ' : filters.transaction === 'rent' ? 'Giá thuê' : 'Giá bán'}</label>
             <select
               className="w-full bg-surface-container-low border border-outline-variant rounded p-2 font-body-sm text-body-sm focus:border-trust-navy focus:ring-1 focus:ring-trust-navy"
               value={`${filters.minPrice}-${filters.maxPrice}`}
-              onChange={(event) => {
-                const [minPrice, maxPrice] = event.target.value.split('-');
-                setFilters((current) => ({ ...current, minPrice, maxPrice }));
-              }}
+              onChange={(event) => updatePrice(event.target.value)}
             >
-              <option value="-">Mọi mức giá</option>
-              <option value="0-1000000000">Dưới 1 tỷ</option>
-              <option value="1000000000-3000000000">1 - 3 tỷ</option>
-              <option value="3000000000-5000000000">3 - 5 tỷ</option>
-              <option value="5000000000-">Trên 5 tỷ</option>
+              {priceOptions.map(([label, minPrice, maxPrice]) => (
+                <option key={`${minPrice}-${maxPrice}`} value={`${minPrice}-${maxPrice}`}>{label}</option>
+              ))}
             </select>
           </div>
-          <div className="mb-stack-md">
-            <label className="font-label-bold text-label-bold block mb-2">Diện tích</label>
-            <div className="flex gap-2">
-              <input className="w-1/2 bg-surface-container-low border border-outline-variant rounded p-2 font-body-sm text-body-sm focus:border-trust-navy focus:ring-1 focus:ring-trust-navy" placeholder="Từ" type="number" value={filters.minArea} onChange={(event) => updateFilter('minArea', event.target.value)} />
-              <input className="w-1/2 bg-surface-container-low border border-outline-variant rounded p-2 font-body-sm text-body-sm focus:border-trust-navy focus:ring-1 focus:ring-trust-navy" placeholder="Đến (m2)" type="number" value={filters.maxArea} onChange={(event) => updateFilter('maxArea', event.target.value)} />
+
+          {filters.category === 'nha' && filters.transaction === 'rent' && (
+            <div className="mb-stack-md">
+              <label className="font-label-bold text-label-bold block mb-2">Loại nhà</label>
+              <select
+                className="w-full bg-surface-container-low border border-outline-variant rounded p-2 font-body-sm text-body-sm focus:border-trust-navy focus:ring-1 focus:ring-trust-navy"
+                value={filters.houseType}
+                onChange={(event) => updateFilter('houseType', event.target.value)}
+              >
+                <option value="all">Tất cả</option>
+                <option value="tret">Trệt</option>
+                <option value="lau">Lầu</option>
+              </select>
             </div>
-          </div>
+          )}
+
+          {filters.category !== 'tro' && (
+            <div className="mb-stack-md">
+              <label className="font-label-bold text-label-bold block mb-2">Diện tích (m²)</label>
+              <div className="flex gap-2">
+                <input className="w-1/2 bg-surface-container-low border border-outline-variant rounded p-2 font-body-sm text-body-sm focus:border-trust-navy focus:ring-1 focus:ring-trust-navy" placeholder="Từ" type="number" value={filters.minArea} onChange={(event) => updateFilter('minArea', event.target.value)} />
+                <input className="w-1/2 bg-surface-container-low border border-outline-variant rounded p-2 font-body-sm text-body-sm focus:border-trust-navy focus:ring-1 focus:ring-trust-navy" placeholder="Đến" type="number" value={filters.maxArea} onChange={(event) => updateFilter('maxArea', event.target.value)} />
+              </div>
+            </div>
+          )}
+
           <button className="w-full bg-trust-navy text-on-primary font-label-bold text-label-bold py-2 rounded hover:bg-primary-container transition-colors" onClick={() => setAppliedFilters(filters)}>
-            Áp dụng
+            Tìm kiếm ngay
           </button>
         </aside>
 
         <section className="w-full md:w-3/4 flex flex-col">
           <div className="flex justify-between items-center mb-stack-md pb-2 border-b border-outline-variant">
-            <h1 className="font-headline-lg text-headline-lg text-trust-navy">Nhà đất bán tại Trà Vinh</h1>
+            <h1 className="font-headline-lg text-headline-lg text-trust-navy">{title}</h1>
             <div className="flex items-center gap-2">
               <span className="font-body-sm text-body-sm text-on-surface-variant">Sắp xếp:</span>
-              <select className="bg-transparent border-none font-label-bold text-label-bold text-trust-navy cursor-pointer focus:ring-0">
-                <option>Mới nhất</option>
-                <option>Giá thấp đến cao</option>
-                <option>Giá cao đến thấp</option>
+              <select className="bg-transparent border-none font-label-bold text-label-bold text-trust-navy cursor-pointer focus:ring-0" value={sort} onChange={(event) => setSort(event.target.value)}>
+                <option value="newest">Mới nhất</option>
+                <option value="price-asc">Giá thấp đến cao</option>
+                <option value="price-desc">Giá cao đến thấp</option>
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-gutter" data-testid="property-grid">
-            {properties.map((property) => (
-              <PropertyCard key={property.title} property={property} compact />
-            ))}
-          </div>
+
+          {error && <div className="mb-stack-md rounded border border-error-container bg-error-container/40 text-on-error-container p-3 font-body-sm text-body-sm">{error}</div>}
+          {loading && <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter">{[1, 2, 3, 4].map((item) => <div key={item} className="h-80 rounded-lg bg-surface-container animate-pulse" />)}</div>}
+          {!loading && sortedProperties.length === 0 && (
+            <div className="bg-surface-container-lowest border border-outline-variant rounded-lg p-8 text-center">
+              <h2 className="font-headline-md text-headline-md text-trust-navy mb-2">Chưa có tin phù hợp</h2>
+              <p className="font-body-sm text-body-sm text-on-surface-variant">Hãy thử nới bộ lọc hoặc chọn khu vực khác.</p>
+            </div>
+          )}
+          {!loading && sortedProperties.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-gutter" data-testid="property-grid">
+              {sortedProperties.map((property) => (
+                <PropertyCard key={property.id || property.title} property={property} compact />
+              ))}
+            </div>
+          )}
         </section>
       </main>
     </MainLayout>
   );
+}
+
+function priceOptionsFor(filters) {
+  if (filters.category === 'tro') return PRICE_GROUPS.tro;
+  return filters.transaction === 'rent' ? PRICE_GROUPS.rent : PRICE_GROUPS.sale;
+}
+
+function titleFor(filters) {
+  if (filters.category === 'tro') return 'Phòng trọ tại Trà Vinh';
+  if (filters.category === 'nha' && filters.transaction === 'rent') return 'Nhà cho thuê tại Trà Vinh';
+  if (filters.category === 'nha') return 'Nhà đất bán tại Trà Vinh';
+  if (filters.category === 'dat' && filters.transaction === 'rent') return 'Đất cho thuê tại Trà Vinh';
+  if (filters.category === 'dat') return 'Đất bán tại Trà Vinh';
+  return 'Nhà đất bán tại Trà Vinh';
 }

@@ -3,15 +3,22 @@ export function filterProperties(properties, filters) {
   const query = normalize(safeFilters.query);
   const minPrice = parseOptionalNumber(safeFilters.minPrice);
   const maxPrice = parseOptionalNumber(safeFilters.maxPrice);
+  const minArea = parseOptionalNumber(safeFilters.minArea);
+  const maxArea = parseOptionalNumber(safeFilters.maxArea);
 
   return properties.filter((property) => {
+    const comparablePrice = property.rawPrice ?? property.price;
     const matchesQuery = !query || normalize(`${property.title} ${property.address}`).includes(query);
     const matchesCategory = safeFilters.category === 'all' || property.category === safeFilters.category;
     const matchesTransaction = safeFilters.transaction === 'all' || property.transaction === safeFilters.transaction;
     const matchesWard = safeFilters.ward === 'all' || property.ward === safeFilters.ward;
-    const matchesMin = minPrice == null || property.price >= minPrice;
-    const matchesMax = maxPrice == null || property.price <= maxPrice;
-    return matchesQuery && matchesCategory && matchesTransaction && matchesWard && matchesMin && matchesMax;
+    const matchesHouseType = safeFilters.houseType === 'all' || property.houseType === safeFilters.houseType;
+    const matchesMin = minPrice == null || comparablePrice >= minPrice;
+    const matchesMax = maxPrice == null || comparablePrice <= maxPrice;
+    const matchesMinArea = minArea == null || Number(property.area || 0) >= minArea;
+    const matchesMaxArea = maxArea == null || Number(property.area || 0) <= maxArea;
+    return matchesQuery && matchesCategory && matchesTransaction && matchesWard
+      && matchesHouseType && matchesMin && matchesMax && matchesMinArea && matchesMaxArea;
   });
 }
 
@@ -20,6 +27,9 @@ export function buildPropertyQuery(filters) {
   const params = new URLSearchParams();
   if (safeFilters.query) params.set('q', safeFilters.query.trim());
   if (safeFilters.category !== 'all') params.set('categorySlug', safeFilters.category);
+  if (safeFilters.transaction !== 'all') params.set('attr.transaction', safeFilters.transaction);
+  if (safeFilters.ward !== 'all') params.set('attr.ward', safeFilters.ward);
+  if (safeFilters.houseType !== 'all') params.set('attr.houseType', safeFilters.houseType);
   if (safeFilters.minPrice) params.set('minPrice', safeFilters.minPrice);
   if (safeFilters.maxPrice) params.set('maxPrice', safeFilters.maxPrice);
   if (safeFilters.minArea) params.set('attr.area.min', safeFilters.minArea);
@@ -37,6 +47,7 @@ function withDefaultFilters(filters = {}) {
     minArea: '',
     maxArea: '',
     ward: 'all',
+    houseType: 'all',
     ...filters,
   };
 }

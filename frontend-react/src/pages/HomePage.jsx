@@ -5,7 +5,7 @@ import MainLayout from '../layouts/MainLayout.jsx';
 import { featuredProperties } from '../data/templateData.js';
 import { fetchProperties } from '../services/api.js';
 
-export default function HomePage() {
+export default function HomePage({ session, onLogout }) {
   const [properties, setProperties] = useState(featuredProperties);
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <MainLayout>
+    <MainLayout session={session} onLogout={onLogout}>
       <main className="flex-grow">
         <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
           <img

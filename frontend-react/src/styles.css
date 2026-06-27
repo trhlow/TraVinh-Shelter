@@ -10,3 +10,20 @@
 body {
   font-family: Inter, sans-serif;
 }
+
+.input {
+  width: 100%;
+  border: 1px solid #c3c6d1;
+  border-radius: 0.25rem;
+  background: #f3f4f6;
+  color: #191c1e;
+  padding: 0.5rem;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.input:focus {
+  border-color: #003366;
+  outline: none;
+  box-shadow: 0 0 0 1px #003366;
+}

@@ -1,25 +1,63 @@
-export function Header() {
+import MaterialIcon from '../components/MaterialIcon.jsx';
+
+export function Header({ session, onLogout }) {
+  const isBroker = session?.role === 'BROKER';
+  const isAdmin = session?.role === 'ADMIN';
+
   return (
-    <nav className="bg-surface dark:bg-inverse-surface docked full-width top-0 sticky z-50 shadow-sm">
+    <header className="bg-surface shadow-sm docked full-width top-0 sticky z-50 w-full transition-all duration-300">
       <div className="flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto">
-        <a className="font-headline-md text-headline-md font-bold text-trust-navy dark:text-primary-fixed" href="#/">
+        <a className="font-headline-md text-headline-md font-bold text-trust-navy flex items-center gap-2 tracking-tight" href="#/">
+          <MaterialIcon filled>real_estate_agent</MaterialIcon>
           BĐS Trà Vinh
         </a>
-        <div className="hidden md:flex gap-6 items-center">
-          <a className="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors px-2 py-1 rounded" href="#/search">Cho thuê</a>
-          <a className="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors px-2 py-1 rounded" href="#/search">Bán nhà</a>
-          <a className="font-body-md text-body-md text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors px-2 py-1 rounded" href="#/search">Bán đất</a>
-        </div>
-        <div className="flex gap-4 items-center">
-          <button className="font-label-bold text-label-bold text-on-surface-variant border border-outline px-4 py-2 rounded-lg hover:bg-surface-container-low transition-colors hidden md:block">
-            Đăng nhập
-          </button>
-          <a className="font-label-bold text-label-bold bg-action-orange text-white px-4 py-2 rounded-lg hover:opacity-90 transition-opacity" href="#/broker">
-            Đăng tin
-          </a>
+
+        <nav className="hidden md:flex items-center gap-8">
+          <div className="relative group">
+            <button className="flex items-center gap-1 text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors px-2 py-1 rounded font-label-bold text-label-bold">
+              Danh mục
+              <MaterialIcon className="text-sm">keyboard_arrow_down</MaterialIcon>
+            </button>
+            <div className="absolute top-full left-0 mt-1 w-56 bg-surface-container-lowest border border-outline-variant rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <a className="block px-4 py-2 text-body-sm hover:bg-surface-container-low text-on-surface" href="#/search?category=tro">Trọ</a>
+              <div className="border-t border-outline-variant py-1">
+                <div className="px-4 py-1 font-label-bold text-label-bold text-trust-navy">Nhà</div>
+                <a className="block px-4 py-2 text-body-sm hover:bg-surface-container-low text-on-surface" href="#/search?category=nha&transaction=rent">Thuê nhà</a>
+                <a className="block px-4 py-2 text-body-sm hover:bg-surface-container-low text-on-surface" href="#/search?category=nha&transaction=sale">Mua nhà</a>
+              </div>
+              <div className="border-t border-outline-variant py-1">
+                <div className="px-4 py-1 font-label-bold text-label-bold text-trust-navy">Đất</div>
+                <a className="block px-4 py-2 text-body-sm hover:bg-surface-container-low text-on-surface" href="#/search?category=dat&transaction=rent">Thuê đất</a>
+                <a className="block px-4 py-2 text-body-sm hover:bg-surface-container-low text-on-surface" href="#/search?category=dat&transaction=sale">Mua đất</a>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        <div className="flex items-center gap-3">
+          {!session && (
+            <a className="hidden md:flex items-center justify-center px-4 py-2 border border-primary text-primary font-label-bold text-label-bold rounded hover:bg-surface-container-low transition-colors" href="#/login">
+              Đăng nhập
+            </a>
+          )}
+          {isAdmin && (
+            <a className="hidden md:flex items-center justify-center px-4 py-2 border border-primary text-primary font-label-bold text-label-bold rounded hover:bg-surface-container-low transition-colors" href="#/admin">
+              Admin
+            </a>
+          )}
+          {isBroker && (
+            <a className="hidden md:flex items-center justify-center px-4 py-2 bg-action-orange text-on-primary font-label-bold text-label-bold rounded shadow-sm hover:opacity-90 transition-opacity" href="#/broker">
+              Đăng tin
+            </a>
+          )}
+          {session && (
+            <button className="font-label-bold text-label-bold text-on-surface-variant border border-outline px-4 py-2 rounded hover:bg-surface-container-low transition-colors" onClick={onLogout}>
+              Đăng xuất
+            </button>
+          )}
         </div>
       </div>
-    </nav>
+    </header>
   );
 }
 
@@ -44,10 +82,10 @@ export function Footer() {
   );
 }
 
-export default function MainLayout({ children }) {
+export default function MainLayout({ children, session, onLogout }) {
   return (
     <div className="bg-surface text-on-surface font-body-sm min-h-screen flex flex-col">
-      <Header />
+      <Header session={session} onLogout={onLogout} />
       {children}
       <Footer />
     </div>

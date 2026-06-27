@@ -29,7 +29,7 @@ Liên hệ xem phòng gọi trước 30 phút.`,
   },
 };
 
-export default function PropertyDetailPage({ propertyId }) {
+export default function PropertyDetailPage({ propertyId, session, onLogout }) {
   const [property, setProperty] = useState(fallbackProperty);
 
   useEffect(() => {
@@ -51,7 +51,7 @@ export default function PropertyDetailPage({ propertyId }) {
   const brokerPhone = property.broker?.phone || '0901 234 567';
 
   return (
-    <MainLayout>
+    <MainLayout session={session} onLogout={onLogout}>
       <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
         <div className="flex items-center gap-2 mb-stack-md text-on-surface-variant font-body-sm text-body-sm">
           <a className="hover:text-primary transition-colors" href="#/">Trang chủ</a>
