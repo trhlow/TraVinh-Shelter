@@ -22,4 +22,15 @@ class JwtServiceTest {
         assertThat(jwtService.extractEmail(token)).isEqualTo("minh@example.com");
         assertThat(jwtService.isTokenValid(token, UserPrincipal.from(user))).isTrue();
     }
+
+    @Test
+    void revokedTokenIsRejected() {
+        User user = User.register("minh.nguyen", "minh@example.com", "hash", "Minh Nguyen", null);
+        ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
+        String token = jwtService.generateToken(user);
+
+        jwtService.revoke(token);
+
+        assertThat(jwtService.isTokenValid(token, UserPrincipal.from(user))).isFalse();
+    }
 }

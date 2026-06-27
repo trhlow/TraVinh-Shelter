@@ -1,7 +1,9 @@
 package com.travinh.realty.modules.auth.security;
 
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -96,6 +98,37 @@ class SecurityHttpTest {
         mockMvc.perform(post("/auth/login").contentType("application/json")
                         .content("{\"email\":\"minh@example.com\",\"password\":\"wrong-password\"}"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void repeatedAuthAttemptsAreRateLimited() throws Exception {
+        when(authService.login(any())).thenThrow(new BadCredentialsException("bad credentials"));
+        for (int attempt = 0; attempt < 10; attempt++) {
+            mockMvc.perform(post("/auth/login")
+                            .header("X-Forwarded-For", "203.0.113.44")
+                            .contentType("application/json")
+                            .content("{\"email\":\"minh@example.com\",\"password\":\"wrong-password\"}"))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        mockMvc.perform(post("/auth/login")
+                        .header("X-Forwarded-For", "203.0.113.44")
+                        .contentType("application/json")
+                        .content("{\"email\":\"minh@example.com\",\"password\":\"wrong-password\"}"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.status").value(429));
+    }
+
+    @Test
+    void authenticatedUserCanLogoutCurrentToken() throws Exception {
+        User user = user("logout@example.com", UserStatus.ACTIVE);
+        when(userDetailsService.loadUserByUsername(user.getEmail())).thenReturn(UserPrincipal.from(user));
+        String authorization = "Bearer " + jwtService.generateToken(user);
+
+        mockMvc.perform(post("/auth/logout").header("Authorization", authorization))
+                .andExpect(status().isNoContent());
+
+        verify(authService).logout(eq(authorization));
     }
 
     @Test

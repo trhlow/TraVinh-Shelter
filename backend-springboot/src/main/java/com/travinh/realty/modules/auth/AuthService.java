@@ -16,6 +16,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -25,6 +26,7 @@ public class AuthService {
     public AuthService(UserRepository users, PasswordEncoder encoder, AuthenticationManager auth, JwtService jwt, JwtProperties properties) {
         this.users = users; this.encoder = encoder; this.auth = auth; this.jwt = jwt; this.properties = properties;
     }
+    @Transactional
     public AuthResponse register(RegisterRequest request) {
         String email = request.email().trim().toLowerCase(); String username = request.username().trim();
         if (users.existsByEmail(email)) throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already registered");
@@ -39,12 +41,21 @@ public class AuthService {
             throw exception;
         }
     }
+    @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
         Authentication authentication = auth.authenticate(new UsernamePasswordAuthenticationToken(request.email().trim().toLowerCase(), request.password()));
         UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
         User user = users.findByEmail(principal.getUsername()).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password"));
         return AuthResponse.of(jwt.generateToken(user), properties.expiration(), user);
     }
+
+    public void logout(String authorizationHeader) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication is required");
+        }
+        jwt.revoke(authorizationHeader.substring(7));
+    }
+
     private String blankToNull(String value) { return value == null || value.isBlank() ? null : value.trim(); }
 
 }
