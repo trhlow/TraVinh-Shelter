@@ -1,6 +1,5 @@
 package com.travinh.realty.modules.property;
 
-import com.travinh.realty.modules.auth.security.UserPrincipal;
 import com.travinh.realty.modules.property.dto.CreatePropertyRequest;
 import com.travinh.realty.modules.property.dto.PropertyResponse;
 import com.travinh.realty.modules.property.dto.PropertySearchCriteria;
@@ -61,8 +60,8 @@ public class PropertyService {
     }
 
     @Transactional
-    public PropertyResponse create(UserPrincipal principal, CreatePropertyRequest request) {
-        User broker = requireActiveBroker(principal.id());
+    public PropertyResponse create(UUID brokerId, CreatePropertyRequest request) {
+        User broker = requireActiveBroker(brokerId);
         Category category = findCategory(request.categoryId(), request.categorySlug());
         Property property = Property.create(broker, category, request.title().trim(), request.address().trim(),
                 request.price(), normalizeAttributes(request.attributes()));
@@ -70,8 +69,8 @@ public class PropertyService {
     }
 
     @Transactional
-    public PropertyResponse update(UserPrincipal principal, UUID propertyId, UpdatePropertyRequest request) {
-        User broker = requireActiveBroker(principal.id());
+    public PropertyResponse update(UUID brokerId, UUID propertyId, UpdatePropertyRequest request) {
+        User broker = requireActiveBroker(brokerId);
         Property property = findOwnedProperty(propertyId, broker);
         Category category = findCategory(request.categoryId(), request.categorySlug());
         property.updateDetails(category, request.title().trim(), request.address().trim(), request.price(),
@@ -80,8 +79,8 @@ public class PropertyService {
     }
 
     @Transactional
-    public PropertyResponse updateStatus(UserPrincipal principal, UUID propertyId, PropertyStatus status) {
-        User broker = requireActiveBroker(principal.id());
+    public PropertyResponse updateStatus(UUID brokerId, UUID propertyId, PropertyStatus status) {
+        User broker = requireActiveBroker(brokerId);
         Property property = findOwnedProperty(propertyId, broker);
         if (status == PropertyStatus.HIDDEN) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Broker cannot hide a property");

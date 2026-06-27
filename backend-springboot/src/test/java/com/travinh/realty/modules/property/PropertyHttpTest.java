@@ -52,7 +52,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = {PropertyController.class, CategoryController.class})
 @Import({SecurityConfig.class, JwtService.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class,
-        PropertyService.class, PropertyHttpTest.JwtTestConfiguration.class})
+        PropertyService.class, CategoryService.class, PropertyHttpTest.JwtTestConfiguration.class})
 class PropertyHttpTest {
     private static final String SECRET = "a-development-secret-that-is-at-least-thirty-two-characters-long";
 

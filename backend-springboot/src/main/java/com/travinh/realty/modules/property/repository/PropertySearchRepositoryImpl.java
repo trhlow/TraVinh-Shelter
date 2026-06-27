@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -53,7 +54,26 @@ public class PropertySearchRepositoryImpl implements PropertySearchRepository {
         @SuppressWarnings("unchecked")
         List<Property> properties = content.getResultList();
         Number total = (Number) count.getSingleResult();
-        return new PageImpl<>(properties, pageable, total.longValue());
+        return new PageImpl<>(fetchListAssociations(properties), pageable, total.longValue());
+    }
+
+    private List<Property> fetchListAssociations(List<Property> properties) {
+        if (properties.isEmpty()) {
+            return properties;
+        }
+        List<UUID> ids = properties.stream().map(Property::getId).toList();
+        List<Property> hydrated = entityManager.createQuery("""
+                SELECT DISTINCT p
+                FROM Property p
+                JOIN FETCH p.category
+                JOIN FETCH p.broker
+                WHERE p.id IN :ids
+                """, Property.class)
+                .setParameter("ids", ids)
+                .getResultList();
+        Map<UUID, Property> byId = new LinkedHashMap<>();
+        hydrated.forEach(property -> byId.put(property.getId(), property));
+        return ids.stream().map(byId::get).toList();
     }
 
     private QueryParts buildWhere(PropertySearchCriteria criteria) {
