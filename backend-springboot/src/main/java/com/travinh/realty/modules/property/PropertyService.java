@@ -51,6 +51,17 @@ public class PropertyService {
     }
 
     @Transactional(readOnly = true)
+    public Page<PropertyResponse> mine(UUID brokerId, Pageable pageable) {
+        User broker = requireActiveBroker(brokerId);
+        return properties.findByBrokerId(broker.getId(), pageable).map(PropertyResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PropertyResponse> adminList(Pageable pageable) {
+        return properties.findAll(pageable).map(PropertyResponse::from);
+    }
+
+    @Transactional(readOnly = true)
     public PropertyResponse publicDetail(UUID propertyId) {
         Property property = findProperty(propertyId);
         if (property.getStatus() == PropertyStatus.HIDDEN) {
@@ -87,6 +98,13 @@ public class PropertyService {
         }
         property.changeStatus(status);
         return PropertyResponse.from(property);
+    }
+
+    @Transactional
+    public void delete(UUID brokerId, UUID propertyId) {
+        User broker = requireActiveBroker(brokerId);
+        Property property = findOwnedProperty(propertyId, broker);
+        properties.delete(property);
     }
 
     private PropertySearchCriteria criteriaFrom(MultiValueMap<String, String> params) {

@@ -16,6 +16,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -50,6 +51,14 @@ public class PropertyController {
         return properties.publicDetail(propertyId);
     }
 
+    @GetMapping("/mine")
+    @PreAuthorize("hasRole('BROKER')")
+    @Operation(summary = "List properties owned by the current broker", security = @SecurityRequirement(name = "bearerAuth"))
+    public PagedResponse<PropertyResponse> mine(@AuthenticationPrincipal UserPrincipal principal,
+                                                @PageableDefault(size = 50) Pageable pageable) {
+        return PagedResponse.from(properties.mine(principal.id(), pageable));
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('BROKER')")
@@ -75,5 +84,14 @@ public class PropertyController {
                                          @PathVariable UUID propertyId,
                                          @Valid @RequestBody UpdatePropertyStatusRequest request) {
         return properties.updateStatus(principal.id(), propertyId, request.status());
+    }
+
+    @DeleteMapping("/{propertyId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('BROKER')")
+    @Operation(summary = "Delete a broker-owned property listing", security = @SecurityRequirement(name = "bearerAuth"))
+    public void delete(@AuthenticationPrincipal UserPrincipal principal,
+                       @PathVariable UUID propertyId) {
+        properties.delete(principal.id(), propertyId);
     }
 }
