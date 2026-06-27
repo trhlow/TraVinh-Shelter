@@ -29,7 +29,7 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class PropertyService {
     private static final Set<String> RESERVED_SEARCH_PARAMS = Set.of("page", "size", "sort",
-            "categorySlug", "status", "minPrice", "maxPrice");
+            "q", "categorySlug", "status", "minPrice", "maxPrice");
     private static final String ATTRIBUTE_PREFIX = "attr.";
     private static final String ATTRIBUTE_MIN_SUFFIX = ".min";
     private static final String ATTRIBUTE_MAX_SUFFIX = ".max";
@@ -115,7 +115,7 @@ public class PropertyService {
             }
         }
 
-        return new PropertySearchCriteria(blankToNull(params.getFirst("categorySlug")),
+        return new PropertySearchCriteria(blankToNull(params.getFirst("q")), blankToNull(params.getFirst("categorySlug")),
                 parseStatus(params.getFirst("status")), parseOptionalDecimal("minPrice", params.getFirst("minPrice")),
                 parseOptionalDecimal("maxPrice", params.getFirst("maxPrice")), equals, minimums, maximums);
     }

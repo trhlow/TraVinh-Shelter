@@ -92,6 +92,10 @@ public class PropertySearchRepositoryImpl implements PropertySearchRepository {
             predicates.add("c.slug = :categorySlug");
             parameters.put("categorySlug", criteria.categorySlug());
         }
+        if (criteria.query() != null) {
+            predicates.add("(LOWER(p.title) LIKE :query OR LOWER(p.address) LIKE :query)");
+            parameters.put("query", "%" + criteria.query().trim().toLowerCase() + "%");
+        }
         if (criteria.minPrice() != null) {
             predicates.add("p.price >= :minPrice");
             parameters.put("minPrice", criteria.minPrice());

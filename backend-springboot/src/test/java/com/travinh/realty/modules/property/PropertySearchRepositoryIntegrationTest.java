@@ -70,7 +70,7 @@ class PropertySearchRepositoryIntegrationTest {
         properties.save(Property.create(broker, tro, "SQL-like note không khớp", "Trà Vinh",
                 BigDecimal.valueOf(1_500_000), attributes(30, 1, true, "x' OR true --")));
 
-        PropertySearchCriteria criteria = new PropertySearchCriteria("tro", null,
+        PropertySearchCriteria criteria = new PropertySearchCriteria(null, "tro", null,
                 BigDecimal.valueOf(1_000_000), BigDecimal.valueOf(2_000_000),
                 Map.of("has_ac", true, "rooms", BigDecimal.ONE, "note", "normal"),
                 Map.of("area", BigDecimal.valueOf(25)),
