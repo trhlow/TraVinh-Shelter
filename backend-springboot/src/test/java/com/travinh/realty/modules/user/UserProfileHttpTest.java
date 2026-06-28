@@ -20,6 +20,7 @@ import com.travinh.realty.modules.auth.security.JpaUserDetailsService;
 import com.travinh.realty.modules.auth.security.JwtAuthenticationFilter;
 import com.travinh.realty.modules.auth.security.JwtService;
 import com.travinh.realty.modules.auth.security.UserPrincipal;
+import com.travinh.realty.infrastructure.storage.LocalMediaStorage;
 import com.travinh.realty.modules.user.model.User;
 import com.travinh.realty.modules.user.model.UserRole;
 import com.travinh.realty.modules.user.model.UserStatus;
@@ -54,6 +55,7 @@ class UserProfileHttpTest {
     @Autowired private JwtService jwtService;
     @Autowired private PasswordEncoder passwordEncoder;
     @MockBean private UserRepository users;
+    @MockBean private LocalMediaStorage storage;
     @MockBean private JpaUserDetailsService userDetailsService;
     @MockBean private JpaMetamodelMappingContext jpaMappingContext;
 

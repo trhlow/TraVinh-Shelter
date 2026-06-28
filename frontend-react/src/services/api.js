@@ -1,4 +1,4 @@
-import { searchProperties } from '../data/templateData.js';
+import { detailImages, searchProperties } from '../data/templateData.js';
 import { BROKER_DASHBOARD, MOCK_PROPERTIES } from './mockData.js';
 import { buildPropertyQuery, filterProperties } from './propertyFilters.js';
 
@@ -16,6 +16,23 @@ export async function login(email, password) {
   });
 }
 
+export async function registerUser(payload) {
+  if (USE_MOCK_API) {
+    return delay({
+      accessToken: 'mock-user-token',
+      tokenType: 'Bearer',
+      expiresIn: 3600,
+      email: payload.email,
+      role: 'USER',
+      userId: 'mock-user',
+    });
+  }
+  return request('/auth/register', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
 export async function logout(token) {
   if (!token || USE_MOCK_API) return null;
   return request('/auth/logout', { method: 'POST', token });
@@ -28,9 +45,10 @@ export async function fetchCurrentUser(token) {
       username: 'demo',
       fullName: 'Tài khoản demo',
       phone: '0901234567',
-      email: 'demo@travinhrealty.vn',
+      email: 'demo@congtinland.vn',
       role: 'BROKER',
       status: 'ACTIVE',
+      avatarUrl: '',
     }, 80);
   }
   return request('/users/me', { token });
@@ -38,6 +56,17 @@ export async function fetchCurrentUser(token) {
 
 export async function updateCurrentProfile(token, payload) {
   return request('/users/me', { method: 'PATCH', token, body: payload });
+}
+
+export async function uploadCurrentUserAvatar(token, file) {
+  if (USE_MOCK_API) {
+    return delay({
+      avatarUrl: objectUrlFor(file),
+    }, 120);
+  }
+  const formData = new FormData();
+  formData.append('file', file);
+  return request('/users/me/avatar', { method: 'POST', token, body: formData });
 }
 
 export async function fetchProperties(filters) {
@@ -56,6 +85,18 @@ export async function fetchPropertyDetail(propertyId) {
   }
   const response = await request(`/properties/${propertyId}`);
   return normalizeProperty(response, 0);
+}
+
+export async function fetchPropertyMedia(propertyId) {
+  if (USE_MOCK_API || !propertyId) {
+    return delay(detailImages.map((url, index) => ({
+      id: `mock-media-${index}`,
+      mediaType: 'IMAGE',
+      url,
+      thumbnail: index === 0,
+    })), 80);
+  }
+  return request(`/properties/${propertyId}/media`);
 }
 
 export async function fetchCategories() {
@@ -91,6 +132,25 @@ export async function createProperty(token, payload) {
 export async function updateProperty(token, propertyId, payload) {
   const response = await request(`/properties/${propertyId}`, { method: 'PATCH', token, body: payload });
   return normalizeProperty(response, 0);
+}
+
+export async function uploadPropertyImage(token, propertyId, file, thumbnail = false) {
+  if (USE_MOCK_API) {
+    return delay({
+      id: `${propertyId}-${file.name}`,
+      propertyId,
+      mediaType: 'IMAGE',
+      url: objectUrlFor(file),
+      thumbnail,
+    }, 120);
+  }
+  const formData = new FormData();
+  formData.append('file', file);
+  return request(`/properties/${propertyId}/media/images?thumbnail=${thumbnail ? 'true' : 'false'}`, {
+    method: 'POST',
+    token,
+    body: formData,
+  });
 }
 
 export async function updatePropertyStatus(token, propertyId, status) {
@@ -131,13 +191,14 @@ export async function updateUserStatus(token, userId, status) {
 
 async function request(path, options = {}) {
   const headers = { ...(options.headers || {}) };
-  if (options.body !== undefined) headers['Content-Type'] = 'application/json';
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+  if (options.body !== undefined && !isFormData) headers['Content-Type'] = 'application/json';
   if (options.token) headers.Authorization = `Bearer ${options.token}`;
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: options.method || 'GET',
     headers,
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    body: options.body === undefined ? undefined : isFormData ? options.body : JSON.stringify(options.body),
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
@@ -186,9 +247,10 @@ function normalizeProperty(item, index = 0) {
     attributes,
     broker: {
       id: item.broker?.id,
-      name: item.broker?.fullName || 'Môi giới Trà Vinh Realty',
+      name: item.broker?.fullName || 'Môi giới Công Tín Land',
       phone: item.broker?.phone || '02943999888',
-      email: item.broker?.email || 'support@travinhrealty.vn',
+      email: item.broker?.email || 'support@congtinland.vn',
+      avatarUrl: item.broker?.avatarUrl || '',
       rating: 'Đã xác minh',
       responseTime: '15 phút',
     },
@@ -220,4 +282,11 @@ function delay(value, ms = 180) {
   return new Promise((resolve) => {
     window.setTimeout(() => resolve(value), ms);
   });
+}
+
+function objectUrlFor(file) {
+  if (typeof URL !== 'undefined' && URL.createObjectURL && file) {
+    return URL.createObjectURL(file);
+  }
+  return '';
 }

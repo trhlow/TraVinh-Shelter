@@ -16,7 +16,7 @@ export const MOCK_PROPERTIES = [
     legal: 'Sổ hồng riêng',
     image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=80',
     description: 'Nhà mới xây, thiết kế hiện đại, nội thất cao cấp. Khu dân cư an ninh, gần trường học, chợ và bệnh viện.',
-    broker: { name: 'Nguyễn Văn Toàn', phone: '0912345678', email: 'toan@travinhrealty.vn', rating: '4.9 (128 đánh giá)', responseTime: '5 phút' },
+    broker: { name: 'Nguyễn Văn Toàn', phone: '0912345678', email: 'toan@congtinland.vn', rating: '4.9 (128 đánh giá)', responseTime: '5 phút' },
   },
   {
     id: 'p-ql53',
@@ -35,7 +35,7 @@ export const MOCK_PROPERTIES = [
     legal: 'Thổ cư',
     image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=80',
     description: 'Lô đất vuông vức, mặt tiền rộng, thuận tiện kinh doanh hoặc xây nhà ở lâu dài.',
-    broker: { name: 'Trần Mỹ Linh', phone: '0908899777', email: 'linh@travinhrealty.vn', rating: '4.8 (76 đánh giá)', responseTime: '8 phút' },
+    broker: { name: 'Trần Mỹ Linh', phone: '0908899777', email: 'linh@congtinland.vn', rating: '4.8 (76 đánh giá)', responseTime: '8 phút' },
   },
   {
     id: 'p-mc',
@@ -54,7 +54,7 @@ export const MOCK_PROPERTIES = [
     legal: 'Hợp đồng thuê',
     image: 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=900&q=80',
     description: 'Căn hộ đủ nội thất, ban công thoáng, phù hợp gia đình trẻ hoặc chuyên gia làm việc tại trung tâm.',
-    broker: { name: 'Lê Minh Khang', phone: '0934567890', email: 'khang@travinhrealty.vn', rating: '4.7 (54 đánh giá)', responseTime: '10 phút' },
+    broker: { name: 'Lê Minh Khang', phone: '0934567890', email: 'khang@congtinland.vn', rating: '4.7 (54 đánh giá)', responseTime: '10 phút' },
   },
   {
     id: 'p-pg',
@@ -73,7 +73,7 @@ export const MOCK_PROPERTIES = [
     legal: 'Sổ hồng riêng',
     image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80',
     description: 'Nhà góc hai mặt tiền, khu dân cư hoàn thiện hạ tầng, thích hợp vừa ở vừa kinh doanh.',
-    broker: { name: 'Phạm Quốc Huy', phone: '0987654321', email: 'huy@travinhrealty.vn', rating: '4.9 (91 đánh giá)', responseTime: '4 phút' },
+    broker: { name: 'Phạm Quốc Huy', phone: '0987654321', email: 'huy@congtinland.vn', rating: '4.9 (91 đánh giá)', responseTime: '4 phút' },
   },
   {
     id: 'p-vuon',
@@ -92,7 +92,7 @@ export const MOCK_PROPERTIES = [
     legal: 'Đất cây lâu năm',
     image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80',
     description: 'Khu đất yên tĩnh, đường xe hơi, phù hợp làm nhà vườn hoặc đầu tư dài hạn.',
-    broker: { name: 'Trần Mỹ Linh', phone: '0908899777', email: 'linh@travinhrealty.vn', rating: '4.8 (76 đánh giá)', responseTime: '8 phút' },
+    broker: { name: 'Trần Mỹ Linh', phone: '0908899777', email: 'linh@congtinland.vn', rating: '4.8 (76 đánh giá)', responseTime: '8 phút' },
   },
   {
     id: 'p-cau-ke',
@@ -111,7 +111,7 @@ export const MOCK_PROPERTIES = [
     legal: 'Sổ hồng riêng',
     image: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=900&q=80',
     description: 'Nhà hoàn thiện, khu dân cư hiện hữu, pháp lý rõ ràng và bàn giao nhanh.',
-    broker: { name: 'Nguyễn Văn Toàn', phone: '0912345678', email: 'toan@travinhrealty.vn', rating: '4.9 (128 đánh giá)', responseTime: '5 phút' },
+    broker: { name: 'Nguyễn Văn Toàn', phone: '0912345678', email: 'toan@congtinland.vn', rating: '4.9 (128 đánh giá)', responseTime: '5 phút' },
   },
 ];
 

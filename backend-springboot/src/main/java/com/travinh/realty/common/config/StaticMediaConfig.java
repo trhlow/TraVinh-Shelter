@@ -17,7 +17,7 @@ public class StaticMediaConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         LocalMediaStorage localStorage = storage.getIfAvailable();
-        if (localStorage == null) {
+        if (localStorage == null || localStorage.storageRoot() == null) {
             return;
         }
         registry.addResourceHandler("/media/**")

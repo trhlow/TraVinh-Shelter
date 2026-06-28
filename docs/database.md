@@ -62,7 +62,7 @@ Các nhóm bảng chính:
 
 | Nhóm | Bảng | Mục đích |
 | --- | --- | --- |
-| User/Auth | `users`, `saved_properties` | Tài khoản, phân quyền, trạng thái user và tin đã lưu. |
+| User/Auth | `users`, `saved_properties` | Tài khoản, phân quyền, trạng thái user, ảnh đại diện và tin đã lưu. |
 | Property | `categories`, `properties` | Danh mục và tin bất động sản. |
 | Media | `media` | Hình ảnh, video file, video link của tin đăng. |
 | Admin/Audit | `reports`, `audit_logs` | Báo cáo vi phạm và lịch sử hành động quản trị. |
@@ -80,6 +80,10 @@ erDiagram
     properties ||--o{ reports : reported_property
     users ||--o{ audit_logs : performs
 ```
+
+## User Profile Fields
+
+Bảng `users` có `avatar_url` để lưu URL public của ảnh đại diện đã upload. File ảnh được lưu trong media storage local, còn database chỉ giữ đường dẫn để response profile/broker summary có thể render avatar.
 
 ## JSONB Attributes
 

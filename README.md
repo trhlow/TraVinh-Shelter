@@ -1,4 +1,4 @@
-# Cổng thông tin Bất động sản Trà Vinh
+# Công Tín Land
 
 Monorepo gồm backend Spring Boot 3, frontend React + Vite và PostgreSQL 16.
 

@@ -1,3 +1,4 @@
+import BrandLogo, { BRAND_NAME } from '../components/BrandLogo.jsx';
 import MaterialIcon from '../components/MaterialIcon.jsx';
 
 export function Header({ session, onLogout }) {
@@ -40,14 +41,19 @@ export function Header({ session, onLogout }) {
   return (
     <header className="bg-surface shadow-sm docked full-width top-0 sticky z-50 w-full transition-all duration-300">
       <div className="flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto">
-        <a className="font-headline-md text-headline-md font-bold text-trust-navy flex items-center gap-2 tracking-tight" href="#/">
-          <MaterialIcon filled>real_estate_agent</MaterialIcon>
-          BĐS Trà Vinh
+        <a className="font-headline-md text-headline-md font-bold text-trust-navy flex items-center gap-2" href="#/">
+          <BrandLogo />
         </a>
 
         <nav className="hidden md:flex items-center gap-8">
           <NavDropdown label="Mua" sections={saleSections} />
           <NavDropdown label="Thuê" sections={rentSections} />
+          <a className="text-on-surface-variant hover:text-action-orange transition-colors px-2 py-1 rounded font-label-bold text-label-bold" href="#/projects">
+            Dự án
+          </a>
+          <a className="text-on-surface-variant hover:text-action-orange transition-colors px-2 py-1 rounded font-label-bold text-label-bold" href="#/brokers">
+            Môi giới
+          </a>
         </nav>
 
         <div className="flex items-center gap-3">
@@ -73,6 +79,17 @@ export function Header({ session, onLogout }) {
           )}
         </div>
       </div>
+      <nav className="md:hidden px-margin-mobile pb-3 max-w-container-max mx-auto flex gap-2 overflow-x-auto no-scrollbar">
+        <a className="shrink-0 px-3 py-2 rounded border border-outline-variant bg-surface-container-lowest text-trust-navy font-label-bold text-label-bold" href="#/search">
+          Tin đăng
+        </a>
+        <a className="shrink-0 px-3 py-2 rounded border border-outline-variant bg-surface-container-lowest text-trust-navy font-label-bold text-label-bold" href="#/projects">
+          Dự án
+        </a>
+        <a className="shrink-0 px-3 py-2 rounded border border-outline-variant bg-surface-container-lowest text-trust-navy font-label-bold text-label-bold" href="#/brokers">
+          Môi giới
+        </a>
+      </nav>
     </header>
   );
 }
@@ -117,7 +134,7 @@ export function Footer() {
     <footer className="w-full py-stack-lg bg-primary dark:bg-on-primary-fixed mt-auto">
       <div className="flex flex-col md:flex-row justify-between items-center px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto gap-4 md:gap-0">
         <div className="font-headline-sm text-headline-sm text-on-primary font-bold">
-          BĐS Trà Vinh
+          {BRAND_NAME}
         </div>
         <div className="flex flex-wrap justify-center gap-4 md:gap-6">
           <a className="font-body-sm text-body-sm text-on-primary-container dark:text-primary-fixed-dim opacity-80 hover:opacity-100 hover:text-secondary-fixed transition-opacity duration-200" href="#/">Về chúng tôi</a>
@@ -126,7 +143,7 @@ export function Footer() {
           <a className="font-body-sm text-body-sm text-on-primary-container dark:text-primary-fixed-dim opacity-80 hover:opacity-100 hover:text-secondary-fixed transition-opacity duration-200" href="#/">Liên hệ quảng cáo</a>
         </div>
         <div className="font-body-sm text-body-sm text-on-primary opacity-60 text-center md:text-right">
-          © 2024 Bất Động Sản Trà Vinh. Bảo lưu mọi quyền.
+          © 2024 {BRAND_NAME}. Bảo lưu mọi quyền.
         </div>
       </div>
     </footer>

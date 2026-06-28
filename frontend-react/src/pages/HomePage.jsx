@@ -35,7 +35,7 @@ export default function HomePage({ session, onLogout }) {
           <div className="absolute inset-0 bg-primary/65"></div>
           <div className="relative z-10 px-margin-mobile md:px-margin-desktop w-full text-center">
             <h1 className="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-headline-xl text-white max-w-[760px] mx-auto mb-stack-lg">
-              Tìm nhà trọ, bất động sản Trà Vinh nhanh chóng
+              Công Tín Land - tìm nhà trọ, bất động sản Trà Vinh nhanh chóng
             </h1>
             <SearchBar />
           </div>

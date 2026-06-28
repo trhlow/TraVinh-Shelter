@@ -38,6 +38,14 @@ public class LocalMediaStorage {
     }
 
     public String store(UUID propertyId, MultipartFile file, MediaType mediaType) {
+        return storeIn("properties", propertyId, file, mediaType);
+    }
+
+    public String storeUserAvatar(UUID userId, MultipartFile file) {
+        return storeIn("users", userId, file, MediaType.IMAGE);
+    }
+
+    private String storeIn(String namespace, UUID ownerId, MultipartFile file, MediaType mediaType) {
         if (file == null || file.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Media file is required");
         }
@@ -45,23 +53,23 @@ public class LocalMediaStorage {
         validateContentType(mediaType, contentType);
         validateFileSignature(file, contentType);
 
-        Path propertyDirectory = storageRoot.resolve("properties").resolve(propertyId.toString()).normalize();
-        if (!propertyDirectory.startsWith(storageRoot)) {
+        Path ownerDirectory = storageRoot.resolve(namespace).resolve(ownerId.toString()).normalize();
+        if (!ownerDirectory.startsWith(storageRoot)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid storage path");
         }
 
         String filename = UUID.randomUUID() + EXTENSIONS_BY_CONTENT_TYPE.get(contentType);
-        Path target = propertyDirectory.resolve(filename).normalize();
-        if (!target.startsWith(propertyDirectory)) {
+        Path target = ownerDirectory.resolve(filename).normalize();
+        if (!target.startsWith(ownerDirectory)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid media filename");
         }
 
         try {
-            Files.createDirectories(propertyDirectory);
+            Files.createDirectories(ownerDirectory);
             try (InputStream input = file.getInputStream()) {
                 Files.copy(input, target, StandardCopyOption.REPLACE_EXISTING);
             }
-            return publicUrlPrefix + "/properties/" + propertyId + "/" + filename;
+            return publicUrlPrefix + "/" + namespace + "/" + ownerId + "/" + filename;
         } catch (IOException exception) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not store media file", exception);
         }

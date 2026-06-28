@@ -30,6 +30,14 @@ http://localhost:8080/api/v1/v3/api-docs
 | Media | `/properties/{propertyId}/media` | Upload/list/delete media. |
 | Admin | `/admin` | Quản trị broker, user, property. |
 
+## User Profile Media
+
+| Method | Endpoint | Mục đích |
+| --- | --- | --- |
+| `POST` | `/users/me/avatar` | Upload ảnh đại diện tài khoản hiện tại bằng `multipart/form-data`, field file là `file`. |
+
+Response profile có thêm `avatarUrl` để frontend hiển thị ảnh đại diện môi giới/user.
+
 ## Error Format
 
 API trả lỗi theo format thống nhất:

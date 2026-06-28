@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { BarChart, DonutChart, HorizontalBarChart } from '../components/Charts.jsx';
 import MaterialIcon from '../components/MaterialIcon.jsx';
 import AdminLayout from '../layouts/AdminLayout.jsx';
 import LoginPage from './LoginPage.jsx';
@@ -53,9 +54,19 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
   const stats = useMemo(() => ({
     users: users.filter((user) => user.role === 'USER').length,
     brokers: brokers.length,
+    admins: users.filter((user) => user.role === 'ADMIN').length,
     posts: properties.length,
     locked: users.filter((user) => user.status === 'LOCKED').length,
   }), [users, brokers, properties]);
+
+  const roleChart = useMemo(() => ([
+    { label: 'Users', value: stats.users, color: '#003366' },
+    { label: 'Môi giới', value: stats.brokers, color: '#F97316' },
+    { label: 'Admin', value: stats.admins, color: '#22C55E' },
+  ]), [stats]);
+
+  const propertyCategoryChart = useMemo(() => chartBy(properties, (property) => categoryLabel(property.category)), [properties]);
+  const propertyStatusChart = useMemo(() => chartBy(properties, (property) => property.statusLabel || 'Đang hiển thị'), [properties]);
 
   if (!session) return <LoginPage onLogin={onLogin} />;
   if (session.role !== 'ADMIN') {
@@ -126,16 +137,15 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
 
         {section === 'overview' && (
           <>
-            <section className="grid grid-cols-1 md:grid-cols-4 gap-gutter mb-stack-lg">
-              <StatCard icon="group" label="Users" value={stats.users} />
-              <StatCard icon="badge" label="Môi giới" value={stats.brokers} />
-              <StatCard icon="description" label="Bài đăng" value={stats.posts} />
-              <StatCard icon="lock" label="Bị khóa" value={stats.locked} />
+            <section className="grid grid-cols-1 xl:grid-cols-3 gap-gutter mb-stack-lg">
+              <DonutChart title="Cơ cấu tài khoản" data={roleChart} centerLabel="tài khoản" />
+              <BarChart title="Bài đăng theo danh mục" data={propertyCategoryChart} />
+              <HorizontalBarChart title="Trạng thái bài đăng" data={propertyStatusChart} />
             </section>
             <section className="grid grid-cols-1 xl:grid-cols-3 gap-gutter">
-              <OverviewLink icon="group" title="Tài khoản users" value={`${users.length} tài khoản`} href="#/admin/users" />
-              <OverviewLink icon="badge" title="Môi giới" value={`${brokers.length} môi giới`} href="#/admin/brokers" />
-              <OverviewLink icon="description" title="Bài đăng" value={`${properties.length} bài đăng`} href="#/admin/properties" />
+              <OverviewLink icon="group" title="Tài khoản users" value="Quản lý trạng thái và vai trò" href="#/admin/users" />
+              <OverviewLink icon="badge" title="Môi giới" value="Cấp tài khoản và kiểm tra hồ sơ" href="#/admin/brokers" />
+              <OverviewLink icon="description" title="Bài đăng" value="Duyệt chất lượng nội dung" href="#/admin/properties" />
             </section>
           </>
         )}
@@ -281,20 +291,6 @@ function Field({ label, children }) {
   );
 }
 
-function StatCard({ icon, label, value }) {
-  return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-surface-variant flex items-center justify-between">
-      <div>
-        <p className="font-body-sm text-body-sm text-on-surface-variant mb-1">{label}</p>
-        <p className="font-headline-lg text-headline-lg text-trust-navy">{value}</p>
-      </div>
-      <div className="w-12 h-12 rounded-full flex items-center justify-center text-primary bg-primary-fixed">
-        <MaterialIcon filled>{icon}</MaterialIcon>
-      </div>
-    </div>
-  );
-}
-
 function TableHeader({ title, count }) {
   return (
     <div className="px-6 py-4 border-b border-surface-variant flex justify-between items-center bg-surface-bright">
@@ -314,4 +310,21 @@ function statusLabel(status) {
 
 function setBrokerValue(name, value, setBrokerForm) {
   setBrokerForm((current) => ({ ...current, [name]: value }));
+}
+
+function chartBy(items, getLabel) {
+  const counts = new Map();
+  items.forEach((item) => {
+    const label = getLabel(item);
+    counts.set(label, (counts.get(label) || 0) + 1);
+  });
+  const result = [...counts.entries()].map(([label, value]) => ({ label, value }));
+  return result.length > 0 ? result : [{ label: 'Chưa có dữ liệu', value: 0 }];
+}
+
+function categoryLabel(category) {
+  if (category === 'tro') return 'Trọ';
+  if (category === 'dat') return 'Đất';
+  if (category === 'nha') return 'Nhà';
+  return category || 'Khác';
 }

@@ -1,3 +1,4 @@
+import BrandLogo from '../components/BrandLogo.jsx';
 import MaterialIcon from '../components/MaterialIcon.jsx';
 
 export default function AdminLayout({ children, session, onLogout, variant = 'broker', activePath = '' }) {
@@ -26,8 +27,7 @@ export default function AdminLayout({ children, session, onLogout, variant = 'br
       <nav className="hidden md:flex bg-surface-container-low h-screen w-64 fixed left-0 top-0 flex-col py-stack-lg z-40">
         <div className="px-gutter mb-stack-lg">
           <a className="flex items-center gap-2 font-headline-md text-headline-md font-bold text-trust-navy mb-stack-md" href="#/">
-            <MaterialIcon filled>real_estate_agent</MaterialIcon>
-            BĐS Trà Vinh
+            <BrandLogo />
           </a>
           <div className="flex items-center gap-4 mb-stack-md">
             <div className="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center">
@@ -73,8 +73,7 @@ export default function AdminLayout({ children, session, onLogout, variant = 'br
       <nav className="md:hidden sticky top-0 z-40 w-full bg-surface-container-low border-b border-outline-variant">
         <div className="px-margin-mobile py-3 flex items-center justify-between gap-3">
           <a className="flex items-center gap-2 font-headline-sm text-headline-sm font-bold text-trust-navy" href="#/">
-            <MaterialIcon filled>real_estate_agent</MaterialIcon>
-            BĐS Trà Vinh
+            <BrandLogo />
           </a>
           {session && (
             <button className="border border-outline text-on-surface-variant font-label-bold text-label-bold px-3 py-2 rounded hover:bg-surface-container-high transition-colors" onClick={onLogout}>

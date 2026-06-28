@@ -18,9 +18,9 @@ afterEach(() => {
 test('renders the template home page', async () => {
   render(<App />);
 
-  expect(screen.getByRole('heading', { name: 'Tìm nhà trọ, bất động sản Trà Vinh nhanh chóng' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Công Tín Land - tìm nhà trọ, bất động sản Trà Vinh nhanh chóng' })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: 'Tin nổi bật' })).toBeInTheDocument();
-  await waitFor(() => expect(screen.getAllByText('BĐS Trà Vinh').length).toBeGreaterThan(0));
+  await waitFor(() => expect(screen.getAllByText('Công Tín Land').length).toBeGreaterThan(0));
 });
 
 test('routes to search page', async () => {
@@ -33,7 +33,7 @@ test('routes to search page', async () => {
 test('routes to broker dashboard for broker sessions', () => {
   window.localStorage.setItem('travinh-realty-session', JSON.stringify({
     token: 'test-token',
-    email: 'broker@travinhrealty.vn',
+    email: 'broker@congtinland.vn',
     role: 'BROKER',
     userId: 'broker-id',
   }));
@@ -45,7 +45,7 @@ test('routes to broker dashboard for broker sessions', () => {
 test('routes to separate broker pages for broker sessions', () => {
   window.localStorage.setItem('travinh-realty-session', JSON.stringify({
     token: 'test-token',
-    email: 'broker@travinhrealty.vn',
+    email: 'broker@congtinland.vn',
     role: 'BROKER',
     userId: 'broker-id',
   }));
@@ -57,7 +57,7 @@ test('routes to separate broker pages for broker sessions', () => {
 test('routes to broker properties page for broker sessions', () => {
   window.localStorage.setItem('travinh-realty-session', JSON.stringify({
     token: 'test-token',
-    email: 'broker@travinhrealty.vn',
+    email: 'broker@congtinland.vn',
     role: 'BROKER',
     userId: 'broker-id',
   }));
@@ -103,7 +103,18 @@ test('routes to all required admin pages for admin sessions', () => {
 test('login page hides demo role account shortcuts', () => {
   window.location.hash = '#/login';
   render(<App />);
-  expect(screen.getByRole('button', { name: /Đăng nhập/ })).toBeInTheDocument();
+  expect(screen.getAllByRole('button', { name: /Đăng nhập/ }).length).toBeGreaterThan(0);
   expect(screen.queryByText('Tài khoản theo vai trò')).not.toBeInTheDocument();
   expect(screen.queryByText(/mẫu/i)).not.toBeInTheDocument();
+});
+
+test('routes to public projects and brokers pages', () => {
+  window.location.hash = '#/projects';
+  render(<App />);
+  expect(screen.getByRole('heading', { name: 'Khu đô thị và dự án nổi bật' })).toBeInTheDocument();
+
+  cleanup();
+  window.location.hash = '#/brokers';
+  render(<App />);
+  expect(screen.getByRole('heading', { name: 'Hồ sơ môi giới Công Tín Land' })).toBeInTheDocument();
 });

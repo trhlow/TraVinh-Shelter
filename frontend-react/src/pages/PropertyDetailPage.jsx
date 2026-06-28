@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import MaterialIcon from '../components/MaterialIcon.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
 import { detailImages } from '../data/templateData.js';
-import { fetchPropertyDetail } from '../services/api.js';
+import { fetchPropertyDetail, fetchPropertyMedia } from '../services/api.js';
 
 const fallbackProperty = {
   title: 'NHÀ TRỌ THANH TRÚC - TRỐNG 2 PHÒNG',
@@ -25,12 +25,16 @@ Liên hệ xem phòng gọi trước 30 phút.`,
   broker: {
     name: 'Nguyễn Văn A',
     phone: '0901 234 567',
-    email: 'broker@travinhrealty.vn',
+    email: 'broker@congtinland.vn',
+    avatarUrl: '',
   },
 };
 
+const fallbackBrokerAvatar = 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=300&q=80';
+
 export default function PropertyDetailPage({ propertyId, session, onLogout }) {
   const [property, setProperty] = useState(fallbackProperty);
+  const [mediaImages, setMediaImages] = useState(detailImages);
 
   useEffect(() => {
     let alive = true;
@@ -46,9 +50,28 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
     };
   }, [propertyId]);
 
-  const mainImage = property.image || detailImages[0];
+  useEffect(() => {
+    let alive = true;
+    fetchPropertyMedia(propertyId)
+      .then((items) => {
+        if (!alive) return;
+        const images = items.filter((item) => item.mediaType === 'IMAGE').map((item) => item.url);
+        setMediaImages(images.length > 0 ? images : detailImages);
+      })
+      .catch(() => {
+        if (alive) setMediaImages(detailImages);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [propertyId]);
+
+  const galleryImages = [property.image, ...mediaImages].filter(Boolean);
+  const uniqueGalleryImages = [...new Set(galleryImages)];
+  const mainImage = uniqueGalleryImages[0] || detailImages[0];
   const categoryLabel = property.category === 'tro' ? 'Phòng trọ' : property.category === 'dat' ? 'Đất' : 'Nhà';
   const brokerPhone = property.broker?.phone || '0901 234 567';
+  const brokerAvatar = property.broker?.avatarUrl || fallbackBrokerAvatar;
 
   return (
     <MainLayout session={session} onLogout={onLogout}>
@@ -73,11 +96,11 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
                   src={mainImage}
                 />
                 <div className="absolute bottom-4 right-4 bg-surface/90 backdrop-blur-sm px-3 py-1 rounded-full font-label-bold text-label-bold flex items-center gap-2 shadow-sm border border-outline-variant">
-                  <MaterialIcon className="text-[16px]">photo_library</MaterialIcon> 1/5
+                  <MaterialIcon className="text-[16px]">photo_library</MaterialIcon> 1/{uniqueGalleryImages.length}
                 </div>
               </div>
               <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-                {detailImages.slice(1).map((image, index) => (
+                {uniqueGalleryImages.slice(1).map((image, index) => (
                   <img
                     key={image}
                     alt={`Thumbnail ${index + 1}`}
@@ -86,9 +109,6 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
                     src={image}
                   />
                 ))}
-                <div className="w-24 h-16 rounded-lg bg-surface-container-high flex items-center justify-center cursor-pointer border-2 border-transparent hover:border-outline-variant transition-all">
-                  <span className="font-label-bold text-label-bold text-on-surface-variant">+1</span>
-                </div>
               </div>
             </div>
 
@@ -140,7 +160,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
                   alt="Broker Avatar"
                   className="w-16 h-16 rounded-full object-cover border-2 border-primary"
                   data-alt="A professional headshot of a Vietnamese real estate broker smiling warmly."
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEReDPyvxSHAVlhe1urURWQSyldaV_T3XjYM4rz4nKtUwT9wclDkrhfasFGDEwscw7wXKhBx1E_Qf522aOCWVgWsgIr-Bc8Lh2xkPRH40w9LU08bCEGMU0qmWZL5cJ5dclae4gVSaGH_WOwJdam9ZcC2C0A6ajL-ZH092yqt7Fo9sGwHdoYPzKIvkjpzg84PQrHHGCGX-wOfFtip3XDjjbGoSQLyMRXEFMMDfjy-VCRv0f8nqFtp9G8GsFTvYWXKMgmAJgsflllhI"
+                  src={brokerAvatar}
                 />
                 <div className="flex flex-col">
                   <span className="font-label-bold text-label-bold text-on-surface text-[16px]">{property.broker?.name || 'Nguyễn Văn A'}</span>
@@ -160,7 +180,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
                 </button>
               </div>
               <div className="text-center font-body-sm text-body-sm text-text-muted mt-2">
-                Vui lòng báo bạn xem tin trên BĐS Trà Vinh
+                Vui lòng báo bạn xem tin trên Công Tín Land
               </div>
             </div>
           </div>

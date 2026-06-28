@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { BarChart, DonutChart, HorizontalBarChart } from '../components/Charts.jsx';
 import MaterialIcon from '../components/MaterialIcon.jsx';
 import AdminLayout from '../layouts/AdminLayout.jsx';
 import LoginPage from './LoginPage.jsx';
@@ -7,6 +8,8 @@ import {
   deleteProperty,
   fetchBrokerDashboard,
   fetchCurrentUser,
+  uploadCurrentUserAvatar,
+  uploadPropertyImage,
   updateCurrentProfile,
   updateProperty,
   updatePropertyStatus,
@@ -25,12 +28,18 @@ const EMPTY_FORM = {
   bathrooms: '',
   houseType: 'tret',
   description: '',
-  image: '',
+  coverUrl: '',
+  coverFile: null,
+  coverPreview: '',
+  galleryFiles: [],
+  galleryPreviews: [],
 };
 
 export default function BrokerDashboard({ session, onLogin, onLogout, currentPath = '/broker/dashboard', section = 'dashboard' }) {
   const [profile, setProfile] = useState(null);
   const [profileForm, setProfileForm] = useState({ fullName: '', phone: '' });
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
   const [stats, setStats] = useState({ activeListings: 0, totalListings: 0, pendingLeads: 0, listings: [] });
   const [listingForm, setListingForm] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(false);
@@ -53,6 +62,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
         if (!alive) return;
         setProfile(profileData);
         setProfileForm({ fullName: profileData.fullName || '', phone: profileData.phone || '' });
+        setAvatarPreview(profileData.avatarUrl || '');
         setStats(dashboardData);
       })
       .catch((exception) => {
@@ -66,7 +76,16 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
     };
   }, [session]);
 
-  const totalViews = useMemo(() => stats.listings.length * 137, [stats.listings.length]);
+  const statusChart = useMemo(() => chartBy(stats.listings, (listing) => listing.statusLabel || 'Đang hiển thị'), [stats.listings]);
+  const categoryChart = useMemo(() => chartBy(stats.listings, (listing) => categoryLabel(listing.category)), [stats.listings]);
+  const viewChart = useMemo(() => stats.listings.slice(0, 5).map((listing) => ({
+    label: shortLabel(listing.title),
+    value: Math.max(32, listing.title.length * 3),
+  })), [stats.listings]);
+  const profileChart = useMemo(() => ([
+    { label: 'Đã hoàn tất', value: profileReady ? 1 : 0, color: '#22C55E' },
+    { label: 'Cần bổ sung', value: profileReady ? 0 : 1, color: '#F97316' },
+  ]), [profileReady]);
 
   if (!session) return <LoginPage onLogin={onLogin} />;
   if (session.role !== 'BROKER') {
@@ -84,8 +103,14 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
     setError('');
     setNotice('');
     try {
-      const nextProfile = await updateCurrentProfile(session.token, profileForm);
+      let nextProfile = await updateCurrentProfile(session.token, profileForm);
+      if (avatarFile) {
+        const avatarProfile = await uploadCurrentUserAvatar(session.token, avatarFile);
+        nextProfile = { ...nextProfile, ...avatarProfile };
+      }
       setProfile(nextProfile);
+      setAvatarFile(null);
+      setAvatarPreview(nextProfile.avatarUrl || '');
       setNotice('Đã cập nhật hồ sơ môi giới.');
     } catch (exception) {
       setError(exception.message || 'Không cập nhật được hồ sơ.');
@@ -94,10 +119,26 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
     }
   }
 
+  function handleAvatarChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setAvatarFile(file);
+    setAvatarPreview(objectUrlFor(file));
+  }
+
   async function saveListing(event) {
     event.preventDefault();
     if (!profileReady) {
       setError('Bạn cần cập nhật họ tên và số điện thoại môi giới trước khi đăng tin.');
+      return;
+    }
+    const selectedImageCount = (listingForm.coverFile || listingForm.coverUrl ? 1 : 0) + listingForm.galleryFiles.length;
+    if (!editing && (selectedImageCount < 5 || selectedImageCount > 7)) {
+      setError('Tin mới cần tổng cộng 5-7 ảnh, gồm 1 ảnh đại diện và 4-6 ảnh bổ sung.');
+      return;
+    }
+    if (listingForm.galleryFiles.length > 6) {
+      setError('Chỉ chọn tối đa 6 ảnh bổ sung để tổng ảnh không vượt quá 7.');
       return;
     }
     setSaving(true);
@@ -105,12 +146,27 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
     setNotice('');
     try {
       const payload = propertyPayload(listingForm);
+      let savedProperty;
       if (editing) {
-        await updateProperty(session.token, listingForm.id, payload);
+        savedProperty = await updateProperty(session.token, listingForm.id, payload);
         setNotice('Đã cập nhật tin đăng.');
       } else {
-        await createProperty(session.token, payload);
+        savedProperty = await createProperty(session.token, payload);
         setNotice('Đã đăng tin mới.');
+      }
+      let coverUrl = listingForm.coverUrl;
+      if (listingForm.coverFile) {
+        const coverMedia = await uploadPropertyImage(session.token, savedProperty.id, listingForm.coverFile, true);
+        coverUrl = coverMedia.url;
+      }
+      for (const file of listingForm.galleryFiles) {
+        await uploadPropertyImage(session.token, savedProperty.id, file, false);
+      }
+      if (coverUrl && coverUrl !== payload.attributes.image) {
+        await updateProperty(session.token, savedProperty.id, {
+          ...payload,
+          attributes: { ...payload.attributes, image: coverUrl },
+        });
       }
       setListingForm(EMPTY_FORM);
       await reloadDashboard();
@@ -166,8 +222,35 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       bathrooms: property.bathrooms ? String(property.bathrooms) : '',
       houseType: property.houseType || 'tret',
       description: property.description || '',
-      image: property.image || '',
+      coverUrl: property.image || '',
+      coverFile: null,
+      coverPreview: '',
+      galleryFiles: [],
+      galleryPreviews: [],
     });
+  }
+
+  function handleCoverChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setListingForm((current) => ({
+      ...current,
+      coverFile: file,
+      coverPreview: objectUrlFor(file),
+    }));
+  }
+
+  function handleGalleryChange(event) {
+    const selectedFiles = Array.from(event.target.files || []);
+    const files = selectedFiles.slice(0, 6);
+    if (selectedFiles.length > 6) {
+      setError('Chỉ chọn tối đa 6 ảnh bổ sung để tổng ảnh không vượt quá 7.');
+    }
+    setListingForm((current) => ({
+      ...current,
+      galleryFiles: files,
+      galleryPreviews: files.map(objectUrlFor),
+    }));
   }
 
   return (
@@ -197,10 +280,10 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
 
         {section === 'dashboard' && (
           <>
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-gutter mb-stack-lg">
-              <StatCard icon="list_alt" label="Tin đang hiển thị" value={stats.activeListings} className="text-primary bg-primary-fixed" />
-              <StatCard icon="inventory_2" label="Tổng tin của tôi" value={stats.totalListings} className="text-primary bg-surface-tint/20" />
-              <StatCard icon="visibility" label="Lượt xem ước tính" value={totalViews.toLocaleString('vi-VN')} className="text-success-green bg-success-green/20" />
+            <section className="grid grid-cols-1 xl:grid-cols-3 gap-gutter mb-stack-lg">
+              <DonutChart title="Mức sẵn sàng hồ sơ" data={profileChart} centerLabel="trạng thái" />
+              <BarChart title="Tin đăng theo danh mục" data={categoryChart} />
+              <HorizontalBarChart title="Trạng thái tin đăng" data={statusChart} />
             </section>
 
             <section className="grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-gutter">
@@ -212,7 +295,10 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                   Mở hồ sơ
                 </a>
               </div>
-              <div className="bg-white rounded-xl shadow-sm border border-surface-variant overflow-hidden">
+              <div className="grid grid-cols-1 gap-gutter">
+                <HorizontalBarChart title="Lượt xem ước tính theo tin" data={viewChart.length > 0 ? viewChart : [{ label: 'Chưa có tin', value: 0 }]} />
+              </div>
+              <div className="bg-white rounded-xl shadow-sm border border-surface-variant overflow-hidden xl:col-span-2">
                 <div className="px-6 py-4 border-b border-surface-variant flex justify-between items-center bg-surface-bright">
                   <h3 className="font-headline-md text-headline-md text-trust-navy">Tin gần đây</h3>
                   <a className="font-label-bold text-label-bold text-primary hover:text-action-orange" href="#/broker/properties">Xem tất cả</a>
@@ -238,10 +324,22 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
         )}
 
         {section === 'profile' && (
-          <form className="bg-white rounded-xl shadow-sm border border-surface-variant p-6 max-w-xl" onSubmit={saveProfile}>
+          <form className="bg-white rounded-xl shadow-sm border border-surface-variant p-6 max-w-2xl" onSubmit={saveProfile}>
             <h2 className="font-headline-md text-headline-md text-trust-navy mb-2">Hồ sơ môi giới</h2>
             <p className="font-body-sm text-body-sm text-on-surface-variant mb-stack-md">Cập nhật hồ sơ trước khi đăng tin. Số điện thoại sẽ hiển thị để khách liên hệ trực tiếp.</p>
             <div className="space-y-stack-md">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                {avatarPreview ? (
+                  <img className="w-24 h-24 rounded-full object-cover border-2 border-primary" src={avatarPreview} alt="Ảnh đại diện môi giới" />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-primary text-on-primary flex items-center justify-center">
+                    <MaterialIcon filled className="text-4xl">badge</MaterialIcon>
+                  </div>
+                )}
+                <Field label="Ảnh đại diện môi giới" className="flex-1">
+                  <input className="input bg-white" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleAvatarChange} />
+                </Field>
+              </div>
               <Field label="Họ tên">
                 <input className="w-full bg-surface-container-low border border-outline-variant rounded p-2 font-body-sm text-body-sm focus:border-trust-navy focus:ring-1 focus:ring-trust-navy" value={profileForm.fullName} onChange={(event) => setProfileForm((current) => ({ ...current, fullName: event.target.value }))} required />
               </Field>
@@ -328,8 +426,23 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                 <Field label="Phòng tắm">
                   <input className="input" type="number" min="0" value={listingForm.bathrooms} onChange={(event) => setListingValue('bathrooms', event.target.value, setListingForm)} />
                 </Field>
-                <Field label="Ảnh đại diện">
-                  <input className="input" value={listingForm.image} onChange={(event) => setListingValue('image', event.target.value, setListingForm)} />
+                <Field label="Ảnh đại diện" className="md:col-span-2">
+                  <input className="input bg-white" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleCoverChange} />
+                  {(listingForm.coverPreview || listingForm.coverUrl) && (
+                    <div className="mt-3 w-full max-w-sm h-44 rounded-lg overflow-hidden border border-outline-variant">
+                      <img className="w-full h-full object-cover" src={listingForm.coverPreview || listingForm.coverUrl} alt="Ảnh đại diện tin đăng" />
+                    </div>
+                  )}
+                </Field>
+                <Field label="Ảnh bổ sung (4-6 ảnh)" className="md:col-span-2">
+                  <input className="input bg-white" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple onChange={handleGalleryChange} />
+                  {listingForm.galleryPreviews.length > 0 && (
+                    <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {listingForm.galleryPreviews.map((preview, index) => (
+                        <img key={preview} className="h-28 w-full rounded-lg object-cover border border-outline-variant" src={preview} alt={`Ảnh bổ sung ${index + 1}`} />
+                      ))}
+                    </div>
+                  )}
                 </Field>
                 <Field label="Mô tả" className="md:col-span-2">
                   <textarea className="input min-h-28" value={listingForm.description} onChange={(event) => setListingValue('description', event.target.value, setListingForm)} />
@@ -385,20 +498,6 @@ function brokerSubtitle(section) {
     profile: 'Cập nhật thông tin liên hệ hiển thị trên các tin đăng của bạn.',
     properties: 'Đăng tin mới, chỉnh sửa, xóa và cập nhật trạng thái tin của bạn.',
   }[section] || 'Theo dõi nhanh hoạt động môi giới của bạn.';
-}
-
-function StatCard({ icon, label, value, className }) {
-  return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-surface-variant flex items-center justify-between">
-      <div>
-        <p className="font-body-sm text-body-sm text-on-surface-variant mb-1">{label}</p>
-        <p className="font-headline-lg text-headline-lg text-trust-navy">{value}</p>
-      </div>
-      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${className}`}>
-        <MaterialIcon filled>{icon}</MaterialIcon>
-      </div>
-    </div>
-  );
 }
 
 function ListingRow({ listing, onEdit, onDelete, onStatus, saving }) {
@@ -463,7 +562,7 @@ function propertyPayload(form) {
   if (form.categorySlug === 'nha' && form.transaction === 'rent') {
     attributes.houseType = form.houseType;
   }
-  if (form.image.trim()) attributes.image = form.image.trim();
+  if (form.coverUrl?.trim()) attributes.image = form.coverUrl.trim();
 
   return {
     categorySlug: form.categorySlug,
@@ -482,4 +581,32 @@ function numericOrNull(value) {
 
 function setListingValue(name, value, setListingForm) {
   setListingForm((current) => ({ ...current, [name]: value }));
+}
+
+function chartBy(items, getLabel) {
+  const counts = new Map();
+  items.forEach((item) => {
+    const label = getLabel(item);
+    counts.set(label, (counts.get(label) || 0) + 1);
+  });
+  const result = [...counts.entries()].map(([label, value]) => ({ label, value }));
+  return result.length > 0 ? result : [{ label: 'Chưa có dữ liệu', value: 0 }];
+}
+
+function categoryLabel(category) {
+  if (category === 'tro') return 'Trọ';
+  if (category === 'dat') return 'Đất';
+  if (category === 'nha') return 'Nhà';
+  return category || 'Khác';
+}
+
+function shortLabel(value) {
+  return value.length > 22 ? `${value.slice(0, 22)}...` : value;
+}
+
+function objectUrlFor(file) {
+  if (typeof URL !== 'undefined' && URL.createObjectURL && file) {
+    return URL.createObjectURL(file);
+  }
+  return '';
 }

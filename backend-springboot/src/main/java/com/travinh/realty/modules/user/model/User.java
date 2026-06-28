@@ -37,6 +37,9 @@ public class User {
     @Column(length = 30)
     private String phone;
 
+    @Column(name = "avatar_url", length = 2048)
+    private String avatarUrl;
+
     @Column(nullable = false, unique = true, length = 254)
     private String email;
 
@@ -82,6 +85,10 @@ public class User {
         this.phone = phone;
     }
 
+    public void updateAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
+
     public void updateStatus(UserStatus status) {
         this.status = status;
     }
@@ -91,6 +98,7 @@ public class User {
     public String getPasswordHash() { return passwordHash; }
     public String getFullName() { return fullName; }
     public String getPhone() { return phone; }
+    public String getAvatarUrl() { return avatarUrl; }
     public String getEmail() { return email; }
     public UserRole getRole() { return role; }
     public UserStatus getStatus() { return status; }

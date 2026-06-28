@@ -25,6 +25,7 @@ export function createSession(auth, profile = {}) {
     role: auth.role || profile.role || 'USER',
     fullName: profile.fullName || auth.email,
     phone: profile.phone || '',
+    avatarUrl: profile.avatarUrl || '',
     status: profile.status || 'ACTIVE',
   };
 }

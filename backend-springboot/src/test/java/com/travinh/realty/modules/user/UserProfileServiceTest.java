@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.travinh.realty.modules.auth.security.UserPrincipal;
+import com.travinh.realty.infrastructure.storage.LocalMediaStorage;
 import com.travinh.realty.modules.user.dto.CreateBrokerRequest;
 import com.travinh.realty.modules.user.dto.UpdateProfileRequest;
 import com.travinh.realty.modules.user.dto.CurrentUserProfileResponse;
@@ -29,6 +30,7 @@ import org.springframework.web.server.ResponseStatusException;
 class UserProfileServiceTest {
 
     @Mock private UserRepository users;
+    @Mock private LocalMediaStorage storage;
 
     @Test
     void updatesOwnUserProfile() {
@@ -69,7 +71,7 @@ class UserProfileServiceTest {
     }
 
     private UserProfileService service() {
-        return new UserProfileService(users, new BCryptPasswordEncoder(4));
+        return new UserProfileService(users, new BCryptPasswordEncoder(4), storage);
     }
 
     private User user(UserRole role, UserStatus status, String fullName, String phone) {

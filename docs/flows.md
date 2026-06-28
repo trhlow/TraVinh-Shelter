@@ -25,6 +25,19 @@ flowchart TD
     F --> G["Response 201 with public media URL"]
 ```
 
+## Broker Uploads Avatar
+
+```mermaid
+flowchart TD
+    A["Broker opens profile"] --> B["Broker selects avatar image"]
+    B --> C["Frontend sends multipart request"]
+    C --> D["POST /users/me/avatar"]
+    D --> E["Storage validates image type and safe path"]
+    E --> F["File saved to local media volume"]
+    F --> G["users.avatar_url updated"]
+    G --> H["Response 201 with updated profile"]
+```
+
 ## Admin Moderates Property
 
 ```mermaid

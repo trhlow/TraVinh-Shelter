@@ -1,5 +1,6 @@
 package com.travinh.realty.modules.user;
 
+import com.travinh.realty.infrastructure.storage.LocalMediaStorage;
 import com.travinh.realty.modules.auth.security.UserPrincipal;
 import com.travinh.realty.modules.user.dto.BrokerContactResponse;
 import com.travinh.realty.modules.user.dto.CreateBrokerRequest;
@@ -11,23 +12,26 @@ import com.travinh.realty.modules.user.model.UserRole;
 import com.travinh.realty.modules.user.model.UserStatus;
 import com.travinh.realty.modules.user.repository.UserRepository;
 import java.util.UUID;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class UserProfileService {
     private final UserRepository users;
     private final PasswordEncoder passwordEncoder;
+    private final LocalMediaStorage storage;
 
-    public UserProfileService(UserRepository users, PasswordEncoder passwordEncoder) {
+    public UserProfileService(UserRepository users, PasswordEncoder passwordEncoder, LocalMediaStorage storage) {
         this.users = users;
         this.passwordEncoder = passwordEncoder;
+        this.storage = storage;
     }
 
     @Transactional(readOnly = true)
@@ -43,6 +47,16 @@ public class UserProfileService {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Broker profile requires a phone number");
         }
         user.updateProfile(request.fullName().trim(), phone);
+        return CurrentUserProfileResponse.from(user);
+    }
+
+    @Transactional
+    public CurrentUserProfileResponse uploadAvatar(UserPrincipal principal, MultipartFile file) {
+        User user = findUser(principal.id());
+        String previousAvatarUrl = user.getAvatarUrl();
+        String avatarUrl = storage.storeUserAvatar(user.getId(), file);
+        user.updateAvatarUrl(avatarUrl);
+        storage.deleteIfLocal(previousAvatarUrl);
         return CurrentUserProfileResponse.from(user);
     }
 
