@@ -46,8 +46,19 @@ public class UserProfileService {
         if (user.getRole() == UserRole.BROKER && phone == null) {
             throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Broker profile requires a phone number");
         }
-        user.updateProfile(request.fullName().trim(), phone);
-        return CurrentUserProfileResponse.from(user);
+        if (phone != null && users.existsByNormalizedPhoneAndIdNot(normalizePhoneForLookup(phone), user.getId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Phone number is already registered");
+        }
+        try {
+            user.updateProfile(request.fullName().trim(), phone);
+            users.flush();
+            return CurrentUserProfileResponse.from(user);
+        } catch (DataIntegrityViolationException exception) {
+            if (UserIdentityConstraints.isDuplicatePhone(exception)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Phone number is already registered", exception);
+            }
+            throw exception;
+        }
     }
 
     @Transactional
@@ -73,19 +84,28 @@ public class UserProfileService {
     public UserProfileResponse createBroker(CreateBrokerRequest request) {
         String email = request.email().trim().toLowerCase();
         String username = request.username().trim();
+        String phone = request.phone().trim();
         if (users.existsByEmail(email)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already registered");
         }
         if (users.existsByUsername(username)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username is already registered");
         }
+        if (users.existsByNormalizedPhone(normalizePhoneForLookup(phone))) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Phone number is already registered");
+        }
         try {
             User broker = User.createBroker(username, email, passwordEncoder.encode(request.password()),
-                    request.fullName().trim(), request.phone().trim());
-            return UserProfileResponse.from(users.save(broker));
+                    request.fullName().trim(), phone);
+            User saved = users.save(broker);
+            users.flush();
+            return UserProfileResponse.from(saved);
         } catch (DataIntegrityViolationException exception) {
             if (UserIdentityConstraints.isDuplicateEmailOrUsername(exception)) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Email or username is already registered", exception);
+            }
+            if (UserIdentityConstraints.isDuplicatePhone(exception)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Phone number is already registered", exception);
             }
             throw exception;
         }
@@ -115,5 +135,9 @@ public class UserProfileService {
 
     private String normalizeOptional(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String normalizePhoneForLookup(String value) {
+        return value.replaceAll("\\s+", "");
     }
 }

@@ -189,6 +189,15 @@ export async function updateUserStatus(token, userId, status) {
   return request(`/admin/users/${userId}/status`, { method: 'PATCH', token, body: { status } });
 }
 
+export async function updateAdminPropertyStatus(token, propertyId, status) {
+  const response = await request(`/admin/properties/${propertyId}/status`, {
+    method: 'PATCH',
+    token,
+    body: { status },
+  });
+  return normalizeProperty(response, 0);
+}
+
 async function request(path, options = {}) {
   const headers = { ...(options.headers || {}) };
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;

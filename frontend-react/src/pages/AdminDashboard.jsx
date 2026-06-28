@@ -9,6 +9,7 @@ import {
   fetchAdminBrokers,
   fetchAdminProperties,
   fetchAdminUsers,
+  updateAdminPropertyStatus,
   updateUserStatus,
 } from '../services/api.js';
 
@@ -29,6 +30,10 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
   const [brokerForm, setBrokerForm] = useState(EMPTY_BROKER);
   const [userQuery, setUserQuery] = useState('');
   const [userStatusFilter, setUserStatusFilter] = useState(ALL);
+  const [brokerQuery, setBrokerQuery] = useState('');
+  const [brokerStatusFilter, setBrokerStatusFilter] = useState(ALL);
+  const [propertyQuery, setPropertyQuery] = useState('');
+  const [propertyStatusFilter, setPropertyStatusFilter] = useState(ALL);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
@@ -89,6 +94,31 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
     return matchesQuery && matchesStatus;
   }), [customerUsers, userQuery, userStatusFilter]);
 
+  const filteredBrokers = useMemo(() => brokers.filter((broker) => {
+    const query = brokerQuery.trim().toLowerCase();
+    const matchesQuery = !query || [broker.email, broker.username, broker.fullName, broker.phone].some((value) => String(value || '').toLowerCase().includes(query));
+    const matchesStatus = brokerStatusFilter === ALL || broker.status === brokerStatusFilter;
+    return matchesQuery && matchesStatus;
+  }), [brokers, brokerQuery, brokerStatusFilter]);
+
+  const filteredProperties = useMemo(() => properties.filter((property) => {
+    const query = propertyQuery.trim().toLowerCase();
+    const broker = property.broker || {};
+    const matchesQuery = !query || [
+      property.title,
+      property.address,
+      property.priceLabel,
+      property.statusLabel,
+      property.rawStatus,
+      categoryLabel(property.category),
+      broker.name,
+      broker.email,
+      broker.phone,
+    ].some((value) => String(value || '').toLowerCase().includes(query));
+    const matchesStatus = propertyStatusFilter === ALL || property.rawStatus === propertyStatusFilter;
+    return matchesQuery && matchesStatus;
+  }), [properties, propertyQuery, propertyStatusFilter]);
+
   if (!session) return <LoginPage onLogin={onLogin} />;
   if (session.role !== 'ADMIN') {
     return (
@@ -140,6 +170,27 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
     } finally {
       setSaving(false);
     }
+  }
+
+  async function changePropertyStatus(propertyId, status) {
+    setSaving(true);
+    setError('');
+    setNotice('');
+    try {
+      await updateAdminPropertyStatus(session.token, propertyId, status);
+      setNotice(status === 'HIDDEN' ? 'Đã gỡ bài đăng khỏi trang công khai.' : 'Đã cập nhật trạng thái bài đăng.');
+      await reload();
+    } catch (exception) {
+      setError(exception.message || 'Không cập nhật được trạng thái bài đăng.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeProperty(property) {
+    if (property.rawStatus === 'HIDDEN') return;
+    if (!window.confirm('Gỡ bài đăng này khỏi trang công khai?')) return;
+    await changePropertyStatus(property.id, 'HIDDEN');
   }
 
   return (
@@ -216,15 +267,49 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
               </div>
             </form>
 
-            <DashboardPanel title="Môi giới đang quản lý" count={`${brokers.length} hồ sơ`}>
-              <BrokerTable brokers={brokers} loading={loading} />
+            <DashboardPanel
+              title="Môi giới đang quản lý"
+              count={`${filteredBrokers.length}/${brokers.length} hồ sơ`}
+              action={(
+                <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-[260px_150px]">
+                  <input className="input" placeholder="Tìm tên, SĐT, email..." value={brokerQuery} onChange={(event) => setBrokerQuery(event.target.value)} />
+                  <select className="input" value={brokerStatusFilter} onChange={(event) => setBrokerStatusFilter(event.target.value)}>
+                    <option value={ALL}>Tất cả trạng thái</option>
+                    <option value="ACTIVE">Hoạt động</option>
+                    <option value="LOCKED">Đã khóa</option>
+                  </select>
+                </div>
+              )}
+            >
+              <BrokerTable brokers={filteredBrokers} loading={loading} saving={saving} onToggleStatus={toggleStatus} />
             </DashboardPanel>
           </section>
         )}
 
         {section === 'properties' && (
-          <DashboardPanel title="Bài đăng trong hệ thống" count={`${properties.length} tin đăng`}>
-            <PropertyTable properties={properties} loading={loading} />
+          <DashboardPanel
+            title="Bài đăng từ môi giới"
+            count={`${filteredProperties.length}/${properties.length} tin đăng`}
+            action={(
+              <div className="grid w-full grid-cols-1 gap-2 lg:w-auto lg:grid-cols-[320px_170px]">
+                <input className="input" placeholder="Tìm tin, môi giới, SĐT..." value={propertyQuery} onChange={(event) => setPropertyQuery(event.target.value)} />
+                <select className="input" value={propertyStatusFilter} onChange={(event) => setPropertyStatusFilter(event.target.value)}>
+                  <option value={ALL}>Tất cả trạng thái</option>
+                  <option value="AVAILABLE">Đang hiển thị</option>
+                  <option value="RENTED">Đã thuê</option>
+                  <option value="SOLD">Đã bán</option>
+                  <option value="HIDDEN">Đã gỡ / tạm ẩn</option>
+                </select>
+              </div>
+            )}
+          >
+            <PropertyTable
+              properties={filteredProperties}
+              loading={loading}
+              saving={saving}
+              onStatus={changePropertyStatus}
+              onRemove={removeProperty}
+            />
           </DashboardPanel>
         )}
 
@@ -267,9 +352,9 @@ function UserTable({ users, session, loading, saving, onToggleStatus }) {
   );
 }
 
-function BrokerTable({ brokers, loading }) {
+function BrokerTable({ brokers, loading, saving, onToggleStatus }) {
   if (loading) return <LoadingRows rows={4} />;
-  if (brokers.length === 0) return <StateBlock title="Chưa có môi giới" description="Tạo tài khoản broker ở form bên trái để bắt đầu." />;
+  if (brokers.length === 0) return <StateBlock title="Không có môi giới phù hợp" description="Thử đổi từ khóa hoặc bộ lọc trạng thái." />;
   return (
     <div className="divide-y divide-outline-variant">
       {brokers.map((broker) => (
@@ -278,19 +363,28 @@ function BrokerTable({ brokers, loading }) {
             <div className="font-label-bold text-label-bold text-on-surface">{broker.fullName || broker.username}</div>
             <div className="truncate font-body-sm text-body-sm text-on-surface-variant">{broker.phone || 'Chưa có SĐT'} · {broker.email}</div>
           </div>
-          <StatusBadge tone={broker.status === 'ACTIVE' ? 'success' : 'danger'}>{userStatusLabel(broker.status)}</StatusBadge>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <StatusBadge tone={broker.status === 'ACTIVE' ? 'success' : 'danger'}>{userStatusLabel(broker.status)}</StatusBadge>
+            <button className="rounded border border-outline px-3 py-2 text-trust-navy transition-colors hover:bg-surface-container-low disabled:opacity-60" onClick={() => onToggleStatus(broker)} disabled={saving} type="button">
+              <span className="inline-flex items-center gap-1">
+                <MaterialIcon className="text-sm">{broker.status === 'ACTIVE' ? 'lock' : 'verified_user'}</MaterialIcon>
+                {broker.status === 'ACTIVE' ? 'Khóa' : 'Mở'}
+              </span>
+            </button>
+          </div>
         </div>
       ))}
     </div>
   );
 }
 
-function PropertyTable({ properties, loading, compact = false }) {
+function PropertyTable({ properties, loading, compact = false, saving = false, onStatus, onRemove }) {
+  const hasActions = Boolean(!compact && onStatus && onRemove);
   if (loading) return <LoadingRows rows={5} />;
-  if (properties.length === 0) return <StateBlock title="Chưa có bài đăng" description="Khi broker đăng tin, dữ liệu sẽ xuất hiện tại đây." />;
+  if (properties.length === 0) return <StateBlock title="Không có bài đăng phù hợp" description="Thử đổi từ khóa hoặc bộ lọc trạng thái." />;
   return (
     <div className="overflow-x-auto">
-      <table className="ui-table w-full min-w-[760px] text-left font-body-sm text-body-sm">
+      <table className={`ui-table w-full ${hasActions ? 'min-w-[980px]' : 'min-w-[760px]'} text-left font-body-sm text-body-sm`}>
         <thead className="bg-surface-container-low text-trust-navy">
           <tr>
             <th className="px-4 py-3 font-label-bold">Bài đăng</th>
@@ -299,6 +393,7 @@ function PropertyTable({ properties, loading, compact = false }) {
             <th className="px-4 py-3 font-label-bold">Giá</th>
             <th className="px-4 py-3 font-label-bold">Trạng thái</th>
             {!compact && <th className="px-4 py-3 font-label-bold">Ngày tạo</th>}
+            {hasActions && <th className="px-4 py-3 font-label-bold text-right">Thao tác</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-outline-variant">
@@ -318,6 +413,21 @@ function PropertyTable({ properties, loading, compact = false }) {
               <td className="px-4 py-3 font-label-bold text-label-bold text-trust-navy">{property.priceLabel}</td>
               <td className="px-4 py-3"><StatusBadge tone={propertyStatusTone(property)}>{property.statusLabel || property.rawStatus}</StatusBadge></td>
               {!compact && <td className="px-4 py-3 text-on-surface-variant">{formatDate(property.createdAt)}</td>}
+              {hasActions && (
+                <td className="px-4 py-3">
+                  <div className="flex justify-end gap-2">
+                    <select className="input min-h-10 w-40" value={property.rawStatus} onChange={(event) => onStatus(property.id, event.target.value)} disabled={saving}>
+                      <option value="AVAILABLE">Đang hiển thị</option>
+                      <option value="RENTED">Đã thuê</option>
+                      <option value="SOLD">Đã bán</option>
+                      <option value="HIDDEN">Đã gỡ / tạm ẩn</option>
+                    </select>
+                    <button className="flex h-10 w-10 items-center justify-center rounded text-error transition-colors hover:bg-error-container disabled:opacity-60" onClick={() => onRemove(property)} disabled={saving || property.rawStatus === 'HIDDEN'} aria-label="Gỡ bài đăng" type="button">
+                      <MaterialIcon>visibility_off</MaterialIcon>
+                    </button>
+                  </div>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

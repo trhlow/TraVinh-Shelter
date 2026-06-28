@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.travinh.realty.common.config.JwtProperties;
 import com.travinh.realty.common.config.SecurityConfig;
 import com.travinh.realty.common.exception.GlobalExceptionHandler;
+import com.travinh.realty.modules.admin.AdminPropertyController;
 import com.travinh.realty.modules.auth.security.JpaUserDetailsService;
 import com.travinh.realty.modules.auth.security.JwtAuthenticationFilter;
 import com.travinh.realty.modules.auth.security.JwtService;
@@ -50,7 +51,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(controllers = {PropertyController.class, CategoryController.class})
+@WebMvcTest(controllers = {PropertyController.class, CategoryController.class, AdminPropertyController.class})
 @Import({SecurityConfig.class, JwtService.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class,
         PropertyService.class, CategoryService.class, PropertyHttpTest.JwtTestConfiguration.class})
 class PropertyHttpTest {
@@ -194,7 +195,7 @@ class PropertyHttpTest {
     }
 
     @Test
-    void ownerCanUpdateStatusButCannotSelfHideAndHiddenDetailIsNotPublic() throws Exception {
+    void ownerCanUpdateStatusCanSelfHideAndHiddenDetailIsNotPublic() throws Exception {
         User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
         Property property = property(broker, category(1L, "Trọ", "tro"), "Tin", PropertyStatus.AVAILABLE, Map.of());
         authenticate(broker);
@@ -209,8 +210,8 @@ class PropertyHttpTest {
 
         mockMvc.perform(patch("/properties/{id}/status", property.getId()).header("Authorization", bearer(broker))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"HIDDEN\"}"))
-                .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.status").value(422));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("HIDDEN"));
 
         Property hidden = property(broker, category(1L, "Trọ", "tro"), "Ẩn", PropertyStatus.HIDDEN, Map.of());
         when(properties.findById(hidden.getId())).thenReturn(Optional.of(hidden));
@@ -227,6 +228,21 @@ class PropertyHttpTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].slug").value("tro"))
                 .andExpect(jsonPath("$[1].slug").value("nha"));
+    }
+
+    @Test
+    void adminCanHideAnyPropertyThroughAdminEndpoint() throws Exception {
+        User owner = user("owner@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Owner", "0900000000");
+        User admin = user("admin@example.com", UserRole.ADMIN, UserStatus.ACTIVE, "Admin", "02943999888");
+        Property property = property(owner, category(1L, "Trọ", "tro"), "Tin", PropertyStatus.AVAILABLE, Map.of());
+        authenticate(admin);
+        when(properties.findById(property.getId())).thenReturn(Optional.of(property));
+
+        mockMvc.perform(patch("/admin/properties/{id}/status", property.getId()).header("Authorization", bearer(admin))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"HIDDEN\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("HIDDEN"));
+        assertThat(property.getStatus()).isEqualTo(PropertyStatus.HIDDEN);
     }
 
     private void authenticate(User user) {

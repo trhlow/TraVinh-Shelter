@@ -36,7 +36,7 @@ export default function AdminLayout({ children, session, onLogout, variant = 'br
             <MaterialIcon>person</MaterialIcon>
           </button>
           <button className="kit-icon-button text-primary" onClick={toggleTheme} type="button" title={isDark ? 'Giao diện sáng' : 'Giao diện tối'}>
-            <MaterialIcon>settings</MaterialIcon>
+            <MaterialIcon>{isDark ? 'light_mode' : 'dark_mode'}</MaterialIcon>
           </button>
           <div className="relative">
             <button
@@ -120,11 +120,16 @@ export default function AdminLayout({ children, session, onLogout, variant = 'br
           <a className="text-on-surface" href="#/">
             <BrandLogo />
           </a>
-          {session && (
-            <button className="ui-secondary-action min-h-10 px-3" onClick={onLogout} type="button">
-              Đăng xuất
+          <div className="flex items-center gap-2">
+            <button className="kit-icon-button border border-outline-variant bg-surface-container-lowest text-primary" onClick={toggleTheme} type="button" title={isDark ? 'Giao diện sáng' : 'Giao diện tối'}>
+              <MaterialIcon>{isDark ? 'light_mode' : 'dark_mode'}</MaterialIcon>
             </button>
-          )}
+            {session && (
+              <button className="ui-secondary-action min-h-10 px-3" onClick={onLogout} type="button">
+                Đăng xuất
+              </button>
+            )}
+          </div>
         </div>
         <nav className="mt-3 flex gap-2 overflow-x-auto no-scrollbar">
           {navItems.map(([icon, label, href]) => (

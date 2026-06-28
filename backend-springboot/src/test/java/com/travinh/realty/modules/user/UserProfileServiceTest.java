@@ -58,6 +58,19 @@ class UserProfileServiceTest {
     }
 
     @Test
+    void profileUpdateRejectsDuplicatePhone() {
+        User user = user(UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+        when(users.existsByNormalizedPhoneAndIdNot("0911111111", user.getId())).thenReturn(true);
+
+        assertThatThrownBy(() -> service().updateCurrentProfile(UserPrincipal.from(user),
+                new UpdateProfileRequest("User", "0911 111 111")))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(error -> ((ResponseStatusException) error).getStatusCode())
+                .isEqualTo(HttpStatus.CONFLICT);
+    }
+
+    @Test
     void adminCreatedBrokerAlwaysHasBrokerRoleAndEncryptedPassword() {
         when(users.existsByEmail("broker@example.com")).thenReturn(false);
         when(users.existsByUsername("broker.one")).thenReturn(false);
@@ -68,6 +81,19 @@ class UserProfileServiceTest {
 
         assertThat(response.role()).isEqualTo(UserRole.BROKER);
         assertThat(response.email()).isEqualTo("broker@example.com");
+    }
+
+    @Test
+    void adminCreateBrokerRejectsDuplicatePhone() {
+        when(users.existsByEmail("broker@example.com")).thenReturn(false);
+        when(users.existsByUsername("broker.one")).thenReturn(false);
+        when(users.existsByNormalizedPhone("0900000000")).thenReturn(true);
+
+        assertThatThrownBy(() -> service().createBroker(new CreateBrokerRequest(
+                "broker.one", "BROKER@example.com", "correct-horse-battery-staple", "Broker One", "0900 000 000")))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(error -> ((ResponseStatusException) error).getStatusCode())
+                .isEqualTo(HttpStatus.CONFLICT);
     }
 
     private UserProfileService service() {

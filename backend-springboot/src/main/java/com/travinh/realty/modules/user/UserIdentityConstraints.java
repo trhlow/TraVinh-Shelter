@@ -18,4 +18,16 @@ public final class UserIdentityConstraints {
         }
         return false;
     }
+
+    public static boolean isDuplicatePhone(DataIntegrityViolationException exception) {
+        Throwable cause = exception;
+        while (cause != null) {
+            if (cause instanceof ConstraintViolationException violation) {
+                String constraintName = violation.getConstraintName();
+                return "users_phone_normalized_unique".equals(constraintName);
+            }
+            cause = cause.getCause();
+        }
+        return false;
+    }
 }

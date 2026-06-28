@@ -43,12 +43,16 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   const [avatarPreview, setAvatarPreview] = useState('');
   const [stats, setStats] = useState({ activeListings: 0, totalListings: 0, pendingLeads: 0, listings: [] });
   const [listingForm, setListingForm] = useState(EMPTY_FORM);
+  const [listingQuery, setListingQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
 
   const listings = stats.listings || [];
+  const filteredListings = useMemo(() => listings.filter((listing) => listingMatchesQuery(listing, listingQuery)), [listings, listingQuery]);
+  const visibleListings = useMemo(() => filteredListings.filter((listing) => listing.rawStatus !== 'HIDDEN'), [filteredListings]);
+  const hiddenListings = useMemo(() => filteredListings.filter((listing) => listing.rawStatus === 'HIDDEN'), [filteredListings]);
   const profileReady = Boolean((profile?.fullName || profileForm.fullName).trim() && (profile?.phone || profileForm.phone).trim());
   const editing = Boolean(listingForm.id);
 
@@ -460,9 +464,48 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
               </button>
             </form>
 
-            <DashboardPanel title="Danh sách hiện tại" count={loading ? 'Đang tải' : `${listings.length} tin`}>
-              <ListingList listings={listings} loading={loading} saving={saving} onEdit={editListing} onDelete={removeListing} onStatus={changeStatus} />
-            </DashboardPanel>
+            <div className="mb-stack-md flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <label className="relative block w-full md:max-w-md">
+                <span className="sr-only">Tìm tin đăng</span>
+                <MaterialIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</MaterialIcon>
+                <input
+                  className="dashboard-search"
+                  placeholder="Tìm theo tiêu đề, địa chỉ, giá..."
+                  value={listingQuery}
+                  onChange={(event) => setListingQuery(event.target.value)}
+                />
+              </label>
+              <p className="font-body-sm text-body-sm text-on-surface-variant">
+                {loading ? 'Đang tải' : `${filteredListings.length}/${listings.length} tin phù hợp`}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-gutter">
+              <DashboardPanel title="Đang hoạt động hoặc đã bán" count={loading ? 'Đang tải' : `${visibleListings.length} tin`}>
+                <ListingList
+                  listings={visibleListings}
+                  loading={loading}
+                  saving={saving}
+                  onEdit={editListing}
+                  onDelete={removeListing}
+                  onStatus={changeStatus}
+                  emptyTitle="Không có tin đang hoạt động hoặc đã bán"
+                  emptyDescription="Thử đổi từ khóa tìm kiếm hoặc mở lại tin đang tạm ẩn."
+                />
+              </DashboardPanel>
+              <DashboardPanel title="Tạm ẩn" count={loading ? 'Đang tải' : `${hiddenListings.length} tin`}>
+                <ListingList
+                  listings={hiddenListings}
+                  loading={loading}
+                  saving={saving}
+                  onEdit={editListing}
+                  onDelete={removeListing}
+                  onStatus={changeStatus}
+                  emptyTitle="Không có tin tạm ẩn"
+                  emptyDescription="Tin bị ẩn khỏi trang công khai sẽ được gom riêng tại đây."
+                />
+              </DashboardPanel>
+            </div>
           </>
         )}
 
@@ -549,9 +592,18 @@ function MiniBarList({ data }) {
   );
 }
 
-function ListingList({ listings, loading, saving, onEdit, onDelete, onStatus }) {
+function ListingList({
+  listings,
+  loading,
+  saving,
+  onEdit,
+  onDelete,
+  onStatus,
+  emptyTitle = 'Bạn chưa có tin đăng nào',
+  emptyDescription = 'Khi đăng tin mới, danh sách quản lý sẽ xuất hiện ở đây.',
+}) {
   if (loading) return <LoadingRows rows={4} />;
-  if (listings.length === 0) return <StateBlock title="Bạn chưa có tin đăng nào" description="Khi đăng tin mới, danh sách quản lý sẽ xuất hiện ở đây." />;
+  if (listings.length === 0) return <StateBlock title={emptyTitle} description={emptyDescription} />;
   return (
     <div className="divide-y divide-outline-variant">
       {listings.map((listing) => (
@@ -686,6 +738,19 @@ function toFormCategory(category) {
 
 function listingViews(listing) {
   return Math.max(32, String(listing.title || '').length * 3);
+}
+
+function listingMatchesQuery(listing, query) {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) return true;
+  return [
+    listing.title,
+    listing.address,
+    listing.priceLabel,
+    listing.statusLabel,
+    listing.rawStatus,
+    categoryLabel(listing.category),
+  ].some((value) => String(value || '').toLowerCase().includes(normalizedQuery));
 }
 
 function isAvailableListing(listing) {

@@ -93,9 +93,13 @@ public class PropertyService {
     public PropertyResponse updateStatus(UUID brokerId, UUID propertyId, PropertyStatus status) {
         User broker = requireActiveBroker(brokerId);
         Property property = findOwnedProperty(propertyId, broker);
-        if (status == PropertyStatus.HIDDEN) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Broker cannot hide a property");
-        }
+        property.changeStatus(status);
+        return PropertyResponse.from(property);
+    }
+
+    @Transactional
+    public PropertyResponse adminUpdateStatus(UUID propertyId, PropertyStatus status) {
+        Property property = findProperty(propertyId);
         property.changeStatus(status);
         return PropertyResponse.from(property);
     }

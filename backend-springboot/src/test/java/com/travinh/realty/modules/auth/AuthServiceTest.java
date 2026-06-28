@@ -78,6 +78,20 @@ class AuthServiceTest {
     }
 
     @Test
+    void registrationRejectsDuplicatePhone() {
+        when(users.existsByEmail("minh@example.com")).thenReturn(false);
+        when(users.existsByUsername("minh.nguyen")).thenReturn(false);
+        when(users.existsByNormalizedPhone("0900000000")).thenReturn(true);
+        AuthService service = new AuthService(users, encoder, authenticationManager, jwt, properties);
+
+        assertThatThrownBy(() -> service.register(new RegisterRequest(
+                "minh.nguyen", "minh@example.com", "correct-horse-battery-staple", "Minh Nguyen", "0900 000 000")))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(error -> ((ResponseStatusException) error).getStatusCode().value())
+                .isEqualTo(409);
+    }
+
+    @Test
     void registrationDoesNotMisclassifyUnrelatedIntegrityErrorsAsDuplicateAccounts() {
         when(users.existsByEmail("minh@example.com")).thenReturn(false);
         when(users.existsByUsername("minh.nguyen")).thenReturn(false);

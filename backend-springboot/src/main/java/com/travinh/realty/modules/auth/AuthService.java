@@ -29,14 +29,22 @@ public class AuthService {
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         String email = request.email().trim().toLowerCase(); String username = request.username().trim();
+        String phone = blankToNull(request.phone());
         if (users.existsByEmail(email)) throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already registered");
         if (users.existsByUsername(username)) throw new ResponseStatusException(HttpStatus.CONFLICT, "Username is already registered");
+        if (phone != null && users.existsByNormalizedPhone(normalizePhoneForLookup(phone))) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Phone number is already registered");
+        }
         try {
-            User saved = users.save(User.register(username, email, encoder.encode(request.password()), request.fullName().trim(), blankToNull(request.phone())));
+            User saved = users.save(User.register(username, email, encoder.encode(request.password()), request.fullName().trim(), phone));
+            users.flush();
             return AuthResponse.of(jwt.generateToken(saved), properties.expiration(), saved);
         } catch (DataIntegrityViolationException exception) {
             if (UserIdentityConstraints.isDuplicateEmailOrUsername(exception)) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Email or username is already registered", exception);
+            }
+            if (UserIdentityConstraints.isDuplicatePhone(exception)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Phone number is already registered", exception);
             }
             throw exception;
         }
@@ -57,5 +65,7 @@ public class AuthService {
     }
 
     private String blankToNull(String value) { return value == null || value.isBlank() ? null : value.trim(); }
+
+    private String normalizePhoneForLookup(String value) { return value.replaceAll("\\s+", ""); }
 
 }
