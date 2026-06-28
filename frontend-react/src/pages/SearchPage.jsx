@@ -47,6 +47,7 @@ function filtersFromQuery(queryParams = {}) {
     ? 'rent'
     : ['rent', 'sale'].includes(queryParams.transaction) ? queryParams.transaction : 'all';
   return {
+    query: queryParams.query || queryParams.q || '',
     category,
     transaction,
     ward: queryParams.ward || 'all',
@@ -124,6 +125,7 @@ export default function SearchPage({ queryParams, session, onLogout }) {
       if (name === 'category') {
         return {
           ...current,
+          query: current.query,
           category: value,
           transaction: value === 'tro' ? 'rent' : value === 'all' ? 'all' : 'sale',
           houseType: 'all',
@@ -147,6 +149,16 @@ export default function SearchPage({ queryParams, session, onLogout }) {
       <main className="flex-grow w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg flex flex-col md:flex-row gap-gutter">
         <aside className="ui-panel w-full md:w-1/4 flex-shrink-0 p-4 h-fit">
           <h2 className="font-headline-md text-headline-md mb-stack-md text-trust-navy border-b border-outline-variant pb-2">Bộ lọc tìm kiếm</h2>
+
+          <div className="mb-stack-md">
+            <label className="font-label-bold text-label-bold block mb-2">Từ khóa</label>
+            <input
+              className="input font-body-sm text-body-sm"
+              placeholder="Ví dụ: Trà Vinh, Phường 6..."
+              value={filters.query}
+              onChange={(event) => updateFilter('query', event.target.value)}
+            />
+          </div>
 
           <div className="mb-stack-md">
             <label className="font-label-bold text-label-bold block mb-2">Danh mục</label>
@@ -275,6 +287,7 @@ function priceOptionsFor(filters) {
 }
 
 function titleFor(filters) {
+  if (filters.query?.trim()) return `Kết quả cho "${filters.query.trim()}"`;
   if (filters.category === 'tro') return 'Phòng trọ tại Trà Vinh';
   if (filters.category === 'nha' && filters.transaction === 'rent') return 'Nhà cho thuê tại Trà Vinh';
   if (filters.category === 'nha') return 'Nhà đất bán tại Trà Vinh';

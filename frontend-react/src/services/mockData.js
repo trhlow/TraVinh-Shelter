@@ -118,45 +118,5 @@ export const MOCK_PROPERTIES = [
 export const BROKER_DASHBOARD = {
   activeListings: 18,
   pendingLeads: 7,
-  appointments: 4,
   conversion: '22%',
 };
-
-export const PRIORITY_SUPPORT_TICKETS = [
-  {
-    id: 'SUP-1024',
-    requesterName: 'Broker demo',
-    requesterEmail: 'broker@congtinland.vn',
-    ownerRole: 'BROKER',
-    title: 'Ảnh gallery chưa hiển thị đủ trên tin mới',
-    issueType: 'listing',
-    priority: 'high',
-    status: 'NEW',
-    content: 'Tin đã upload đủ ảnh nhưng khách chỉ thấy ảnh đại diện. Cần kiểm tra giúp.',
-    createdAt: '2026-06-27T09:30:00+07:00',
-  },
-  {
-    id: 'SUP-1025',
-    requesterName: 'Trần Mỹ Linh',
-    requesterEmail: 'linh@congtinland.vn',
-    ownerRole: 'BROKER',
-    title: 'Cần ưu tiên duyệt tin đất nền Long Đức',
-    issueType: 'approval',
-    priority: 'medium',
-    status: 'IN_PROGRESS',
-    content: 'Khách đang cần xem tin trong hôm nay, nhờ admin hỗ trợ kiểm tra trạng thái.',
-    createdAt: '2026-06-26T15:10:00+07:00',
-  },
-  {
-    id: 'SUP-1026',
-    requesterName: 'Công Tín Land',
-    requesterEmail: 'support@congtinland.vn',
-    ownerRole: 'ADMIN',
-    title: 'Kiểm tra thông tin liên hệ broker',
-    issueType: 'account',
-    priority: 'low',
-    status: 'DONE',
-    content: 'Đã xác minh lại số điện thoại và email hiển thị trên hồ sơ.',
-    createdAt: '2026-06-25T11:20:00+07:00',
-  },
-];

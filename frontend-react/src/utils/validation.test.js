@@ -22,4 +22,11 @@ describe('form validation', () => {
       password: 'Mật khẩu cần ít nhất 8 ký tự.',
     });
   });
+
+  test('forgot password only requires a valid email', () => {
+    expect(validateLoginForm({ email: 'user@example.com', password: '' }, 'forgot')).toEqual({});
+    expect(validateLoginForm({ email: 'bad', password: '' }, 'forgot')).toEqual({
+      email: 'Email không hợp lệ.',
+    });
+  });
 });

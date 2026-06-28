@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BarChart, DonutChart, HorizontalBarChart } from '../components/Charts.jsx';
-import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../components/DashboardWidgets.jsx';
+import { DashboardPageHeader, DashboardPanel, LoadingRows, StateBlock, StatusBadge } from '../components/DashboardWidgets.jsx';
 import MaterialIcon from '../components/MaterialIcon.jsx';
 import AdminLayout from '../layouts/AdminLayout.jsx';
 import LoginPage from './LoginPage.jsx';
@@ -9,8 +9,6 @@ import {
   fetchAdminBrokers,
   fetchAdminProperties,
   fetchAdminUsers,
-  fetchPrioritySupportTickets,
-  updatePrioritySupportTicketStatus,
   updateUserStatus,
 } from '../services/api.js';
 
@@ -28,12 +26,9 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
   const [users, setUsers] = useState([]);
   const [brokers, setBrokers] = useState([]);
   const [properties, setProperties] = useState([]);
-  const [supportTickets, setSupportTickets] = useState([]);
   const [brokerForm, setBrokerForm] = useState(EMPTY_BROKER);
   const [userQuery, setUserQuery] = useState('');
   const [userStatusFilter, setUserStatusFilter] = useState(ALL);
-  const [supportStatusFilter, setSupportStatusFilter] = useState(ALL);
-  const [supportPriorityFilter, setSupportPriorityFilter] = useState(ALL);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
@@ -45,12 +40,11 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
     setLoading(true);
     setError('');
     loadAdminData(session)
-      .then(({ nextUsers, nextBrokers, nextProperties, nextSupportTickets }) => {
+      .then(({ nextUsers, nextBrokers, nextProperties }) => {
         if (!alive) return;
         setUsers(nextUsers);
         setBrokers(nextBrokers);
         setProperties(nextProperties);
-        setSupportTickets(nextSupportTickets);
       })
       .catch((exception) => {
         if (alive) setError(exception.message || 'Không tải được dashboard admin.');
@@ -75,9 +69,8 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
       visiblePosts,
       pendingPosts,
       locked: users.filter((user) => user.status === 'LOCKED' || user.status === 'BLOCKED').length,
-      supportNew: supportTickets.filter((ticket) => ticket.status === 'NEW').length,
     };
-  }, [users, brokers, properties, supportTickets]);
+  }, [users, brokers, properties]);
 
   const roleChart = useMemo(() => ([
     { label: 'Users', value: stats.users, color: '#2563EB' },
@@ -86,7 +79,6 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
   ]), [stats]);
   const propertyCategoryChart = useMemo(() => chartBy(properties, (property) => categoryLabel(property.category)), [properties]);
   const propertyStatusChart = useMemo(() => chartBy(properties, (property) => property.statusLabel || property.rawStatus || 'Đang hiển thị'), [properties]);
-  const supportPriorityChart = useMemo(() => chartBy(supportTickets, (ticket) => priorityLabel(ticket.priority)), [supportTickets]);
 
   const customerUsers = useMemo(() => users.filter((user) => user.role === 'USER'), [users]);
 
@@ -96,12 +88,6 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
     const matchesStatus = userStatusFilter === ALL || user.status === userStatusFilter;
     return matchesQuery && matchesStatus;
   }), [customerUsers, userQuery, userStatusFilter]);
-
-  const filteredSupportTickets = useMemo(() => supportTickets.filter((ticket) => {
-    const matchesStatus = supportStatusFilter === ALL || ticket.status === supportStatusFilter;
-    const matchesPriority = supportPriorityFilter === ALL || ticket.priority === supportPriorityFilter;
-    return matchesStatus && matchesPriority;
-  }), [supportTickets, supportStatusFilter, supportPriorityFilter]);
 
   if (!session) return <LoginPage onLogin={onLogin} />;
   if (session.role !== 'ADMIN') {
@@ -122,7 +108,6 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
     setUsers(data.nextUsers);
     setBrokers(data.nextBrokers);
     setProperties(data.nextProperties);
-    setSupportTickets(data.nextSupportTickets);
   }
 
   async function saveBroker(event) {
@@ -157,42 +142,22 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
     }
   }
 
-  async function changeTicketStatus(ticketId, status) {
-    setSaving(true);
-    setError('');
-    setNotice('');
-    try {
-      await updatePrioritySupportTicketStatus(session.token, ticketId, status);
-      const nextTickets = await fetchPrioritySupportTickets(session.token, { role: 'ADMIN', email: session.email });
-      setSupportTickets(nextTickets);
-      setNotice('Đã cập nhật trạng thái ticket hỗ trợ.');
-    } catch (exception) {
-      setError(exception.message || 'Không cập nhật được ticket hỗ trợ.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
   return (
     <AdminLayout session={session} onLogout={onLogout} variant="admin" activePath={currentPath}>
       <main className="dashboard-main">
-        <header className="mb-stack-lg flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h1 className="font-headline-xl-mobile text-headline-xl-mobile text-trust-navy md:font-headline-xl md:text-headline-xl">{adminTitle(section)}</h1>
-            <p className="mt-2 font-body-md text-body-md text-on-surface-variant">{adminSubtitle(section)}</p>
-          </div>
-          <div className="inline-flex items-center gap-2 rounded border border-outline-variant bg-surface-container-lowest px-3 py-2 font-body-sm text-body-sm text-on-surface-variant">
-            <MaterialIcon className="text-sm">{loading ? 'sync' : 'verified'}</MaterialIcon>
-            {loading ? 'Đang đồng bộ' : 'Dữ liệu mới nhất'}
-          </div>
-        </header>
+        <DashboardPageHeader
+          activePath={currentPath}
+          loading={loading}
+          subtitle={adminSubtitle(section)}
+          tabs={adminTabs(stats)}
+          title={adminTitle(section)}
+        />
 
         {notice && <div className="mb-stack-md rounded border border-success-green/40 bg-success-green/10 p-3 font-body-sm text-body-sm text-on-surface">{notice}</div>}
         {error && <div className="mb-stack-md rounded border border-error-container bg-error-container/50 p-3 font-body-sm text-body-sm text-on-error-container">{error}</div>}
 
         {section === 'overview' && (
           <>
-            <AdminStatsGrid stats={stats} loading={loading} />
             <section className="mb-stack-lg grid grid-cols-1 gap-gutter xl:grid-cols-3">
               <DonutChart title="Cơ cấu tài khoản" data={roleChart} centerLabel="tài khoản" />
               <BarChart title="Bài đăng theo danh mục" data={propertyCategoryChart} />
@@ -202,20 +167,12 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
               <DashboardPanel title="Bài đăng mới trong hệ thống" count={`${properties.slice(0, 5).length} tin gần đây`}>
                 <PropertyTable properties={properties.slice(0, 5)} loading={loading} compact />
               </DashboardPanel>
-              <DashboardPanel title="Hỗ trợ ưu tiên" count={`${stats.supportNew} ticket mới`}>
-                <div className="p-5">
-                  <div className="space-y-3">
-                    {supportPriorityChart.map((item) => (
-                      <div className="flex items-center justify-between gap-3 rounded border border-outline-variant bg-surface-container-low p-3" key={item.label}>
-                        <span className="font-body-sm text-body-sm text-on-surface">{item.label}</span>
-                        <span className="font-label-bold text-label-bold text-trust-navy">{item.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <a className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded bg-primary px-4 py-2 font-label-bold text-label-bold text-on-primary transition-colors hover:bg-primary-container" href="#/admin/support">
-                    <MaterialIcon className="text-sm">support_agent</MaterialIcon>
-                    Mở danh sách ticket
-                  </a>
+              <DashboardPanel title="Tình trạng hệ thống" count="Từ API hiện có">
+                <div className="space-y-3 p-5">
+                  <SystemLine label="Users đang hoạt động" value={stats.users} icon="group" />
+                  <SystemLine label="Môi giới được cấp" value={stats.brokers} icon="badge" />
+                  <SystemLine label="Bài đăng hiển thị" value={stats.visiblePosts} icon="visibility" />
+                  <SystemLine label="Tài khoản bị khóa" value={stats.locked} icon="lock" />
                 </div>
               </DashboardPanel>
             </section>
@@ -271,50 +228,8 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
           </DashboardPanel>
         )}
 
-        {section === 'support' && (
-          <DashboardPanel
-            title="Ticket hỗ trợ ưu tiên"
-            count={`${filteredSupportTickets.length}/${supportTickets.length} ticket`}
-            action={(
-              <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-2">
-                <select className="input" value={supportStatusFilter} onChange={(event) => setSupportStatusFilter(event.target.value)}>
-                  <option value={ALL}>Tất cả trạng thái</option>
-                  <option value="NEW">Mới</option>
-                  <option value="IN_PROGRESS">Đang xử lý</option>
-                  <option value="DONE">Đã xong</option>
-                </select>
-                <select className="input" value={supportPriorityFilter} onChange={(event) => setSupportPriorityFilter(event.target.value)}>
-                  <option value={ALL}>Tất cả mức độ</option>
-                  <option value="high">Cao</option>
-                  <option value="medium">Trung bình</option>
-                  <option value="low">Thấp</option>
-                </select>
-              </div>
-            )}
-          >
-            <SupportTable tickets={filteredSupportTickets} loading={loading} saving={saving} onChangeStatus={changeTicketStatus} />
-          </DashboardPanel>
-        )}
       </main>
     </AdminLayout>
-  );
-}
-
-function AdminStatsGrid({ stats, loading }) {
-  const items = [
-    ['group', 'Tổng user', loading ? '...' : stats.users, 'Không gồm môi giới và admin', 'navy', '#/admin/users'],
-    ['badge', 'Tổng môi giới', loading ? '...' : stats.brokers, 'Broker do admin cấp tài khoản', 'orange', '#/admin/brokers'],
-    ['description', 'Tổng bài đăng', loading ? '...' : stats.posts, 'Bao gồm mọi trạng thái', 'navy', '#/admin/properties'],
-    ['visibility', 'Bài đang hiển thị', loading ? '...' : stats.visiblePosts, 'Tin sẵn sàng cho user xem', 'green', '#/admin/properties'],
-    ['pending_actions', 'Bài chờ xử lý', loading ? '...' : stats.pendingPosts, 'Đếm theo trạng thái pending nếu API có', 'orange', '#/admin/properties'],
-    ['lock', 'Tài khoản bị khóa', loading ? '...' : stats.locked, 'Có thể mở lại trong trang Users', 'red', '#/admin/users'],
-  ];
-  return (
-    <section className="mb-stack-lg grid grid-cols-1 gap-gutter sm:grid-cols-2 xl:grid-cols-3">
-      {items.map(([icon, title, value, meta, tone, href]) => (
-        <StatCard key={title} icon={icon} title={title} value={value} meta={meta} tone={tone} href={href} />
-      ))}
-    </section>
   );
 }
 
@@ -411,68 +326,25 @@ function PropertyTable({ properties, loading, compact = false }) {
   );
 }
 
-function SupportTable({ tickets, loading, saving, onChangeStatus }) {
-  if (loading) return <LoadingRows rows={5} />;
-  if (tickets.length === 0) return <StateBlock icon="support_agent" title="Chưa có ticket phù hợp" description="Ticket broker gửi sẽ được lưu tạm ở frontend để demo luồng hỗ trợ." />;
+function SystemLine({ icon, label, value }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="ui-table w-full min-w-[880px] text-left font-body-sm text-body-sm">
-        <thead className="bg-surface-container-low text-trust-navy">
-          <tr>
-            <th className="px-4 py-3 font-label-bold">Ticket</th>
-            <th className="px-4 py-3 font-label-bold">Broker</th>
-            <th className="px-4 py-3 font-label-bold">Loại</th>
-            <th className="px-4 py-3 font-label-bold">Mức độ</th>
-            <th className="px-4 py-3 font-label-bold">Trạng thái</th>
-            <th className="px-4 py-3 font-label-bold">Cập nhật</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-outline-variant">
-          {tickets.map((ticket) => (
-            <tr key={ticket.id} className="align-top hover:bg-surface-container-low">
-              <td className="px-4 py-3">
-                <div className="font-label-bold text-label-bold text-on-surface">{ticket.title}</div>
-                <div className="mt-1 max-w-md text-on-surface-variant">{ticket.content}</div>
-                <div className="mt-2 text-text-muted">{ticket.id} · {formatDate(ticket.createdAt)}</div>
-              </td>
-              <td className="px-4 py-3">
-                <div className="font-label-bold text-label-bold text-on-surface">{ticket.requesterName}</div>
-                <div className="text-on-surface-variant">{ticket.requesterEmail}</div>
-              </td>
-              <td className="px-4 py-3">{issueTypeLabel(ticket.issueType)}</td>
-              <td className="px-4 py-3"><StatusBadge tone={priorityTone(ticket.priority)}>{priorityLabel(ticket.priority)}</StatusBadge></td>
-              <td className="px-4 py-3"><StatusBadge tone={ticketStatusTone(ticket.status)}>{ticketStatusLabel(ticket.status)}</StatusBadge></td>
-              <td className="px-4 py-3">
-                <div className="flex flex-wrap gap-2">
-                  {['NEW', 'IN_PROGRESS', 'DONE'].map((status) => (
-                    <button
-                      className={`rounded border px-2.5 py-1.5 font-label-bold text-label-bold transition-colors disabled:opacity-60 ${ticket.status === status ? 'border-primary bg-primary text-on-primary' : 'border-outline text-on-surface-variant hover:bg-surface-container'}`}
-                      disabled={saving}
-                      key={status}
-                      onClick={() => onChangeStatus(ticket.id, status)}
-                      type="button"
-                    >
-                      {ticketStatusLabel(status)}
-                    </button>
-                  ))}
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="flex items-center justify-between gap-3 border border-outline-variant bg-surface-container-low px-4 py-3">
+      <span className="flex items-center gap-2 font-body-sm text-body-sm text-on-surface-variant">
+        <MaterialIcon className="text-sm text-primary">{icon}</MaterialIcon>
+        {label}
+      </span>
+      <span className="font-label-bold text-label-bold text-on-surface">{value}</span>
     </div>
   );
 }
 
 async function loadAdminData(session) {
-  const [nextUsers, nextBrokers, nextProperties, nextSupportTickets] = await Promise.all([
+  const [nextUsers, nextBrokers, nextProperties] = await Promise.all([
     fetchAdminUsers(session.token),
     fetchAdminBrokers(session.token),
     fetchAdminProperties(session.token),
-    fetchPrioritySupportTickets(session.token, { role: 'ADMIN', email: session.email }),
   ]);
-  return { nextUsers, nextBrokers, nextProperties, nextSupportTickets };
+  return { nextUsers, nextBrokers, nextProperties };
 }
 
 function adminTitle(section) {
@@ -481,18 +353,25 @@ function adminTitle(section) {
     users: 'Tài khoản users',
     brokers: 'Môi giới',
     properties: 'Bài đăng',
-    support: 'Hỗ trợ ưu tiên',
   }[section] || 'Tổng quan';
 }
 
 function adminSubtitle(section) {
   return {
-    overview: 'Theo dõi nhanh users, môi giới, bài đăng, trạng thái xử lý và hỗ trợ ưu tiên.',
+    overview: 'Theo dõi users, môi giới và bài đăng bằng biểu đồ từ dữ liệu API.',
     users: 'Tìm kiếm, lọc vai trò/trạng thái và khóa hoặc mở tài khoản bằng API hiện có.',
     brokers: 'Cấp tài khoản môi giới và theo dõi danh sách broker đang hoạt động.',
     properties: 'Kiểm tra thumbnail, tiêu đề, broker, danh mục, giá và trạng thái bài đăng.',
-    support: 'Theo dõi ticket hỗ trợ ưu tiên và cập nhật trạng thái xử lý.',
   }[section] || 'Theo dõi nhanh hệ thống.';
+}
+
+function adminTabs(stats) {
+  return [
+    { label: 'Tổng quan', href: '#/admin/overview', count: stats.totalAccounts },
+    { label: 'Tài khoản users', href: '#/admin/users', count: stats.users },
+    { label: 'Môi giới', href: '#/admin/brokers', count: stats.brokers },
+    { label: 'Bài đăng', href: '#/admin/properties', count: stats.posts },
+  ];
 }
 
 function Field({ label, children }) {
@@ -506,48 +385,6 @@ function Field({ label, children }) {
 
 function userStatusLabel(status) {
   return status === 'ACTIVE' ? 'Đang hoạt động' : 'Đã khóa';
-}
-
-function ticketStatusLabel(status) {
-  return {
-    NEW: 'Mới',
-    IN_PROGRESS: 'Đang xử lý',
-    DONE: 'Đã xong',
-  }[status] || status;
-}
-
-function ticketStatusTone(status) {
-  return {
-    NEW: 'warning',
-    IN_PROGRESS: 'info',
-    DONE: 'success',
-  }[status] || 'muted';
-}
-
-function priorityLabel(priority) {
-  return {
-    high: 'Cao',
-    medium: 'Trung bình',
-    low: 'Thấp',
-  }[priority] || priority || 'Trung bình';
-}
-
-function priorityTone(priority) {
-  return {
-    high: 'danger',
-    medium: 'warning',
-    low: 'info',
-  }[priority] || 'muted';
-}
-
-function issueTypeLabel(issueType) {
-  return {
-    listing: 'Tin đăng',
-    approval: 'Duyệt tin',
-    account: 'Tài khoản',
-    payment: 'Thanh toán',
-    other: 'Khác',
-  }[issueType] || 'Khác';
 }
 
 function setBrokerValue(name, value, setBrokerForm) {

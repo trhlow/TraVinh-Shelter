@@ -66,18 +66,6 @@ test('routes to broker properties page for broker sessions', () => {
   expect(screen.getAllByRole('heading', { name: 'Tin đăng của tôi' }).length).toBeGreaterThan(0);
 });
 
-test('routes to broker support page for broker sessions', () => {
-  window.localStorage.setItem('travinh-realty-session', JSON.stringify({
-    token: 'test-token',
-    email: 'broker@congtinland.vn',
-    role: 'BROKER',
-    userId: 'broker-id',
-  }));
-  window.location.hash = '#/broker/support';
-  render(<App />);
-  expect(screen.getAllByRole('heading', { name: 'Hỗ trợ ưu tiên' }).length).toBeGreaterThan(0);
-});
-
 test('routes to separate admin pages for admin sessions', () => {
   window.localStorage.setItem('travinh-realty-session', JSON.stringify({
     token: 'test-token',
@@ -101,7 +89,6 @@ test('routes to all required admin pages for admin sessions', () => {
     ['#/admin/overview', 'Tổng quan'],
     ['#/admin/brokers', 'Môi giới'],
     ['#/admin/properties', 'Bài đăng'],
-    ['#/admin/support', 'Hỗ trợ ưu tiên'],
   ];
 
   for (const [hash, heading] of cases) {
@@ -119,6 +106,34 @@ test('login page hides demo role account shortcuts', () => {
   expect(screen.getAllByRole('button', { name: /Đăng nhập/ }).length).toBeGreaterThan(0);
   expect(screen.queryByText('Tài khoản theo vai trò')).not.toBeInTheDocument();
   expect(screen.queryByText(/mẫu/i)).not.toBeInTheDocument();
+  expect(screen.queryByText('Hoặc đăng nhập với')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Google' })).not.toBeInTheDocument();
+});
+
+test('routes to user registration page', () => {
+  window.location.hash = '#/register';
+  render(<App />);
+  expect(screen.getByRole('heading', { name: 'Đăng ký miễn phí' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Tạo tài khoản user' })).toBeInTheDocument();
+});
+
+test('routes to forgot password page', () => {
+  window.location.hash = '#/forgot-password';
+  render(<App />);
+  expect(screen.getByRole('heading', { name: 'Quên mật khẩu?' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Gửi liên kết đặt lại' })).toBeInTheDocument();
+});
+
+test('routes to user profile page for user sessions', () => {
+  window.localStorage.setItem('travinh-realty-session', JSON.stringify({
+    token: 'test-token',
+    email: 'user@congtinland.vn',
+    role: 'USER',
+    userId: 'user-id',
+  }));
+  window.location.hash = '#/profile';
+  render(<App />);
+  expect(screen.getByRole('heading', { name: 'Cập nhật hồ sơ' })).toBeInTheDocument();
 });
 
 test('routes to public projects and brokers pages', () => {

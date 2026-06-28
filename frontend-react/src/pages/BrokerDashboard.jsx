@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BarChart, DonutChart, HorizontalBarChart } from '../components/Charts.jsx';
-import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../components/DashboardWidgets.jsx';
+import { DashboardPageHeader, DashboardPanel, LoadingRows, StateBlock, StatusBadge } from '../components/DashboardWidgets.jsx';
 import MaterialIcon from '../components/MaterialIcon.jsx';
 import AdminLayout from '../layouts/AdminLayout.jsx';
 import LoginPage from './LoginPage.jsx';
 import {
-  createPrioritySupportTicket,
   createProperty,
   deleteProperty,
   fetchBrokerDashboard,
   fetchCurrentUser,
-  fetchPrioritySupportTickets,
   uploadCurrentUserAvatar,
   uploadPropertyImage,
   updateCurrentProfile,
@@ -38,21 +36,12 @@ const EMPTY_FORM = {
   galleryPreviews: [],
 };
 
-const EMPTY_SUPPORT_FORM = {
-  title: '',
-  issueType: 'listing',
-  priority: 'medium',
-  content: '',
-};
-
 export default function BrokerDashboard({ session, onLogin, onLogout, currentPath = '/broker/dashboard', section = 'dashboard' }) {
   const [profile, setProfile] = useState(null);
   const [profileForm, setProfileForm] = useState({ fullName: '', phone: '' });
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState('');
   const [stats, setStats] = useState({ activeListings: 0, totalListings: 0, pendingLeads: 0, listings: [] });
-  const [supportTickets, setSupportTickets] = useState([]);
-  const [supportForm, setSupportForm] = useState(EMPTY_SUPPORT_FORM);
   const [listingForm, setListingForm] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -71,15 +60,13 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
     Promise.all([
       fetchCurrentUser(session.token),
       fetchBrokerDashboard(session.token),
-      fetchPrioritySupportTickets(session.token, { role: 'BROKER', email: session.email }),
     ])
-      .then(([profileData, dashboardData, ticketData]) => {
+      .then(([profileData, dashboardData]) => {
         if (!alive) return;
         setProfile(profileData);
         setProfileForm({ fullName: profileData.fullName || '', phone: profileData.phone || '' });
         setAvatarPreview(profileData.avatarUrl || '');
         setStats(dashboardData);
-        setSupportTickets(ticketData);
       })
       .catch((exception) => {
         if (alive) setError(exception.message || 'Không tải được dashboard môi giới.');
@@ -125,11 +112,6 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   async function reloadDashboard() {
     const dashboardData = await fetchBrokerDashboard(session.token);
     setStats(dashboardData);
-  }
-
-  async function reloadSupportTickets() {
-    const ticketData = await fetchPrioritySupportTickets(session.token, { role: 'BROKER', email: session.email });
-    setSupportTickets(ticketData);
   }
 
   async function saveProfile(event) {
@@ -243,27 +225,6 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
     }
   }
 
-  async function sendSupportTicket(event) {
-    event.preventDefault();
-    setSaving(true);
-    setError('');
-    setNotice('');
-    try {
-      await createPrioritySupportTicket(session.token, supportForm, {
-        email: session.email,
-        name: profile?.fullName || profileForm.fullName,
-        role: 'BROKER',
-      });
-      setSupportForm(EMPTY_SUPPORT_FORM);
-      await reloadSupportTickets();
-      setNotice('Đã gửi yêu cầu hỗ trợ ưu tiên.');
-    } catch (exception) {
-      setError(exception.message || 'Không gửi được yêu cầu hỗ trợ.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
   function editListing(property) {
     setListingForm({
       id: property.id,
@@ -313,11 +274,14 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   return (
     <AdminLayout session={session} onLogout={onLogout} variant="broker" activePath={currentPath}>
       <main className="dashboard-main">
-        <header className="mb-stack-lg flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h1 className="font-headline-xl-mobile text-headline-xl-mobile text-trust-navy md:font-headline-xl md:text-headline-xl">{brokerTitle(section)}</h1>
-            <p className="mt-2 font-body-md text-body-md text-on-surface-variant">{brokerSubtitle(section)}</p>
-          </div>
+        <div className="mb-stack-lg flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <DashboardPageHeader
+            activePath={currentPath}
+            loading={loading}
+            subtitle={brokerSubtitle(section)}
+            tabs={brokerTabs(dashboardStats, profileReady)}
+            title={brokerTitle(section)}
+          />
           {section === 'properties' && (
             <button className="ui-action" onClick={() => document.getElementById('listing-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} type="button">
               <MaterialIcon className="text-sm">add</MaterialIcon>
@@ -330,14 +294,13 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
               Tin đăng của tôi
             </a>
           )}
-        </header>
+        </div>
 
         {notice && <div className="mb-stack-md rounded border border-success-green/40 bg-success-green/10 p-3 font-body-sm text-body-sm text-on-surface">{notice}</div>}
         {error && <div className="mb-stack-md rounded border border-error-container bg-error-container/50 p-3 font-body-sm text-body-sm text-on-error-container">{error}</div>}
 
         {section === 'dashboard' && (
           <>
-            <BrokerStatsGrid stats={dashboardStats} loading={loading} />
             <section className="mb-stack-lg grid grid-cols-1 gap-gutter xl:grid-cols-3">
               <DonutChart title="Mức sẵn sàng hồ sơ" data={profileChart} centerLabel="trạng thái" />
               <BarChart title="Tin đăng theo danh mục" data={categoryChart} />
@@ -503,80 +466,8 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
           </>
         )}
 
-        {section === 'support' && (
-          <section className="grid grid-cols-1 gap-gutter xl:grid-cols-[380px_1fr]">
-            <DashboardPanel title="Quyền lợi hỗ trợ ưu tiên" count="Dành cho broker">
-              <div className="space-y-3 p-5">
-                {[
-                  ['bolt', 'Ưu tiên xử lý sự cố đăng tin và gallery ảnh.'],
-                  ['verified', 'Theo dõi trạng thái ticket rõ ràng.'],
-                  ['support_agent', 'Admin có thể cập nhật Mới, Đang xử lý, Đã xong.'],
-                ].map(([icon, text]) => (
-                  <div className="flex gap-3 rounded border border-outline-variant bg-surface-container-low p-3" key={text}>
-                    <MaterialIcon className="text-primary">{icon}</MaterialIcon>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant">{text}</p>
-                  </div>
-                ))}
-              </div>
-            </DashboardPanel>
-
-            <form className="ui-panel p-5" onSubmit={sendSupportTicket}>
-              <h2 className="font-headline-md text-headline-md text-trust-navy">Gửi yêu cầu hỗ trợ</h2>
-              <p className="mb-stack-md mt-2 font-body-sm text-body-sm text-on-surface-variant">Ticket được lưu tạm ở frontend để demo luồng Priority Support khi chưa có backend API.</p>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Field label="Tiêu đề" className="md:col-span-2">
-                  <input className="input" value={supportForm.title} onChange={(event) => setSupportValue('title', event.target.value, setSupportForm)} required />
-                </Field>
-                <Field label="Loại vấn đề">
-                  <select className="input" value={supportForm.issueType} onChange={(event) => setSupportValue('issueType', event.target.value, setSupportForm)}>
-                    <option value="listing">Tin đăng</option>
-                    <option value="approval">Duyệt tin</option>
-                    <option value="account">Tài khoản</option>
-                    <option value="payment">Thanh toán</option>
-                    <option value="other">Khác</option>
-                  </select>
-                </Field>
-                <Field label="Mức độ ưu tiên">
-                  <select className="input" value={supportForm.priority} onChange={(event) => setSupportValue('priority', event.target.value, setSupportForm)}>
-                    <option value="high">Cao</option>
-                    <option value="medium">Trung bình</option>
-                    <option value="low">Thấp</option>
-                  </select>
-                </Field>
-                <Field label="Nội dung" className="md:col-span-2">
-                  <textarea className="input min-h-32" value={supportForm.content} onChange={(event) => setSupportValue('content', event.target.value, setSupportForm)} required />
-                </Field>
-              </div>
-              <button className="ui-action mt-stack-md disabled:opacity-60" disabled={saving || !supportForm.title.trim() || !supportForm.content.trim()}>
-                <MaterialIcon className="text-sm">send</MaterialIcon>
-                Gửi yêu cầu
-              </button>
-            </form>
-
-            <DashboardPanel title="Yêu cầu gần đây" count={`${supportTickets.length} ticket`} className="xl:col-span-2">
-              <SupportRequestList tickets={supportTickets} loading={loading} />
-            </DashboardPanel>
-          </section>
-        )}
       </main>
     </AdminLayout>
-  );
-}
-
-function BrokerStatsGrid({ stats, loading }) {
-  const items = [
-    ['description', 'Tổng tin', loading ? '...' : stats.totalListings, 'Tất cả tin đã đăng', 'navy'],
-    ['visibility', 'Đang hiển thị', loading ? '...' : stats.activeListings, 'Tin khách có thể xem', 'green'],
-    ['pending_actions', 'Tin chờ', loading ? '...' : stats.pendingListings, 'Dựa theo trạng thái pending nếu API có', 'orange'],
-    ['monitoring', 'Lượt xem ước tính', loading ? '...' : stats.estimatedViews, 'Tính từ dữ liệu tin hiện có', 'navy'],
-    ['contact_phone', 'Liên hệ/lead', loading ? '...' : stats.leads, 'Mock từ số lượng tin', 'orange'],
-  ];
-  return (
-    <section className="mb-stack-lg grid grid-cols-1 gap-gutter sm:grid-cols-2 xl:grid-cols-5">
-      {items.map(([icon, title, value, meta, tone]) => (
-        <StatCard key={title} icon={icon} title={title} value={value} meta={meta} tone={tone} />
-      ))}
-    </section>
   );
 }
 
@@ -714,26 +605,6 @@ function ListingRow({ listing, onEdit, onDelete, onStatus, saving }) {
   );
 }
 
-function SupportRequestList({ tickets, loading }) {
-  if (loading) return <LoadingRows rows={3} />;
-  if (tickets.length === 0) return <StateBlock icon="support_agent" title="Chưa có yêu cầu hỗ trợ" description="Gửi ticket đầu tiên bằng form bên trên khi bạn cần admin xử lý ưu tiên." />;
-  return (
-    <div className="divide-y divide-outline-variant">
-      {tickets.map((ticket) => (
-        <div key={ticket.id} className="grid gap-3 p-4 md:grid-cols-[1fr_150px_130px] md:items-start">
-          <div>
-            <div className="font-label-bold text-label-bold text-on-surface">{ticket.title}</div>
-            <div className="mt-1 font-body-sm text-body-sm text-on-surface-variant">{ticket.content}</div>
-            <div className="mt-2 font-body-sm text-body-sm text-text-muted">{ticket.id} · {formatDate(ticket.createdAt)}</div>
-          </div>
-          <StatusBadge tone={priorityTone(ticket.priority)}>{priorityLabel(ticket.priority)}</StatusBadge>
-          <StatusBadge tone={ticketStatusTone(ticket.status)}>{ticketStatusLabel(ticket.status)}</StatusBadge>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function Field({ label, children, className = '' }) {
   return (
     <label className={`block ${className}`}>
@@ -789,10 +660,6 @@ function setListingValue(name, value, setListingForm) {
   setListingForm((current) => ({ ...current, [name]: value }));
 }
 
-function setSupportValue(name, value, setSupportForm) {
-  setSupportForm((current) => ({ ...current, [name]: value }));
-}
-
 function chartBy(items, getLabel) {
   const counts = new Map();
   items.forEach((item) => {
@@ -843,60 +710,27 @@ function brokerTitle(section) {
     dashboard: 'Bảng điều khiển',
     profile: 'Hồ sơ môi giới',
     properties: 'Tin đăng của tôi',
-    support: 'Hỗ trợ ưu tiên',
   }[section] || 'Bảng điều khiển';
 }
 
 function brokerSubtitle(section) {
   return {
-    dashboard: 'Theo dõi số lượng tin, hiệu suất gần đây, hồ sơ và lead ước tính.',
+    dashboard: 'Theo dõi hiệu suất tin đăng, trạng thái hồ sơ và danh mục bằng biểu đồ.',
     profile: 'Cập nhật avatar, tên và số điện thoại hiển thị trên bài đăng.',
     properties: 'Đăng tin mới, chỉnh sửa, upload ảnh, ẩn/hiện và xóa tin của bạn.',
-    support: 'Gửi yêu cầu ưu tiên cho admin và theo dõi trạng thái xử lý.',
   }[section] || 'Theo dõi nhanh hoạt động môi giới của bạn.';
+}
+
+function brokerTabs(stats, profileReady) {
+  return [
+    { label: 'Bảng điều khiển', href: '#/broker/dashboard', count: stats.totalListings },
+    { label: 'Hồ sơ môi giới', href: '#/broker/profile', count: profileReady ? 1 : 0 },
+    { label: 'Tin đăng của tôi', href: '#/broker/properties', count: stats.activeListings },
+  ];
 }
 
 function shortLabel(value) {
   return value.length > 22 ? `${value.slice(0, 22)}...` : value;
-}
-
-function priorityLabel(priority) {
-  return {
-    high: 'Cao',
-    medium: 'Trung bình',
-    low: 'Thấp',
-  }[priority] || priority || 'Trung bình';
-}
-
-function priorityTone(priority) {
-  return {
-    high: 'danger',
-    medium: 'warning',
-    low: 'info',
-  }[priority] || 'muted';
-}
-
-function ticketStatusLabel(status) {
-  return {
-    NEW: 'Mới',
-    IN_PROGRESS: 'Đang xử lý',
-    DONE: 'Đã xong',
-  }[status] || status;
-}
-
-function ticketStatusTone(status) {
-  return {
-    NEW: 'warning',
-    IN_PROGRESS: 'info',
-    DONE: 'success',
-  }[status] || 'muted';
-}
-
-function formatDate(value) {
-  if (!value) return 'Đang cập nhật';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'Đang cập nhật';
-  return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short' }).format(date);
 }
 
 function objectUrlFor(file) {

@@ -8,7 +8,7 @@ export function filterProperties(properties, filters) {
 
   return properties.filter((property) => {
     const comparablePrice = property.rawPrice ?? property.price;
-    const matchesQuery = !query || normalize(`${property.title} ${property.address}`).includes(query);
+    const matchesQuery = !query || normalize(`${property.title} ${property.address} ${property.category} ${property.broker?.name}`).includes(query);
     const matchesCategory = safeFilters.category === 'all' || property.category === safeFilters.category;
     const matchesTransaction = safeFilters.transaction === 'all' || property.transaction === safeFilters.transaction;
     const matchesWard = safeFilters.ward === 'all' || property.ward === safeFilters.ward;

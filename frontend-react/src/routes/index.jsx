@@ -6,6 +6,7 @@ import LoginPage from '../pages/LoginPage.jsx';
 import ProjectsPage from '../pages/ProjectsPage.jsx';
 import PropertyDetailPage from '../pages/PropertyDetailPage.jsx';
 import SearchPage from '../pages/SearchPage.jsx';
+import UserProfilePage from '../pages/UserProfilePage.jsx';
 
 function AdminOverviewRoute(props) {
   return <AdminDashboard {...props} section="overview" currentPath="/admin/overview" />;
@@ -23,10 +24,6 @@ function AdminPropertiesRoute(props) {
   return <AdminDashboard {...props} section="properties" currentPath="/admin/properties" />;
 }
 
-function AdminSupportRoute(props) {
-  return <AdminDashboard {...props} section="support" currentPath="/admin/support" />;
-}
-
 function BrokerDashboardRoute(props) {
   return <BrokerDashboard {...props} section="dashboard" currentPath="/broker/dashboard" />;
 }
@@ -39,8 +36,12 @@ function BrokerPropertiesRoute(props) {
   return <BrokerDashboard {...props} section="properties" currentPath="/broker/properties" />;
 }
 
-function BrokerSupportRoute(props) {
-  return <BrokerDashboard {...props} section="support" currentPath="/broker/support" />;
+function RegisterRoute(props) {
+  return <LoginPage {...props} initialMode="register" />;
+}
+
+function ForgotPasswordRoute(props) {
+  return <LoginPage {...props} initialMode="forgot" />;
 }
 
 export const routes = {
@@ -51,17 +52,18 @@ export const routes = {
   '/projects': ProjectsPage,
   '/brokers': BrokersPage,
   '/login': LoginPage,
+  '/register': RegisterRoute,
+  '/forgot-password': ForgotPasswordRoute,
+  '/profile': UserProfilePage,
   '/broker': BrokerDashboardRoute,
   '/broker/dashboard': BrokerDashboardRoute,
   '/broker/profile': BrokerProfileRoute,
   '/broker/properties': BrokerPropertiesRoute,
-  '/broker/support': BrokerSupportRoute,
   '/admin': AdminOverviewRoute,
   '/admin/overview': AdminOverviewRoute,
   '/admin/users': AdminUsersRoute,
   '/admin/brokers': AdminBrokersRoute,
   '/admin/properties': AdminPropertiesRoute,
-  '/admin/support': AdminSupportRoute,
 };
 
 export function resolveRoute(path) {

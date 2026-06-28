@@ -15,6 +15,9 @@ export function validateLoginForm(values, mode = 'login') {
   if (!EMAIL_PATTERN.test(values.email || '')) {
     errors.email = 'Email không hợp lệ.';
   }
+  if (mode === 'forgot') {
+    return errors;
+  }
   if (!values.password || values.password.length < 8) {
     errors.password = 'Mật khẩu cần ít nhất 8 ký tự.';
   }

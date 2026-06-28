@@ -52,6 +52,33 @@ export function DashboardPanel({ title, count, action, children, className = '' 
   );
 }
 
+export function DashboardPageHeader({ title, subtitle, tabs = [], activePath, loading = false }) {
+  return (
+    <header className="dashboard-page-header">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h1 className="dashboard-page-title">{title}</h1>
+          {subtitle && <p className="mt-2 font-body-md text-body-md text-on-surface-variant">{subtitle}</p>}
+        </div>
+        <div className="inline-flex w-fit items-center gap-2 border border-outline-variant bg-surface-container-lowest px-3 py-2 font-body-sm text-body-sm text-on-surface-variant">
+          <MaterialIcon className={`text-sm ${loading ? 'animate-spin' : ''}`}>{loading ? 'sync' : 'verified'}</MaterialIcon>
+          {loading ? 'Đang đồng bộ' : 'Dữ liệu API'}
+        </div>
+      </div>
+      {tabs.length > 0 && (
+        <nav className="dashboard-tabs" aria-label="Dashboard sections">
+          {tabs.map((tab) => (
+            <a key={tab.href} className={`dashboard-tab ${isTabActive(tab.href, activePath) ? 'is-active' : ''}`} href={tab.href}>
+              {tab.label}
+              {tab.count !== undefined && <span className="dashboard-tab-count">{tab.count}</span>}
+            </a>
+          ))}
+        </nav>
+      )}
+    </header>
+  );
+}
+
 export function StatusBadge({ children, tone = 'muted' }) {
   return (
     <span className={`ui-badge ${badgeTone(tone)}`}>
@@ -97,4 +124,8 @@ function badgeTone(tone) {
     info: 'bg-primary-fixed text-trust-navy',
     muted: 'bg-surface-container text-on-surface-variant',
   }[tone] || 'bg-surface-container text-on-surface-variant';
+}
+
+function isTabActive(href, activePath) {
+  return href.replace('#', '') === activePath;
 }
