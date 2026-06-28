@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import MainLayout from '../layouts/MainLayout.jsx';
-import MaterialIcon from '../components/MaterialIcon.jsx';
+import Icon from '../components/ui/Icon.jsx';
 import { fetchProperties } from '../services/api.js';
 import { MOCK_PROPERTIES } from '../services/mockData.js';
 
@@ -47,86 +47,154 @@ export default function BrokersPage({ session, onLogout }) {
 
   return (
     <MainLayout session={session} onLogout={onLogout}>
-      <main className="flex-grow">
-        <section className="px-margin-mobile md:px-margin-desktop py-stack-lg max-w-container-max mx-auto">
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-stack-lg">
-            <div>
-              <p className="font-label-bold text-label-bold text-action-orange mb-2">Môi giới</p>
-              <h1 className="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-headline-xl text-trust-navy">
-                Hồ sơ môi giới Công Tín Land
-              </h1>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto">
-              <input className="input bg-white" placeholder="Tìm theo tên" value={query} onChange={(event) => setQuery(event.target.value)} />
-              <select className="input bg-white" value={ward} onChange={(event) => setWard(event.target.value)}>
-                {WARDS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select>
-              <select className="input bg-white" value={sort} onChange={(event) => setSort(event.target.value)}>
-                <option value="top-sales">Người bán nhiều nhất</option>
-                <option value="most-listings">Đăng tin nhiều nhất</option>
-                <option value="fast-response">Phản hồi nhanh nhất</option>
-              </select>
-            </div>
-          </div>
+      {/* Page header */}
+      <div style={{ background: 'var(--color-brand)', padding: '40px 0', color: '#fff' }}>
+        <div className="container">
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-accent)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Môi giới</p>
+          <h1 style={{ fontSize: 32, fontWeight: 700, margin: 0 }}>Hồ sơ môi giới Công Tín Land</h1>
+        </div>
+      </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-gutter">
-            {brokers.map((broker, index) => (
-              <article key={broker.email} className="ui-card p-5">
-                <div className="flex flex-col sm:flex-row gap-5">
-                  <div className="shrink-0">
-                    {broker.avatarUrl ? (
-                      <img className="w-24 h-24 rounded-full object-cover border-2 border-primary" src={broker.avatarUrl} alt={broker.name} />
-                    ) : (
-                      <div className="w-24 h-24 rounded-full bg-primary text-on-primary flex items-center justify-center font-headline-lg text-headline-lg">
-                        {broker.name.charAt(0)}
-                      </div>
-                    )}
+      <div className="container" style={{ padding: '32px 24px' }}>
+        {/* Filter bar */}
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 32 }}>
+          <input
+            className="input"
+            style={{ flex: '1 1 180px', maxWidth: 280 }}
+            placeholder="Tìm theo tên"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+          <select
+            className="input"
+            style={{ flex: '1 1 160px', maxWidth: 220 }}
+            value={ward}
+            onChange={(event) => setWard(event.target.value)}
+          >
+            {WARDS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+          <select
+            className="input"
+            style={{ flex: '1 1 200px', maxWidth: 260 }}
+            value={sort}
+            onChange={(event) => setSort(event.target.value)}
+          >
+            <option value="top-sales">Người bán nhiều nhất</option>
+            <option value="most-listings">Đăng tin nhiều nhất</option>
+            <option value="fast-response">Phản hồi nhanh nhất</option>
+          </select>
+        </div>
+
+        {/* Broker grid */}
+        <div className="grid-4" style={{ '--grid-cols': 2 }}>
+          {brokers.map((broker, index) => (
+            <article key={broker.email} className="card" style={{ padding: 20 }}>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                {/* Avatar */}
+                <div style={{ flexShrink: 0 }}>
+                  {broker.avatarUrl ? (
+                    <img
+                      style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--color-accent)' }}
+                      src={broker.avatarUrl}
+                      alt={broker.name}
+                    />
+                  ) : (
+                    <div style={{
+                      width: 72,
+                      height: 72,
+                      borderRadius: '50%',
+                      background: 'var(--color-brand)',
+                      color: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 28,
+                      fontWeight: 700,
+                    }}>
+                      {broker.name.charAt(0)}
+                    </div>
+                  )}
+                </div>
+
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+                    <div>
+                      <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-brand)', margin: 0 }}>{broker.name}</h2>
+                      <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginTop: 2 }}>{broker.email}</p>
+                    </div>
+                    <span className="badge badge-neutral" style={{ flexShrink: 0 }}>Top {index + 1}</span>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-                      <div>
-                        <h2 className="font-headline-md text-headline-md text-trust-navy">{broker.name}</h2>
-                        <p className="font-body-sm text-body-sm text-on-surface-variant">{broker.email}</p>
-                      </div>
-                      <span className="bg-primary-fixed text-trust-navy font-label-bold text-label-bold px-3 py-1 rounded">
-                        Top {index + 1}
+
+                  {/* Stats */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, margin: '12px 0' }}>
+                    <Metric label="Đã bán" value={broker.closedDeals} />
+                    <Metric label="Tin đăng" value={broker.listings.length} />
+                    <Metric label="Phút p/hồi" value={broker.responseMinutes} />
+                  </div>
+
+                  {/* Specialties */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                    {broker.specialties.map((item) => (
+                      <span
+                        key={item}
+                        style={{
+                          fontSize: 12,
+                          padding: '3px 10px',
+                          borderRadius: 100,
+                          background: 'var(--color-bg-muted)',
+                          color: 'var(--color-text-secondary)',
+                        }}
+                      >
+                        {item}
                       </span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 mb-4">
-                      <Metric label="Đã bán" value={broker.closedDeals} />
-                      <Metric label="Tin đăng" value={broker.listings.length} />
-                      <Metric label="Phút phản hồi" value={broker.responseMinutes} />
-                    </div>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {broker.specialties.map((item) => (
-                        <span key={item} className="bg-surface-container-low text-trust-navy font-body-sm text-body-sm px-3 py-1 rounded">{item}</span>
-                      ))}
-                    </div>
-                    <div className="space-y-2">
-                      {broker.listings.slice(0, 3).map((listing) => (
-                        <a key={listing.id || listing.title} className="flex items-center gap-3 rounded border border-outline-variant p-2 hover:bg-surface-container-low transition-colors" href={listing.id ? `#/property/${listing.id}` : '#/property'}>
-                          <img className="w-14 h-12 rounded object-cover" src={listing.image} alt={listing.title} />
-                          <span className="font-body-sm text-body-sm text-on-surface line-clamp-1 flex-1">{listing.title}</span>
-                          <MaterialIcon className="text-sm text-on-surface-variant">chevron_right</MaterialIcon>
-                        </a>
-                      ))}
-                    </div>
+                    ))}
+                  </div>
+
+                  {/* Recent listings */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {broker.listings.slice(0, 3).map((listing) => (
+                      <a
+                        key={listing.id || listing.title}
+                        href={listing.id ? `#/property/${listing.id}` : '#/property'}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          padding: '6px 8px',
+                          borderRadius: 8,
+                          border: '1px solid var(--color-border)',
+                          textDecoration: 'none',
+                          background: 'var(--color-bg-subtle)',
+                        }}
+                      >
+                        <img
+                          style={{ width: 48, height: 40, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }}
+                          src={listing.image}
+                          alt={listing.title}
+                        />
+                        <span style={{ fontSize: 13, color: 'var(--color-text-primary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {listing.title}
+                        </span>
+                        <Icon name="ChevronRight" size={16} />
+                      </a>
+                    ))}
                   </div>
                 </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      </main>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
     </MainLayout>
   );
 }
 
 function Metric({ label, value }) {
   return (
-    <div className="bg-surface-container-low rounded p-3">
-      <div className="font-headline-md text-headline-md text-trust-navy">{value}</div>
-      <div className="font-body-sm text-body-sm text-on-surface-variant">{label}</div>
+    <div style={{ background: 'var(--color-bg-muted)', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
+      <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-brand)' }}>{value}</div>
+      <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 2 }}>{label}</div>
     </div>
   );
 }

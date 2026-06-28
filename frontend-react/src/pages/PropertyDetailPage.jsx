@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import ImageGallery from '../components/ImageGallery.jsx';
-import MaterialIcon from '../components/MaterialIcon.jsx';
+import Icon from '../components/ui/Icon.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
 import { detailImages } from '../data/templateData.js';
 import { fetchPropertyDetail, fetchPropertyMedia } from '../services/api.js';
@@ -79,98 +79,152 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
 
   return (
     <MainLayout session={session} onLogout={onLogout}>
-      <main className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg">
-        <div className="flex items-center gap-2 mb-stack-md text-on-surface-variant font-body-sm text-body-sm">
-          <a className="hover:text-primary transition-colors" href="#/">Trang chủ</a>
-          <MaterialIcon className="text-[16px]">chevron_right</MaterialIcon>
-          <a className="hover:text-primary transition-colors" href="#/search">Cho thuê</a>
-          <MaterialIcon className="text-[16px]">chevron_right</MaterialIcon>
-          <span className="text-on-surface">{property.title}</span>
-        </div>
+      <div className="container" style={{ padding: '24px' }}>
+        {/* Breadcrumb */}
+        <nav style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 24, fontSize: 14, color: 'var(--color-text-secondary)' }}>
+          <a href="#/" style={{ color: 'var(--color-text-secondary)', textDecoration: 'none' }}>Trang chủ</a>
+          <Icon name="ChevronRight" size={14} />
+          <a href="#/search" style={{ color: 'var(--color-text-secondary)', textDecoration: 'none' }}>Cho thuê</a>
+          <Icon name="ChevronRight" size={14} />
+          <span style={{ color: 'var(--color-text-primary)' }}>{property.title}</span>
+        </nav>
 
-        <div className="flex flex-col lg:flex-row gap-gutter">
-          <div className="w-full lg:w-2/3 flex flex-col gap-stack-lg">
+        {/* Main content: 2-col layout */}
+        <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          {/* Left column — gallery + details */}
+          <div style={{ flex: '1 1 0', minWidth: 0 }}>
+            {/* Gallery */}
             <ImageGallery images={galleryImages} title={property.title} fallbackImage={detailImages[0]} />
             {mediaLoading && (
-              <div className="-mt-stack-md rounded border border-outline-variant bg-surface-container-low px-3 py-2 font-body-sm text-body-sm text-on-surface-variant">
+              <div style={{ marginTop: 8, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--color-border)', background: 'var(--color-bg-subtle)', fontSize: 13, color: 'var(--color-text-secondary)' }}>
                 Đang tải thư viện ảnh...
               </div>
             )}
 
-            <div className="ui-panel p-stack-md flex flex-col gap-4">
-              <div className="flex flex-wrap gap-2 mb-1">
-                <span className="bg-primary/10 text-primary px-2 py-1 rounded font-label-bold text-label-bold text-[12px]">{property.statusLabel}</span>
-                <span className="bg-surface-container text-on-surface-variant px-2 py-1 rounded font-label-bold text-label-bold text-[12px]">{categoryLabel}</span>
+            {/* Property header info */}
+            <div className="card" style={{ padding: 24, marginTop: 20 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                <span className="badge badge-success">{property.statusLabel}</span>
+                <span className="badge badge-neutral">{categoryLabel}</span>
               </div>
-              <h1 className="font-headline-lg md:font-headline-xl text-headline-lg md:text-headline-xl text-on-surface">{property.title}</h1>
-              <div className="flex items-start gap-2 text-on-surface-variant font-body-md text-body-md">
-                <MaterialIcon className="mt-0.5">location_on</MaterialIcon>
-                <p>{property.address}</p>
+              <h1 className="text-h2" style={{ marginBottom: 12 }}>{property.title}</h1>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, color: 'var(--color-text-secondary)', fontSize: 15, marginBottom: 16 }}>
+                <Icon name="MapPin" size={16} style={{ marginTop: 2, flexShrink: 0 }} />
+                <span>{property.address}</span>
               </div>
-              <div className="font-price-display text-price-display text-action-orange pt-2 border-t border-outline-variant/30">
+              <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--color-accent)', paddingTop: 12, borderTop: '1px solid var(--color-border)' }}>
                 {property.priceLabel}
               </div>
             </div>
 
-            <div className="ui-panel p-stack-md">
-              <h2 className="font-headline-md text-headline-md text-on-surface mb-stack-md">Thông tin chi tiết</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Property specs */}
+            <div className="card" style={{ padding: 24, marginTop: 16 }}>
+              <h2 className="text-h3" style={{ marginBottom: 16 }}>Thông tin chi tiết</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
                 {[
-                  ['straighten', 'Diện tích', `${property.area || 0} m²`],
-                  ['bed', 'Phòng ngủ', property.bedrooms || 0],
-                  ['bathroom', 'Phòng tắm', property.bathrooms || 0],
-                  ['explore', 'Hướng', property.direction || 'Đang cập nhật'],
-                ].map(([icon, label, value]) => (
-                  <div key={label} className="flex flex-col gap-1 p-3 bg-surface-container-low rounded">
-                    <MaterialIcon className="text-on-surface-variant">{icon}</MaterialIcon>
-                    <span className="font-body-sm text-body-sm text-on-surface-variant">{label}</span>
-                    <span className="font-label-bold text-label-bold text-on-surface">{value}</span>
+                  ['Ruler', 'Diện tích', `${property.area || 0} m²`],
+                  ['Bed', 'Phòng ngủ', property.bedrooms || 0],
+                  ['Bath', 'Phòng tắm', property.bathrooms || 0],
+                  ['Sun', 'Hướng', property.direction || 'Đang cập nhật'],
+                ].map(([iconName, label, value]) => (
+                  <div
+                    key={label}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 4,
+                      padding: 12,
+                      background: 'var(--color-bg-muted)',
+                      borderRadius: 8,
+                    }}
+                  >
+                    <Icon name={iconName} size={18} style={{ color: 'var(--color-text-secondary)' }} />
+                    <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{label}</span>
+                    <span style={{ fontWeight: 600, fontSize: 14 }}>{value}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="ui-panel p-stack-md">
-              <h2 className="font-headline-md text-headline-md text-on-surface mb-stack-md">Mô tả</h2>
-              <div className="font-body-md text-body-md text-on-surface-variant flex flex-col gap-4 whitespace-pre-line">
+            {/* Description */}
+            <div className="card" style={{ padding: 24, marginTop: 16 }}>
+              <h2 className="text-h3" style={{ marginBottom: 16 }}>Mô tả</h2>
+              <div style={{ fontSize: 15, color: 'var(--color-text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
                 {property.description}
               </div>
             </div>
           </div>
 
-          <div className="w-full lg:w-1/3 relative">
-            <div className="ui-panel sticky top-[100px] p-stack-md flex flex-col gap-6 z-10">
-              <div className="flex items-center gap-4 border-b border-outline-variant/30 pb-4">
+          {/* Right column — broker contact */}
+          <div style={{ width: 300, flexShrink: 0, position: 'sticky', top: 100 }}>
+            <div className="card" style={{ padding: 24 }}>
+              {/* Broker info */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 16, borderBottom: '1px solid var(--color-border)', marginBottom: 20 }}>
                 <img
                   alt="Broker Avatar"
-                  className="w-16 h-16 rounded-full object-cover border-2 border-primary"
-                  data-alt="A professional headshot of a Vietnamese real estate broker smiling warmly."
+                  style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--color-accent)' }}
                   src={brokerAvatar}
                 />
-                <div className="flex flex-col">
-                  <span className="font-label-bold text-label-bold text-on-surface text-[16px]">{property.broker?.name || 'Nguyễn Văn A'}</span>
-                  <span className="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-1">
-                    <MaterialIcon className="text-[14px]">verified</MaterialIcon> Môi giới uy tín
-                  </span>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--color-brand)' }}>{property.broker?.name || 'Nguyễn Văn A'}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--color-text-secondary)', marginTop: 2 }}>
+                    <Icon name="ShieldCheck" size={14} style={{ color: 'var(--color-accent)' }} />
+                    Môi giới uy tín
+                  </div>
                 </div>
               </div>
-              <div className="flex flex-col gap-3">
-                <button className="w-full bg-success-green hover:bg-success-green/90 text-white font-label-bold text-label-bold py-3 rounded flex justify-center items-center gap-2 shadow-sm transition-colors">
-                  <MaterialIcon>call</MaterialIcon>
+
+              {/* CTA buttons */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <button
+                  style={{
+                    width: '100%',
+                    background: 'var(--color-accent)',
+                    color: '#fff',
+                    fontWeight: 600,
+                    padding: '12px 16px',
+                    borderRadius: 8,
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    fontSize: 15,
+                  }}
+                >
+                  <Icon name="Phone" size={18} />
                   Gọi ngay: {brokerPhone}
                 </button>
-                <button className="w-full bg-[#0068FF] hover:bg-[#0068FF]/90 text-white font-label-bold text-label-bold py-3 rounded flex justify-center items-center gap-2 shadow-sm transition-colors">
-                  <MaterialIcon>chat</MaterialIcon>
+                <button
+                  style={{
+                    width: '100%',
+                    background: '#0068FF',
+                    color: '#fff',
+                    fontWeight: 600,
+                    padding: '12px 16px',
+                    borderRadius: 8,
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    fontSize: 15,
+                  }}
+                >
+                  <Icon name="Mail" size={18} />
                   Chat Zalo
                 </button>
               </div>
-              <div className="text-center font-body-sm text-body-sm text-text-muted mt-2">
+
+              <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--color-text-muted)', marginTop: 16 }}>
                 Vui lòng báo bạn xem tin trên Công Tín Land
-              </div>
+              </p>
             </div>
           </div>
         </div>
-      </main>
+      </div>
     </MainLayout>
   );
 }

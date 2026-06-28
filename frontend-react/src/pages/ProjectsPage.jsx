@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import MainLayout from '../layouts/MainLayout.jsx';
-import MaterialIcon from '../components/MaterialIcon.jsx';
+import Icon from '../components/ui/Icon.jsx';
 
 const PROJECTS = [
   {
@@ -45,6 +45,12 @@ const WARDS = [
   ['chau-thanh', 'Châu Thành'],
 ];
 
+const STATUS_BADGE = {
+  'Đang mở bán': 'success',
+  'Nhận giữ chỗ': 'warning',
+  'Sắp mở bán': 'neutral',
+};
+
 export default function ProjectsPage({ session, onLogout }) {
   const [ward, setWard] = useState('all');
   const [status, setStatus] = useState('all');
@@ -56,59 +62,96 @@ export default function ProjectsPage({ session, onLogout }) {
 
   return (
     <MainLayout session={session} onLogout={onLogout}>
-      <main className="flex-grow">
-        <section className="px-margin-mobile md:px-margin-desktop py-stack-lg max-w-container-max mx-auto">
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-stack-lg">
-            <div>
-              <p className="font-label-bold text-label-bold text-action-orange mb-2">Dự án</p>
-              <h1 className="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-headline-xl text-trust-navy">
-                Khu đô thị và dự án nổi bật
-              </h1>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <select className="input bg-white min-w-44" value={ward} onChange={(event) => setWard(event.target.value)}>
-                {WARDS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select>
-              <select className="input bg-white min-w-44" value={status} onChange={(event) => setStatus(event.target.value)}>
-                <option value="all">Tất cả trạng thái</option>
-                <option value="Đang mở bán">Đang mở bán</option>
-                <option value="Nhận giữ chỗ">Nhận giữ chỗ</option>
-                <option value="Sắp mở bán">Sắp mở bán</option>
-              </select>
-            </div>
-          </div>
+      {/* Page header */}
+      <div style={{ background: 'var(--color-brand)', padding: '40px 0', color: '#fff' }}>
+        <div className="container">
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-accent)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Dự án</p>
+          <h1 style={{ fontSize: 32, fontWeight: 700, margin: 0 }}>Khu đô thị và dự án nổi bật</h1>
+        </div>
+      </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-            {projects.map((project) => (
-              <article key={project.id} className="ui-card overflow-hidden">
-                <div className="h-64 relative">
-                  <img className="w-full h-full object-cover" src={project.image} alt={project.name} />
-                  <span className="absolute top-4 left-4 bg-white text-trust-navy font-label-bold text-label-bold px-3 py-1 rounded">
-                    {project.status}
+      <div className="container" style={{ padding: '32px 24px' }}>
+        {/* Filter bar */}
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 32 }}>
+          <select
+            className="input"
+            style={{ minWidth: 176 }}
+            value={ward}
+            onChange={(event) => setWard(event.target.value)}
+          >
+            {WARDS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+          <select
+            className="input"
+            style={{ minWidth: 176 }}
+            value={status}
+            onChange={(event) => setStatus(event.target.value)}
+          >
+            <option value="all">Tất cả trạng thái</option>
+            <option value="Đang mở bán">Đang mở bán</option>
+            <option value="Nhận giữ chỗ">Nhận giữ chỗ</option>
+            <option value="Sắp mở bán">Sắp mở bán</option>
+          </select>
+        </div>
+
+        {/* Project grid */}
+        <div className="grid-3">
+          {projects.map((project) => (
+            <article key={project.id} className="card" style={{ overflow: 'hidden', padding: 0 }}>
+              {/* Image */}
+              <div style={{ position: 'relative', height: 220 }}>
+                <img
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  src={project.image}
+                  alt={project.name}
+                />
+                <span
+                  className={`badge badge-${STATUS_BADGE[project.status] || 'neutral'}`}
+                  style={{ position: 'absolute', top: 12, left: 12 }}
+                >
+                  {project.status}
+                </span>
+              </div>
+
+              {/* Content */}
+              <div style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
+                  <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-brand)', margin: 0 }}>{project.name}</h2>
+                  <span style={{ fontWeight: 700, color: 'var(--color-accent)', whiteSpace: 'nowrap', fontSize: 15 }}>{project.price}</span>
+                </div>
+
+                <div style={{ display: 'flex', gap: 16, marginBottom: 16, color: 'var(--color-text-secondary)', fontSize: 14 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Icon name="Building2" size={15} />
+                    {project.type}
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Icon name="Home" size={15} />
+                    {project.units} sản phẩm
                   </span>
                 </div>
-                <div className="p-5">
-                  <div className="flex items-center justify-between gap-3 mb-2">
-                    <h2 className="font-headline-md text-headline-md text-trust-navy">{project.name}</h2>
-                    <span className="font-label-bold text-label-bold text-action-orange whitespace-nowrap">{project.price}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-3 font-body-sm text-body-sm text-on-surface-variant mb-4">
-                    <span className="flex items-center gap-1"><MaterialIcon className="text-sm">apartment</MaterialIcon>{project.type}</span>
-                    <span className="flex items-center gap-1"><MaterialIcon className="text-sm">home_work</MaterialIcon>{project.units} sản phẩm</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {project.highlights.map((item) => (
-                      <span key={item} className="bg-surface-container-low text-trust-navy font-body-sm text-body-sm px-3 py-1 rounded">
-                        {item}
-                      </span>
-                    ))}
-                  </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {project.highlights.map((item) => (
+                    <span
+                      key={item}
+                      style={{
+                        fontSize: 12,
+                        padding: '4px 10px',
+                        borderRadius: 100,
+                        background: 'var(--color-bg-muted)',
+                        color: 'var(--color-text-secondary)',
+                      }}
+                    >
+                      {item}
+                    </span>
+                  ))}
                 </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      </main>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
     </MainLayout>
   );
 }

@@ -117,7 +117,7 @@ export default function SearchPage({ queryParams, session, onLogout }) {
     return items;
   }, [properties, sort]);
 
-  const title = titleFor(appliedFilters);
+  const subtitle = subtitleFor(appliedFilters);
   const priceOptions = priceOptionsFor(filters);
 
   function updateFilter(name, value) {
@@ -146,137 +146,202 @@ export default function SearchPage({ queryParams, session, onLogout }) {
 
   return (
     <MainLayout session={session} onLogout={onLogout}>
-      <main className="flex-grow w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg flex flex-col md:flex-row gap-gutter">
-        <aside className="ui-panel w-full md:w-1/4 flex-shrink-0 p-4 h-fit">
-          <h2 className="font-headline-md text-headline-md mb-stack-md text-trust-navy border-b border-outline-variant pb-2">Bộ lọc tìm kiếm</h2>
+      {/* Page header */}
+      <div style={{ background: 'var(--color-brand)', padding: '40px 0', color: '#fff' }}>
+        <div className="container">
+          <h1 style={{ fontSize: 32, fontWeight: 700, margin: 0 }}>Nhà đất bán tại Trà Vinh</h1>
+          {subtitle && (
+            <p style={{ marginTop: 8, opacity: 0.8, fontSize: 16 }}>{subtitle}</p>
+          )}
+        </div>
+      </div>
 
-          <div className="mb-stack-md">
-            <label className="font-label-bold text-label-bold block mb-2">Từ khóa</label>
-            <input
-              className="input font-body-sm text-body-sm"
-              placeholder="Ví dụ: Trà Vinh, Phường 6..."
-              value={filters.query}
-              onChange={(event) => updateFilter('query', event.target.value)}
-            />
-          </div>
+      <div className="container" style={{ padding: '32px 24px' }}>
+        <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          {/* Filter sidebar */}
+          <aside style={{ minWidth: 220, flex: '0 0 220px' }}>
+            <div className="card" style={{ padding: 20 }}>
+              <h2 className="text-h3" style={{ marginBottom: 16 }}>Bộ lọc tìm kiếm</h2>
 
-          <div className="mb-stack-md">
-            <label className="font-label-bold text-label-bold block mb-2">Danh mục</label>
-            <select
-              className="input font-body-sm text-body-sm"
-              value={filters.category}
-              onChange={(event) => updateFilter('category', event.target.value)}
-            >
-              <option value="all">Tất cả</option>
-              {categories.map((category) => (
-                <option key={category.slug} value={category.slug}>{category.name}</option>
-              ))}
-            </select>
-          </div>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>Từ khóa</label>
+                <input
+                  className="input"
+                  placeholder="Ví dụ: Trà Vinh, Phường 6..."
+                  value={filters.query}
+                  onChange={(event) => updateFilter('query', event.target.value)}
+                />
+              </div>
 
-          {['nha', 'dat'].includes(filters.category) && (
-            <div className="flex border-b border-outline-variant mb-4">
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>Danh mục</label>
+                <select
+                  className="input"
+                  value={filters.category}
+                  onChange={(event) => updateFilter('category', event.target.value)}
+                >
+                  <option value="all">Tất cả</option>
+                  {categories.map((category) => (
+                    <option key={category.slug} value={category.slug}>{category.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {['nha', 'dat'].includes(filters.category) && (
+                <div style={{ display: 'flex', borderBottom: '1px solid var(--color-border)', marginBottom: 16 }}>
+                  <button
+                    style={{
+                      flex: 1,
+                      padding: '8px 0',
+                      border: 'none',
+                      background: 'transparent',
+                      fontWeight: filters.transaction === 'sale' ? 700 : 400,
+                      borderBottom: filters.transaction === 'sale' ? '2px solid var(--color-brand)' : '2px solid transparent',
+                      color: filters.transaction === 'sale' ? 'var(--color-brand)' : 'var(--color-text-secondary)',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => updateFilter('transaction', 'sale')}
+                  >
+                    Mua
+                  </button>
+                  <button
+                    style={{
+                      flex: 1,
+                      padding: '8px 0',
+                      border: 'none',
+                      background: 'transparent',
+                      fontWeight: filters.transaction === 'rent' ? 700 : 400,
+                      borderBottom: filters.transaction === 'rent' ? '2px solid var(--color-brand)' : '2px solid transparent',
+                      color: filters.transaction === 'rent' ? 'var(--color-brand)' : 'var(--color-text-secondary)',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => updateFilter('transaction', 'rent')}
+                  >
+                    Thuê
+                  </button>
+                </div>
+              )}
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>Khu vực</label>
+                <select
+                  className="input"
+                  value={filters.ward}
+                  onChange={(event) => updateFilter('ward', event.target.value)}
+                >
+                  {WARDS.map((ward) => (
+                    <option key={ward.value} value={ward.value}>{ward.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>
+                  {filters.category === 'tro' ? 'Giá trọ' : filters.transaction === 'rent' ? 'Giá thuê' : 'Giá bán'}
+                </label>
+                <select
+                  className="input"
+                  value={`${filters.minPrice}-${filters.maxPrice}`}
+                  onChange={(event) => updatePrice(event.target.value)}
+                >
+                  {priceOptions.map(([label, minPrice, maxPrice]) => (
+                    <option key={`${minPrice}-${maxPrice}`} value={`${minPrice}-${maxPrice}`}>{label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {filters.category === 'nha' && filters.transaction === 'rent' && (
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>Loại nhà</label>
+                  <select
+                    className="input"
+                    value={filters.houseType}
+                    onChange={(event) => updateFilter('houseType', event.target.value)}
+                  >
+                    <option value="all">Tất cả</option>
+                    <option value="tret">Trệt</option>
+                    <option value="lau">Lầu</option>
+                  </select>
+                </div>
+              )}
+
+              {filters.category !== 'tro' && (
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, fontSize: 14 }}>Diện tích (m²)</label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      className="input"
+                      style={{ width: '50%' }}
+                      placeholder="Từ"
+                      type="number"
+                      value={filters.minArea}
+                      onChange={(event) => updateFilter('minArea', event.target.value)}
+                    />
+                    <input
+                      className="input"
+                      style={{ width: '50%' }}
+                      placeholder="Đến"
+                      type="number"
+                      value={filters.maxArea}
+                      onChange={(event) => updateFilter('maxArea', event.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+
               <button
-                className={`flex-1 py-2 text-label-bold ${filters.transaction === 'sale' ? 'font-bold border-b-2 border-trust-navy text-trust-navy' : 'text-on-surface-variant hover:text-trust-navy transition-colors'}`}
-                onClick={() => updateFilter('transaction', 'sale')}
+                className="btn btn-primary"
+                style={{ width: '100%' }}
+                onClick={() => setAppliedFilters(filters)}
               >
-                Mua
-              </button>
-              <button
-                className={`flex-1 py-2 text-label-bold ${filters.transaction === 'rent' ? 'font-bold border-b-2 border-trust-navy text-trust-navy' : 'text-on-surface-variant hover:text-trust-navy transition-colors'}`}
-                onClick={() => updateFilter('transaction', 'rent')}
-              >
-                Thuê
+                Tìm kiếm ngay
               </button>
             </div>
-          )}
+          </aside>
 
-          <div className="mb-stack-md">
-            <label className="font-label-bold text-label-bold block mb-2">Khu vực</label>
-            <select
-              className="input font-body-sm text-body-sm"
-              value={filters.ward}
-              onChange={(event) => updateFilter('ward', event.target.value)}
-            >
-              {WARDS.map((ward) => (
-                <option key={ward.value} value={ward.value}>{ward.label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="mb-stack-md">
-            <label className="font-label-bold text-label-bold block mb-2">{filters.category === 'tro' ? 'Giá trọ' : filters.transaction === 'rent' ? 'Giá thuê' : 'Giá bán'}</label>
-            <select
-              className="input font-body-sm text-body-sm"
-              value={`${filters.minPrice}-${filters.maxPrice}`}
-              onChange={(event) => updatePrice(event.target.value)}
-            >
-              {priceOptions.map(([label, minPrice, maxPrice]) => (
-                <option key={`${minPrice}-${maxPrice}`} value={`${minPrice}-${maxPrice}`}>{label}</option>
-              ))}
-            </select>
-          </div>
-
-          {filters.category === 'nha' && filters.transaction === 'rent' && (
-            <div className="mb-stack-md">
-              <label className="font-label-bold text-label-bold block mb-2">Loại nhà</label>
-              <select
-                className="input font-body-sm text-body-sm"
-                value={filters.houseType}
-                onChange={(event) => updateFilter('houseType', event.target.value)}
-              >
-                <option value="all">Tất cả</option>
-                <option value="tret">Trệt</option>
-                <option value="lau">Lầu</option>
-              </select>
-            </div>
-          )}
-
-          {filters.category !== 'tro' && (
-            <div className="mb-stack-md">
-              <label className="font-label-bold text-label-bold block mb-2">Diện tích (m²)</label>
-              <div className="flex gap-2">
-                <input className="input !w-1/2 font-body-sm text-body-sm" placeholder="Từ" type="number" value={filters.minArea} onChange={(event) => updateFilter('minArea', event.target.value)} />
-                <input className="input !w-1/2 font-body-sm text-body-sm" placeholder="Đến" type="number" value={filters.maxArea} onChange={(event) => updateFilter('maxArea', event.target.value)} />
+          {/* Results area */}
+          <section style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingBottom: 12, borderBottom: '1px solid var(--color-border)' }}>
+              <span style={{ color: 'var(--color-text-secondary)', fontSize: 14 }}>
+                {loading ? 'Đang tìm...' : `${sortedProperties.length} kết quả`}
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 14, color: 'var(--color-text-secondary)' }}>Sắp xếp:</span>
+                <select
+                  style={{ background: 'transparent', border: 'none', fontWeight: 600, color: 'var(--color-brand)', cursor: 'pointer' }}
+                  value={sort}
+                  onChange={(event) => setSort(event.target.value)}
+                >
+                  <option value="newest">Mới nhất</option>
+                  <option value="price-asc">Giá thấp đến cao</option>
+                  <option value="price-desc">Giá cao đến thấp</option>
+                </select>
               </div>
             </div>
-          )}
 
-          <button className="ui-action w-full" onClick={() => setAppliedFilters(filters)}>
-            Tìm kiếm ngay
-          </button>
-        </aside>
+            {error && (
+              <div style={{ marginBottom: 16, padding: 12, borderRadius: 8, background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626', fontSize: 14 }}>
+                {error}
+              </div>
+            )}
 
-        <section className="w-full md:w-3/4 flex flex-col">
-          <div className="flex justify-between items-center mb-stack-md pb-2 border-b border-outline-variant">
-            <h1 className="font-headline-lg text-headline-lg text-trust-navy">{title}</h1>
-            <div className="flex items-center gap-2">
-              <span className="font-body-sm text-body-sm text-on-surface-variant">Sắp xếp:</span>
-              <select className="bg-transparent border-none font-label-bold text-label-bold text-trust-navy cursor-pointer focus:ring-0" value={sort} onChange={(event) => setSort(event.target.value)}>
-                <option value="newest">Mới nhất</option>
-                <option value="price-asc">Giá thấp đến cao</option>
-                <option value="price-desc">Giá cao đến thấp</option>
-              </select>
-            </div>
-          </div>
-
-          {error && <div className="mb-stack-md rounded border border-error-container bg-error-container/40 text-on-error-container p-3 font-body-sm text-body-sm">{error}</div>}
-          {loading && <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter">{[1, 2, 3, 4].map((item) => <div key={item} className="h-80 rounded-lg bg-surface-container animate-pulse" />)}</div>}
-          {!loading && sortedProperties.length === 0 && (
-            <div className="ui-panel p-8 text-center">
-              <h2 className="font-headline-md text-headline-md text-trust-navy mb-2">Chưa có tin phù hợp</h2>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">Hãy thử nới bộ lọc hoặc chọn khu vực khác.</p>
-            </div>
-          )}
-          {!loading && sortedProperties.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-gutter" data-testid="property-grid">
-              {sortedProperties.map((property) => (
+            <div data-testid="property-grid" className="grid-3">
+              {loading && [1, 2, 3, 4, 5, 6].map((item) => (
+                <div key={item} style={{ height: 280, borderRadius: 12, background: 'var(--color-bg-muted)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              ))}
+              {!loading && sortedProperties.length === 0 && (
+                <div className="card" style={{ padding: 40, textAlign: 'center', gridColumn: '1 / -1' }}>
+                  <h2 className="text-h3" style={{ marginBottom: 8 }}>Chưa có tin phù hợp</h2>
+                  <p style={{ color: 'var(--color-text-secondary)' }}>Hãy thử nới bộ lọc hoặc chọn khu vực khác.</p>
+                </div>
+              )}
+              {!loading && sortedProperties.map((property) => (
                 <PropertyCard key={property.id || property.title} property={property} compact />
               ))}
             </div>
-          )}
-        </section>
-      </main>
+          </section>
+        </div>
+      </div>
     </MainLayout>
   );
 }
@@ -286,12 +351,12 @@ function priceOptionsFor(filters) {
   return filters.transaction === 'rent' ? PRICE_GROUPS.rent : PRICE_GROUPS.sale;
 }
 
-function titleFor(filters) {
+function subtitleFor(filters) {
   if (filters.query?.trim()) return `Kết quả cho "${filters.query.trim()}"`;
   if (filters.category === 'tro') return 'Phòng trọ tại Trà Vinh';
   if (filters.category === 'nha' && filters.transaction === 'rent') return 'Nhà cho thuê tại Trà Vinh';
   if (filters.category === 'nha') return 'Nhà đất bán tại Trà Vinh';
   if (filters.category === 'dat' && filters.transaction === 'rent') return 'Đất cho thuê tại Trà Vinh';
   if (filters.category === 'dat') return 'Đất bán tại Trà Vinh';
-  return 'Nhà đất bán tại Trà Vinh';
+  return '';
 }
