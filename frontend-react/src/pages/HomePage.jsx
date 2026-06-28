@@ -173,8 +173,8 @@ export default function HomePage({ session, onLogout }) {
       <section className="section">
         <div className="container">
           <div className="section-center">
-            <h2 className="text-h2" style={{ marginBottom: 12 }}>Tại sao chọn Công Tín Land?</h2>
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: 16 }}>
+            <h2 className="text-h2 section-center-title">Tại sao chọn Công Tín Land?</h2>
+            <p className="section-center-subtitle">
               Nền tảng bất động sản địa phương với đội ngũ môi giới được kiểm duyệt chặt chẽ.
             </p>
           </div>
@@ -229,8 +229,8 @@ export default function HomePage({ session, onLogout }) {
       <section className="section">
         <div className="container">
           <div className="section-center">
-            <h2 className="text-h2" style={{ marginBottom: 12 }}>Khách hàng nói gì?</h2>
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: 16 }}>
+            <h2 className="text-h2 section-center-title">Khách hàng nói gì?</h2>
+            <p className="section-center-subtitle">
               Hàng nghìn giao dịch thành công trong 5 năm qua.
             </p>
           </div>
@@ -239,7 +239,7 @@ export default function HomePage({ session, onLogout }) {
               <div key={t.name} className="testimonial-card">
                 <p className="testimonial-quote">"{t.quote}"</p>
                 <div className="testimonial-author">
-                  <div className="broker-avatar" style={{ width: 40, height: 40, fontSize: 14 }}>
+                  <div className="broker-avatar testimonial-avatar-sm">
                     {t.name.charAt(t.name.indexOf(' ') + 1)}
                   </div>
                   <div>
