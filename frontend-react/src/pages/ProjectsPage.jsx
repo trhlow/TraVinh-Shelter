@@ -63,19 +63,18 @@ export default function ProjectsPage({ session, onLogout }) {
   return (
     <MainLayout session={session} onLogout={onLogout}>
       {/* Page header */}
-      <div style={{ background: 'var(--color-brand)', padding: '40px 0', color: '#fff' }}>
+      <div className="page-header">
         <div className="container">
-          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-accent)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Dự án</p>
-          <h1 style={{ fontSize: 32, fontWeight: 700, margin: 0 }}>Khu đô thị và dự án nổi bật</h1>
+          <p className="page-header-eyebrow">Dự án</p>
+          <h1 className="page-header-title">Khu đô thị và dự án nổi bật</h1>
         </div>
       </div>
 
-      <div className="container" style={{ padding: '32px 24px' }}>
+      <div className="container">
         {/* Filter bar */}
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 32 }}>
+        <div className="filter-bar-inner mt-24 mb-32">
           <select
             className="input"
-            style={{ minWidth: 176 }}
             value={ward}
             onChange={(event) => setWard(event.target.value)}
           >
@@ -83,7 +82,6 @@ export default function ProjectsPage({ session, onLogout }) {
           </select>
           <select
             className="input"
-            style={{ minWidth: 176 }}
             value={status}
             onChange={(event) => setStatus(event.target.value)}
           >
@@ -97,54 +95,36 @@ export default function ProjectsPage({ session, onLogout }) {
         {/* Project grid */}
         <div className="grid-3">
           {projects.map((project) => (
-            <article key={project.id} className="card" style={{ overflow: 'hidden', padding: 0 }}>
+            <article key={project.id} className="project-card">
               {/* Image */}
-              <div style={{ position: 'relative', height: 220 }}>
-                <img
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                  src={project.image}
-                  alt={project.name}
-                />
-                <span
-                  className={`badge badge-${STATUS_BADGE[project.status] || 'neutral'}`}
-                  style={{ position: 'absolute', top: 12, left: 12 }}
-                >
+              <div className="project-card-image">
+                <img src={project.image} alt={project.name} />
+                <span className={`badge badge-${STATUS_BADGE[project.status] || 'neutral'} project-card-badge`}>
                   {project.status}
                 </span>
               </div>
 
               {/* Content */}
-              <div style={{ padding: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
-                  <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-brand)', margin: 0 }}>{project.name}</h2>
-                  <span style={{ fontWeight: 700, color: 'var(--color-accent)', whiteSpace: 'nowrap', fontSize: 15 }}>{project.price}</span>
+              <div className="project-card-body">
+                <div className="filter-bar-inner justify-between gap-8 mb-8">
+                  <h2 className="project-card-title">{project.name}</h2>
+                  <span className="project-card-price">{project.price}</span>
                 </div>
 
-                <div style={{ display: 'flex', gap: 16, marginBottom: 16, color: 'var(--color-text-secondary)', fontSize: 14 }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Icon name="Building2" size={15} />
+                <div className="project-card-meta">
+                  <span className="project-card-meta-item">
+                    <Icon name="Building2" size={15} className="icon-muted" />
                     {project.type}
                   </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Icon name="Home" size={15} />
+                  <span className="project-card-meta-item">
+                    <Icon name="Home" size={15} className="icon-muted" />
                     {project.units} sản phẩm
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                <div className="broker-specialty-tags">
                   {project.highlights.map((item) => (
-                    <span
-                      key={item}
-                      style={{
-                        fontSize: 12,
-                        padding: '4px 10px',
-                        borderRadius: 100,
-                        background: 'var(--color-bg-muted)',
-                        color: 'var(--color-text-secondary)',
-                      }}
-                    >
-                      {item}
-                    </span>
+                    <span key={item} className="specialty-tag">{item}</span>
                   ))}
                 </div>
               </div>

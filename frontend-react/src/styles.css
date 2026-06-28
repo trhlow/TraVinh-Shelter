@@ -39,6 +39,8 @@
   --color-warning-bg: #FEF3C7;
   --color-error: #DC2626;
   --color-error-bg: #FEE2E2;
+  --color-error-border: #FECACA;
+  --color-zalo: #0068FF;
 
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -1096,6 +1098,709 @@ img { display: block; max-width: 100%; }
 }
 
 .dashboard-table tr:last-child td { border-bottom: none; }
+
+/* ============================================================
+   PAGE HEADERS (dark brand top bar)
+   ============================================================ */
+.page-header {
+  background: var(--color-brand);
+  padding: 40px 0;
+  color: var(--color-text-inverse);
+}
+
+.page-header-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 700;
+  color: var(--color-text-inverse);
+  margin: 0 0 8px;
+}
+
+.page-header-subtitle {
+  font-size: 16px;
+  color: rgb(255 255 255 / 0.7);
+  margin: 0;
+}
+
+/* ============================================================
+   FILTER BAR
+   ============================================================ */
+.filter-bar {
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  padding: 16px 0;
+}
+
+.filter-bar-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+/* ============================================================
+   SEARCH PAGE LAYOUT
+   ============================================================ */
+.search-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  padding: 32px 0;
+}
+
+@media (min-width: 1024px) {
+  .search-layout {
+    grid-template-columns: 280px 1fr;
+  }
+}
+
+.filter-sidebar {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  height: fit-content;
+}
+
+.filter-group {
+  margin-bottom: 20px;
+}
+
+.filter-group:last-child {
+  margin-bottom: 0;
+}
+
+.filter-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ============================================================
+   BROKER CARD (detailed version for BrokersPage)
+   ============================================================ */
+.broker-profile-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  transition: box-shadow 180ms ease;
+}
+
+.broker-profile-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.broker-profile-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.broker-profile-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.broker-profile-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 4px;
+}
+
+.broker-profile-meta {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.broker-profile-stats {
+  display: flex;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+  margin-top: 16px;
+}
+
+.broker-stat {
+  text-align: center;
+}
+
+.broker-stat-number {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  display: block;
+}
+
+.broker-stat-label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.broker-specialty-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+/* ============================================================
+   PROJECT CARD
+   ============================================================ */
+.project-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+.project-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.project-card-image {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  position: relative;
+}
+
+.project-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.project-card-body {
+  padding: 16px;
+}
+
+.project-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 8px;
+}
+
+.project-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-bottom: 12px;
+}
+
+.project-card-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ============================================================
+   PROPERTY DETAIL PAGE
+   ============================================================ */
+.detail-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  padding: 32px 0;
+}
+
+@media (min-width: 1024px) {
+  .detail-layout {
+    grid-template-columns: 1fr 320px;
+  }
+}
+
+.detail-main {}
+
+.detail-sidebar {
+  height: fit-content;
+}
+
+@media (min-width: 1024px) {
+  .detail-sidebar {
+    position: sticky;
+    top: 80px;
+  }
+}
+
+.detail-title {
+  font-size: clamp(20px, 3vw, 28px);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 12px;
+}
+
+.detail-price {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-accent);
+  margin: 0 0 16px;
+}
+
+.detail-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 640px) {
+  .detail-meta-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.detail-meta-item {
+  background: var(--color-bg-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  text-align: center;
+}
+
+.detail-meta-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.detail-meta-label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.detail-section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 24px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.detail-description {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.contact-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.contact-card-broker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.contact-card-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 2px;
+}
+
+.contact-card-verified {
+  font-size: 12px;
+  color: var(--color-accent);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+}
+
+.contact-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.contact-btn-zalo {
+  width: 100%;
+  min-height: 44px;
+  background: var(--color-zalo);
+  color: #fff;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 160ms ease;
+}
+
+.contact-btn-zalo:hover {
+  opacity: 0.9;
+}
+
+/* ============================================================
+   ERROR / ALERT BANNERS
+   ============================================================ */
+.alert {
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.alert-error {
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
+  color: var(--color-error);
+}
+
+.alert-success {
+  background: var(--color-success-bg);
+  border: 1px solid var(--color-accent);
+  color: var(--color-success);
+}
+
+/* ============================================================
+   ICON WRAPPER UTILITIES
+   ============================================================ */
+.icon-muted { color: var(--color-text-muted); }
+.icon-accent { color: var(--color-accent); }
+.icon-brand  { color: var(--color-brand); }
+.icon-inverse { color: var(--color-text-inverse); }
+
+/* ============================================================
+   BUTTON UTILITIES
+   ============================================================ */
+.btn-full { width: 100%; }
+
+/* ============================================================
+   SPACING UTILITIES
+   ============================================================ */
+.mb-0  { margin-bottom: 0; }
+.mb-4  { margin-bottom: 4px; }
+.mb-8  { margin-bottom: 8px; }
+.mb-12 { margin-bottom: 12px; }
+.mb-16 { margin-bottom: 16px; }
+.mb-20 { margin-bottom: 20px; }
+.mb-24 { margin-bottom: 24px; }
+.mb-32 { margin-bottom: 32px; }
+.mt-8  { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.mt-16 { margin-top: 16px; }
+.mt-20 { margin-top: 20px; }
+.mt-24 { margin-top: 24px; }
+.mt-32 { margin-top: 32px; }
+.p-24  { padding: 24px; }
+.pt-12 { padding-top: 12px; }
+.text-center { text-align: center; }
+.text-sm { font-size: 12px; }
+.flex-shrink-0 { flex-shrink: 0; }
+.justify-between { justify-content: space-between; }
+.whitespace-pre { white-space: pre-line; }
+.gap-8 { gap: 8px; }
+.border-top { border-top: 1px solid var(--color-border); }
+
+.filter-sidebar-heading { margin-bottom: 16px; }
+.card-section { padding: 24px; margin-top: 20px; }
+.card-section + .card-section { margin-top: 16px; }
+
+.detail-address {
+  color: var(--color-text-secondary);
+  font-size: 15px;
+}
+
+.detail-price-rule {
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+  margin: 0;
+}
+
+.project-card-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+}
+
+.project-card-price {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+
+.broker-listings-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.contact-footer-note {
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: 16px;
+  margin-bottom: 0;
+}
+
+/* ============================================================
+   TRANSACTION TABS (SearchPage filter)
+   ============================================================ */
+.tab-bar {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 16px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 8px 0;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  font-weight: 400;
+}
+
+.tab-btn.is-active {
+  font-weight: 700;
+  border-bottom-color: var(--color-brand);
+  color: var(--color-brand);
+}
+
+/* ============================================================
+   RESULTS TOOLBAR
+   ============================================================ */
+.results-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.results-count {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.sort-select {
+  background: transparent;
+  border: none;
+  font-weight: 600;
+  color: var(--color-brand);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* ============================================================
+   BROKER LISTING LINK
+   ============================================================ */
+.broker-listing-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
+}
+
+.broker-listing-link img {
+  width: 48px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.broker-listing-title {
+  font-size: 13px;
+  color: var(--color-text-primary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   BROKER AVATAR
+   ============================================================ */
+.broker-avatar-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-full);
+  background: var(--color-brand);
+  color: var(--color-text-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.broker-avatar-img {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  border: 2px solid var(--color-accent);
+  flex-shrink: 0;
+}
+
+.broker-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.broker-metric {
+  background: var(--color-bg-muted);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  text-align: center;
+}
+
+.broker-metric-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-brand);
+}
+
+.broker-metric-label {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-top: 2px;
+}
+
+/* ============================================================
+   SPECIALTY TAG
+   ============================================================ */
+.specialty-tag {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-muted);
+  color: var(--color-text-secondary);
+}
+
+/* ============================================================
+   DETAIL PAGE BREADCRUMB
+   ============================================================ */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.breadcrumb a {
+  color: var(--color-text-secondary);
+}
+
+.breadcrumb-current {
+  color: var(--color-text-primary);
+}
+
+/* ============================================================
+   CONTACT AVATAR
+   ============================================================ */
+.contact-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  border: 2px solid var(--color-accent);
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   MEDIA LOADING NOTICE
+   ============================================================ */
+.media-loading-notice {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+/* ============================================================
+   PAGE HEADER EYEBROW
+   ============================================================ */
+.page-header-eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-accent);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================================
+   SKELETON LOADER
+   ============================================================ */
+.skeleton {
+  border-radius: var(--radius-md);
+  background: var(--color-bg-muted);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-card {
+  height: 280px;
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.empty-state {
+  padding: 40px;
+  text-align: center;
+  grid-column: 1 / -1;
+}
+
+.empty-state-title {
+  font-size: clamp(18px, 2vw, 22px);
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.empty-state-desc {
+  color: var(--color-text-secondary);
+  margin: 0;
+}
 .dashboard-table tr:hover td { background: var(--color-bg-subtle); }
 
 @media (max-width: 767px) {

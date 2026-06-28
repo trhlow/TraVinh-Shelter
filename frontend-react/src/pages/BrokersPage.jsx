@@ -48,26 +48,24 @@ export default function BrokersPage({ session, onLogout }) {
   return (
     <MainLayout session={session} onLogout={onLogout}>
       {/* Page header */}
-      <div style={{ background: 'var(--color-brand)', padding: '40px 0', color: '#fff' }}>
+      <div className="page-header">
         <div className="container">
-          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-accent)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Môi giới</p>
-          <h1 style={{ fontSize: 32, fontWeight: 700, margin: 0 }}>Hồ sơ môi giới Công Tín Land</h1>
+          <p className="page-header-eyebrow">Môi giới</p>
+          <h1 className="page-header-title">Hồ sơ môi giới Công Tín Land</h1>
         </div>
       </div>
 
-      <div className="container" style={{ padding: '32px 24px' }}>
+      <div className="container">
         {/* Filter bar */}
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 32 }}>
+        <div className="filter-bar-inner mt-24 mb-32">
           <input
             className="input"
-            style={{ flex: '1 1 180px', maxWidth: 280 }}
             placeholder="Tìm theo tên"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
           <select
             className="input"
-            style={{ flex: '1 1 160px', maxWidth: 220 }}
             value={ward}
             onChange={(event) => setWard(event.target.value)}
           >
@@ -75,7 +73,6 @@ export default function BrokersPage({ session, onLogout }) {
           </select>
           <select
             className="input"
-            style={{ flex: '1 1 200px', maxWidth: 260 }}
             value={sort}
             onChange={(event) => setSort(event.target.value)}
           >
@@ -86,101 +83,65 @@ export default function BrokersPage({ session, onLogout }) {
         </div>
 
         {/* Broker grid */}
-        <div className="grid-4" style={{ '--grid-cols': 2 }}>
+        <div className="grid-4">
           {brokers.map((broker, index) => (
-            <article key={broker.email} className="card" style={{ padding: 20 }}>
-              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+            <article key={broker.email} className="broker-profile-card">
+              <div className="broker-profile-header">
                 {/* Avatar */}
-                <div style={{ flexShrink: 0 }}>
-                  {broker.avatarUrl ? (
-                    <img
-                      style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--color-accent)' }}
-                      src={broker.avatarUrl}
-                      alt={broker.name}
-                    />
-                  ) : (
-                    <div style={{
-                      width: 72,
-                      height: 72,
-                      borderRadius: '50%',
-                      background: 'var(--color-brand)',
-                      color: '#fff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 28,
-                      fontWeight: 700,
-                    }}>
-                      {broker.name.charAt(0)}
-                    </div>
-                  )}
-                </div>
+                {broker.avatarUrl ? (
+                  <img
+                    className="broker-avatar-img"
+                    src={broker.avatarUrl}
+                    alt={broker.name}
+                  />
+                ) : (
+                  <div className="broker-avatar-circle">
+                    {broker.name.charAt(0)}
+                  </div>
+                )}
 
                 {/* Info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+                <div className="broker-profile-info">
+                  <div className="filter-bar-inner justify-between gap-8 mb-4">
                     <div>
-                      <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-brand)', margin: 0 }}>{broker.name}</h2>
-                      <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginTop: 2 }}>{broker.email}</p>
+                      <h2 className="broker-profile-name">{broker.name}</h2>
+                      <p className="broker-profile-meta">{broker.email}</p>
                     </div>
-                    <span className="badge badge-neutral" style={{ flexShrink: 0 }}>Top {index + 1}</span>
+                    <span className="badge badge-neutral flex-shrink-0">Top {index + 1}</span>
                   </div>
 
                   {/* Stats */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, margin: '12px 0' }}>
+                  <div className="broker-metric-grid">
                     <Metric label="Đã bán" value={broker.closedDeals} />
                     <Metric label="Tin đăng" value={broker.listings.length} />
                     <Metric label="Phút p/hồi" value={broker.responseMinutes} />
                   </div>
 
                   {/* Specialties */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                  <div className="broker-specialty-tags">
                     {broker.specialties.map((item) => (
-                      <span
-                        key={item}
-                        style={{
-                          fontSize: 12,
-                          padding: '3px 10px',
-                          borderRadius: 100,
-                          background: 'var(--color-bg-muted)',
-                          color: 'var(--color-text-secondary)',
-                        }}
-                      >
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Recent listings */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {broker.listings.slice(0, 3).map((listing) => (
-                      <a
-                        key={listing.id || listing.title}
-                        href={listing.id ? `#/property/${listing.id}` : '#/property'}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          padding: '6px 8px',
-                          borderRadius: 8,
-                          border: '1px solid var(--color-border)',
-                          textDecoration: 'none',
-                          background: 'var(--color-bg-subtle)',
-                        }}
-                      >
-                        <img
-                          style={{ width: 48, height: 40, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }}
-                          src={listing.image}
-                          alt={listing.title}
-                        />
-                        <span style={{ fontSize: 13, color: 'var(--color-text-primary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {listing.title}
-                        </span>
-                        <Icon name="ChevronRight" size={16} />
-                      </a>
+                      <span key={item} className="specialty-tag">{item}</span>
                     ))}
                   </div>
                 </div>
+              </div>
+
+              {/* Recent listings */}
+              <div className="broker-listings-stack">
+                {broker.listings.slice(0, 3).map((listing) => (
+                  <a
+                    key={listing.id || listing.title}
+                    href={listing.id ? `#/property/${listing.id}` : '#/property'}
+                    className="broker-listing-link"
+                  >
+                    <img
+                      src={listing.image}
+                      alt={listing.title}
+                    />
+                    <span className="broker-listing-title">{listing.title}</span>
+                    <Icon name="ChevronRight" size={16} className="icon-muted" />
+                  </a>
+                ))}
               </div>
             </article>
           ))}
@@ -192,9 +153,9 @@ export default function BrokersPage({ session, onLogout }) {
 
 function Metric({ label, value }) {
   return (
-    <div style={{ background: 'var(--color-bg-muted)', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
-      <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--color-brand)' }}>{value}</div>
-      <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 2 }}>{label}</div>
+    <div className="broker-metric">
+      <div className="broker-metric-value">{value}</div>
+      <div className="broker-metric-label">{label}</div>
     </div>
   );
 }
