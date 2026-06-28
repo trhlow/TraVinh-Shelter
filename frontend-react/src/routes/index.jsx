@@ -23,6 +23,10 @@ function AdminPropertiesRoute(props) {
   return <AdminDashboard {...props} section="properties" currentPath="/admin/properties" />;
 }
 
+function AdminSupportRoute(props) {
+  return <AdminDashboard {...props} section="support" currentPath="/admin/support" />;
+}
+
 function BrokerDashboardRoute(props) {
   return <BrokerDashboard {...props} section="dashboard" currentPath="/broker/dashboard" />;
 }
@@ -33,6 +37,10 @@ function BrokerProfileRoute(props) {
 
 function BrokerPropertiesRoute(props) {
   return <BrokerDashboard {...props} section="properties" currentPath="/broker/properties" />;
+}
+
+function BrokerSupportRoute(props) {
+  return <BrokerDashboard {...props} section="support" currentPath="/broker/support" />;
 }
 
 export const routes = {
@@ -47,11 +55,13 @@ export const routes = {
   '/broker/dashboard': BrokerDashboardRoute,
   '/broker/profile': BrokerProfileRoute,
   '/broker/properties': BrokerPropertiesRoute,
+  '/broker/support': BrokerSupportRoute,
   '/admin': AdminOverviewRoute,
   '/admin/overview': AdminOverviewRoute,
   '/admin/users': AdminUsersRoute,
   '/admin/brokers': AdminBrokersRoute,
   '/admin/properties': AdminPropertiesRoute,
+  '/admin/support': AdminSupportRoute,
 };
 
 export function resolveRoute(path) {

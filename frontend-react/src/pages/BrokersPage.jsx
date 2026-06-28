@@ -71,7 +71,7 @@ export default function BrokersPage({ session, onLogout }) {
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-gutter">
             {brokers.map((broker, index) => (
-              <article key={broker.email} className="bg-white border border-outline-variant rounded-lg p-5 shadow-sm">
+              <article key={broker.email} className="ui-card p-5">
                 <div className="flex flex-col sm:flex-row gap-5">
                   <div className="shrink-0">
                     {broker.avatarUrl ? (

@@ -1,9 +1,10 @@
 import { detailImages, searchProperties } from '../data/templateData.js';
-import { BROKER_DASHBOARD, MOCK_PROPERTIES } from './mockData.js';
+import { BROKER_DASHBOARD, MOCK_PROPERTIES, PRIORITY_SUPPORT_TICKETS } from './mockData.js';
 import { buildPropertyQuery, filterProperties } from './propertyFilters.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true';
+const SUPPORT_STORAGE_KEY = 'travinh-priority-support-tickets';
 
 export async function login(email, password) {
   if (USE_MOCK_API) {
@@ -189,6 +190,43 @@ export async function updateUserStatus(token, userId, status) {
   return request(`/admin/users/${userId}/status`, { method: 'PATCH', token, body: { status } });
 }
 
+export async function fetchPrioritySupportTickets(_token, scope = {}) {
+  const tickets = readSupportTickets();
+  const filteredTickets = scope.role === 'BROKER' && scope.email
+    ? tickets.filter((ticket) => ticket.requesterEmail === scope.email)
+    : tickets;
+  return delay(sortTickets(filteredTickets), 80);
+}
+
+export async function createPrioritySupportTicket(_token, payload, requester = {}) {
+  const tickets = readSupportTickets();
+  const ticket = {
+    id: `SUP-${Date.now().toString().slice(-6)}`,
+    requesterName: requester.name || requester.email || 'Nhà môi giới',
+    requesterEmail: requester.email || 'broker@congtinland.vn',
+    ownerRole: requester.role || 'BROKER',
+    title: payload.title?.trim() || 'Yêu cầu hỗ trợ',
+    issueType: payload.issueType || 'other',
+    priority: payload.priority || 'medium',
+    status: 'NEW',
+    content: payload.content?.trim() || '',
+    createdAt: new Date().toISOString(),
+  };
+  const nextTickets = [ticket, ...tickets];
+  saveSupportTickets(nextTickets);
+  return delay(ticket, 120);
+}
+
+export async function updatePrioritySupportTicketStatus(_token, ticketId, status) {
+  const tickets = readSupportTickets();
+  const nextTickets = tickets.map((ticket) => (
+    ticket.id === ticketId ? { ...ticket, status } : ticket
+  ));
+  saveSupportTickets(nextTickets);
+  const updated = nextTickets.find((ticket) => ticket.id === ticketId);
+  return delay(updated, 100);
+}
+
 async function request(path, options = {}) {
   const headers = { ...(options.headers || {}) };
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
@@ -289,4 +327,25 @@ function objectUrlFor(file) {
     return URL.createObjectURL(file);
   }
   return '';
+}
+
+function readSupportTickets() {
+  if (typeof window === 'undefined') return PRIORITY_SUPPORT_TICKETS;
+  const raw = window.localStorage.getItem(SUPPORT_STORAGE_KEY);
+  if (!raw) return PRIORITY_SUPPORT_TICKETS;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : PRIORITY_SUPPORT_TICKETS;
+  } catch {
+    return PRIORITY_SUPPORT_TICKETS;
+  }
+}
+
+function saveSupportTickets(tickets) {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(SUPPORT_STORAGE_KEY, JSON.stringify(tickets));
+}
+
+function sortTickets(tickets) {
+  return [...tickets].sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
 }

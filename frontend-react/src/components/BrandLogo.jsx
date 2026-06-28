@@ -17,7 +17,7 @@ export default function BrandLogo({ compact = false, className = '' }) {
         <path d="M36 24h15v6H41v22h-6V24h1Z" fill="#5DBB63" />
       </svg>
       {!compact && (
-        <span className="font-headline-md text-headline-md font-bold tracking-normal text-trust-navy whitespace-nowrap">
+        <span className="font-headline-md text-headline-md font-bold tracking-normal text-current whitespace-nowrap">
           {BRAND_NAME}
         </span>
       )}

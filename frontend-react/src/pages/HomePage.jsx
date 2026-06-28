@@ -25,14 +25,14 @@ export default function HomePage({ session, onLogout }) {
   return (
     <MainLayout session={session} onLogout={onLogout}>
       <main className="flex-grow">
-        <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
+        <section className="relative min-h-[560px] flex items-center justify-center overflow-hidden border-b border-outline-variant">
           <img
             className="absolute inset-0 w-full h-full object-cover"
             data-alt="A wide aerial city view used as a real estate search hero background."
             src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1800&q=80"
             alt="Bất động sản Trà Vinh"
           />
-          <div className="absolute inset-0 bg-primary/65"></div>
+          <div className="absolute inset-0 bg-primary/70"></div>
           <div className="relative z-10 px-margin-mobile md:px-margin-desktop w-full text-center">
             <h1 className="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-headline-xl text-white max-w-[760px] mx-auto mb-stack-lg">
               Công Tín Land - tìm nhà trọ, bất động sản Trà Vinh nhanh chóng
@@ -41,13 +41,13 @@ export default function HomePage({ session, onLogout }) {
           </div>
         </section>
 
-        <section className="px-margin-mobile md:px-margin-desktop py-[96px] max-w-container-max mx-auto">
+        <section className="px-margin-mobile md:px-margin-desktop py-[80px] max-w-container-max mx-auto">
           <div className="flex justify-between items-end mb-stack-lg">
             <div>
               <h2 className="font-headline-lg text-headline-lg text-trust-navy mb-2">Tin nổi bật</h2>
               <p className="font-body-md text-body-md text-on-surface-variant">Khám phá các bất động sản tốt nhất tại Trà Vinh</p>
             </div>
-            <a className="hidden md:flex items-center gap-1 font-label-bold text-label-bold text-trust-navy hover:text-action-orange transition-colors" href="#/search">
+            <a className="hidden min-h-11 items-center justify-center gap-2 rounded border border-outline-variant bg-surface-container-lowest px-4 py-2 font-label-bold text-label-bold text-primary transition-colors hover:bg-surface-container-low md:inline-flex" href="#/search">
               Xem tất cả →
             </a>
           </div>

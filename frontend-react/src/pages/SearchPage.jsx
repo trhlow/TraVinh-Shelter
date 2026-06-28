@@ -145,13 +145,13 @@ export default function SearchPage({ queryParams, session, onLogout }) {
   return (
     <MainLayout session={session} onLogout={onLogout}>
       <main className="flex-grow w-full max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop py-stack-lg flex flex-col md:flex-row gap-gutter">
-        <aside className="w-full md:w-1/4 flex-shrink-0 bg-surface-container-lowest shadow-sm p-4 rounded-lg h-fit border border-outline-variant">
+        <aside className="ui-panel w-full md:w-1/4 flex-shrink-0 p-4 h-fit">
           <h2 className="font-headline-md text-headline-md mb-stack-md text-trust-navy border-b border-outline-variant pb-2">Bộ lọc tìm kiếm</h2>
 
           <div className="mb-stack-md">
             <label className="font-label-bold text-label-bold block mb-2">Danh mục</label>
             <select
-              className="w-full bg-surface-container-low border border-outline-variant rounded p-2 font-body-sm text-body-sm focus:border-trust-navy focus:ring-1 focus:ring-trust-navy"
+              className="input font-body-sm text-body-sm"
               value={filters.category}
               onChange={(event) => updateFilter('category', event.target.value)}
             >
@@ -182,7 +182,7 @@ export default function SearchPage({ queryParams, session, onLogout }) {
           <div className="mb-stack-md">
             <label className="font-label-bold text-label-bold block mb-2">Khu vực</label>
             <select
-              className="w-full bg-surface-container-low border border-outline-variant rounded p-2 font-body-sm text-body-sm focus:border-trust-navy focus:ring-1 focus:ring-trust-navy"
+              className="input font-body-sm text-body-sm"
               value={filters.ward}
               onChange={(event) => updateFilter('ward', event.target.value)}
             >
@@ -195,7 +195,7 @@ export default function SearchPage({ queryParams, session, onLogout }) {
           <div className="mb-stack-md">
             <label className="font-label-bold text-label-bold block mb-2">{filters.category === 'tro' ? 'Giá trọ' : filters.transaction === 'rent' ? 'Giá thuê' : 'Giá bán'}</label>
             <select
-              className="w-full bg-surface-container-low border border-outline-variant rounded p-2 font-body-sm text-body-sm focus:border-trust-navy focus:ring-1 focus:ring-trust-navy"
+              className="input font-body-sm text-body-sm"
               value={`${filters.minPrice}-${filters.maxPrice}`}
               onChange={(event) => updatePrice(event.target.value)}
             >
@@ -209,7 +209,7 @@ export default function SearchPage({ queryParams, session, onLogout }) {
             <div className="mb-stack-md">
               <label className="font-label-bold text-label-bold block mb-2">Loại nhà</label>
               <select
-                className="w-full bg-surface-container-low border border-outline-variant rounded p-2 font-body-sm text-body-sm focus:border-trust-navy focus:ring-1 focus:ring-trust-navy"
+                className="input font-body-sm text-body-sm"
                 value={filters.houseType}
                 onChange={(event) => updateFilter('houseType', event.target.value)}
               >
@@ -224,13 +224,13 @@ export default function SearchPage({ queryParams, session, onLogout }) {
             <div className="mb-stack-md">
               <label className="font-label-bold text-label-bold block mb-2">Diện tích (m²)</label>
               <div className="flex gap-2">
-                <input className="w-1/2 bg-surface-container-low border border-outline-variant rounded p-2 font-body-sm text-body-sm focus:border-trust-navy focus:ring-1 focus:ring-trust-navy" placeholder="Từ" type="number" value={filters.minArea} onChange={(event) => updateFilter('minArea', event.target.value)} />
-                <input className="w-1/2 bg-surface-container-low border border-outline-variant rounded p-2 font-body-sm text-body-sm focus:border-trust-navy focus:ring-1 focus:ring-trust-navy" placeholder="Đến" type="number" value={filters.maxArea} onChange={(event) => updateFilter('maxArea', event.target.value)} />
+                <input className="input !w-1/2 font-body-sm text-body-sm" placeholder="Từ" type="number" value={filters.minArea} onChange={(event) => updateFilter('minArea', event.target.value)} />
+                <input className="input !w-1/2 font-body-sm text-body-sm" placeholder="Đến" type="number" value={filters.maxArea} onChange={(event) => updateFilter('maxArea', event.target.value)} />
               </div>
             </div>
           )}
 
-          <button className="w-full bg-trust-navy text-on-primary font-label-bold text-label-bold py-2 rounded hover:bg-primary-container transition-colors" onClick={() => setAppliedFilters(filters)}>
+          <button className="ui-action w-full" onClick={() => setAppliedFilters(filters)}>
             Tìm kiếm ngay
           </button>
         </aside>
@@ -251,7 +251,7 @@ export default function SearchPage({ queryParams, session, onLogout }) {
           {error && <div className="mb-stack-md rounded border border-error-container bg-error-container/40 text-on-error-container p-3 font-body-sm text-body-sm">{error}</div>}
           {loading && <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter">{[1, 2, 3, 4].map((item) => <div key={item} className="h-80 rounded-lg bg-surface-container animate-pulse" />)}</div>}
           {!loading && sortedProperties.length === 0 && (
-            <div className="bg-surface-container-lowest border border-outline-variant rounded-lg p-8 text-center">
+            <div className="ui-panel p-8 text-center">
               <h2 className="font-headline-md text-headline-md text-trust-navy mb-2">Chưa có tin phù hợp</h2>
               <p className="font-body-sm text-body-sm text-on-surface-variant">Hãy thử nới bộ lọc hoặc chọn khu vực khác.</p>
             </div>

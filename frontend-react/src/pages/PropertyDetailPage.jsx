@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import ImageGallery from '../components/ImageGallery.jsx';
 import MaterialIcon from '../components/MaterialIcon.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
 import { detailImages } from '../data/templateData.js';
@@ -35,6 +36,7 @@ const fallbackBrokerAvatar = 'https://images.unsplash.com/photo-1599566150163-29
 export default function PropertyDetailPage({ propertyId, session, onLogout }) {
   const [property, setProperty] = useState(fallbackProperty);
   const [mediaImages, setMediaImages] = useState(detailImages);
+  const [mediaLoading, setMediaLoading] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -52,6 +54,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
 
   useEffect(() => {
     let alive = true;
+    setMediaLoading(true);
     fetchPropertyMedia(propertyId)
       .then((items) => {
         if (!alive) return;
@@ -60,6 +63,9 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
       })
       .catch(() => {
         if (alive) setMediaImages(detailImages);
+      })
+      .finally(() => {
+        if (alive) setMediaLoading(false);
       });
     return () => {
       alive = false;
@@ -67,8 +73,6 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
   }, [propertyId]);
 
   const galleryImages = [property.image, ...mediaImages].filter(Boolean);
-  const uniqueGalleryImages = [...new Set(galleryImages)];
-  const mainImage = uniqueGalleryImages[0] || detailImages[0];
   const categoryLabel = property.category === 'tro' ? 'Phòng trọ' : property.category === 'dat' ? 'Đất' : 'Nhà';
   const brokerPhone = property.broker?.phone || '0901 234 567';
   const brokerAvatar = property.broker?.avatarUrl || fallbackBrokerAvatar;
@@ -86,33 +90,14 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
 
         <div className="flex flex-col lg:flex-row gap-gutter">
           <div className="w-full lg:w-2/3 flex flex-col gap-stack-lg">
-            <div className="flex flex-col gap-stack-sm">
-              <div className="w-full h-[300px] md:h-[450px] rounded-xl overflow-hidden shadow-sm relative group cursor-pointer">
-                <img
-                  alt="Main property view"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  data-alt="A bright, high-quality wide photograph of a clean, modern rental room interior in Tra Vinh."
-                  id="main-gallery-image"
-                  src={mainImage}
-                />
-                <div className="absolute bottom-4 right-4 bg-surface/90 backdrop-blur-sm px-3 py-1 rounded-full font-label-bold text-label-bold flex items-center gap-2 shadow-sm border border-outline-variant">
-                  <MaterialIcon className="text-[16px]">photo_library</MaterialIcon> 1/{uniqueGalleryImages.length}
-                </div>
+            <ImageGallery images={galleryImages} title={property.title} fallbackImage={detailImages[0]} />
+            {mediaLoading && (
+              <div className="-mt-stack-md rounded border border-outline-variant bg-surface-container-low px-3 py-2 font-body-sm text-body-sm text-on-surface-variant">
+                Đang tải thư viện ảnh...
               </div>
-              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-                {uniqueGalleryImages.slice(1).map((image, index) => (
-                  <img
-                    key={image}
-                    alt={`Thumbnail ${index + 1}`}
-                    className={`w-24 h-16 rounded-lg object-cover cursor-pointer border-2 ${index === 0 ? 'border-primary' : 'border-transparent hover:border-outline-variant opacity-70 hover:opacity-100 transition-all'}`}
-                    data-alt="Thumbnail showing rental room details."
-                    src={image}
-                  />
-                ))}
-              </div>
-            </div>
+            )}
 
-            <div className="bg-surface-container-lowest p-stack-md rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-outline-variant/30 flex flex-col gap-4">
+            <div className="ui-panel p-stack-md flex flex-col gap-4">
               <div className="flex flex-wrap gap-2 mb-1">
                 <span className="bg-primary/10 text-primary px-2 py-1 rounded font-label-bold text-label-bold text-[12px]">{property.statusLabel}</span>
                 <span className="bg-surface-container text-on-surface-variant px-2 py-1 rounded font-label-bold text-label-bold text-[12px]">{categoryLabel}</span>
@@ -127,7 +112,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
               </div>
             </div>
 
-            <div className="bg-surface-container-lowest p-stack-md rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-outline-variant/30">
+            <div className="ui-panel p-stack-md">
               <h2 className="font-headline-md text-headline-md text-on-surface mb-stack-md">Thông tin chi tiết</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
@@ -136,7 +121,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
                   ['bathroom', 'Phòng tắm', property.bathrooms || 0],
                   ['explore', 'Hướng', property.direction || 'Đang cập nhật'],
                 ].map(([icon, label, value]) => (
-                  <div key={label} className="flex flex-col gap-1 p-3 bg-surface-container-low rounded-lg">
+                  <div key={label} className="flex flex-col gap-1 p-3 bg-surface-container-low rounded">
                     <MaterialIcon className="text-on-surface-variant">{icon}</MaterialIcon>
                     <span className="font-body-sm text-body-sm text-on-surface-variant">{label}</span>
                     <span className="font-label-bold text-label-bold text-on-surface">{value}</span>
@@ -145,7 +130,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
               </div>
             </div>
 
-            <div className="bg-surface-container-lowest p-stack-md rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-outline-variant/30">
+            <div className="ui-panel p-stack-md">
               <h2 className="font-headline-md text-headline-md text-on-surface mb-stack-md">Mô tả</h2>
               <div className="font-body-md text-body-md text-on-surface-variant flex flex-col gap-4 whitespace-pre-line">
                 {property.description}
@@ -154,7 +139,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
           </div>
 
           <div className="w-full lg:w-1/3 relative">
-            <div className="sticky top-[100px] bg-surface-container-lowest p-stack-md rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-outline-variant/30 flex flex-col gap-6 z-10">
+            <div className="ui-panel sticky top-[100px] p-stack-md flex flex-col gap-6 z-10">
               <div className="flex items-center gap-4 border-b border-outline-variant/30 pb-4">
                 <img
                   alt="Broker Avatar"
@@ -170,11 +155,11 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
                 </div>
               </div>
               <div className="flex flex-col gap-3">
-                <button className="w-full bg-success-green hover:bg-success-green/90 text-white font-label-bold text-label-bold py-3 rounded-lg flex justify-center items-center gap-2 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
+                <button className="w-full bg-success-green hover:bg-success-green/90 text-white font-label-bold text-label-bold py-3 rounded flex justify-center items-center gap-2 shadow-sm transition-colors">
                   <MaterialIcon>call</MaterialIcon>
                   Gọi ngay: {brokerPhone}
                 </button>
-                <button className="w-full bg-[#0068FF] hover:bg-[#0068FF]/90 text-white font-label-bold text-label-bold py-3 rounded-lg flex justify-center items-center gap-2 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
+                <button className="w-full bg-[#0068FF] hover:bg-[#0068FF]/90 text-white font-label-bold text-label-bold py-3 rounded flex justify-center items-center gap-2 shadow-sm transition-colors">
                   <MaterialIcon>chat</MaterialIcon>
                   Chat Zalo
                 </button>

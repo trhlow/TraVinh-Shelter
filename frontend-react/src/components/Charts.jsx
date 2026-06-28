@@ -4,12 +4,12 @@ export function DonutChart({ title, data, centerLabel }) {
   let offset = 25;
 
   return (
-    <section className="bg-white border border-surface-variant rounded-lg p-5 shadow-sm">
+    <section className="ui-panel p-5">
       <h2 className="font-headline-md text-headline-md text-trust-navy mb-4">{title}</h2>
       <div className="flex flex-col sm:flex-row items-center gap-5">
         <div className="relative w-44 h-44 shrink-0">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 42 42" aria-hidden="true">
-            <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#E6E8EF" strokeWidth="6" />
+            <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="rgb(var(--twc-surface-container-highest))" strokeWidth="6" />
             {data.map((item) => {
               const dash = (item.value / total) * 100;
               const circle = (
@@ -47,7 +47,7 @@ export function DonutChart({ title, data, centerLabel }) {
 export function BarChart({ title, data }) {
   const max = Math.max(...data.map((item) => item.value), 1);
   return (
-    <section className="bg-white border border-surface-variant rounded-lg p-5 shadow-sm">
+    <section className="ui-panel p-5">
       <h2 className="font-headline-md text-headline-md text-trust-navy mb-4">{title}</h2>
       <div className="h-56 flex items-end gap-3 border-b border-outline-variant pb-2">
         {data.map((item) => (
@@ -64,7 +64,7 @@ export function BarChart({ title, data }) {
 export function HorizontalBarChart({ title, data }) {
   const max = Math.max(...data.map((item) => item.value), 1);
   return (
-    <section className="bg-white border border-surface-variant rounded-lg p-5 shadow-sm">
+    <section className="ui-panel p-5">
       <h2 className="font-headline-md text-headline-md text-trust-navy mb-4">{title}</h2>
       <div className="space-y-4">
         {data.map((item) => (

@@ -80,7 +80,7 @@ export default function ProjectsPage({ session, onLogout }) {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
             {projects.map((project) => (
-              <article key={project.id} className="bg-white border border-outline-variant rounded-lg overflow-hidden shadow-sm">
+              <article key={project.id} className="ui-card overflow-hidden">
                 <div className="h-64 relative">
                   <img className="w-full h-full object-cover" src={project.image} alt={project.name} />
                   <span className="absolute top-4 left-4 bg-white text-trust-navy font-label-bold text-label-bold px-3 py-1 rounded">

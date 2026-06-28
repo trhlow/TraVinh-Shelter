@@ -13,7 +13,7 @@ export default function PropertyCard({ property, compact = false }) {
 
   if (compact) {
     return (
-      <article className="bg-surface-container-lowest rounded-lg overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] hover:border-trust-navy border border-transparent transition-all group">
+      <article className="ui-card overflow-hidden group">
         <a className="block relative h-48 w-full" href={href}>
           <img className="w-full h-full object-cover" data-alt={property.dataAlt} src={property.image} alt={property.title} />
           <div className="absolute bottom-0 w-full h-1/2 bg-gradient-to-t from-black/60 to-transparent"></div>
@@ -39,7 +39,7 @@ export default function PropertyCard({ property, compact = false }) {
   }
 
   return (
-    <article className="bg-white rounded-lg overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-transparent transition-all">
+    <article className="ui-card overflow-hidden">
       <a className="block relative h-72 w-full" href={href}>
         <img className="w-full h-full object-cover" data-alt={property.dataAlt} src={property.image} alt={property.title} />
         <span className="absolute top-4 left-4 bg-primary text-on-primary font-label-bold text-label-bold px-3 py-1 rounded">{price}</span>
@@ -65,7 +65,7 @@ export default function PropertyCard({ property, compact = false }) {
         </p>
         <div className="border-t border-surface-variant pt-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center font-label-bold text-label-bold text-trust-navy">{brokerInitial}</div>
+            <div className="w-8 h-8 rounded bg-surface-container flex items-center justify-center font-label-bold text-label-bold text-trust-navy">{brokerInitial}</div>
             <span className="font-body-sm text-body-sm text-on-surface">{broker}</span>
           </div>
           <span className="font-body-sm text-body-sm text-on-surface-variant">{postedAt}</span>

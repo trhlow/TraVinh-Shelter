@@ -66,6 +66,18 @@ test('routes to broker properties page for broker sessions', () => {
   expect(screen.getAllByRole('heading', { name: 'Tin đăng của tôi' }).length).toBeGreaterThan(0);
 });
 
+test('routes to broker support page for broker sessions', () => {
+  window.localStorage.setItem('travinh-realty-session', JSON.stringify({
+    token: 'test-token',
+    email: 'broker@congtinland.vn',
+    role: 'BROKER',
+    userId: 'broker-id',
+  }));
+  window.location.hash = '#/broker/support';
+  render(<App />);
+  expect(screen.getAllByRole('heading', { name: 'Hỗ trợ ưu tiên' }).length).toBeGreaterThan(0);
+});
+
 test('routes to separate admin pages for admin sessions', () => {
   window.localStorage.setItem('travinh-realty-session', JSON.stringify({
     token: 'test-token',
@@ -89,6 +101,7 @@ test('routes to all required admin pages for admin sessions', () => {
     ['#/admin/overview', 'Tổng quan'],
     ['#/admin/brokers', 'Môi giới'],
     ['#/admin/properties', 'Bài đăng'],
+    ['#/admin/support', 'Hỗ trợ ưu tiên'],
   ];
 
   for (const [hash, heading] of cases) {
