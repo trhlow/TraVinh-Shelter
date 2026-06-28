@@ -1,30 +1,22 @@
 import { useState } from 'react';
 import BrandLogo, { BRAND_NAME } from '../components/BrandLogo.jsx';
-import MaterialIcon from '../components/MaterialIcon.jsx';
+import Icon from '../components/ui/Icon.jsx';
 import useTheme from '../hooks/useTheme.js';
 
-const categorySections = [
+const NAV_CATEGORIES = [
   {
-    title: 'Trọ',
-    icon: 'home',
-    caption: 'Giá trọ, khu vực',
-    links: [
-      { label: 'Xem phòng trọ', href: '#/search?category=tro&transaction=rent' },
-    ],
+    title: 'Trọ', icon: 'Home', caption: 'Giá trọ, khu vực',
+    links: [{ label: 'Xem phòng trọ', href: '#/search?category=tro&transaction=rent' }],
   },
   {
-    title: 'Nhà',
-    icon: 'home_work',
-    caption: 'Thuê nhà, mua nhà, diện tích',
+    title: 'Nhà', icon: 'Building2', caption: 'Thuê nhà, mua nhà',
     links: [
       { label: 'Thuê nhà', href: '#/search?category=nha&transaction=rent' },
       { label: 'Mua nhà', href: '#/search?category=nha&transaction=sale' },
     ],
   },
   {
-    title: 'Đất',
-    icon: 'landscape',
-    caption: 'Thuê đất, mua đất, khu vực',
+    title: 'Đất', icon: 'Mountain', caption: 'Thuê đất, mua đất',
     links: [
       { label: 'Thuê đất', href: '#/search?category=dat&transaction=rent' },
       { label: 'Mua đất', href: '#/search?category=dat&transaction=sale' },
@@ -32,7 +24,7 @@ const categorySections = [
   },
 ];
 
-const footerColumns = [
+const FOOTER_COLS = [
   {
     title: 'Danh mục',
     links: [
@@ -62,217 +54,217 @@ const footerColumns = [
   },
 ];
 
-const socialLinks = [
-  ['youtube', 'YouTube'],
-  ['facebook', 'Facebook'],
-  ['twitter', 'Twitter'],
-  ['instagram', 'Instagram'],
-  ['linkedin', 'LinkedIn'],
-];
-
 export function Header({ session, onLogout }) {
   const isBroker = session?.role === 'BROKER';
   const isAdmin = session?.role === 'ADMIN';
   const isUser = session?.role === 'USER';
   const { isDark, toggleTheme } = useTheme();
-  const [query, setQuery] = useState('');
-
-  function submitSearch(event) {
-    event.preventDefault();
-    const params = new URLSearchParams();
-    if (query.trim()) params.set('query', query.trim());
-    window.location.hash = params.toString() ? `#/search?${params}` : '#/search';
-  }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-outline-variant bg-surface-container-lowest/95 backdrop-blur">
-      <div className="mx-auto flex max-w-container-max items-center justify-between gap-4 px-margin-mobile py-3 md:px-margin-desktop">
-        <a className="flex min-h-12 items-center text-on-surface" href="#/" aria-label={BRAND_NAME}>
+    <header className="navbar">
+      <div className="navbar-inner">
+        {/* Logo */}
+        <a href="#/" aria-label={BRAND_NAME} style={{ display: 'flex', alignItems: 'center' }}>
           <BrandLogo />
         </a>
 
-        <nav className="hidden items-center gap-1 lg:flex" aria-label="Điều hướng chính">
-          <NavDropdown label="Danh mục" sections={categorySections} />
-          <a className="public-header-link" href="#/projects">
-            <MaterialIcon>apartment</MaterialIcon>
-            Dự án
+        {/* Nav links */}
+        <nav className="navbar-nav" aria-label="Điều hướng chính">
+          <div className="navbar-dropdown">
+            <button
+              className="navbar-link"
+              type="button"
+              style={{ background: 'none', border: 'none' }}
+            >
+              <Icon name="SlidersHorizontal" size={16} />
+              Danh mục
+              <Icon name="ChevronDown" size={14} />
+            </button>
+            <div className="navbar-dropdown-panel">
+              {NAV_CATEGORIES.map((cat, i) => (
+                <div
+                  key={cat.title}
+                  className="navbar-dropdown-col"
+                  style={i > 0 ? { borderLeft: '1px solid var(--color-border)' } : {}}
+                >
+                  <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+                    <span style={{
+                      width: 36, height: 36, borderRadius: 'var(--radius-sm)',
+                      background: 'var(--color-accent-light)', color: 'var(--color-accent)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      <Icon name={cat.icon} size={18} />
+                    </span>
+                    <div>
+                      <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: 'var(--color-text-primary)' }}>{cat.title}</p>
+                      <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-muted)' }}>{cat.caption}</p>
+                    </div>
+                  </div>
+                  {cat.links.map((link) => (
+                    <a
+                      key={link.href}
+                      href={link.href}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '6px 8px', borderRadius: 'var(--radius-sm)',
+                        fontSize: 13, color: 'var(--color-text-secondary)',
+                        transition: 'background 160ms, color 160ms',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-bg-subtle)'; e.currentTarget.style.color = 'var(--color-text-primary)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = 'var(--color-text-secondary)'; }}
+                    >
+                      {link.label}
+                      <Icon name="ChevronRight" size={13} />
+                    </a>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <a className="navbar-link" href="#/projects">
+            <Icon name="Building" size={16} /> Dự án
           </a>
-          <a className="public-header-link" href="#/brokers">
-            <MaterialIcon>badge</MaterialIcon>
-            Môi giới
+          <a className="navbar-link" href="#/brokers">
+            <Icon name="IdCard" size={16} /> Môi giới
           </a>
         </nav>
 
-        <form className="hidden flex-1 justify-end xl:flex" onSubmit={submitSearch}>
-          <label className="public-header-search">
-            <MaterialIcon>search</MaterialIcon>
-            <span className="sr-only">Tìm tin</span>
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Tìm tin theo khu vực, giá, diện tích"
-            />
-            <button className="sr-only" type="submit">Tìm kiếm</button>
-          </label>
-        </form>
-
-        <div className="flex items-center gap-2">
-          <button className="kit-icon-button border border-outline-variant bg-surface-container-lowest text-primary" onClick={toggleTheme} type="button" title={isDark ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}>
-            <MaterialIcon>{isDark ? 'light_mode' : 'dark_mode'}</MaterialIcon>
+        {/* Right actions */}
+        <div className="navbar-actions">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            title={isDark ? 'Giao diện sáng' : 'Giao diện tối'}
+            style={{
+              width: 36, height: 36, borderRadius: 'var(--radius-sm)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--color-text-secondary)', background: 'none', border: 'none',
+              cursor: 'pointer', transition: 'background 160ms',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-bg-subtle)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
+          >
+            <Icon name={isDark ? 'Sun' : 'Moon'} size={18} />
           </button>
+
           {!session && (
             <>
-              <a className="ui-secondary-action min-h-10 px-3" href="#/login">
-                <MaterialIcon className="text-sm">account_circle</MaterialIcon>
-                Đăng nhập
+              <a href="#/login" className="btn btn-ghost btn-sm">
+                <Icon name="User" size={15} /> Đăng nhập
               </a>
-              <a className="ui-action hidden min-h-10 px-3 sm:inline-flex" href="#/register">
+              <a href="#/register" className="btn btn-primary btn-sm navbar-desktop-only">
                 Đăng ký
               </a>
             </>
           )}
           {isAdmin && (
-            <a className="ui-secondary-action hidden min-h-10 px-3 md:inline-flex" href="#/admin/overview">
-              <MaterialIcon className="text-sm">admin_panel_settings</MaterialIcon>
-              Admin
+            <a href="#/admin/overview" className="btn btn-ghost btn-sm navbar-desktop-only">
+              <Icon name="ShieldCheck" size={15} /> Admin
             </a>
           )}
           {isBroker && (
             <>
-              <a className="ui-secondary-action hidden min-h-10 px-3 md:inline-flex" href="#/broker/dashboard">
-                <MaterialIcon className="text-sm">dashboard</MaterialIcon>
-                Bảng điều khiển
+              <a href="#/broker/dashboard" className="btn btn-ghost btn-sm navbar-desktop-only">
+                <Icon name="LayoutDashboard" size={15} /> Bảng điều khiển
               </a>
-              <a className="ui-action hidden min-h-10 bg-action-orange px-3 text-on-primary hover:bg-orange-600 md:inline-flex" href="#/broker/properties">
-                <MaterialIcon className="text-sm">add</MaterialIcon>
-                Đăng tin
+              <a href="#/broker/properties" className="btn btn-primary btn-sm navbar-desktop-only">
+                <Icon name="Plus" size={15} /> Đăng tin
               </a>
             </>
           )}
           {isUser && (
-            <a className="ui-secondary-action hidden min-h-10 px-3 md:inline-flex" href="#/profile">
-              <MaterialIcon className="text-sm">account_circle</MaterialIcon>
-              Hồ sơ
+            <a href="#/profile" className="btn btn-ghost btn-sm navbar-desktop-only">
+              <Icon name="User" size={15} /> Hồ sơ
             </a>
           )}
           {session && (
-            <button className="ui-secondary-action min-h-10 px-3" onClick={onLogout} type="button">
+            <button type="button" onClick={onLogout} className="btn btn-ghost btn-sm">
               Đăng xuất
             </button>
           )}
         </div>
       </div>
-
-      <nav className="mx-auto flex max-w-container-max gap-2 overflow-x-auto px-margin-mobile pb-3 md:px-margin-desktop lg:hidden" aria-label="Điều hướng nhanh">
-        <a className="dashboard-mobile-chip" href="#/search">
-          <MaterialIcon className="text-sm">filter_list</MaterialIcon>
-          Danh mục
-        </a>
-        <a className="dashboard-mobile-chip" href="#/projects">
-          <MaterialIcon className="text-sm">apartment</MaterialIcon>
-          Dự án
-        </a>
-        <a className="dashboard-mobile-chip" href="#/brokers">
-          <MaterialIcon className="text-sm">badge</MaterialIcon>
-          Môi giới
-        </a>
-        {isBroker && (
-          <a className="dashboard-mobile-chip is-active" href="#/broker/properties">
-            <MaterialIcon className="text-sm">add</MaterialIcon>
-            Đăng tin
-          </a>
-        )}
-      </nav>
     </header>
   );
 }
 
-function NavDropdown({ label, sections }) {
-  return (
-    <div className="group relative">
-      <button className="public-header-link" type="button" aria-haspopup="true">
-        <MaterialIcon>filter_list</MaterialIcon>
-        {label}
-        <MaterialIcon className="text-sm transition-transform duration-200 group-hover:rotate-180">keyboard_arrow_down</MaterialIcon>
-      </button>
-      <div className="public-dropdown-panel invisible absolute left-0 top-full mt-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
-        <div className="grid gap-0 md:grid-cols-3">
-          {sections.map((section, index) => (
-            <div key={section.title} className={`${index > 0 ? 'border-t border-outline-variant md:border-l md:border-t-0' : ''} p-4`}>
-              <div className="mb-3 flex items-start gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center bg-surface-container-low text-primary">
-                  <MaterialIcon>{section.icon}</MaterialIcon>
-                </span>
-                <div>
-                  <h3 className="font-label-bold text-label-bold text-on-surface">{section.title}</h3>
-                  <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">{section.caption}</p>
-                </div>
-              </div>
-              <div className="space-y-1">
-                {section.links.map((link) => (
-                  <a key={link.href} className="flex items-center justify-between gap-3 px-2 py-2 font-body-sm text-body-sm text-on-surface transition-colors hover:bg-surface-container-low hover:text-primary" href={link.href}>
-                    {link.label}
-                    <MaterialIcon className="text-sm text-on-surface-variant">chevron_right</MaterialIcon>
-                  </a>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function Footer() {
+  const [email, setEmail] = useState('');
   return (
-    <footer className="public-footer mt-auto">
-      <div className="mx-auto max-w-container-max px-margin-mobile py-10 md:px-margin-desktop">
-        <div className="flex flex-col gap-6 border-b border-white/20 pb-8 lg:flex-row lg:items-center lg:justify-between">
-          <a className="inline-flex w-fit text-white" href="#/" aria-label={BRAND_NAME}>
+    <footer className="footer">
+      <div className="container">
+        <div className="footer-top">
+          <a href="#/" aria-label={BRAND_NAME} style={{ color: '#fff', display: 'flex' }}>
             <BrandLogo />
           </a>
-          <div className="flex w-full flex-col gap-2 sm:flex-row lg:max-w-md">
-            <label className="sr-only" htmlFor="footer-email">Email nhận tin</label>
-            <input id="footer-email" className="public-footer-input flex-1" placeholder="Nhập email để nhận tin mới..." type="email" />
-            <button className="public-footer-submit" type="button">Theo dõi</button>
+          <div style={{ display: 'flex', gap: 8, maxWidth: 380, width: '100%' }}>
+            <label htmlFor="footer-email" className="sr-only">Email nhận tin</label>
+            <input
+              id="footer-email"
+              type="email"
+              className="footer-email-input"
+              placeholder="Nhập email để nhận tin mới..."
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              style={{ flex: 1 }}
+            />
+            <button type="button" className="btn btn-primary btn-sm" style={{ flexShrink: 0 }}>
+              Theo dõi
+            </button>
           </div>
         </div>
 
-        <div className="grid gap-8 py-8 md:grid-cols-4">
-          {footerColumns.map((column) => (
-            <div key={column.title}>
-              <h3 className="mb-4 font-label-bold text-label-bold text-white">{column.title}</h3>
-              <ul className="space-y-2">
-                {column.links.map(([label, href]) => (
+        <div className="footer-grid">
+          {FOOTER_COLS.map(col => (
+            <div key={col.title}>
+              <p className="footer-col-title">{col.title}</p>
+              <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                {col.links.map(([label, href]) => (
                   <li key={label}>
-                    <a className="font-body-sm text-body-sm" href={href}>{label}</a>
+                    <a className="footer-link" href={href}>{label}</a>
                   </li>
                 ))}
               </ul>
             </div>
           ))}
           <div>
-            <h3 className="mb-4 font-label-bold text-label-bold text-white">Công Tín Land</h3>
-            <p className="font-body-sm text-body-sm text-white/80">
-              Cổng thông tin bất động sản Trà Vinh, kết nối khách hàng với môi giới được quản lý bởi admin.
+            <p className="footer-col-title">Công Tín Land</p>
+            <p style={{ fontSize: 14, color: 'rgb(255 255 255 / 0.6)', lineHeight: 1.6, margin: '0 0 20px' }}>
+              Cổng thông tin bất động sản Trà Vinh, kết nối khách hàng với môi giới chuyên nghiệp.
             </p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              {socialLinks.map(([icon, label]) => (
-                <a key={label} className="flex h-9 w-9 items-center justify-center border border-white/25 text-white/85 hover:text-white" href="#/" aria-label={label}>
-                  <MaterialIcon>{icon}</MaterialIcon>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {[
+                ['Youtube', 'Youtube'], ['Facebook', 'Facebook'],
+                ['Twitter', 'Twitter'], ['Instagram', 'Instagram'], ['Linkedin', 'Linkedin'],
+              ].map(([icon, label]) => (
+                <a
+                  key={label}
+                  href="#/"
+                  aria-label={label}
+                  style={{
+                    width: 36, height: 36, borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--color-dark-border)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'rgb(255 255 255 / 0.6)', transition: 'color 160ms, border-color 160ms',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#fff'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = 'rgb(255 255 255 / 0.6)'; e.currentTarget.style.borderColor = 'var(--color-dark-border)'; }}
+                >
+                  <Icon name={icon} size={16} />
                 </a>
               ))}
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-white/20 pt-6 font-body-sm text-body-sm text-white/75 md:flex-row md:items-center md:justify-between">
-          <p>{BRAND_NAME} @ 2024. All rights reserved.</p>
-          <div className="flex flex-wrap gap-4">
-            <a href="#/">Trang chủ</a>
-            <a href="#/projects">Dự án</a>
-            <a href="#/brokers">Môi giới</a>
+        <div className="footer-bottom">
+          <p style={{ margin: 0 }}>{BRAND_NAME} © 2025. All rights reserved.</p>
+          <div style={{ display: 'flex', gap: 20 }}>
+            {[['Trang chủ', '#/'], ['Dự án', '#/projects'], ['Môi giới', '#/brokers']].map(([label, href]) => (
+              <a key={label} className="footer-link" href={href} style={{ padding: 0 }}>{label}</a>
+            ))}
           </div>
         </div>
       </div>
@@ -282,31 +274,27 @@ export function Footer() {
 
 export default function MainLayout({ children, session, onLogout }) {
   return (
-    <div className="flex min-h-screen flex-col bg-surface pb-16 font-body-sm text-on-surface md:pb-0">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--color-bg)' }}>
       <Header session={session} onLogout={onLogout} />
-      {children}
+      <main style={{ flex: 1 }}>{children}</main>
       <Footer />
-      <nav className="mobile-bottom-nav" aria-label="Điều hướng mobile">
-        <a href="#/">
-          <MaterialIcon>home</MaterialIcon>
-          Home
-        </a>
-        <a href="#/search">
-          <MaterialIcon>search</MaterialIcon>
-          Tìm kiếm
-        </a>
-        <a href="#/projects">
-          <MaterialIcon>apartment</MaterialIcon>
-          Dự án
-        </a>
-        <a href="#/brokers">
-          <MaterialIcon>badge</MaterialIcon>
-          Môi giới
-        </a>
-        <a href={session?.role === 'BROKER' ? '#/broker/properties' : session ? '#/profile' : '#/login'}>
-          <MaterialIcon>{session?.role === 'BROKER' ? 'add' : 'person'}</MaterialIcon>
-          {session?.role === 'BROKER' ? 'Đăng tin' : 'Tài khoản'}
-        </a>
+      <nav className="mobile-nav" aria-label="Điều hướng mobile">
+        {[
+          { href: '#/', icon: 'Home', label: 'Home' },
+          { href: '#/search', icon: 'Search', label: 'Tìm kiếm' },
+          { href: '#/projects', icon: 'Building', label: 'Dự án' },
+          { href: '#/brokers', icon: 'IdCard', label: 'Môi giới' },
+          {
+            href: session?.role === 'BROKER' ? '#/broker/properties' : session ? '#/profile' : '#/login',
+            icon: session?.role === 'BROKER' ? 'Plus' : 'User',
+            label: session?.role === 'BROKER' ? 'Đăng tin' : 'Tài khoản',
+          },
+        ].map(item => (
+          <a key={item.href} href={item.href} className="mobile-nav-item">
+            <Icon name={item.icon} size={20} />
+            <span>{item.label}</span>
+          </a>
+        ))}
       </nav>
     </div>
   );
