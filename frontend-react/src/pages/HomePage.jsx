@@ -81,7 +81,7 @@ function HeroSearchBar() {
   }
   return (
     <form className="hero-search" onSubmit={handleSearch}>
-      <Icon name="Search" size={18} style={{ margin: '0 0 0 20px', color: 'var(--color-text-muted)', flexShrink: 0 }} />
+      <Icon name="Search" size={18} className="hero-search-icon" />
       <input
         className="hero-search-input"
         placeholder="Tìm theo khu vực, giá, loại bất động sản..."
@@ -172,7 +172,7 @@ export default function HomePage({ session, onLogout }) {
       {/* 4. SERVICES */}
       <section className="section">
         <div className="container">
-          <div style={{ textAlign: 'center', maxWidth: 560, margin: '0 auto 48px' }}>
+          <div className="section-center">
             <h2 className="text-h2" style={{ marginBottom: 12 }}>Tại sao chọn Công Tín Land?</h2>
             <p style={{ color: 'var(--color-text-secondary)', fontSize: 16 }}>
               Nền tảng bất động sản địa phương với đội ngũ môi giới được kiểm duyệt chặt chẽ.
@@ -184,8 +184,8 @@ export default function HomePage({ session, onLogout }) {
                 <div className="feature-icon">
                   <Icon name={svc.icon} size={22} />
                 </div>
-                <h3 className="text-h3" style={{ marginBottom: 8 }}>{svc.title}</h3>
-                <p style={{ color: 'var(--color-text-secondary)', fontSize: 14, lineHeight: 1.6, margin: 0 }}>
+                <h3 className="text-h3 feature-card-title">{svc.title}</h3>
+                <p className="feature-card-desc">
                   {svc.desc}
                 </p>
               </div>
@@ -210,13 +210,13 @@ export default function HomePage({ session, onLogout }) {
             {MOCK_BROKERS.map(broker => (
               <div key={broker.name} className="broker-card">
                 <div className="broker-avatar-lg">{broker.initial}</div>
-                <p style={{ fontWeight: 600, fontSize: 15, margin: '0 0 4px', color: 'var(--color-text-primary)' }}>
+                <p className="broker-card-name">
                   {broker.name}
                 </p>
-                <p style={{ fontSize: 13, color: 'var(--color-text-muted)', margin: '0 0 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                <p className="broker-card-area">
                   <Icon name="MapPin" size={12} /> {broker.area}
                 </p>
-                <p style={{ fontSize: 12, color: 'var(--color-accent)', fontWeight: 600 }}>
+                <p className="broker-card-count">
                   {broker.listings} tin đăng
                 </p>
               </div>
@@ -228,7 +228,7 @@ export default function HomePage({ session, onLogout }) {
       {/* 6. TESTIMONIALS */}
       <section className="section">
         <div className="container">
-          <div style={{ textAlign: 'center', maxWidth: 480, margin: '0 auto 48px' }}>
+          <div className="section-center">
             <h2 className="text-h2" style={{ marginBottom: 12 }}>Khách hàng nói gì?</h2>
             <p style={{ color: 'var(--color-text-secondary)', fontSize: 16 }}>
               Hàng nghìn giao dịch thành công trong 5 năm qua.
@@ -243,8 +243,8 @@ export default function HomePage({ session, onLogout }) {
                     {t.name.charAt(t.name.indexOf(' ') + 1)}
                   </div>
                   <div>
-                    <p style={{ margin: 0, fontWeight: 600, fontSize: 14 }}>{t.name}</p>
-                    <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-muted)' }}>{t.role}</p>
+                    <p className="testimonial-author-name">{t.name}</p>
+                    <p className="testimonial-author-role">{t.role}</p>
                   </div>
                 </div>
               </div>
@@ -256,14 +256,14 @@ export default function HomePage({ session, onLogout }) {
       {/* 7. DARK CTA */}
       <section className="section-dark">
         <div className="container">
-          <div style={{ textAlign: 'center', maxWidth: 560, margin: '0 auto' }}>
-            <h2 className="text-h2" style={{ color: '#fff', marginBottom: 16 }}>
+          <div className="section-center">
+            <h2 className="text-h2 cta-dark-title">
               Bắt đầu tìm bất động sản ngay hôm nay
             </h2>
-            <p style={{ color: 'rgb(255 255 255 / 0.65)', fontSize: 16, marginBottom: 32 }}>
+            <p className="cta-dark-subtitle">
               Đăng ký miễn phí để lưu tin yêu thích và nhận thông báo khi có bất động sản mới.
             </p>
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <div className="cta-dark-buttons">
               <Button as="a" href="#/register" variant="primary" size="lg">
                 Đăng ký miễn phí
               </Button>
