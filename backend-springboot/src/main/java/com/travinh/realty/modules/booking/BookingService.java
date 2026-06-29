@@ -61,4 +61,20 @@ public class BookingService {
         appointment.changeStatus(status);
         return ViewingResponse.of(appointment);
     }
+
+    /**
+     * Broker-scoped status update: only the broker who owns the property may change the status.
+     * Throws 403 FORBIDDEN if the appointment's property does not belong to the given broker.
+     */
+    @Transactional
+    public ViewingResponse updateStatusForBrokerOwner(UUID appointmentId, AppointmentStatus status, UUID brokerId) {
+        ViewingAppointment appointment = appointments.findById(appointmentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found"));
+        List<UUID> brokerPropertyIds = properties.findIdsByBrokerId(brokerId);
+        if (!brokerPropertyIds.contains(appointment.getPropertyId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your appointment");
+        }
+        appointment.changeStatus(status);
+        return ViewingResponse.of(appointment);
+    }
 }

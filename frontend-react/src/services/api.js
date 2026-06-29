@@ -204,6 +204,11 @@ export async function updateViewingStatus(token, viewingId, status) {
   return request(`/admin/viewings/${viewingId}/status`, { method: 'PATCH', token, body: { status } });
 }
 
+export async function updateBrokerViewingStatus(token, viewingId, status) {
+  if (USE_MOCK_API) return delay({ id: viewingId, status }, 120);
+  return request(`/viewings/mine/${viewingId}/status`, { method: 'PATCH', token, body: { status } });
+}
+
 function readMockViewings() {
   try {
     const items = JSON.parse(localStorage.getItem('travinh-mock-viewings') || '[]');

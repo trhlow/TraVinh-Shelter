@@ -144,6 +144,37 @@ class BookingServiceTest {
                 .hasMessageContaining("404");
     }
 
+    @Test
+    void updateStatusForBrokerOwner_ownerSucceedsAndStatusPersists() {
+        User broker = broker();
+        UUID brokerId = broker.getId();
+        UUID propertyId = UUID.randomUUID();
+        ViewingAppointment appointment = appointment(propertyId, AppointmentStatus.PENDING);
+
+        when(appointments.findById(appointment.getId())).thenReturn(Optional.of(appointment));
+        when(properties.findIdsByBrokerId(brokerId)).thenReturn(List.of(propertyId));
+
+        ViewingResponse response = service.updateStatusForBrokerOwner(appointment.getId(), AppointmentStatus.CONFIRMED, brokerId);
+
+        assertThat(appointment.getStatus()).isEqualTo(AppointmentStatus.CONFIRMED);
+        assertThat(response.status()).isEqualTo(AppointmentStatus.CONFIRMED);
+    }
+
+    @Test
+    void updateStatusForBrokerOwner_nonOwnerGetsForbidden() {
+        UUID propertyId = UUID.randomUUID();
+        UUID otherBrokerId = UUID.randomUUID();
+        ViewingAppointment appointment = appointment(propertyId, AppointmentStatus.PENDING);
+
+        when(appointments.findById(appointment.getId())).thenReturn(Optional.of(appointment));
+        // otherBroker owns no properties containing this appointment's property
+        when(properties.findIdsByBrokerId(otherBrokerId)).thenReturn(List.of(UUID.randomUUID()));
+
+        assertThatThrownBy(() -> service.updateStatusForBrokerOwner(appointment.getId(), AppointmentStatus.CONFIRMED, otherBrokerId))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("403");
+    }
+
     private CreateViewingRequest request() {
         return new CreateViewingRequest(null, "Nguyễn Văn A", "0900000000", null, null, null, null, null, null);
     }

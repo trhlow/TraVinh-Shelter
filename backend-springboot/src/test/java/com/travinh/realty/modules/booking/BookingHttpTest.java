@@ -111,6 +111,39 @@ class BookingHttpTest {
     }
 
     @Test
+    void brokerCanUpdateStatusOfOwnViewing() throws Exception {
+        UUID appointmentId = UUID.randomUUID();
+        User broker = user("broker@example.com", UserRole.BROKER);
+        authenticate(broker);
+        when(bookingService.updateStatusForBrokerOwner(eq(appointmentId), eq(AppointmentStatus.CONFIRMED), any()))
+                .thenReturn(response(UUID.randomUUID()));
+
+        // unauthenticated → 401
+        mockMvc.perform(patch("/viewings/mine/{id}/status", appointmentId)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"CONFIRMED\"}"))
+                .andExpect(status().isUnauthorized());
+
+        // broker (owner) → 200
+        mockMvc.perform(patch("/viewings/mine/{id}/status", appointmentId)
+                        .header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"CONFIRMED\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("PENDING"));
+    }
+
+    @Test
+    void nonBrokerCannotUpdateBrokerViewingStatus() throws Exception {
+        UUID appointmentId = UUID.randomUUID();
+        User regularUser = user("user@example.com", UserRole.USER);
+        authenticate(regularUser);
+
+        mockMvc.perform(patch("/viewings/mine/{id}/status", appointmentId)
+                        .header("Authorization", bearer(regularUser))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"CONFIRMED\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void repeatedViewingSubmissionsAreRateLimited() throws Exception {
         UUID propertyId = UUID.randomUUID();
         when(bookingService.create(any(), any())).thenReturn(response(propertyId));

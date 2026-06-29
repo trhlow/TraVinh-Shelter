@@ -17,6 +17,7 @@ import {
   updateProperty,
   updatePropertyStatus,
   fetchBrokerViewings,
+  updateBrokerViewingStatus,
 } from '../services/api.js';
 
 const CHART_COLORS = {
@@ -273,6 +274,18 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       await reloadDashboard();
     } catch (exception) {
       setError(exception.message || 'Không cập nhật được trạng thái.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function changeViewingStatus(id, status) {
+    setSaving(true);
+    try {
+      await updateBrokerViewingStatus(session.token, id, status);
+      setViewings((vs) => vs.map((v) => v.id === id ? { ...v, status } : v));
+    } catch {
+      setError('Không thể cập nhật trạng thái lịch hẹn.');
     } finally {
       setSaving(false);
     }
@@ -561,7 +574,12 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
 
           {section === 'viewings' && (
             <DashboardPanel title="Lịch hẹn xem" count={viewingsLoading ? 'Đang tải' : `${viewings.length} yêu cầu`}>
-              <ViewingsPanel viewings={viewings} loading={viewingsLoading} />
+              <ViewingsPanel
+                viewings={viewings}
+                loading={viewingsLoading}
+                onStatusChange={changeViewingStatus}
+                saving={saving}
+              />
             </DashboardPanel>
           )}
         </div>

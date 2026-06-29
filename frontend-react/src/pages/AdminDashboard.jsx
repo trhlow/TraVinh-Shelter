@@ -14,7 +14,6 @@ import {
   updateAdminPropertyStatus,
   updateUserStatus,
   fetchAdminViewings,
-  updateViewingStatus,
 } from '../services/api.js';
 
 const CHART_COLORS = {
@@ -68,18 +67,6 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
       .finally(() => { if (alive) setViewingsLoading(false); });
     return () => { alive = false; };
   }, [session, section]);
-
-  async function changeViewingStatus(viewingId, status) {
-    setSaving(true);
-    try {
-      await updateViewingStatus(session.token, viewingId, status);
-      setViewings((current) => current.map((item) => (item.id === viewingId ? { ...item, status } : item)));
-    } catch (exception) {
-      setError(exception.message || 'Không cập nhật được trạng thái lịch hẹn.');
-    } finally {
-      setSaving(false);
-    }
-  }
 
   useEffect(() => {
     if (!session?.token || session.role !== 'ADMIN') return;
@@ -390,12 +377,7 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
 
           {section === 'viewings' && (
             <DashboardPanel title="Lịch hẹn xem" count={viewingsLoading ? 'Đang tải' : `${viewings.length} yêu cầu`}>
-              <ViewingsPanel
-                viewings={viewings}
-                loading={viewingsLoading}
-                onStatusChange={changeViewingStatus}
-                saving={saving}
-              />
+              <ViewingsPanel viewings={viewings} loading={viewingsLoading} />
             </DashboardPanel>
           )}
         </div>
