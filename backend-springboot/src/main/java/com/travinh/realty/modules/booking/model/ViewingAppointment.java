@@ -74,7 +74,7 @@ public class ViewingAppointment {
         appointment.occupants = request.occupants();
         appointment.vehicles = request.vehicles();
         appointment.pets = request.pets();
-        appointment.requestedAt = parseInstant(request.requestedAt());
+        appointment.requestedAt = request.requestedAt();
         appointment.status = AppointmentStatus.PENDING;
         return appointment;
     }
@@ -85,11 +85,6 @@ public class ViewingAppointment {
 
     private static String trimToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
-    }
-
-    private static Instant parseInstant(String value) {
-        String normalized = trimToNull(value);
-        return normalized == null ? null : Instant.parse(normalized);
     }
 
     public UUID getId() { return id; }

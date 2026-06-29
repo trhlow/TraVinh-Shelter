@@ -2,6 +2,7 @@ package com.travinh.realty.modules.booking.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.time.Instant;
 
 public record CreateViewingRequest(
         @Size(max = 100) String roomLabel,
@@ -12,6 +13,6 @@ public record CreateViewingRequest(
         Integer occupants,
         Integer vehicles,
         Boolean pets,
-        String requestedAt
+        Instant requestedAt
 ) {
 }

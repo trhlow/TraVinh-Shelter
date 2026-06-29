@@ -29,7 +29,7 @@ public class BookingService {
     public ViewingResponse create(UUID propertyId, CreateViewingRequest request) {
         Property property = properties.findById(propertyId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
-        if (property.getStatus() == PropertyStatus.HIDDEN) {
+        if (property.getStatus() != PropertyStatus.AVAILABLE) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found");
         }
         ViewingAppointment appointment = ViewingAppointment.create(propertyId, request);

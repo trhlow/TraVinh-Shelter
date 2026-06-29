@@ -36,8 +36,11 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        Integer limit = isRateLimitedPath(request);
-        if (limit == null || allow(request, limit)) {
+        String group = rateLimitGroup(requestPath(request));
+        Integer limit = group == null || !HttpMethod.POST.matches(request.getMethod())
+                ? null
+                : RATE_LIMITED_GROUPS.get(group);
+        if (limit == null || allow(request, group, limit)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -51,13 +54,6 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
                 Map.of()));
     }
 
-    private Integer isRateLimitedPath(HttpServletRequest request) {
-        if (!HttpMethod.POST.matches(request.getMethod())) {
-            return null;
-        }
-        return RATE_LIMITED_GROUPS.get(rateLimitGroup(requestPath(request)));
-    }
-
     private String rateLimitGroup(String path) {
         if ("/auth/login".equals(path)) {
             return "/auth/login";
@@ -68,8 +64,8 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         return null;
     }
 
-    private boolean allow(HttpServletRequest request, int limit) {
-        String key = clientIp(request) + ":" + requestPath(request);
+    private boolean allow(HttpServletRequest request, String group, int limit) {
+        String key = clientIp(request) + ":" + group;
         Instant now = Instant.now();
         AttemptWindow window = attempts.compute(key, (_ignored, existing) -> {
             if (existing == null || existing.expiresAt().isBefore(now)) {

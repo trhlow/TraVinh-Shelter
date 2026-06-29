@@ -81,6 +81,16 @@ class BookingServiceTest {
     }
 
     @Test
+    void createOnSoldPropertyReturnsNotFound() {
+        Property sold = property(broker(), PropertyStatus.SOLD);
+        when(properties.findById(sold.getId())).thenReturn(Optional.of(sold));
+
+        assertThatThrownBy(() -> service.create(sold.getId(), request()))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("404");
+    }
+
+    @Test
     void listForBrokerReturnsAppointmentsForBrokerProperties() {
         UUID brokerId = UUID.randomUUID();
         UUID propertyId = UUID.randomUUID();
