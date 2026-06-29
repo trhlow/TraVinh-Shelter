@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import MaterialIcon from './MaterialIcon.jsx';
+import Icon from './ui/Icon.jsx';
 
 export default function ImageGallery({ images, title = 'Ảnh bài đăng', fallbackImage }) {
   const uniqueImages = useMemo(() => {
@@ -39,55 +39,60 @@ export default function ImageGallery({ images, title = 'Ảnh bài đăng', fall
     setSelectedImageIndex((current) => (current + 1) % galleryImages.length);
   }
 
+  if (galleryImages.length === 0) {
+    return <div className="gallery-placeholder">Không có ảnh</div>;
+  }
+
   return (
-    <div className="flex flex-col gap-stack-sm">
-      <div className="group relative h-[300px] w-full overflow-hidden rounded-xl shadow-sm md:h-[450px]">
+    <div className="gallery">
+      <div className="gallery-main">
         <img
           alt={title}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className="gallery-main-img"
           data-alt="A bright, high-quality wide photograph of a clean real estate listing in Tra Vinh."
           id="main-gallery-image"
+          loading="eager"
           src={mainImage}
         />
         {hasMultipleImages && (
           <>
             <button
               aria-label="Xem ảnh trước"
-              className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded bg-surface/90 text-on-surface shadow-sm backdrop-blur transition-colors hover:bg-surface-container-low"
+              className="gallery-nav gallery-nav-prev"
               onClick={previousImage}
               type="button"
             >
-              <MaterialIcon>chevron_left</MaterialIcon>
+              <Icon name="ChevronLeft" size={20} />
             </button>
             <button
               aria-label="Xem ảnh tiếp theo"
-              className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded bg-surface/90 text-on-surface shadow-sm backdrop-blur transition-colors hover:bg-surface-container-low"
+              className="gallery-nav gallery-nav-next"
               onClick={nextImage}
               type="button"
             >
-              <MaterialIcon>chevron_right</MaterialIcon>
+              <Icon name="ChevronRight" size={20} />
             </button>
           </>
         )}
-        <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded bg-surface/90 px-3 py-1 font-label-bold text-label-bold text-on-surface shadow-sm backdrop-blur border border-outline-variant">
-          <MaterialIcon className="text-[16px]">photo_library</MaterialIcon>
-          {galleryImages.length > 0 ? `${selectedImageIndex + 1}/${galleryImages.length}` : '0/0'}
+        <div className="gallery-counter">
+          <Icon name="Image" size={15} />
+          {`${selectedImageIndex + 1} / ${galleryImages.length}`}
         </div>
       </div>
-      {galleryImages.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar" aria-label="Danh sách ảnh bài đăng">
+      {hasMultipleImages && (
+        <div aria-label="Danh sách ảnh bài đăng" className="gallery-thumbs">
           {galleryImages.map((image, index) => (
             <button
               aria-label={`Xem ảnh ${index + 1}`}
-              className={`h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 transition-all ${selectedImageIndex === index ? 'border-primary opacity-100' : 'border-transparent opacity-70 hover:border-outline-variant hover:opacity-100'}`}
+              className={`gallery-thumb${selectedImageIndex === index ? ' is-active' : ''}`}
               key={image}
               onClick={() => setSelectedImageIndex(index)}
               type="button"
             >
               <img
                 alt={`Ảnh thu nhỏ ${index + 1}`}
-                className="h-full w-full object-cover"
                 data-alt="Thumbnail showing real estate listing details."
+                loading="lazy"
                 src={image}
               />
             </button>
@@ -97,4 +102,3 @@ export default function ImageGallery({ images, title = 'Ảnh bài đăng', fall
     </div>
   );
 }
-
