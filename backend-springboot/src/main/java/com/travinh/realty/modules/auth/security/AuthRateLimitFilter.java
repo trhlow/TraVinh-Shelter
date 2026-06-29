@@ -47,7 +47,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     private boolean isProtectedAuthWrite(HttpServletRequest request) {
         String path = requestPath(request);
         return HttpMethod.POST.matches(request.getMethod())
-                && ("/auth/login".equals(path) || "/auth/register".equals(path));
+                && "/auth/login".equals(path);
     }
 
     private boolean allow(HttpServletRequest request) {

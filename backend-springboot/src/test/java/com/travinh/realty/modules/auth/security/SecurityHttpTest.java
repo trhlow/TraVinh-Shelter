@@ -6,10 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
 
 import com.travinh.realty.common.config.JwtProperties;
 import com.travinh.realty.common.config.SecurityConfig;
@@ -31,11 +28,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.dao.DataIntegrityViolationException;
 
 @WebMvcTest(controllers = {AuthController.class, PropertyController.class})
 @Import({SecurityConfig.class, JwtService.class, JwtAuthenticationFilter.class,
@@ -129,31 +123,6 @@ class SecurityHttpTest {
                 .andExpect(status().isNoContent());
 
         verify(authService).logout(eq(authorization));
-    }
-
-    @Test
-    void duplicateRegistrationReturnsConflict() throws Exception {
-        when(authService.register(any())).thenThrow(new ResponseStatusException(HttpStatus.CONFLICT, "Email or username is already registered"));
-
-        mockMvc.perform(post("/auth/register").contentType("application/json").content("""
-                {"username":"minh.nguyen","email":"minh@example.com","password":"correct-horse-battery-staple","fullName":"Minh Nguyen"}
-                """))
-                .andExpect(status().isConflict());
-    }
-
-    @Test
-    void unrelatedIntegrityErrorIsNotReportedAsDuplicateAccount() throws Exception {
-        when(authService.register(any())).thenThrow(new DataIntegrityViolationException("foreign key failure"));
-
-        mockMvc.perform(post("/auth/register").contentType("application/json").content("""
-                {"username":"minh.nguyen","email":"minh@example.com","password":"correct-horse-battery-staple","fullName":"Minh Nguyen"}
-                """))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.status").value(500))
-                .andExpect(jsonPath("$.error").value("Internal Server Error"))
-                .andExpect(jsonPath("$.message").value("An unexpected error occurred"))
-                .andExpect(jsonPath("$.fieldErrors").isMap())
-                .andExpect(content().string(not(containsString("Resource already exists"))));
     }
 
     private User user(String email, UserStatus status) {

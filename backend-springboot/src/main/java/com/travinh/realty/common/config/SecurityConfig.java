@@ -49,7 +49,7 @@ public class SecurityConfig {
                                 writeApiError(response, objectMapper, HttpStatus.UNAUTHORIZED, "Authentication is required"))
                         .accessDeniedHandler((request, response, accessDeniedException) ->
                                 writeApiError(response, objectMapper, HttpStatus.FORBIDDEN, "Access is denied")))
-                .authorizeHttpRequests(authorize -> authorize.requestMatchers("/auth/register", "/auth/login", "/error").permitAll()
+                .authorizeHttpRequests(authorize -> authorize.requestMatchers("/auth/login", "/error").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/properties/**", "/categories/**", "/brokers/**", "/media/**").permitAll()
