@@ -9,16 +9,22 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 public class AuthRateLimitFilter extends OncePerRequestFilter {
     private static final Duration WINDOW = Duration.ofMinutes(1);
-    private static final int MAX_ATTEMPTS_PER_WINDOW = 10;
+    private static final int DEFAULT_LIMIT = 10;
+    private static final Pattern VIEWING_SUBMIT_PATH = Pattern.compile("^/properties/[^/]+/viewings$");
+
+    // path-group -> requests allowed per WINDOW per IP; tunable independently per group.
+    private static final Map<String, Integer> RATE_LIMITED_GROUPS = rateLimitedGroups();
 
     private final ObjectMapper objectMapper;
     private final Map<String, AttemptWindow> attempts = new ConcurrentHashMap<>();
@@ -30,7 +36,8 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        if (!isProtectedAuthWrite(request) || allow(request)) {
+        Integer limit = isRateLimitedPath(request);
+        if (limit == null || allow(request, limit)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -40,17 +47,28 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         objectMapper.writeValue(response.getOutputStream(), new ApiError(Instant.now(),
                 HttpStatus.TOO_MANY_REQUESTS.value(),
                 HttpStatus.TOO_MANY_REQUESTS.getReasonPhrase(),
-                "Too many authentication attempts. Please retry later.",
+                "Too many requests. Please retry later.",
                 Map.of()));
     }
 
-    private boolean isProtectedAuthWrite(HttpServletRequest request) {
-        String path = requestPath(request);
-        return HttpMethod.POST.matches(request.getMethod())
-                && "/auth/login".equals(path);
+    private Integer isRateLimitedPath(HttpServletRequest request) {
+        if (!HttpMethod.POST.matches(request.getMethod())) {
+            return null;
+        }
+        return RATE_LIMITED_GROUPS.get(rateLimitGroup(requestPath(request)));
     }
 
-    private boolean allow(HttpServletRequest request) {
+    private String rateLimitGroup(String path) {
+        if ("/auth/login".equals(path)) {
+            return "/auth/login";
+        }
+        if (VIEWING_SUBMIT_PATH.matcher(path).matches()) {
+            return "/properties/*/viewings";
+        }
+        return null;
+    }
+
+    private boolean allow(HttpServletRequest request, int limit) {
         String key = clientIp(request) + ":" + requestPath(request);
         Instant now = Instant.now();
         AttemptWindow window = attempts.compute(key, (_ignored, existing) -> {
@@ -60,7 +78,14 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             existing.count().incrementAndGet();
             return existing;
         });
-        return window.count().get() <= MAX_ATTEMPTS_PER_WINDOW;
+        return window.count().get() <= limit;
+    }
+
+    private static Map<String, Integer> rateLimitedGroups() {
+        Map<String, Integer> groups = new LinkedHashMap<>();
+        groups.put("/auth/login", DEFAULT_LIMIT);
+        groups.put("/properties/*/viewings", DEFAULT_LIMIT);
+        return groups;
     }
 
     private String clientIp(HttpServletRequest request) {
