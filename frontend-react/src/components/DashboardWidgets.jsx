@@ -1,48 +1,94 @@
-import MaterialIcon from './MaterialIcon.jsx';
+import Icon from './ui/Icon.jsx';
 
-const toneClasses = {
-  navy: 'bg-primary-fixed text-primary',
-  orange: 'bg-secondary-fixed text-action-orange',
-  green: 'bg-success-green/10 text-success-green',
-  red: 'bg-error-container text-error',
-  muted: 'bg-surface-container text-on-surface-variant',
+// tone → icon chip CSS class
+const CHIP_CLASS = {
+  navy:   'kpi-chip-navy',
+  orange: 'kpi-chip-orange',
+  green:  'kpi-chip-green',
+  red:    'kpi-chip-red',
+  muted:  'kpi-chip-muted',
 };
 
-export function StatCard({ icon, title, value, meta, tone = 'navy', href }) {
+// badge tone → badge CSS class (reuses .badge-* from styles.css)
+function badgeClass(tone) {
+  return {
+    success: 'badge badge-success',
+    warning: 'badge badge-warning',
+    danger:  'badge badge-error',
+    error:   'badge badge-error',
+    info:    'badge badge-brand',
+    muted:   'badge badge-neutral',
+    neutral: 'badge badge-neutral',
+  }[tone] || 'badge badge-neutral';
+}
+
+function isTabActive(href, activePath) {
+  return href.replace('#', '') === activePath;
+}
+
+/**
+ * StatCard — KPI tile.
+ *
+ * Props (all existing props preserved):
+ *   icon   {string}   — Icon name (lucide-react key in ICON_MAP)
+ *   title  {string}   — label above the value
+ *   value  {string|number}
+ *   meta   {string}   — optional sub-text below value
+ *   tone   {'navy'|'orange'|'green'|'red'|'muted'}
+ *   href   {string}   — if provided, renders as <a>
+ *   trend  {{ value: string, direction: 'up'|'down' }}  — optional trend pill
+ */
+export function StatCard({ icon, title, value, meta, tone = 'navy', href, trend }) {
+  const chipClass = CHIP_CLASS[tone] || CHIP_CLASS.navy;
+
   const content = (
     <>
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="font-body-sm text-body-sm text-on-surface-variant">{title}</p>
-          <p className="mt-2 font-headline-lg text-headline-lg text-on-surface">{value}</p>
+      <div className="stat-card-top">
+        <div className="stat-card-body">
+          <p className="stat-card-label">{title}</p>
+          <p className="stat-card-value">{value}</p>
+          {trend && (
+            <span className={`kpi-trend ${trend.direction === 'up' ? 'kpi-trend-up' : 'kpi-trend-down'}`}>
+              <Icon
+                name={trend.direction === 'up' ? 'TrendingUp' : 'TrendingDown'}
+                size={12}
+                strokeWidth={2.5}
+              />
+              {trend.value}
+            </span>
+          )}
         </div>
-        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${toneClasses[tone] || toneClasses.navy}`}>
-          <MaterialIcon filled>{icon}</MaterialIcon>
+        <span className={`kpi-icon-chip ${chipClass}`}>
+          <Icon name={icon} size={22} strokeWidth={1.75} />
         </span>
       </div>
-      {meta && <p className="mt-4 font-body-sm text-body-sm text-on-surface-variant">{meta}</p>}
+      {meta && <p className="stat-card-meta">{meta}</p>}
     </>
   );
 
-  const className = 'ui-card block p-5 transition-colors hover:bg-surface-container-low';
   if (href) {
     return (
-      <a className={className} href={href}>
+      <a className="stat-card-link" href={href}>
         {content}
       </a>
     );
   }
-  return <article className={className}>{content}</article>;
+  return <article className="stat-card-article">{content}</article>;
 }
 
+/**
+ * DashboardPanel — generic content panel with optional header.
+ *
+ * Props preserved: title, count, action, children, className
+ */
 export function DashboardPanel({ title, count, action, children, className = '' }) {
   return (
-    <section className={`ui-panel ${className}`.trim()}>
+    <section className={`widget-panel ${className}`.trim()}>
       {(title || action || count !== undefined) && (
-        <div className="flex flex-col gap-3 border-b border-outline-variant px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="widget-panel-header">
           <div>
-            {title && <h2 className="font-headline-md text-headline-md text-on-surface">{title}</h2>}
-            {count !== undefined && <p className="font-body-sm text-body-sm text-on-surface-variant">{count}</p>}
+            {title && <h2 className="widget-panel-title">{title}</h2>}
+            {count !== undefined && <p className="widget-panel-count">{count}</p>}
           </div>
           {action}
         </div>
@@ -52,25 +98,45 @@ export function DashboardPanel({ title, count, action, children, className = '' 
   );
 }
 
+/**
+ * DashboardPageHeader — page-level heading with optional tabs and sync badge.
+ *
+ * Props preserved: title, subtitle, tabs, activePath, loading
+ */
 export function DashboardPageHeader({ title, subtitle, tabs = [], activePath, loading = false }) {
   return (
-    <header className="dashboard-page-header">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <header className="widget-page-header">
+      <div className="widget-page-header-row">
         <div>
           <h1 className="dashboard-page-title">{title}</h1>
-          {subtitle && <p className="mt-2 font-body-md text-body-md text-on-surface-variant">{subtitle}</p>}
+          {subtitle && (
+            <p style={{ marginTop: 8, fontSize: 15, color: 'var(--color-text-secondary)' }}>
+              {subtitle}
+            </p>
+          )}
         </div>
-        <div className="inline-flex w-fit items-center gap-2 border border-outline-variant bg-surface-container-lowest px-3 py-2 font-body-sm text-body-sm text-on-surface-variant">
-          <MaterialIcon className={`text-sm ${loading ? 'animate-spin' : ''}`}>{loading ? 'sync' : 'verified'}</MaterialIcon>
+        <div className="widget-sync-badge">
+          <Icon
+            name={loading ? 'Clock' : 'CheckCircle'}
+            size={14}
+            strokeWidth={2}
+            className={loading ? 'widget-spin' : ''}
+          />
           {loading ? 'Đang đồng bộ' : 'Dữ liệu API'}
         </div>
       </div>
       {tabs.length > 0 && (
         <nav className="dashboard-tabs" aria-label="Dashboard sections">
           {tabs.map((tab) => (
-            <a key={tab.href} className={`dashboard-tab ${isTabActive(tab.href, activePath) ? 'is-active' : ''}`} href={tab.href}>
+            <a
+              key={tab.href}
+              className={`dashboard-tab ${isTabActive(tab.href, activePath) ? 'is-active' : ''}`}
+              href={tab.href}
+            >
               {tab.label}
-              {tab.count !== undefined && <span className="dashboard-tab-count">{tab.count}</span>}
+              {tab.count !== undefined && (
+                <span className="dashboard-tab-count">{tab.count}</span>
+              )}
             </a>
           ))}
         </nav>
@@ -79,53 +145,56 @@ export function DashboardPageHeader({ title, subtitle, tabs = [], activePath, lo
   );
 }
 
+/**
+ * StatusBadge — inline badge, maps old tones to design-system badge variants.
+ *
+ * Props preserved: children, tone
+ */
 export function StatusBadge({ children, tone = 'muted' }) {
   return (
-    <span className={`ui-badge ${badgeTone(tone)}`}>
+    <span className={badgeClass(tone)}>
       {children}
     </span>
   );
 }
 
-export function StateBlock({ icon = 'inbox', title, description }) {
+/**
+ * StateBlock — empty / error state with centered icon + text.
+ *
+ * Props preserved: icon, title, description
+ * icon is now a lucide Icon name string (e.g. 'FileText', 'AlertCircle').
+ * Falls back to 'FileText' if name not recognized.
+ */
+export function StateBlock({ icon = 'FileText', title, description }) {
   return (
-    <div className="flex flex-col items-center justify-center px-5 py-10 text-center">
-      <span className="mb-3 flex h-12 w-12 items-center justify-center rounded bg-surface-container text-on-surface-variant">
-        <MaterialIcon>{icon}</MaterialIcon>
+    <div className="widget-state-block">
+      <span className="widget-state-icon">
+        <Icon name={icon} size={24} strokeWidth={1.75} />
       </span>
-      <p className="font-label-bold text-label-bold text-on-surface">{title}</p>
-      {description && <p className="mt-1 max-w-md font-body-sm text-body-sm text-on-surface-variant">{description}</p>}
+      <p className="widget-state-title">{title}</p>
+      {description && <p className="widget-state-desc">{description}</p>}
     </div>
   );
 }
 
+/**
+ * LoadingRows — skeleton loader for tabular content.
+ *
+ * Props preserved: rows
+ */
 export function LoadingRows({ rows = 4 }) {
   return (
-    <div className="divide-y divide-outline-variant">
+    <div>
       {Array.from({ length: rows }).map((_, index) => (
-        <div key={index} className="grid grid-cols-[56px_1fr_120px] items-center gap-4 px-5 py-4">
-          <div className="h-12 rounded bg-surface-container-low" />
-          <div className="space-y-2">
-            <div className="h-3 w-3/4 rounded bg-surface-container-low" />
-            <div className="h-3 w-1/2 rounded bg-surface-container-low" />
+        <div key={index} className="widget-loading-row">
+          <div className="widget-skeleton widget-skeleton-thumb" />
+          <div className="widget-skeleton-lines">
+            <div className="widget-skeleton widget-skeleton-line widget-skeleton-w-3-4" />
+            <div className="widget-skeleton widget-skeleton-line widget-skeleton-w-1-2" />
           </div>
-          <div className="h-8 rounded bg-surface-container-low" />
+          <div className="widget-skeleton widget-skeleton-action" />
         </div>
       ))}
     </div>
   );
-}
-
-function badgeTone(tone) {
-  return {
-    success: 'bg-success-green/10 text-success-green',
-    warning: 'bg-secondary-fixed text-on-secondary-container',
-    danger: 'bg-error-container text-on-error-container',
-    info: 'bg-primary-fixed text-trust-navy',
-    muted: 'bg-surface-container text-on-surface-variant',
-  }[tone] || 'bg-surface-container text-on-surface-variant';
-}
-
-function isTabActive(href, activePath) {
-  return href.replace('#', '') === activePath;
 }

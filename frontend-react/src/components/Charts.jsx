@@ -1,4 +1,32 @@
-const KIT_COLORS = ['#697077', '#A2A9B0', '#C1C7CD', '#0F62FE', '#001D6C', '#DDE1E6'];
+// Mirrors design tokens; SVG fill/stroke require literal color values.
+const CHART_PALETTE = ['#16A34A', '#0A2540', '#D97706', '#0EA5E9', '#8B5CF6', '#94A3B8'];
+const TRACK_COLOR = '#E2E8F0'; // = --color-border
+
+function withColors(data) {
+  return data.map((item, index) => ({
+    ...item,
+    color: item.color || CHART_PALETTE[index % CHART_PALETTE.length],
+  }));
+}
+
+function Legend({ data, total }) {
+  return (
+    <div className="chart-legend">
+      {data.map((item) => {
+        const percent = total > 0 ? Math.round((item.value / total) * 100) : 0;
+        return (
+          <div className="chart-legend-row" key={item.label}>
+            <span className="chart-legend-label">
+              <span className="chart-legend-dot" style={{ backgroundColor: item.color }} />
+              {item.label}
+            </span>
+            <span className="chart-legend-pct">{percent}%</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export function DonutChart({ title, data, centerLabel }) {
   const normalized = withColors(data);
@@ -7,21 +35,28 @@ export function DonutChart({ title, data, centerLabel }) {
   let offset = 25;
 
   return (
-    <section className="ui-panel p-5">
-      <h2 className="font-headline-md text-headline-md text-on-surface">{title}</h2>
-      <div className="mt-5 flex flex-col items-center gap-5 sm:flex-row">
-        <div className="relative h-48 w-48 shrink-0">
-          <svg className="h-full w-full -rotate-90" viewBox="0 0 42 42" aria-hidden="true">
-            <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="rgb(var(--twc-surface-container))" strokeWidth="5" />
+    <section className="chart-panel">
+      <h2 className="chart-title">{title}</h2>
+      <div className="chart-donut-wrap">
+        <div className="chart-donut-ring">
+          <svg className="chart-donut-svg" viewBox="0 0 42 42" aria-hidden="true">
+            <circle
+              cx="21"
+              cy="21"
+              r="15.915"
+              fill="transparent"
+              stroke={TRACK_COLOR}
+              strokeWidth="5"
+            />
             {normalized.map((item) => {
               const dash = (item.value / total) * 100;
               const circle = (
                 <circle
+                  key={item.label}
                   cx="21"
                   cy="21"
-                  fill="transparent"
-                  key={item.label}
                   r="15.915"
+                  fill="transparent"
                   stroke={item.color}
                   strokeDasharray={`${dash} ${100 - dash}`}
                   strokeDashoffset={offset}
@@ -33,9 +68,9 @@ export function DonutChart({ title, data, centerLabel }) {
               return circle;
             })}
           </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="font-headline-lg text-headline-lg text-on-surface">{totalValue}</span>
-            <span className="font-body-sm text-body-sm text-on-surface-variant">{centerLabel}</span>
+          <div className="chart-donut-center">
+            <span className="chart-donut-total">{totalValue}</span>
+            <span className="chart-donut-label">{centerLabel}</span>
           </div>
         </div>
         <Legend data={normalized} total={total} />
@@ -47,29 +82,42 @@ export function DonutChart({ title, data, centerLabel }) {
 export function BarChart({ title, data }) {
   const normalized = withColors(data);
   const max = Math.max(...normalized.map((item) => item.value), 1);
+
   return (
-    <section className="ui-panel p-5">
-      <h2 className="font-headline-md text-headline-md text-on-surface">{title}</h2>
-      <div className="mt-5 grid grid-cols-[52px_1fr] gap-3">
-        <div className="flex h-64 flex-col justify-between pb-7 text-right font-body-sm text-body-sm text-on-surface-variant">
+    <section className="chart-panel">
+      <h2 className="chart-title">{title}</h2>
+      <div className="chart-bar-grid">
+        <div className="chart-bar-yaxis">
           {[100, 75, 50, 25, 0].map((tick) => (
             <span key={tick}>{Math.round((max * tick) / 100)}</span>
           ))}
         </div>
-        <div className="relative h-64 border-b border-outline-variant">
-          <div className="absolute inset-0 grid grid-rows-4">
+        <div className="chart-bar-area">
+          <div className="chart-bar-gridlines">
             {Array.from({ length: 4 }).map((_, index) => (
-              <span className="border-t border-outline-variant/70" key={index} />
+              <span className="chart-bar-gridline" key={index} />
             ))}
           </div>
-          <div className="relative z-10 flex h-full items-end gap-4 pb-7">
+          <div className="chart-bar-cols">
             {normalized.map((item) => (
-              <div className="flex h-full min-w-12 flex-1 flex-col items-center justify-end gap-2" key={item.label}>
-                <div className="flex w-full items-end justify-center gap-1">
-                  <span className="w-4 bg-[#697077]" style={{ height: `${Math.max(8, (item.value / max) * 100)}%` }} />
-                  <span className="w-4 bg-[#C1C7CD]" style={{ height: `${Math.max(8, ((item.value * 0.82) / max) * 100)}%` }} />
+              <div className="chart-bar-col" key={item.label}>
+                <div className="chart-bar-pair">
+                  <span
+                    className="chart-bar-stick"
+                    style={{
+                      height: `${Math.max(8, (item.value / max) * 100)}%`,
+                      backgroundColor: item.color,
+                    }}
+                  />
+                  <span
+                    className="chart-bar-stick"
+                    style={{
+                      height: `${Math.max(8, ((item.value * 0.82) / max) * 100)}%`,
+                      backgroundColor: TRACK_COLOR,
+                    }}
+                  />
                 </div>
-                <span className="max-w-24 truncate text-center font-body-sm text-body-sm text-on-surface-variant">{item.label}</span>
+                <span className="chart-bar-col-label">{item.label}</span>
               </div>
             ))}
           </div>
@@ -82,18 +130,25 @@ export function BarChart({ title, data }) {
 export function HorizontalBarChart({ title, data }) {
   const normalized = withColors(data);
   const max = Math.max(...normalized.map((item) => item.value), 1);
+
   return (
-    <section className="ui-panel p-5">
-      <h2 className="font-headline-md text-headline-md text-on-surface">{title}</h2>
-      <div className="mt-5 space-y-4">
+    <section className="chart-panel">
+      <h2 className="chart-title">{title}</h2>
+      <div className="chart-hbar-list">
         {normalized.map((item) => (
-          <div key={item.label}>
-            <div className="mb-1 flex items-center justify-between gap-3">
-              <span className="font-body-sm text-body-sm text-on-surface">{item.label}</span>
-              <span className="font-label-bold text-label-bold text-on-surface">{item.value}</span>
+          <div className="chart-hbar-item" key={item.label}>
+            <div className="chart-hbar-meta">
+              <span className="chart-hbar-item-label">{item.label}</span>
+              <span className="chart-hbar-item-value">{item.value}</span>
             </div>
-            <div className="h-3 bg-surface-container">
-              <div className="h-full bg-[#697077]" style={{ width: `${Math.max(8, (item.value / max) * 100)}%` }} />
+            <div className="chart-hbar-track">
+              <div
+                className="chart-hbar-fill"
+                style={{
+                  width: `${Math.max(8, (item.value / max) * 100)}%`,
+                  backgroundColor: item.color,
+                }}
+              />
             </div>
           </div>
         ))}
@@ -102,28 +157,54 @@ export function HorizontalBarChart({ title, data }) {
   );
 }
 
-function Legend({ data, total }) {
-  return (
-    <div className="w-full space-y-3">
-      {data.map((item) => {
-        const percent = total > 0 ? Math.round((item.value / total) * 100) : 0;
-        return (
-          <div className="flex items-center justify-between gap-3" key={item.label}>
-            <span className="flex items-center gap-2 font-body-sm text-body-sm text-on-surface-variant">
-              <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
-              {item.label}
-            </span>
-            <span className="font-label-bold text-label-bold text-on-surface">{percent}%</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+/**
+ * GaugeChart — circular progress gauge showing value/max as a percentage.
+ *
+ * Props:
+ *   title  {string}  — panel heading
+ *   value  {number}  — current value
+ *   max    {number}  — maximum value (default: 100)
+ *   label  {string}  — optional sub-label below the percentage
+ */
+export function GaugeChart({ title, value, max = 100, label }) {
+  const pct = Math.min(100, Math.max(0, Math.round((value / (max || 1)) * 100)));
+  // SVG circle: r=15.915 → circumference ≈ 100 (convenient for percent)
+  const circumference = 2 * Math.PI * 15.915;
+  const filled = (pct / 100) * circumference;
+  const gap = circumference - filled;
 
-function withColors(data) {
-  return data.map((item, index) => ({
-    ...item,
-    color: item.color || KIT_COLORS[index % KIT_COLORS.length],
-  }));
+  return (
+    <section className="gauge-panel">
+      {title && <h2 className="gauge-title">{title}</h2>}
+      <div className="gauge-ring">
+        <svg className="gauge-svg" viewBox="0 0 42 42" aria-hidden="true">
+          {/* track */}
+          <circle
+            cx="21"
+            cy="21"
+            r="15.915"
+            fill="transparent"
+            stroke={TRACK_COLOR}
+            strokeWidth="5"
+          />
+          {/* arc */}
+          <circle
+            cx="21"
+            cy="21"
+            r="15.915"
+            fill="transparent"
+            stroke="#16A34A"
+            strokeWidth="5"
+            strokeDasharray={`${filled} ${gap}`}
+            strokeDashoffset="0"
+            strokeLinecap="round"
+          />
+        </svg>
+        <div className="gauge-center">
+          <span className="gauge-pct">{pct}%</span>
+          {label && <span className="gauge-sub-label">{label}</span>}
+        </div>
+      </div>
+    </section>
+  );
 }

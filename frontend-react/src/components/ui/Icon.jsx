@@ -7,7 +7,7 @@ import {
   Phone, Mail, Star, Heart, Share2, Upload, Image, FileText,
   AlertCircle, CheckCircle, Info, Clock, Filter, Grid,
   List, ChevronLeft, MoreHorizontal, LogOut, Settings,
-  TrendingUp, Users, DollarSign, BarChart3, Crop, Lock,
+  TrendingUp, TrendingDown, Users, DollarSign, BarChart3, Crop, Lock,
 } from 'lucide-react';
 
 const ICON_MAP = {
@@ -20,7 +20,7 @@ const ICON_MAP = {
   Phone, Mail, Star, Heart, Share2, Upload, Image,
   FileText, AlertCircle, CheckCircle, Info, Clock,
   Filter, Grid, List, ChevronLeft, MoreHorizontal,
-  LogOut, Settings, TrendingUp, Users, DollarSign,
+  LogOut, Settings, TrendingUp, TrendingDown, Users, DollarSign,
   BarChart3, Crop, Lock,
 };
 
