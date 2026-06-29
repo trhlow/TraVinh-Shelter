@@ -3,6 +3,7 @@ import { BarChart, DonutChart, GaugeChart, HorizontalBarChart } from '../compone
 import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../components/DashboardWidgets.jsx';
 import ViewingsPanel from '../components/dashboard/ViewingsPanel.jsx';
 import BrandLogo from '../components/BrandLogo.jsx';
+import { wardLabel, categoryLabel } from '../data/locations.js';
 import Icon from '../components/ui/Icon.jsx';
 import LoginPage from './LoginPage.jsx';
 import {
@@ -581,29 +582,6 @@ function chartBy(items, getLabel) {
   });
   const result = [...counts.entries()].map(([label, value]) => ({ label, value }));
   return result.length > 0 ? result : [{ label: 'Chưa có dữ liệu', value: 0 }];
-}
-
-function categoryLabel(category) {
-  if (category === 'tro') return 'Trọ';
-  if (category === 'dat' || category === 'land') return 'Đất';
-  if (category === 'nha' || category === 'house') return 'Nhà';
-  if (category === 'apartment') return 'Căn hộ';
-  return category || 'Khác';
-}
-
-function wardLabel(ward) {
-  const map = {
-    'phuong-1':   'Phường 1',
-    'phuong-7':   'Phường 7',
-    'long-duc':   'Long Đức',
-    'chau-thanh': 'Châu Thành',
-    'cau-ngang':  'Cầu Ngang',
-    'cau-ke':     'Cầu Kè',
-    'cang-long':  'Càng Long',
-    'tieu-can':   'Tiểu Cần',
-  };
-  if (!ward || ward === 'all') return 'Chưa xác định';
-  return map[ward] || 'Chưa xác định';
 }
 
 function isAvailableProperty(property) {

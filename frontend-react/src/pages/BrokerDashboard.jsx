@@ -3,6 +3,7 @@ import { DonutChart, GaugeChart, HorizontalBarChart } from '../components/Charts
 import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../components/DashboardWidgets.jsx';
 import ViewingsPanel from '../components/dashboard/ViewingsPanel.jsx';
 import BrandLogo from '../components/BrandLogo.jsx';
+import { WARDS } from '../data/locations.js';
 import Icon from '../components/ui/Icon.jsx';
 import LoginPage from './LoginPage.jsx';
 import {
@@ -39,7 +40,7 @@ const EMPTY_FORM = {
   categorySlug: 'tro',
   transaction: 'rent',
   address: '',
-  ward: 'phuong-6',
+  ward: 'phuong-tra-vinh',
   price: '',
   area: '',
   bedrooms: '',
@@ -457,11 +458,9 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                   )}
                   <FormField label="Khu vực">
                     <select className="input" value={listingForm.ward} onChange={(event) => setListingValue('ward', event.target.value, setListingForm)}>
-                      <option value="phuong-6">Phường 6</option>
-                      <option value="phuong-7">Phường 7</option>
-                      <option value="cau-ngang">Cầu Ngang</option>
-                      <option value="chau-thanh">Châu Thành</option>
-                      <option value="long-duc">Long Đức</option>
+                      {WARDS.filter((ward) => ward.code !== 'all').map((ward) => (
+                        <option key={ward.code} value={ward.code}>{ward.label}</option>
+                      ))}
                     </select>
                   </FormField>
                   <FormField label="Địa chỉ" className="dashboard-listing-span2">

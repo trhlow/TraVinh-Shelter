@@ -3,15 +3,7 @@ import MainLayout from '../layouts/MainLayout.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import { fetchProperties } from '../services/api.js';
 import { MOCK_PROPERTIES } from '../services/mockData.js';
-
-const WARDS = [
-  ['all', 'Tất cả khu vực'],
-  ['phuong-7', 'Phường 7'],
-  ['long-duc', 'Long Đức'],
-  ['cau-ke', 'Cầu Kè'],
-  ['chau-thanh', 'Châu Thành'],
-  ['cang-long', 'Càng Long'],
-];
+import { WARDS } from '../data/locations.js';
 
 export default function BrokersPage({ session, onLogout }) {
   const [properties, setProperties] = useState(MOCK_PROPERTIES);
@@ -69,7 +61,7 @@ export default function BrokersPage({ session, onLogout }) {
             value={ward}
             onChange={(event) => setWard(event.target.value)}
           >
-            {WARDS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            {WARDS.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
           </select>
           <select
             className="input"

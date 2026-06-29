@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import MainLayout from '../layouts/MainLayout.jsx';
 import Icon from '../components/ui/Icon.jsx';
+import { WARDS } from '../data/locations.js';
 
 const PROJECTS = [
   {
     id: 'ct-riverside',
     name: 'Công Tín Riverside',
-    ward: 'phuong-7',
+    ward: 'phuong-tra-vinh',
     type: 'Nhà phố',
     status: 'Đang mở bán',
     units: 84,
@@ -17,7 +18,7 @@ const PROJECTS = [
   {
     id: 'long-duc-garden',
     name: 'Long Đức Garden',
-    ward: 'long-duc',
+    ward: 'phuong-long-duc',
     type: 'Đất nền',
     status: 'Nhận giữ chỗ',
     units: 126,
@@ -27,8 +28,8 @@ const PROJECTS = [
   },
   {
     id: 'chau-thanh-green',
-    name: 'Châu Thành Green Villas',
-    ward: 'chau-thanh',
+    name: 'Green Villas Nguyệt Hóa',
+    ward: 'phuong-nguyet-hoa',
     type: 'Biệt thự vườn',
     status: 'Sắp mở bán',
     units: 32,
@@ -36,13 +37,6 @@ const PROJECTS = [
     image: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=1200&q=80',
     highlights: ['Không gian xanh', 'An ninh 24/7', 'Bàn giao thô'],
   },
-];
-
-const WARDS = [
-  ['all', 'Tất cả khu vực'],
-  ['phuong-7', 'Phường 7'],
-  ['long-duc', 'Long Đức'],
-  ['chau-thanh', 'Châu Thành'],
 ];
 
 const STATUS_BADGE = {
@@ -78,7 +72,7 @@ export default function ProjectsPage({ session, onLogout }) {
             value={ward}
             onChange={(event) => setWard(event.target.value)}
           >
-            {WARDS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            {WARDS.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
           </select>
           <select
             className="input"
