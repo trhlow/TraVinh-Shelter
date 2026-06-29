@@ -64,7 +64,7 @@ export async function fetchProperties(filters) {
 export async function fetchPropertyDetail(propertyId) {
   if (USE_MOCK_API || !propertyId) {
     const items = await fetchProperties({});
-    return items[0] ?? null;
+    return items.find((item) => item.id === propertyId) ?? items[0] ?? null;
   }
   const response = await request(`/properties/${propertyId}`);
   return normalizeProperty(response, 0);
