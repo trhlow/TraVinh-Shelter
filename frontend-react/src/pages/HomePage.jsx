@@ -281,14 +281,14 @@ export default function HomePage({ session, onLogout }) {
               Bắt đầu tìm bất động sản ngay hôm nay
             </h2>
             <p className="cta-dark-subtitle">
-              Đăng ký miễn phí để lưu tin yêu thích và nhận thông báo khi có bất động sản mới.
+              Tìm kiếm bất động sản phù hợp và kết nối với đội ngũ môi giới uy tín tại Trà Vinh.
             </p>
             <div className="cta-dark-buttons">
-              <Button as="a" href="#/register" variant="primary" size="lg">
-                Đăng ký miễn phí
-              </Button>
-              <Button as="a" href="#/search" variant="outline-white" size="lg">
+              <Button as="a" href="#/search" variant="primary" size="lg">
                 Khám phá ngay
+              </Button>
+              <Button as="a" href="#/brokers" variant="outline-white" size="lg">
+                Liên hệ môi giới
               </Button>
             </div>
           </div>

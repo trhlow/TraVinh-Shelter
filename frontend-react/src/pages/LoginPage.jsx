@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import BrandLogo, { BRAND_NAME } from '../components/BrandLogo.jsx';
-import { fetchCurrentUser, login, registerUser } from '../services/api.js';
+import { fetchCurrentUser, login } from '../services/api.js';
 import { createSession } from '../services/session.js';
 import { validateLoginForm } from '../utils/validation.js';
 
@@ -10,12 +10,6 @@ const MODE_COPY = {
     subtitle: `Tiếp tục vào ${BRAND_NAME}.`,
     button: 'Đăng nhập',
     loading: 'Đang đăng nhập',
-  },
-  register: {
-    title: 'Đăng ký miễn phí',
-    subtitle: `Tạo tài khoản user để lưu và theo dõi tin trên ${BRAND_NAME}.`,
-    button: 'Tạo tài khoản user',
-    loading: 'Đang đăng ký',
   },
   forgot: {
     title: 'Quên mật khẩu?',
@@ -27,7 +21,7 @@ const MODE_COPY = {
 
 export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
   const [mode, setMode] = useState(initialMode);
-  const [values, setValues] = useState({ username: '', fullName: '', phone: '', email: '', password: '' });
+  const [values, setValues] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -55,21 +49,13 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
 
     setSubmitting(true);
     try {
-      const auth = mode === 'register'
-        ? await registerUser({
-          username: values.username.trim(),
-          fullName: values.fullName.trim(),
-          phone: values.phone.trim() || null,
-          email: values.email.trim(),
-          password: values.password,
-        })
-        : await login(values.email, values.password);
+      const auth = await login(values.email, values.password);
       const profile = await fetchCurrentUser(auth.accessToken).catch(() => ({}));
       const nextSession = createSession(auth, profile);
       onLogin(nextSession);
       window.location.hash = nextSession.role === 'ADMIN' ? '#/admin/overview' : nextSession.role === 'BROKER' ? '#/broker/dashboard' : '#/';
     } catch (exception) {
-      setServerError(exception.message || (mode === 'register' ? 'Đăng ký thất bại.' : 'Đăng nhập thất bại.'));
+      setServerError(exception.message || 'Đăng nhập thất bại.');
     } finally {
       setSubmitting(false);
     }
@@ -88,7 +74,7 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
   }
 
   if (session) {
-    const href = session.role === 'ADMIN' ? '#/admin/overview' : session.role === 'BROKER' ? '#/broker/dashboard' : '#/';
+    const href = session.role === 'ADMIN' ? '#/admin/overview' : session.role === 'BROKER' ? '#/broker/dashboard' : '#/login';
     return (
       <div className="auth-shell">
         <div className="auth-card">
@@ -107,7 +93,6 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
     );
   }
 
-  const isRegister = mode === 'register';
   const isForgot = mode === 'forgot';
   const copy = MODE_COPY[mode] || MODE_COPY.login;
 
@@ -124,41 +109,6 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
         <p className="auth-subtitle">{copy.subtitle}</p>
 
         <form onSubmit={handleSubmit}>
-          {isRegister && (
-            <div className="auth-field-group">
-              <Field error={errors.username} id="username" label="Tên đăng nhập">
-                <input
-                  className="input"
-                  id="username"
-                  name="username"
-                  placeholder="ten_dang_nhap"
-                  value={values.username}
-                  onChange={(event) => updateValue('username', event.target.value)}
-                />
-              </Field>
-              <Field error={errors.fullName} id="fullName" label="Họ tên">
-                <input
-                  className="input"
-                  id="fullName"
-                  name="fullName"
-                  placeholder="Nguyễn Văn A"
-                  value={values.fullName}
-                  onChange={(event) => updateValue('fullName', event.target.value)}
-                />
-              </Field>
-              <Field error={errors.phone} id="phone" label="Số điện thoại">
-                <input
-                  className="input"
-                  id="phone"
-                  name="phone"
-                  placeholder="090..."
-                  value={values.phone}
-                  onChange={(event) => updateValue('phone', event.target.value)}
-                />
-              </Field>
-            </div>
-          )}
-
           <Field error={errors.email} id="email" label="Email">
             <input
               className="input"
@@ -185,7 +135,7 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
             </Field>
           )}
 
-          {!isRegister && !isForgot && (
+          {!isForgot && (
             <div className="auth-row">
               <label className="auth-remember">
                 <input type="checkbox" />
@@ -216,15 +166,7 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
             <button className="auth-link" type="button" onClick={() => switchMode('login')}>
               Quay lại đăng nhập
             </button>
-          ) : isRegister ? (
-            <button className="auth-link" type="button" onClick={() => switchMode('login')}>
-              Đã có tài khoản? Đăng nhập
-            </button>
-          ) : (
-            <button className="auth-link" type="button" onClick={() => switchMode('register')}>
-              Chưa có tài khoản? Đăng ký
-            </button>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
@@ -242,7 +184,6 @@ function Field({ children, className = '', error, id, label }) {
 }
 
 function modePath(mode) {
-  if (mode === 'register') return '#/register';
   if (mode === 'forgot') return '#/forgot-password';
   return '#/login';
 }

@@ -7,29 +7,12 @@ const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true';
 
 export async function login(email, password) {
   if (USE_MOCK_API) {
-    const role = email.includes('admin') ? 'ADMIN' : email.includes('broker') ? 'BROKER' : 'USER';
+    const role = email.includes('admin') ? 'ADMIN' : 'BROKER';
     return delay({ accessToken: 'mock-token', tokenType: 'Bearer', expiresIn: 3600, email, role, userId: role.toLowerCase() });
   }
   return request('/auth/login', {
     method: 'POST',
     body: { email, password },
-  });
-}
-
-export async function registerUser(payload) {
-  if (USE_MOCK_API) {
-    return delay({
-      accessToken: 'mock-user-token',
-      tokenType: 'Bearer',
-      expiresIn: 3600,
-      email: payload.email,
-      role: 'USER',
-      userId: 'mock-user',
-    });
-  }
-  return request('/auth/register', {
-    method: 'POST',
-    body: payload,
   });
 }
 

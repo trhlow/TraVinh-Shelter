@@ -66,18 +66,6 @@ test('routes to broker properties page for broker sessions', () => {
   expect(screen.getAllByRole('heading', { name: 'Tin đăng của tôi' }).length).toBeGreaterThan(0);
 });
 
-test('routes to separate admin pages for admin sessions', () => {
-  window.localStorage.setItem('travinh-realty-session', JSON.stringify({
-    token: 'test-token',
-    email: 'admin@congtinland.vn',
-    role: 'ADMIN',
-    userId: 'admin-id',
-  }));
-  window.location.hash = '#/admin/users';
-  render(<App />);
-  expect(screen.getAllByRole('heading', { name: 'Tài khoản users' }).length).toBeGreaterThan(0);
-});
-
 test('routes to all required admin pages for admin sessions', () => {
   const adminSession = {
     token: 'test-token',
@@ -110,30 +98,11 @@ test('login page hides demo role account shortcuts', () => {
   expect(screen.queryByRole('button', { name: 'Google' })).not.toBeInTheDocument();
 });
 
-test('routes to user registration page', () => {
-  window.location.hash = '#/register';
-  render(<App />);
-  expect(screen.getByRole('heading', { name: 'Đăng ký miễn phí' })).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'Tạo tài khoản user' })).toBeInTheDocument();
-});
-
 test('routes to forgot password page', () => {
   window.location.hash = '#/forgot-password';
   render(<App />);
   expect(screen.getByRole('heading', { name: 'Quên mật khẩu?' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Gửi liên kết đặt lại' })).toBeInTheDocument();
-});
-
-test('routes to user profile page for user sessions', () => {
-  window.localStorage.setItem('travinh-realty-session', JSON.stringify({
-    token: 'test-token',
-    email: 'user@congtinland.vn',
-    role: 'USER',
-    userId: 'user-id',
-  }));
-  window.location.hash = '#/profile';
-  render(<App />);
-  expect(screen.getByRole('heading', { name: 'Cập nhật hồ sơ' })).toBeInTheDocument();
 });
 
 test('routes to public projects and brokers pages', () => {

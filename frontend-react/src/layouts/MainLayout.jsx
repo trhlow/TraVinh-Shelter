@@ -56,7 +56,6 @@ const FOOTER_COLS = [
 export function Header({ session, onLogout }) {
   const isBroker = session?.role === 'BROKER';
   const isAdmin = session?.role === 'ADMIN';
-  const isUser = session?.role === 'USER';
 
   return (
     <header className="navbar">
@@ -120,14 +119,9 @@ export function Header({ session, onLogout }) {
         {/* Right actions */}
         <div className="navbar-actions">
           {!session && (
-            <>
-              <a href="#/login" className="btn btn-ghost btn-sm">
-                <Icon name="User" size={15} /> Đăng nhập
-              </a>
-              <a href="#/register" className="btn btn-primary btn-sm navbar-desktop-only">
-                Đăng ký
-              </a>
-            </>
+            <a href="#/login" className="btn btn-ghost btn-sm">
+              <Icon name="User" size={15} /> Đăng nhập
+            </a>
           )}
           {isAdmin && (
             <a href="#/admin/overview" className="btn btn-ghost btn-sm navbar-desktop-only">
@@ -143,11 +137,6 @@ export function Header({ session, onLogout }) {
                 <Icon name="Plus" size={15} /> Đăng tin
               </a>
             </>
-          )}
-          {isUser && (
-            <a href="#/profile" className="btn btn-ghost btn-sm navbar-desktop-only">
-              <Icon name="User" size={15} /> Hồ sơ
-            </a>
           )}
           {session && (
             <button type="button" onClick={onLogout} className="btn btn-ghost btn-sm">
@@ -248,7 +237,7 @@ export default function MainLayout({ children, session, onLogout }) {
           { href: '#/projects', icon: 'Building', label: 'Dự án' },
           { href: '#/brokers', icon: 'IdCard', label: 'Môi giới' },
           {
-            href: session?.role === 'BROKER' ? '#/broker/properties' : session ? '#/profile' : '#/login',
+            href: session?.role === 'BROKER' ? '#/broker/properties' : session?.role === 'ADMIN' ? '#/admin/overview' : '#/login',
             icon: session?.role === 'BROKER' ? 'Plus' : 'User',
             label: session?.role === 'BROKER' ? 'Đăng tin' : 'Tài khoản',
           },

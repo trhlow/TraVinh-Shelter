@@ -23,7 +23,6 @@ const CHART_COLORS = {
 
 const ADMIN_SIDEBAR_ITEMS = [
   { href: '#/admin/overview', icon: 'BarChart3', label: 'Tổng quan' },
-  { href: '#/admin/users', icon: 'Users', label: 'Tài khoản users' },
   { href: '#/admin/brokers', icon: 'IdCard', label: 'Môi giới' },
   { href: '#/admin/properties', icon: 'Building', label: 'Bài đăng' },
 ];
@@ -43,8 +42,6 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
   const [brokers, setBrokers] = useState([]);
   const [properties, setProperties] = useState([]);
   const [brokerForm, setBrokerForm] = useState(EMPTY_BROKER);
-  const [userQuery, setUserQuery] = useState('');
-  const [userStatusFilter, setUserStatusFilter] = useState(ALL);
   const [brokerQuery, setBrokerQuery] = useState('');
   const [brokerStatusFilter, setBrokerStatusFilter] = useState(ALL);
   const [propertyQuery, setPropertyQuery] = useState('');
@@ -81,19 +78,17 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
     const visiblePosts = properties.filter(isAvailableProperty).length;
     const pendingPosts = properties.filter(isPendingProperty).length;
     return {
-      totalAccounts: users.length,
-      users: users.filter((user) => user.role === 'USER').length,
+      totalAccounts: users.length + brokers.length,
       brokers: brokers.length,
       admins: users.filter((user) => user.role === 'ADMIN').length,
       posts: properties.length,
       visiblePosts,
       pendingPosts,
-      locked: users.filter((user) => user.status === 'LOCKED' || user.status === 'BLOCKED').length,
+      locked: [...users, ...brokers].filter((u) => u.status === 'LOCKED' || u.status === 'BLOCKED').length,
     };
   }, [users, brokers, properties]);
 
   const roleChart = useMemo(() => ([
-    { label: 'Users', value: stats.users, color: CHART_COLORS.brand },
     { label: 'Môi giới', value: stats.brokers, color: CHART_COLORS.orange },
     { label: 'Admin', value: stats.admins, color: CHART_COLORS.success },
   ]), [stats]);
@@ -126,15 +121,6 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
   }, [properties]);
 
   const visiblePercent = stats.posts > 0 ? Math.round((stats.visiblePosts / stats.posts) * 100) : 0;
-
-  const customerUsers = useMemo(() => users.filter((user) => user.role === 'USER'), [users]);
-
-  const filteredUsers = useMemo(() => customerUsers.filter((user) => {
-    const query = userQuery.trim().toLowerCase();
-    const matchesQuery = !query || [user.email, user.username, user.fullName].some((value) => String(value || '').toLowerCase().includes(query));
-    const matchesStatus = userStatusFilter === ALL || user.status === userStatusFilter;
-    return matchesQuery && matchesStatus;
-  }), [customerUsers, userQuery, userStatusFilter]);
 
   const filteredBrokers = useMemo(() => brokers.filter((broker) => {
     const query = brokerQuery.trim().toLowerCase();
@@ -262,8 +248,8 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
             <>
               <div className="grid-4 dashboard-stats-row">
                 <StatCard icon="Users" title="Tổng tài khoản" value={stats.totalAccounts} tone="navy" trend={{ value: '+8%', direction: 'up' }} />
-                <StatCard icon="User" title="Người dùng" value={stats.users} tone="green" trend={{ value: '+12%', direction: 'up' }} />
                 <StatCard icon="IdCard" title="Môi giới" value={stats.brokers} tone="orange" trend={{ value: '+5%', direction: 'up' }} />
+                <StatCard icon="ShieldCheck" title="Admin" value={stats.admins} tone="green" trend={{ value: '0%', direction: 'up' }} />
                 <StatCard icon="Building" title="Bài đăng" value={stats.posts} tone="navy" trend={{ value: '+15%', direction: 'up' }} />
               </div>
 
@@ -300,33 +286,14 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
 
                 <DashboardPanel title="Tình trạng hệ thống" count="Từ API hiện có">
                   <div className="dashboard-system-lines">
-                    <SystemLine label="Users đang hoạt động" value={stats.users} icon="Users" />
                     <SystemLine label="Môi giới được cấp" value={stats.brokers} icon="IdCard" />
+                    <SystemLine label="Admin trong hệ thống" value={stats.admins} icon="ShieldCheck" />
                     <SystemLine label="Bài đăng hiển thị" value={stats.visiblePosts} icon="Eye" />
                     <SystemLine label="Tài khoản bị khóa" value={stats.locked} icon="Lock" />
                   </div>
                 </DashboardPanel>
               </div>
             </>
-          )}
-
-          {section === 'users' && (
-            <DashboardPanel
-              title="Tài khoản users"
-              count={`${filteredUsers.length}/${customerUsers.length} user`}
-              action={(
-                <div className="dashboard-filter-row">
-                  <input className="input" placeholder="Tìm email, tên..." value={userQuery} onChange={(event) => setUserQuery(event.target.value)} />
-                  <select className="input" value={userStatusFilter} onChange={(event) => setUserStatusFilter(event.target.value)}>
-                    <option value={ALL}>Tất cả trạng thái</option>
-                    <option value="ACTIVE">Hoạt động</option>
-                    <option value="LOCKED">Đã khóa</option>
-                  </select>
-                </div>
-              )}
-            >
-              <UserTable users={filteredUsers} session={session} loading={loading} saving={saving} onToggleStatus={toggleStatus} />
-            </DashboardPanel>
           )}
 
           {section === 'brokers' && (
@@ -434,40 +401,6 @@ function AdminSidebar({ currentPath, onLogout, session }) {
         </div>
       )}
     </aside>
-  );
-}
-
-function UserTable({ users, session, loading, saving, onToggleStatus }) {
-  if (loading) return <LoadingRows rows={5} />;
-  if (users.length === 0) return <StateBlock title="Không có user phù hợp" description="Thử đổi từ khóa hoặc bộ lọc trạng thái." />;
-  return (
-    <div className="dashboard-table-wrap">
-      <table className="dashboard-table">
-        <thead>
-          <tr>
-            <th>Tài khoản</th>
-            <th>Trạng thái</th>
-            <th className="dashboard-table-right">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.id}>
-              <td>
-                <div className="dashboard-table-name">{user.fullName || user.username || 'Chưa cập nhật'}</div>
-                <div className="dashboard-table-sub">{user.email}</div>
-              </td>
-              <td><StatusBadge tone={user.status === 'ACTIVE' ? 'success' : 'danger'}>{userStatusLabel(user.status)}</StatusBadge></td>
-              <td className="dashboard-table-right">
-                <button className="btn btn-ghost btn-sm" onClick={() => onToggleStatus(user)} disabled={saving || user.id === session.userId}>
-                  {user.status === 'ACTIVE' ? 'Khóa' : 'Mở'}
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }
 
@@ -586,7 +519,6 @@ async function loadAdminData(session) {
 function adminTitle(section) {
   return {
     overview: 'Tổng quan',
-    users: 'Tài khoản users',
     brokers: 'Môi giới',
     properties: 'Bài đăng',
   }[section] || 'Tổng quan';
