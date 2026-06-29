@@ -74,6 +74,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   const [passwordForm, setPasswordForm] = useState({ current: '', next: '', confirm: '' });
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
 
   const listings = stats.listings || [];
   const filteredListings = useMemo(() => listings.filter((listing) => listingMatchesQuery(listing, listingQuery)), [listings, listingQuery]);
@@ -119,6 +120,11 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       .finally(() => { if (alive) setViewingsLoading(false); });
     return () => { alive = false; };
   }, [session, section]);
+
+  useEffect(() => {
+    setPasswordSuccess(false);
+    setPasswordError('');
+  }, [section]);
 
   const dashboardStats = useMemo(() => {
     const totalListings = listings.length || stats.totalListings || 0;
@@ -203,7 +209,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       setPasswordError('Mật khẩu mới không khớp.');
       return;
     }
-    setSaving(true);
+    setSavingPassword(true);
     try {
       await changePassword(session.token, passwordForm.current, passwordForm.next);
       setPasswordSuccess(true);
@@ -211,7 +217,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
     } catch (err) {
       setPasswordError(err.message || 'Đổi mật khẩu thất bại.');
     } finally {
-      setSaving(false);
+      setSavingPassword(false);
     }
   }
 
@@ -457,22 +463,22 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                   <div className="form-group">
                     <label>Mật khẩu hiện tại</label>
                     <input type="password" className="input" value={passwordForm.current}
-                      onChange={e => setPasswordForm(f => ({ ...f, current: e.target.value }))} />
+                      onChange={e => setPasswordForm(f => ({ ...f, current: e.target.value }))} required />
                   </div>
                   <div className="form-group">
                     <label>Mật khẩu mới</label>
                     <input type="password" className="input" value={passwordForm.next}
-                      onChange={e => setPasswordForm(f => ({ ...f, next: e.target.value }))} />
+                      onChange={e => setPasswordForm(f => ({ ...f, next: e.target.value }))} required />
                   </div>
                   <div className="form-group">
                     <label>Xác nhận mật khẩu mới</label>
                     <input type="password" className="input" value={passwordForm.confirm}
-                      onChange={e => setPasswordForm(f => ({ ...f, confirm: e.target.value }))} />
+                      onChange={e => setPasswordForm(f => ({ ...f, confirm: e.target.value }))} required />
                   </div>
                   {passwordError && <p className="form-error">{passwordError}</p>}
                   {passwordSuccess && <p className="form-success">Đổi mật khẩu thành công!</p>}
-                  <button className="auth-btn" type="submit" disabled={saving}>
-                    {saving ? 'Đang lưu...' : 'Đổi mật khẩu'}
+                  <button className="auth-btn" type="submit" disabled={savingPassword}>
+                    {savingPassword ? 'Đang lưu...' : 'Đổi mật khẩu'}
                   </button>
                 </form>
               </div>
