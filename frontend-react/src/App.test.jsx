@@ -20,7 +20,15 @@ test('renders the template home page', async () => {
 
   expect(screen.getByRole('heading', { name: 'Công Tín Land - tìm nhà trọ, bất động sản Trà Vinh nhanh chóng' })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: 'Tin nổi bật' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Khám phá theo loại hình' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Phòng trọ theo Khu vực Trà Vinh' })).toBeInTheDocument();
   await waitFor(() => expect(screen.getAllByText('Công Tín Land').length).toBeGreaterThan(0));
+});
+
+test('home ward browse links to filtered trọ search', () => {
+  render(<App />);
+  const wardLink = screen.getByRole('link', { name: /Phường Trà Vinh/ });
+  expect(wardLink).toHaveAttribute('href', '#/search?category=tro&ward=phuong-tra-vinh');
 });
 
 test('routes to search page', async () => {

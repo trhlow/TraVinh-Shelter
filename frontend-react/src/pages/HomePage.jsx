@@ -4,7 +4,26 @@ import Icon from '../components/ui/Icon.jsx';
 import Button from '../components/ui/Button.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
 import { featuredProperties } from '../data/templateData.js';
+import { WARDS, CATEGORIES } from '../data/locations.js';
 import { fetchProperties } from '../services/api.js';
+
+// Price brackets (VND) emitted as minPrice/maxPrice query params.
+const HERO_PRICE_RANGES = [
+  { label: 'Mọi mức giá', min: '', max: '' },
+  { label: 'Dưới 1 triệu', min: '', max: '1000000' },
+  { label: '1 - 3 triệu', min: '1000000', max: '3000000' },
+  { label: '3 - 5 triệu', min: '3000000', max: '5000000' },
+  { label: 'Dưới 1 tỷ', min: '', max: '1000000000' },
+  { label: '1 - 3 tỷ', min: '1000000000', max: '3000000000' },
+  { label: 'Trên 3 tỷ', min: '3000000000', max: '' },
+];
+
+// Category browse cards (Trọ / Nhà / Đất).
+const CATEGORY_CARDS = [
+  { slug: 'tro', icon: 'BedDouble', desc: 'Phòng trọ, nhà trọ cho thuê quanh khu vực Trà Vinh.' },
+  { slug: 'nha', icon: 'Home', desc: 'Nhà phố, nhà riêng mua bán và cho thuê.' },
+  { slug: 'dat', icon: 'Map', desc: 'Đất nền, đất thổ cư, đất vườn pháp lý rõ ràng.' },
+];
 
 const STATS = [
   { number: '500+', label: 'Bất động sản' },
@@ -66,25 +85,75 @@ const CORAL_BENEFITS = [
 ];
 
 function HeroSearchBar() {
-  const [query, setQuery] = useState('');
+  const [ward, setWard] = useState('all');
+  const [category, setCategory] = useState('all');
+  const [priceIndex, setPriceIndex] = useState('0');
+
   function handleSearch(e) {
     e.preventDefault();
     const params = new URLSearchParams();
-    if (query.trim()) params.set('query', query.trim());
-    window.location.hash = params.toString() ? `#/search?${params}` : '#/search';
+    if (category !== 'all') params.set('category', category);
+    if (ward !== 'all') params.set('ward', ward);
+    const range = HERO_PRICE_RANGES[Number(priceIndex)] || HERO_PRICE_RANGES[0];
+    if (range.min) params.set('minPrice', range.min);
+    if (range.max) params.set('maxPrice', range.max);
+    const qs = params.toString();
+    window.location.hash = qs ? `#/search?${qs}` : '#/search';
   }
+
   return (
-    <form className="hero-search" onSubmit={handleSearch}>
-      <Icon name="Search" size={18} className="hero-search-icon" />
-      <input
-        className="hero-search-input"
-        placeholder="Tìm theo khu vực, giá, loại bất động sản..."
-        value={query}
-        onChange={e => setQuery(e.target.value)}
-      />
-      <button type="submit" className="hero-search-btn">
-        <Icon name="Search" size={16} /> Tìm kiếm
-      </button>
+    <form className="hero-search-panel" onSubmit={handleSearch}>
+      <div className="hero-search-row">
+        <label className="hero-search-group">
+          <span className="hero-search-group-label">
+            <Icon name="MapPin" size={14} /> Khu vực
+          </span>
+          <select
+            className="hero-search-select"
+            value={ward}
+            onChange={e => setWard(e.target.value)}
+          >
+            {WARDS.map(item => (
+              <option key={item.code} value={item.code}>{item.label}</option>
+            ))}
+          </select>
+        </label>
+
+        <label className="hero-search-group">
+          <span className="hero-search-group-label">
+            <Icon name="LayoutGrid" size={14} /> Loại
+          </span>
+          <select
+            className="hero-search-select"
+            value={category}
+            onChange={e => setCategory(e.target.value)}
+          >
+            <option value="all">Tất cả loại hình</option>
+            {CATEGORIES.map(item => (
+              <option key={item.slug} value={item.slug}>{item.label}</option>
+            ))}
+          </select>
+        </label>
+
+        <label className="hero-search-group">
+          <span className="hero-search-group-label">
+            <Icon name="Wallet" size={14} /> Khoảng giá
+          </span>
+          <select
+            className="hero-search-select"
+            value={priceIndex}
+            onChange={e => setPriceIndex(e.target.value)}
+          >
+            {HERO_PRICE_RANGES.map((range, index) => (
+              <option key={range.label} value={String(index)}>{range.label}</option>
+            ))}
+          </select>
+        </label>
+
+        <button type="submit" className="hero-search-submit">
+          <Icon name="Search" size={18} /> Tìm kiếm
+        </button>
+      </div>
     </form>
   );
 }
@@ -143,7 +212,36 @@ export default function HomePage({ session, onLogout }) {
         </div>
       </div>
 
-      {/* 3. FEATURED PROPERTIES */}
+      {/* 3. CATEGORY BROWSE */}
+      <section className="section">
+        <div className="container">
+          <div className="section-center">
+            <h2 className="text-h2 section-center-title">Khám phá theo loại hình</h2>
+            <p className="section-center-subtitle">
+              Chọn loại bất động sản bạn quan tâm tại Trà Vinh.
+            </p>
+          </div>
+          <div className="category-browse-grid">
+            {CATEGORY_CARDS.map(card => {
+              const label = CATEGORIES.find(c => c.slug === card.slug)?.label || card.slug;
+              return (
+                <a key={card.slug} href={`#/search?category=${card.slug}`} className="category-browse-card">
+                  <span className="category-browse-icon">
+                    <Icon name={card.icon} size={26} />
+                  </span>
+                  <div>
+                    <h3 className="text-h3 category-browse-title">{label}</h3>
+                    <p className="category-browse-desc">{card.desc}</p>
+                  </div>
+                  <Icon name="ArrowRight" size={18} className="category-browse-arrow" />
+                </a>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* 4. FEATURED PROPERTIES */}
       <section className="section-subtle">
         <div className="container">
           <div className="section-header">
@@ -159,7 +257,37 @@ export default function HomePage({ session, onLogout }) {
         </div>
       </section>
 
-      {/* 4. SERVICES */}
+      {/* 5. WARD BROWSE — Phòng trọ theo Khu vực Trà Vinh */}
+      <section className="section">
+        <div className="container">
+          <div className="section-header">
+            <div className="section-header-text">
+              <h2 className="text-h2">Phòng trọ theo Khu vực Trà Vinh</h2>
+              <p>Tìm phòng trọ theo từng phường tại Trà Vinh</p>
+            </div>
+            <a href="#/search?category=tro" className="section-header-link">
+              Xem tất cả phòng trọ <Icon name="ArrowRight" size={15} />
+            </a>
+          </div>
+          <div className="ward-browse-grid">
+            {WARDS.filter(item => item.code !== 'all').map(item => (
+              <a
+                key={item.code}
+                href={`#/search?category=tro&ward=${item.code}`}
+                className="ward-browse-card"
+              >
+                <span className="ward-browse-icon">
+                  <Icon name="MapPin" size={18} />
+                </span>
+                <span className="ward-browse-name">{item.label}</span>
+                <span className="ward-browse-cta">Xem phòng trọ</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 6. SERVICES */}
       <section className="section-pastel">
         <div className="container">
           <div className="section-center">

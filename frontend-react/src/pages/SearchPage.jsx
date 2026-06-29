@@ -52,8 +52,8 @@ function filtersFromQuery(queryParams = {}) {
     transaction,
     ward: queryParams.ward || 'all',
     houseType: queryParams.houseType || 'all',
-    minPrice: '',
-    maxPrice: '',
+    minPrice: queryParams.minPrice || '',
+    maxPrice: queryParams.maxPrice || '',
     minArea: '',
     maxArea: '',
   };
