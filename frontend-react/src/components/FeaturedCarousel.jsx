@@ -63,23 +63,21 @@ export default function FeaturedCarousel({ properties }) {
     }
   }, []);
 
+  const goTo = useCallback((i) => {
+    setIndex(i);
+    // Reset timer on manual navigation
+    stopInterval();
+    if (!paused) {
+      startInterval();
+    }
+  }, [paused, stopInterval, startInterval]);
+
   useEffect(() => {
     if (!paused) {
       startInterval();
     }
     return stopInterval;
   }, [paused, startInterval, stopInterval]);
-
-  function goTo(i) {
-    setIndex(i);
-    // Reset timer on manual navigation
-    stopInterval();
-    if (!paused && !prefersReducedMotion() && !single) {
-      intervalRef.current = setInterval(() => {
-        setIndex(prev => (prev + 1) % items.length);
-      }, AUTO_ADVANCE_MS);
-    }
-  }
 
   function goPrev() {
     goTo((index - 1 + items.length) % items.length);
