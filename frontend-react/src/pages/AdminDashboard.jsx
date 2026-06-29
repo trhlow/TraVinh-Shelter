@@ -13,6 +13,14 @@ import {
   updateUserStatus,
 } from '../services/api.js';
 
+const CHART_COLORS = {
+  accent: '#16A34A',   // --color-accent
+  warning: '#D97706',  // --color-warning
+  brand: '#2563EB',    // brand blue
+  success: '#22C55E',  // green
+  orange: '#F97316',   // orange
+};
+
 const ADMIN_SIDEBAR_ITEMS = [
   { href: '#/admin/overview', icon: 'BarChart3', label: 'Tổng quan' },
   { href: '#/admin/users', icon: 'Users', label: 'Tài khoản users' },
@@ -85,9 +93,9 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
   }, [users, brokers, properties]);
 
   const roleChart = useMemo(() => ([
-    { label: 'Users', value: stats.users, color: '#2563EB' },
-    { label: 'Môi giới', value: stats.brokers, color: '#F97316' },
-    { label: 'Admin', value: stats.admins, color: '#22C55E' },
+    { label: 'Users', value: stats.users, color: CHART_COLORS.brand },
+    { label: 'Môi giới', value: stats.brokers, color: CHART_COLORS.orange },
+    { label: 'Admin', value: stats.admins, color: CHART_COLORS.success },
   ]), [stats]);
   const propertyCategoryChart = useMemo(() => chartBy(properties, (property) => categoryLabel(property.category)), [properties]);
   const propertyStatusChart = useMemo(() => chartBy(properties, (property) => property.statusLabel || property.rawStatus || 'Đang hiển thị'), [properties]);
@@ -546,15 +554,6 @@ function adminTitle(section) {
     brokers: 'Môi giới',
     properties: 'Bài đăng',
   }[section] || 'Tổng quan';
-}
-
-function Field({ label, children }) {
-  return (
-    <label className="block">
-      <span className="auth-field-label">{label}</span>
-      {children}
-    </label>
-  );
 }
 
 function userStatusLabel(status) {

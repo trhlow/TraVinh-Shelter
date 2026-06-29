@@ -16,6 +16,14 @@ import {
   updatePropertyStatus,
 } from '../services/api.js';
 
+const CHART_COLORS = {
+  accent: '#16A34A',   // --color-accent
+  warning: '#D97706',  // --color-warning
+  brand: '#2563EB',    // brand blue
+  success: '#22C55E',  // green
+  orange: '#F97316',   // orange
+};
+
 const BROKER_SIDEBAR_ITEMS = [
   { href: '#/broker/dashboard', icon: 'LayoutDashboard', label: 'Bảng điều khiển' },
   { href: '#/broker/profile', icon: 'User', label: 'Hồ sơ môi giới' },
@@ -110,8 +118,8 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
     value: listingViews(listing),
   })), [listings]);
   const profileChart = useMemo(() => ([
-    { label: 'Đã hoàn tất', value: profileReady ? 1 : 0, color: '#22C55E' },
-    { label: 'Cần bổ sung', value: profileReady ? 0 : 1, color: '#F97316' },
+    { label: 'Đã hoàn tất', value: profileReady ? 1 : 0, color: CHART_COLORS.success },
+    { label: 'Cần bổ sung', value: profileReady ? 0 : 1, color: CHART_COLORS.orange },
   ]), [profileReady]);
 
   if (!session) return <LoginPage onLogin={onLogin} />;

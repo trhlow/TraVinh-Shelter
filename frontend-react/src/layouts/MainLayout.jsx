@@ -64,7 +64,7 @@ export function Header({ session, onLogout }) {
     <header className="navbar">
       <div className="navbar-inner">
         {/* Logo */}
-        <a href="#/" aria-label={BRAND_NAME} style={{ display: 'flex', alignItems: 'center' }}>
+        <a href="#/" aria-label={BRAND_NAME} className="navbar-logo">
           <BrandLogo />
         </a>
 
@@ -87,32 +87,20 @@ export function Header({ session, onLogout }) {
                   className="navbar-dropdown-col"
                   style={i > 0 ? { borderLeft: '1px solid var(--color-border)' } : {}}
                 >
-                  <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-                    <span style={{
-                      width: 36, height: 36, borderRadius: 'var(--radius-sm)',
-                      background: 'var(--color-accent-light)', color: 'var(--color-accent)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      flexShrink: 0,
-                    }}>
+                  <div className="navbar-dropdown-cat-header">
+                    <span className="navbar-dropdown-cat-icon">
                       <Icon name={cat.icon} size={18} />
                     </span>
                     <div>
-                      <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: 'var(--color-text-primary)' }}>{cat.title}</p>
-                      <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-muted)' }}>{cat.caption}</p>
+                      <p className="navbar-dropdown-cat-name">{cat.title}</p>
+                      <p className="navbar-dropdown-cat-caption">{cat.caption}</p>
                     </div>
                   </div>
                   {cat.links.map((link) => (
                     <a
                       key={link.href}
                       href={link.href}
-                      style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '6px 8px', borderRadius: 'var(--radius-sm)',
-                        fontSize: 13, color: 'var(--color-text-secondary)',
-                        transition: 'background 160ms, color 160ms',
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-bg-subtle)'; e.currentTarget.style.color = 'var(--color-text-primary)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = 'var(--color-text-secondary)'; }}
+                      className="navbar-dropdown-link"
                     >
                       {link.label}
                       <Icon name="ChevronRight" size={13} />
@@ -137,14 +125,7 @@ export function Header({ session, onLogout }) {
             type="button"
             onClick={toggleTheme}
             title={isDark ? 'Giao diện sáng' : 'Giao diện tối'}
-            style={{
-              width: 36, height: 36, borderRadius: 'var(--radius-sm)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--color-text-secondary)', background: 'none', border: 'none',
-              cursor: 'pointer', transition: 'background 160ms',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-bg-subtle)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
+            className="navbar-theme-btn"
           >
             <Icon name={isDark ? 'Sun' : 'Moon'} size={18} />
           </button>
@@ -199,7 +180,7 @@ export function Footer() {
           <a href="#/" aria-label={BRAND_NAME} style={{ color: '#fff', display: 'flex' }}>
             <BrandLogo />
           </a>
-          <div style={{ display: 'flex', gap: 8, maxWidth: 380, width: '100%' }}>
+          <div className="footer-email-row">
             <label htmlFor="footer-email" className="sr-only">Email nhận tin</label>
             <input
               id="footer-email"
@@ -231,10 +212,10 @@ export function Footer() {
           ))}
           <div>
             <p className="footer-col-title">Công Tín Land</p>
-            <p style={{ fontSize: 14, color: 'rgb(255 255 255 / 0.6)', lineHeight: 1.6, margin: '0 0 20px' }}>
+            <p className="footer-about-text">
               Cổng thông tin bất động sản Trà Vinh, kết nối khách hàng với môi giới chuyên nghiệp.
             </p>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div className="footer-social-icons">
               {[
                 ['Youtube', 'Youtube'], ['Facebook', 'Facebook'],
                 ['Twitter', 'Twitter'], ['Instagram', 'Instagram'], ['Linkedin', 'Linkedin'],
@@ -243,14 +224,7 @@ export function Footer() {
                   key={label}
                   href="#/"
                   aria-label={label}
-                  style={{
-                    width: 36, height: 36, borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--color-dark-border)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'rgb(255 255 255 / 0.6)', transition: 'color 160ms, border-color 160ms',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#fff'; }}
-                  onMouseLeave={e => { e.currentTarget.style.color = 'rgb(255 255 255 / 0.6)'; e.currentTarget.style.borderColor = 'var(--color-dark-border)'; }}
+                  className="footer-social-icon"
                 >
                   <Icon name={icon} size={16} />
                 </a>
@@ -260,10 +234,10 @@ export function Footer() {
         </div>
 
         <div className="footer-bottom">
-          <p style={{ margin: 0 }}>{BRAND_NAME} © 2025. All rights reserved.</p>
-          <div style={{ display: 'flex', gap: 20 }}>
+          <p className="footer-copyright">{BRAND_NAME} © 2025. All rights reserved.</p>
+          <div className="footer-links-row">
             {[['Trang chủ', '#/'], ['Dự án', '#/projects'], ['Môi giới', '#/brokers']].map(([label, href]) => (
-              <a key={label} className="footer-link" href={href} style={{ padding: 0 }}>{label}</a>
+              <a key={label} className="footer-link" href={href}>{label}</a>
             ))}
           </div>
         </div>
@@ -274,9 +248,9 @@ export function Footer() {
 
 export default function MainLayout({ children, session, onLogout }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--color-bg)' }}>
+    <div className="layout-root">
       <Header session={session} onLogout={onLogout} />
-      <main style={{ flex: 1 }}>{children}</main>
+      <main className="layout-main">{children}</main>
       <Footer />
       <nav className="mobile-nav" aria-label="Điều hướng mobile">
         {[

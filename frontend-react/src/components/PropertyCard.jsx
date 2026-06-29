@@ -26,36 +26,18 @@ export default function PropertyCard({ property, compact = false }) {
     <article className="property-card">
       <a href={href} className="property-card-image">
         <img src={property.image} alt={property.title} />
-        <span
-          style={{
-            position: 'absolute', top: 12, left: 12,
-            background: 'var(--color-accent)', color: '#fff',
-            padding: '4px 10px', borderRadius: 'var(--radius-full)',
-            fontSize: 13, fontWeight: 700,
-          }}
-        >
+        <span className="property-card-price-badge">
           {price}
         </span>
         {property.status && (
-          <span style={{ position: 'absolute', top: 12, right: 12 }}>
+          <span className="property-card-status-badge">
             <Badge variant={statusVariant}>{property.status}</Badge>
           </span>
         )}
       </a>
       <div className="property-card-body">
         <a href={href}>
-          <h3
-            style={{
-              fontSize: compact ? 14 : 16,
-              fontWeight: 600,
-              color: 'var(--color-text-primary)',
-              margin: '0 0 8px',
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-            }}
-          >
+          <h3 className={compact ? 'property-card-title property-card-title--compact' : 'property-card-title'}>
             {property.title}
           </h3>
         </a>
@@ -86,11 +68,11 @@ export default function PropertyCard({ property, compact = false }) {
           <div className="property-card-footer">
             <div className="property-card-broker">
               <div className="broker-avatar">{brokerInitial}</div>
-              <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>
+              <span className="property-card-broker-name">
                 {broker}
               </span>
             </div>
-            <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+            <span className="property-card-posted-at">
               {postedAt}
             </span>
           </div>

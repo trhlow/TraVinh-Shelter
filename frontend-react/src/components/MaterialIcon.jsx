@@ -58,7 +58,7 @@ const MATERIAL_TO_LUCIDE = {
   more_horiz: 'MoreHorizontal',
 };
 
-export default function MaterialIcon({ children, className = '', style }) {
+export default function MaterialIcon({ children, className = '' }) {
   const lucideName = MATERIAL_TO_LUCIDE[children] || 'AlertCircle';
   const sizeMatch = className.match(/text-(\w+)/);
   const sizeMap = { sm: 14, base: 16, lg: 20, xl: 24, '2xl': 28 };
