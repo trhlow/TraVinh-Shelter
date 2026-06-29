@@ -149,6 +149,37 @@ export async function deleteProperty(token, propertyId) {
   return request(`/properties/${propertyId}`, { method: 'DELETE', token });
 }
 
+export async function createViewing(propertyId, payload) {
+  if (USE_MOCK_API) {
+    const record = {
+      id: 'mock-viewing-' + Date.now(),
+      status: 'PENDING',
+      propertyId,
+      propertyTitle: payload.propertyTitle,
+      visitorName: payload.visitorName,
+      visitorPhone: payload.visitorPhone,
+      note: payload.note,
+      roomLabel: payload.roomLabel,
+      expectedMoveIn: payload.expectedMoveIn,
+      occupants: payload.occupants,
+      vehicles: payload.vehicles,
+      pets: payload.pets,
+      requestedAt: payload.requestedAt,
+      createdAt: new Date().toISOString(),
+    };
+    try {
+      const existing = JSON.parse(localStorage.getItem('travinh-mock-viewings') || '[]');
+      existing.push(record);
+      localStorage.setItem('travinh-mock-viewings', JSON.stringify(existing));
+    } catch (_) {
+      // localStorage unavailable — ignore
+    }
+    return delay(record, 150);
+  }
+  const { propertyTitle: _title, ...backendPayload } = payload;
+  return request(`/properties/${propertyId}/viewings`, { method: 'POST', body: backendPayload });
+}
+
 export async function fetchAdminUsers(token) {
   if (USE_MOCK_API) return delay(MOCK_USERS, 120);
   const response = await request('/admin/users?size=100', { token });

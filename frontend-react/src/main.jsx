@@ -6,6 +6,7 @@ import './styles/dashboard.css';
 import './styles/home.css';
 import './styles/carousel.css';
 import './styles/gallery.css';
+import './styles/detail.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

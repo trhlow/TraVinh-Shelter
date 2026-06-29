@@ -8,6 +8,10 @@ import {
   AlertCircle, CheckCircle, Info, Clock, Filter, Grid,
   List, ChevronLeft, MoreHorizontal, LogOut, Settings,
   TrendingUp, TrendingDown, Users, DollarSign, BarChart3, Crop, Lock,
+  Zap, Droplets, Wrench, Car, Wifi, Thermometer, Coffee, Package,
+  Wind, BedDouble, Calendar, Users2, Bike, Dog, CalendarCheck,
+  PawPrint, Refrigerator, AirVent, WashingMachine, Utensils,
+  ShowerHead, Layers, Sofa, Tv, Sparkles,
 } from 'lucide-react';
 
 const ICON_MAP = {
@@ -22,6 +26,10 @@ const ICON_MAP = {
   Filter, Grid, List, ChevronLeft, MoreHorizontal,
   LogOut, Settings, TrendingUp, TrendingDown, Users, DollarSign,
   BarChart3, Crop, Lock,
+  Zap, Droplets, Wrench, Car, Wifi, Thermometer, Coffee, Package,
+  Wind, BedDouble, Calendar, Users2, Bike, Dog, CalendarCheck,
+  PawPrint, Refrigerator, AirVent, WashingMachine, Utensils,
+  ShowerHead, Layers, Sofa, Tv, Sparkles,
 };
 
 export default function Icon({ name, size = 20, className = '', strokeWidth = 1.75 }) {
