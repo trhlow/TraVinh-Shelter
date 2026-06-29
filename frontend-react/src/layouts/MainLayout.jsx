@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import BrandLogo, { BRAND_NAME } from '../components/BrandLogo.jsx';
 import Icon from '../components/ui/Icon.jsx';
-import useTheme from '../hooks/useTheme.js';
 
 const NAV_CATEGORIES = [
   {
@@ -58,7 +57,6 @@ export function Header({ session, onLogout }) {
   const isBroker = session?.role === 'BROKER';
   const isAdmin = session?.role === 'ADMIN';
   const isUser = session?.role === 'USER';
-  const { isDark, toggleTheme } = useTheme();
 
   return (
     <header className="navbar">
@@ -121,15 +119,6 @@ export function Header({ session, onLogout }) {
 
         {/* Right actions */}
         <div className="navbar-actions">
-          <button
-            type="button"
-            onClick={toggleTheme}
-            title={isDark ? 'Giao diện sáng' : 'Giao diện tối'}
-            className="navbar-theme-btn"
-          >
-            <Icon name={isDark ? 'Sun' : 'Moon'} size={18} />
-          </button>
-
           {!session && (
             <>
               <a href="#/login" className="btn btn-ghost btn-sm">

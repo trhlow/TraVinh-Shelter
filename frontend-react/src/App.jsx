@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { logout as logoutRequest } from './services/api.js';
 import { clearStoredSession, loadStoredSession, saveStoredSession } from './services/session.js';
 import { resolveRoute } from './routes/index.jsx';
-import useTheme from './hooks/useTheme.js';
 
 function readHashPath() {
   const hashPath = window.location.hash.replace(/^#/, '');
@@ -13,7 +12,6 @@ export default function App() {
   const [path, setPath] = useState(readHashPath);
   const [session, setSession] = useState(loadStoredSession);
   const { Page, params } = resolveRoute(path);
-  useTheme();
 
   useEffect(() => {
     const onHashChange = () => setPath(readHashPath());
