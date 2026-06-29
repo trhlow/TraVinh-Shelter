@@ -176,16 +176,6 @@ export default function HomePage({ session, onLogout }) {
       <section className="hero">
         <div className="container">
           <div className="hero-content">
-            <div className="hero-eyebrow">
-              <Icon name="MapPin" size={14} />
-              Bất động sản Trà Vinh
-            </div>
-            <h1 className="hero-title">
-              Công Tín Land - tìm nhà trọ, bất động sản Trà Vinh nhanh chóng
-            </h1>
-            <p className="hero-subtitle">
-              Kết nối người mua — người bán — môi giới uy tín. Hàng trăm bất động sản được cập nhật hằng ngày tại Trà Vinh.
-            </p>
             <div className="hero-ctas">
               <Button as="a" href="#/search" variant="primary" size="lg">
                 <Icon name="Search" size={18} /> Tìm bất động sản

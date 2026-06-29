@@ -609,38 +609,6 @@ img { display: block; max-width: 100%; }
   margin: 0 auto;
 }
 
-.hero-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  background: var(--color-accent-light);
-  border: 1px solid rgb(22 163 74 / 0.25);
-  border-radius: var(--radius-full);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-accent-hover);
-  margin-bottom: 24px;
-}
-
-.hero-title {
-  font-size: clamp(46px, 7vw, 76px);
-  font-weight: 700;
-  line-height: 1.08;
-  letter-spacing: -0.025em;
-  color: var(--color-text-primary);
-  margin-bottom: 20px;
-}
-
-.hero-subtitle {
-  font-size: clamp(19px, 2.2vw, 24px);
-  color: var(--color-text-secondary);
-  line-height: 1.6;
-  margin-bottom: 36px;
-  max-width: 580px;
-  margin-left: auto;
-  margin-right: auto;
-}
 
 .hero-ctas {
   display: flex;
