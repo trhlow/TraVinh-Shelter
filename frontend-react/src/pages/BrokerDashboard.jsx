@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BarChart, DonutChart, HorizontalBarChart } from '../components/Charts.jsx';
-import { DashboardPageHeader, DashboardPanel, LoadingRows, StateBlock, StatusBadge } from '../components/DashboardWidgets.jsx';
-import MaterialIcon from '../components/MaterialIcon.jsx';
-import AdminLayout from '../layouts/AdminLayout.jsx';
+import { DashboardPanel, LoadingRows, StateBlock, StatusBadge } from '../components/DashboardWidgets.jsx';
+import BrandLogo from '../components/BrandLogo.jsx';
+import Icon from '../components/ui/Icon.jsx';
 import LoginPage from './LoginPage.jsx';
 import {
   createProperty,
@@ -15,6 +15,12 @@ import {
   updateProperty,
   updatePropertyStatus,
 } from '../services/api.js';
+
+const BROKER_SIDEBAR_ITEMS = [
+  { href: '#/broker/dashboard', icon: 'LayoutDashboard', label: 'Bảng điều khiển' },
+  { href: '#/broker/profile', icon: 'User', label: 'Hồ sơ môi giới' },
+  { href: '#/broker/properties', icon: 'Building', label: 'Tin đăng của tôi' },
+];
 
 const EMPTY_FORM = {
   id: '',
@@ -110,7 +116,19 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
 
   if (!session) return <LoginPage onLogin={onLogin} />;
   if (session.role !== 'BROKER') {
-    return <AccessDenied session={session} onLogout={onLogout} activePath={currentPath} />;
+    return (
+      <div className="dashboard-shell">
+        <BrokerSidebar currentPath={currentPath} />
+        <div className="dashboard-content">
+          <div className="dashboard-main">
+            <div className="card">
+              <h1 className="dashboard-page-title">Không có quyền môi giới</h1>
+              <p>Chỉ tài khoản môi giới do admin cấp mới được đăng và quản lý tin.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   async function reloadDashboard() {
@@ -276,279 +294,328 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   }
 
   return (
-    <AdminLayout session={session} onLogout={onLogout} variant="broker" activePath={currentPath}>
-      <main className="dashboard-main">
-        <div className="mb-stack-lg flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <DashboardPageHeader
-            activePath={currentPath}
-            loading={loading}
-            subtitle={brokerSubtitle(section)}
-            tabs={brokerTabs(dashboardStats, profileReady)}
-            title={brokerTitle(section)}
-          />
-          {section === 'properties' && (
-            <button className="ui-action" onClick={() => document.getElementById('listing-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} type="button">
-              <MaterialIcon className="text-sm">add</MaterialIcon>
-              Đăng tin mới
-            </button>
-          )}
-          {section === 'profile' && (
-            <a className="ui-action" href="#/broker/properties">
-              <MaterialIcon className="text-sm">description</MaterialIcon>
-              Tin đăng của tôi
-            </a>
-          )}
+    <div className="dashboard-shell">
+      <BrokerSidebar currentPath={currentPath} onLogout={onLogout} session={session} />
+      <div className="dashboard-content">
+        <div className="dashboard-topbar">
+          <span className="dashboard-topbar-title">{brokerTitle(section)}</span>
+          <div className="dashboard-topbar-actions">
+            {section === 'properties' && (
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={() => document.getElementById('listing-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                type="button"
+              >
+                <Icon name="Plus" size={16} className="icon-inverse" />
+                Đăng tin mới
+              </button>
+            )}
+            {session && (
+              <button className="btn btn-ghost btn-sm" onClick={onLogout} type="button">
+                <Icon name="LogOut" size={16} className="icon-muted" />
+                Đăng xuất
+              </button>
+            )}
+          </div>
         </div>
 
-        {notice && <div className="mb-stack-md rounded border border-success-green/40 bg-success-green/10 p-3 font-body-sm text-body-sm text-on-surface">{notice}</div>}
-        {error && <div className="mb-stack-md rounded border border-error-container bg-error-container/50 p-3 font-body-sm text-body-sm text-on-error-container">{error}</div>}
+        <div className="dashboard-main">
+          <h1 className="dashboard-page-title">{brokerTitle(section)}</h1>
 
-        {section === 'dashboard' && (
-          <>
-            <section className="mb-stack-lg grid grid-cols-1 gap-gutter xl:grid-cols-3">
-              <DonutChart title="Mức sẵn sàng hồ sơ" data={profileChart} centerLabel="trạng thái" />
-              <BarChart title="Tin đăng theo danh mục" data={categoryChart} />
-              <HorizontalBarChart title="Trạng thái tin đăng" data={statusChart} />
-            </section>
+          {notice && <div className="alert dashboard-notice">{notice}</div>}
+          {error && <div className="alert alert-error">{error}</div>}
 
-            <section className="grid grid-cols-1 gap-gutter xl:grid-cols-[360px_1fr]">
-              <DashboardPanel title="Trạng thái hồ sơ" count={profileReady ? 'Đủ thông tin liên hệ' : 'Cần bổ sung'}>
+          {section === 'dashboard' && (
+            <>
+              <div className="grid-3 dashboard-stats-row">
+                <div className="stat-card">
+                  <div className="stat-card-number">{dashboardStats.totalListings}</div>
+                  <div className="stat-card-label">Tổng tin đăng</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-card-number">{dashboardStats.activeListings}</div>
+                  <div className="stat-card-label">Đang hiển thị</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-card-number">{dashboardStats.leads}</div>
+                  <div className="stat-card-label">Lượt liên hệ</div>
+                </div>
+              </div>
+
+              <div className="dashboard-charts-row">
+                <DonutChart title="Mức sẵn sàng hồ sơ" data={profileChart} centerLabel="trạng thái" />
+                <BarChart title="Tin đăng theo danh mục" data={categoryChart} />
+                <HorizontalBarChart title="Trạng thái tin đăng" data={statusChart} />
+              </div>
+
+              <div className="dashboard-panels-row">
+                <DashboardPanel title="Trạng thái hồ sơ" count={profileReady ? 'Đủ thông tin liên hệ' : 'Cần bổ sung'}>
+                  <ProfileSummary profile={profile} profileForm={profileForm} avatarPreview={avatarPreview} profileReady={profileReady} />
+                </DashboardPanel>
+                <DashboardPanel title="Tin gần đây" count={`${listings.slice(0, 4).length} tin mới`}>
+                  <RecentListings listings={listings} loading={loading} />
+                </DashboardPanel>
+              </div>
+            </>
+          )}
+
+          {section === 'profile' && (
+            <div className="dashboard-profile-grid">
+              <DashboardPanel title="Hồ sơ đang hiển thị" count={profileReady ? 'Sẵn sàng đăng tin' : 'Cần cập nhật'}>
                 <ProfileSummary profile={profile} profileForm={profileForm} avatarPreview={avatarPreview} profileReady={profileReady} />
               </DashboardPanel>
-              <DashboardPanel title="Hiệu suất tin gần đây" count={`${viewChart.length} tin`}>
-                <div className="p-5">
-                  <MiniBarList data={viewChart.length > 0 ? viewChart : [{ label: 'Chưa có tin', value: 0 }]} />
-                </div>
-              </DashboardPanel>
-              <DashboardPanel title="Tin gần đây" count={`${listings.slice(0, 4).length} tin mới`} className="xl:col-span-2">
-                <RecentListings listings={listings} loading={loading} />
-              </DashboardPanel>
-            </section>
-          </>
-        )}
-
-        {section === 'profile' && (
-          <section className="grid grid-cols-1 gap-gutter xl:grid-cols-[360px_1fr]">
-            <DashboardPanel title="Hồ sơ đang hiển thị" count={profileReady ? 'Sẵn sàng đăng tin' : 'Cần cập nhật'}>
-              <ProfileSummary profile={profile} profileForm={profileForm} avatarPreview={avatarPreview} profileReady={profileReady} />
-            </DashboardPanel>
-            <form className="ui-panel p-5" onSubmit={saveProfile}>
-              <h2 className="font-headline-md text-headline-md text-trust-navy">Cập nhật hồ sơ môi giới</h2>
-              <p className="mb-stack-md mt-2 font-body-sm text-body-sm text-on-surface-variant">Số điện thoại và tên môi giới sẽ hiển thị trên các tin đăng để khách liên hệ trực tiếp.</p>
-              <div className="space-y-stack-md">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <form className="card dashboard-form-card" onSubmit={saveProfile}>
+                <h2 className="dashboard-section-title">Cập nhật hồ sơ môi giới</h2>
+                <p className="dashboard-section-subtitle">Số điện thoại và tên môi giới sẽ hiển thị trên các tin đăng.</p>
+                <div className="dashboard-form-avatar-row">
                   {avatarPreview ? (
-                    <img className="h-24 w-24 rounded-full border-2 border-primary object-cover" src={avatarPreview} alt="Ảnh đại diện môi giới" />
+                    <img className="dashboard-form-avatar-img" src={avatarPreview} alt="Ảnh đại diện môi giới" />
                   ) : (
-                    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary text-on-primary">
-                      <MaterialIcon filled className="text-4xl">badge</MaterialIcon>
+                    <div className="dashboard-form-avatar-placeholder">
+                      <Icon name="User" size={32} className="icon-muted" />
                     </div>
                   )}
-                  <Field label="Ảnh đại diện môi giới" className="flex-1">
+                  <FormField label="Ảnh đại diện môi giới" className="dashboard-form-field-flex">
                     <input className="input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleAvatarChange} />
-                  </Field>
+                  </FormField>
                 </div>
-                <Field label="Họ tên">
+                <FormField label="Họ tên">
                   <input className="input" value={profileForm.fullName} onChange={(event) => setProfileForm((current) => ({ ...current, fullName: event.target.value }))} required />
-                </Field>
-                <Field label="Số điện thoại">
+                </FormField>
+                <FormField label="Số điện thoại">
                   <input className="input" value={profileForm.phone} onChange={(event) => setProfileForm((current) => ({ ...current, phone: event.target.value }))} required />
-                </Field>
-                <button className="ui-action w-full disabled:opacity-60" disabled={saving}>
-                  <MaterialIcon className="text-sm">save</MaterialIcon>
+                </FormField>
+                <button className="auth-btn" type="submit" disabled={saving}>
+                  <Icon name="Check" size={16} className="icon-inverse" />
                   Lưu hồ sơ
                 </button>
-              </div>
-            </form>
-          </section>
-        )}
-
-        {section === 'properties' && (
-          <>
-            <form id="listing-form" className={`ui-panel mb-stack-lg p-5 ${profileReady ? '' : 'ring-1 ring-action-orange/60'}`} onSubmit={saveListing}>
-              <div className="mb-stack-md flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                <div>
-                  <h2 className="font-headline-md text-headline-md text-trust-navy">{editing ? 'Chỉnh sửa tin' : 'Đăng tin mới'}</h2>
-                  <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">Tin sẽ dùng thông tin liên hệ trong hồ sơ môi giới của bạn.</p>
-                </div>
-                {editing && (
-                  <button className="rounded border border-primary px-4 py-2 font-label-bold text-label-bold text-primary transition-colors hover:bg-surface-container-low" type="button" onClick={() => setListingForm(EMPTY_FORM)}>
-                    Hủy sửa
-                  </button>
-                )}
-              </div>
-              {!profileReady && (
-                <div className="mb-stack-md rounded border border-action-orange/40 bg-secondary-fixed/40 p-3 font-body-sm text-body-sm text-on-secondary-container">
-                  Vui lòng hoàn tất hồ sơ môi giới trước khi đăng tin. <a className="font-label-bold text-primary" href="#/broker/profile">Mở hồ sơ</a>
-                </div>
-              )}
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                <Field label="Tiêu đề" className="lg:col-span-2">
-                  <input className="input" value={listingForm.title} onChange={(event) => setListingValue('title', event.target.value, setListingForm)} required />
-                </Field>
-                <Field label="Danh mục">
-                  <select className="input" value={listingForm.categorySlug} onChange={(event) => {
-                    const categorySlug = event.target.value;
-                    setListingForm((current) => ({ ...current, categorySlug, transaction: categorySlug === 'tro' ? 'rent' : current.transaction }));
-                  }}>
-                    <option value="tro">Trọ</option>
-                    <option value="nha">Nhà</option>
-                    <option value="dat">Đất</option>
-                  </select>
-                </Field>
-                {listingForm.categorySlug !== 'tro' && (
-                  <Field label="Nhu cầu">
-                    <select className="input" value={listingForm.transaction} onChange={(event) => setListingValue('transaction', event.target.value, setListingForm)}>
-                      <option value="sale">Mua bán</option>
-                      <option value="rent">Cho thuê</option>
-                    </select>
-                  </Field>
-                )}
-                <Field label="Khu vực">
-                  <select className="input" value={listingForm.ward} onChange={(event) => setListingValue('ward', event.target.value, setListingForm)}>
-                    <option value="phuong-6">Phường 6</option>
-                    <option value="phuong-7">Phường 7</option>
-                    <option value="cau-ngang">Cầu Ngang</option>
-                    <option value="chau-thanh">Châu Thành</option>
-                    <option value="long-duc">Long Đức</option>
-                  </select>
-                </Field>
-                <Field label="Địa chỉ" className="lg:col-span-2">
-                  <input className="input" value={listingForm.address} onChange={(event) => setListingValue('address', event.target.value, setListingForm)} required />
-                </Field>
-                <Field label="Giá (VNĐ)">
-                  <input className="input" type="number" min="0" value={listingForm.price} onChange={(event) => setListingValue('price', event.target.value, setListingForm)} required />
-                </Field>
-                <Field label="Diện tích (m²)">
-                  <input className="input" type="number" min="0" value={listingForm.area} onChange={(event) => setListingValue('area', event.target.value, setListingForm)} />
-                </Field>
-                {listingForm.categorySlug === 'nha' && listingForm.transaction === 'rent' && (
-                  <Field label="Loại nhà">
-                    <select className="input" value={listingForm.houseType} onChange={(event) => setListingValue('houseType', event.target.value, setListingForm)}>
-                      <option value="tret">Trệt</option>
-                      <option value="lau">Lầu</option>
-                    </select>
-                  </Field>
-                )}
-                <Field label="Phòng ngủ">
-                  <input className="input" type="number" min="0" value={listingForm.bedrooms} onChange={(event) => setListingValue('bedrooms', event.target.value, setListingForm)} />
-                </Field>
-                <Field label="Phòng tắm">
-                  <input className="input" type="number" min="0" value={listingForm.bathrooms} onChange={(event) => setListingValue('bathrooms', event.target.value, setListingForm)} />
-                </Field>
-                <Field label="Ảnh đại diện" className="lg:col-span-3">
-                  <input className="input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleCoverChange} />
-                  {(listingForm.coverPreview || listingForm.coverUrl) && (
-                    <div className="mt-3 h-44 w-full max-w-sm overflow-hidden rounded-lg border border-outline-variant">
-                      <img className="h-full w-full object-cover" src={listingForm.coverPreview || listingForm.coverUrl} alt="Ảnh đại diện tin đăng" />
-                    </div>
-                  )}
-                </Field>
-                <Field label="Ảnh bổ sung (4-6 ảnh)" className="lg:col-span-3">
-                  <input className="input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple onChange={handleGalleryChange} />
-                  {listingForm.galleryPreviews.length > 0 && (
-                    <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-                      {listingForm.galleryPreviews.map((preview, index) => (
-                        <img key={preview} className="h-28 w-full rounded-lg border border-outline-variant object-cover" src={preview} alt={`Ảnh bổ sung ${index + 1}`} />
-                      ))}
-                    </div>
-                  )}
-                </Field>
-                <Field label="Mô tả" className="lg:col-span-3">
-                  <textarea className="input min-h-28" value={listingForm.description} onChange={(event) => setListingValue('description', event.target.value, setListingForm)} />
-                </Field>
-              </div>
-              <button className="ui-action mt-stack-md disabled:opacity-60" disabled={saving || !profileReady}>
-                <MaterialIcon className="text-sm">{editing ? 'save' : 'add'}</MaterialIcon>
-                {editing ? 'Lưu chỉnh sửa' : 'Đăng tin'}
-              </button>
-            </form>
-
-            <div className="mb-stack-md flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <label className="relative block w-full md:max-w-md">
-                <span className="sr-only">Tìm tin đăng</span>
-                <MaterialIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</MaterialIcon>
-                <input
-                  className="dashboard-search"
-                  placeholder="Tìm theo tiêu đề, địa chỉ, giá..."
-                  value={listingQuery}
-                  onChange={(event) => setListingQuery(event.target.value)}
-                />
-              </label>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">
-                {loading ? 'Đang tải' : `${filteredListings.length}/${listings.length} tin phù hợp`}
-              </p>
+              </form>
             </div>
+          )}
 
-            <div className="grid grid-cols-1 gap-gutter">
-              <DashboardPanel title="Đang hoạt động hoặc đã bán" count={loading ? 'Đang tải' : `${visibleListings.length} tin`}>
-                <ListingList
-                  listings={visibleListings}
-                  loading={loading}
-                  saving={saving}
-                  onEdit={editListing}
-                  onDelete={removeListing}
-                  onStatus={changeStatus}
-                  emptyTitle="Không có tin đang hoạt động hoặc đã bán"
-                  emptyDescription="Thử đổi từ khóa tìm kiếm hoặc mở lại tin đang tạm ẩn."
-                />
-              </DashboardPanel>
-              <DashboardPanel title="Tạm ẩn" count={loading ? 'Đang tải' : `${hiddenListings.length} tin`}>
-                <ListingList
-                  listings={hiddenListings}
-                  loading={loading}
-                  saving={saving}
-                  onEdit={editListing}
-                  onDelete={removeListing}
-                  onStatus={changeStatus}
-                  emptyTitle="Không có tin tạm ẩn"
-                  emptyDescription="Tin bị ẩn khỏi trang công khai sẽ được gom riêng tại đây."
-                />
-              </DashboardPanel>
-            </div>
-          </>
-        )}
+          {section === 'properties' && (
+            <>
+              <form id="listing-form" className="card dashboard-form-card" onSubmit={saveListing}>
+                <div className="dashboard-form-header">
+                  <div>
+                    <h2 className="dashboard-section-title">{editing ? 'Chỉnh sửa tin' : 'Đăng tin mới'}</h2>
+                    <p className="dashboard-section-subtitle">Tin sẽ dùng thông tin liên hệ trong hồ sơ môi giới của bạn.</p>
+                  </div>
+                  {editing && (
+                    <button className="btn btn-ghost btn-sm" type="button" onClick={() => setListingForm(EMPTY_FORM)}>
+                      Hủy sửa
+                    </button>
+                  )}
+                </div>
+                {!profileReady && (
+                  <div className="alert alert-error">
+                    Vui lòng hoàn tất hồ sơ môi giới trước khi đăng tin. <a className="auth-link" href="#/broker/profile">Mở hồ sơ</a>
+                  </div>
+                )}
+                <div className="dashboard-listing-grid">
+                  <FormField label="Tiêu đề" className="dashboard-listing-span2">
+                    <input className="input" value={listingForm.title} onChange={(event) => setListingValue('title', event.target.value, setListingForm)} required />
+                  </FormField>
+                  <FormField label="Danh mục">
+                    <select className="input" value={listingForm.categorySlug} onChange={(event) => {
+                      const categorySlug = event.target.value;
+                      setListingForm((current) => ({ ...current, categorySlug, transaction: categorySlug === 'tro' ? 'rent' : current.transaction }));
+                    }}>
+                      <option value="tro">Trọ</option>
+                      <option value="nha">Nhà</option>
+                      <option value="dat">Đất</option>
+                    </select>
+                  </FormField>
+                  {listingForm.categorySlug !== 'tro' && (
+                    <FormField label="Nhu cầu">
+                      <select className="input" value={listingForm.transaction} onChange={(event) => setListingValue('transaction', event.target.value, setListingForm)}>
+                        <option value="sale">Mua bán</option>
+                        <option value="rent">Cho thuê</option>
+                      </select>
+                    </FormField>
+                  )}
+                  <FormField label="Khu vực">
+                    <select className="input" value={listingForm.ward} onChange={(event) => setListingValue('ward', event.target.value, setListingForm)}>
+                      <option value="phuong-6">Phường 6</option>
+                      <option value="phuong-7">Phường 7</option>
+                      <option value="cau-ngang">Cầu Ngang</option>
+                      <option value="chau-thanh">Châu Thành</option>
+                      <option value="long-duc">Long Đức</option>
+                    </select>
+                  </FormField>
+                  <FormField label="Địa chỉ" className="dashboard-listing-span2">
+                    <input className="input" value={listingForm.address} onChange={(event) => setListingValue('address', event.target.value, setListingForm)} required />
+                  </FormField>
+                  <FormField label="Giá (VNĐ)">
+                    <input className="input" type="number" min="0" value={listingForm.price} onChange={(event) => setListingValue('price', event.target.value, setListingForm)} required />
+                  </FormField>
+                  <FormField label="Diện tích (m²)">
+                    <input className="input" type="number" min="0" value={listingForm.area} onChange={(event) => setListingValue('area', event.target.value, setListingForm)} />
+                  </FormField>
+                  {listingForm.categorySlug === 'nha' && listingForm.transaction === 'rent' && (
+                    <FormField label="Loại nhà">
+                      <select className="input" value={listingForm.houseType} onChange={(event) => setListingValue('houseType', event.target.value, setListingForm)}>
+                        <option value="tret">Trệt</option>
+                        <option value="lau">Lầu</option>
+                      </select>
+                    </FormField>
+                  )}
+                  <FormField label="Phòng ngủ">
+                    <input className="input" type="number" min="0" value={listingForm.bedrooms} onChange={(event) => setListingValue('bedrooms', event.target.value, setListingForm)} />
+                  </FormField>
+                  <FormField label="Phòng tắm">
+                    <input className="input" type="number" min="0" value={listingForm.bathrooms} onChange={(event) => setListingValue('bathrooms', event.target.value, setListingForm)} />
+                  </FormField>
+                  <FormField label="Ảnh đại diện" className="dashboard-listing-span3">
+                    <input className="input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleCoverChange} />
+                    {(listingForm.coverPreview || listingForm.coverUrl) && (
+                      <div className="dashboard-cover-preview">
+                        <img src={listingForm.coverPreview || listingForm.coverUrl} alt="Ảnh đại diện tin đăng" />
+                      </div>
+                    )}
+                  </FormField>
+                  <FormField label="Ảnh bổ sung (4-6 ảnh)" className="dashboard-listing-span3">
+                    <input className="input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple onChange={handleGalleryChange} />
+                    {listingForm.galleryPreviews.length > 0 && (
+                      <div className="dashboard-gallery-grid">
+                        {listingForm.galleryPreviews.map((preview, index) => (
+                          <img key={preview} className="dashboard-gallery-thumb" src={preview} alt={`Ảnh bổ sung ${index + 1}`} />
+                        ))}
+                      </div>
+                    )}
+                  </FormField>
+                  <FormField label="Mô tả" className="dashboard-listing-span3">
+                    <textarea className="input" value={listingForm.description} onChange={(event) => setListingValue('description', event.target.value, setListingForm)} />
+                  </FormField>
+                </div>
+                <button className="auth-btn dashboard-submit-btn" type="submit" disabled={saving || !profileReady}>
+                  <Icon name={editing ? 'Check' : 'Plus'} size={16} className="icon-inverse" />
+                  {editing ? 'Lưu chỉnh sửa' : 'Đăng tin'}
+                </button>
+              </form>
 
-      </main>
-    </AdminLayout>
+              <div className="dashboard-search-bar">
+                <label className="dashboard-search-label">
+                  <span className="sr-only">Tìm tin đăng</span>
+                  <Icon name="Search" size={16} className="icon-muted dashboard-search-icon" />
+                  <input
+                    className="input dashboard-search-input"
+                    placeholder="Tìm theo tiêu đề, địa chỉ, giá..."
+                    value={listingQuery}
+                    onChange={(event) => setListingQuery(event.target.value)}
+                  />
+                </label>
+                <p className="dashboard-search-count">
+                  {loading ? 'Đang tải' : `${filteredListings.length}/${listings.length} tin phù hợp`}
+                </p>
+              </div>
+
+              <div className="dashboard-panels-col">
+                <DashboardPanel title="Đang hoạt động hoặc đã bán" count={loading ? 'Đang tải' : `${visibleListings.length} tin`}>
+                  <ListingList
+                    listings={visibleListings}
+                    loading={loading}
+                    saving={saving}
+                    onEdit={editListing}
+                    onDelete={removeListing}
+                    onStatus={changeStatus}
+                    emptyTitle="Không có tin đang hoạt động hoặc đã bán"
+                    emptyDescription="Thử đổi từ khóa tìm kiếm hoặc mở lại tin đang tạm ẩn."
+                  />
+                </DashboardPanel>
+                <DashboardPanel title="Tạm ẩn" count={loading ? 'Đang tải' : `${hiddenListings.length} tin`}>
+                  <ListingList
+                    listings={hiddenListings}
+                    loading={loading}
+                    saving={saving}
+                    onEdit={editListing}
+                    onDelete={removeListing}
+                    onStatus={changeStatus}
+                    emptyTitle="Không có tin tạm ẩn"
+                    emptyDescription="Tin bị ẩn khỏi trang công khai sẽ được gom riêng tại đây."
+                  />
+                </DashboardPanel>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BrokerSidebar({ currentPath, onLogout, session }) {
+  const activePath = currentPath.startsWith('/') ? `#${currentPath}` : currentPath;
+  return (
+    <aside className="dashboard-sidebar">
+      <div className="dashboard-sidebar-header">
+        <a href="#/">
+          <BrandLogo />
+        </a>
+      </div>
+      <nav className="dashboard-sidebar-nav">
+        {BROKER_SIDEBAR_ITEMS.map((item) => (
+          <a
+            key={item.href}
+            href={item.href}
+            className={`sidebar-item ${activePath === item.href ? 'is-active' : ''}`}
+          >
+            <Icon name={item.icon} size={18} />
+            {item.label}
+          </a>
+        ))}
+        <a href="#/" className="sidebar-item">
+          <Icon name="Home" size={18} />
+          Trang chủ
+        </a>
+      </nav>
+      {session && (
+        <div className="dashboard-sidebar-footer">
+          <div className="dashboard-sidebar-user">
+            <Icon name="User" size={16} className="icon-muted" />
+            <span className="dashboard-sidebar-email">{session.email}</span>
+          </div>
+          <button className="sidebar-item dashboard-sidebar-logout" type="button" onClick={onLogout}>
+            <Icon name="LogOut" size={16} />
+            Đăng xuất
+          </button>
+        </div>
+      )}
+    </aside>
   );
 }
 
 function ProfileSummary({ profile, profileForm, avatarPreview, profileReady }) {
   return (
-    <div className="p-5">
-      <div className="flex items-center gap-4">
+    <div className="dashboard-profile-summary">
+      <div className="dashboard-profile-summary-top">
         {avatarPreview ? (
-          <img className="h-16 w-16 rounded-full border-2 border-primary object-cover" src={avatarPreview} alt="Ảnh đại diện môi giới" />
+          <img className="dashboard-profile-avatar" src={avatarPreview} alt="Ảnh đại diện môi giới" />
         ) : (
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-on-primary">
-            <MaterialIcon filled>badge</MaterialIcon>
+          <div className="dashboard-profile-avatar-placeholder">
+            <Icon name="User" size={24} className="icon-muted" />
           </div>
         )}
-        <div className="min-w-0">
-          <p className="truncate font-headline-md text-headline-md text-on-surface">{profile?.fullName || profileForm.fullName || 'Chưa cập nhật tên'}</p>
-          <p className="truncate font-body-sm text-body-sm text-on-surface-variant">{profile?.email || 'Email tài khoản'}</p>
+        <div>
+          <p className="dashboard-profile-name">{profile?.fullName || profileForm.fullName || 'Chưa cập nhật tên'}</p>
+          <p className="dashboard-profile-email">{profile?.email || 'Email tài khoản'}</p>
         </div>
       </div>
-      <div className="mt-5 space-y-3">
-        <InfoLine icon="call" label="Số điện thoại" value={profile?.phone || profileForm.phone || 'Chưa cập nhật'} />
-        <InfoLine icon="verified_user" label="Trạng thái hồ sơ" value={profileReady ? 'Sẵn sàng hiển thị' : 'Cần bổ sung'} tone={profileReady ? 'success' : 'warning'} />
+      <div className="dashboard-profile-meta">
+        <ProfileLine label="Số điện thoại" value={profile?.phone || profileForm.phone || 'Chưa cập nhật'} />
+        <ProfileLine label="Trạng thái hồ sơ" value={profileReady ? 'Sẵn sàng hiển thị' : 'Cần bổ sung'} tone={profileReady ? 'success' : 'warning'} />
       </div>
-      <a className="ui-action mt-5 w-full" href="#/broker/profile">
-        <MaterialIcon className="text-sm">account_circle</MaterialIcon>
+      <a className="auth-btn" href="#/broker/profile">
         Mở hồ sơ
       </a>
     </div>
   );
 }
 
-function InfoLine({ icon, label, value, tone = 'muted' }) {
+function ProfileLine({ label, value, tone = 'muted' }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="flex items-center gap-2 font-body-sm text-body-sm text-on-surface-variant">
-        <MaterialIcon className="text-sm">{icon}</MaterialIcon>
-        {label}
-      </span>
+    <div className="dashboard-profile-line">
+      <span className="dashboard-profile-line-label">{label}</span>
       <StatusBadge tone={tone}>{value}</StatusBadge>
     </div>
   );
@@ -558,35 +625,16 @@ function RecentListings({ listings, loading }) {
   if (loading) return <LoadingRows rows={3} />;
   if (listings.length === 0) return <StateBlock title="Bạn chưa có tin đăng nào" description="Tạo tin đầu tiên trong mục Tin đăng của tôi." />;
   return (
-    <div className="divide-y divide-outline-variant">
+    <div className="dashboard-recent-list">
       {listings.slice(0, 4).map((listing) => (
-        <a key={listing.id} className="flex items-center gap-4 p-4 transition-colors hover:bg-surface-container-low" href="#/broker/properties">
-          <img className="h-16 w-20 shrink-0 rounded object-cover" src={listing.image} alt={listing.title} />
-          <div className="min-w-0 flex-1">
-            <div className="truncate font-label-bold text-label-bold text-on-surface">{listing.title}</div>
-            <div className="truncate font-body-sm text-body-sm text-on-surface-variant">{listing.priceLabel}</div>
+        <a key={listing.id} className="dashboard-recent-item" href="#/broker/properties">
+          <img className="dashboard-recent-thumb" src={listing.image} alt={listing.title} />
+          <div className="dashboard-recent-info">
+            <div className="dashboard-recent-title">{listing.title}</div>
+            <div className="dashboard-recent-price">{listing.priceLabel}</div>
           </div>
           <StatusBadge tone={listingStatusTone(listing)}>{listing.statusLabel}</StatusBadge>
         </a>
-      ))}
-    </div>
-  );
-}
-
-function MiniBarList({ data }) {
-  const max = Math.max(...data.map((item) => item.value), 1);
-  return (
-    <div className="space-y-4">
-      {data.map((item) => (
-        <div key={item.label}>
-          <div className="mb-1 flex items-center justify-between gap-3">
-            <span className="font-body-sm text-body-sm text-on-surface">{item.label}</span>
-            <span className="font-label-bold text-label-bold text-trust-navy">{item.value}</span>
-          </div>
-          <div className="h-3 overflow-hidden rounded bg-surface-container-low">
-            <div className="h-full rounded bg-action-orange" style={{ width: `${Math.max(8, (item.value / max) * 100)}%` }} />
-          </div>
-        </div>
       ))}
     </div>
   );
@@ -605,7 +653,7 @@ function ListingList({
   if (loading) return <LoadingRows rows={4} />;
   if (listings.length === 0) return <StateBlock title={emptyTitle} description={emptyDescription} />;
   return (
-    <div className="divide-y divide-outline-variant">
+    <div className="dashboard-listing-list">
       {listings.map((listing) => (
         <ListingRow key={listing.id} listing={listing} onEdit={onEdit} onDelete={onDelete} onStatus={onStatus} saving={saving} />
       ))}
@@ -616,40 +664,38 @@ function ListingList({
 function ListingRow({ listing, onEdit, onDelete, onStatus, saving }) {
   const hidden = listing.rawStatus === 'HIDDEN';
   return (
-    <div className="flex flex-col gap-5 p-5 transition-colors hover:bg-surface-container-low md:flex-row">
-      <div className="relative h-32 w-full shrink-0 overflow-hidden rounded-lg md:w-48">
-        <img className="h-full w-full object-cover" data-alt="A real estate listing image." src={listing.image} alt={listing.title} />
-        <div className="absolute left-2 top-2">
+    <div className="dashboard-listing-row">
+      <div className="dashboard-listing-thumb-wrap">
+        <img className="dashboard-listing-thumb" src={listing.image} alt={listing.title} />
+        <div className="dashboard-listing-thumb-badge">
           <StatusBadge tone={listingStatusTone(listing)}>{listing.statusLabel}</StatusBadge>
         </div>
       </div>
-      <div className="flex min-w-0 flex-1 flex-col justify-between">
-        <div>
-          <h4 className="mb-1 font-headline-md text-headline-md text-on-surface">{listing.title}</h4>
-          <p className="mb-2 line-clamp-1 font-body-sm text-body-sm text-on-surface-variant">{listing.address}</p>
-          <p className="font-price-display text-price-display text-trust-navy">{listing.priceLabel}</p>
-        </div>
-        <div className="mt-4 flex flex-wrap items-center gap-4 font-body-sm text-body-sm text-on-surface-variant">
-          <span className="flex items-center gap-1"><MaterialIcon className="text-sm">straighten</MaterialIcon> {listing.area || 0}m²</span>
-          <span className="flex items-center gap-1"><MaterialIcon className="text-sm">visibility</MaterialIcon> {listingViews(listing)}</span>
+      <div className="dashboard-listing-body">
+        <h4 className="dashboard-listing-title">{listing.title}</h4>
+        <p className="dashboard-listing-address">{listing.address}</p>
+        <p className="dashboard-listing-price">{listing.priceLabel}</p>
+        <div className="dashboard-listing-meta">
+          <span>{listing.area || 0}m²</span>
+          <span>{listingViews(listing)} lượt xem</span>
         </div>
       </div>
-      <div className="flex shrink-0 flex-wrap items-center gap-2 md:w-52 md:flex-col md:items-stretch">
+      <div className="dashboard-listing-actions">
         <select className="input" value={listing.rawStatus} onChange={(event) => onStatus(listing.id, event.target.value)} disabled={saving}>
           <option value="AVAILABLE">Đang hiển thị</option>
           <option value="HIDDEN">Đã ẩn</option>
           <option value="RENTED">Đã thuê</option>
           <option value="SOLD">Đã bán</option>
         </select>
-        <div className="flex gap-2">
-          <button className="flex h-10 w-10 items-center justify-center rounded text-primary transition-colors hover:bg-primary-fixed disabled:opacity-60" onClick={() => onEdit(listing)} disabled={saving} aria-label="Chỉnh sửa tin" type="button">
-            <MaterialIcon>edit</MaterialIcon>
+        <div className="dashboard-listing-btns">
+          <button className="btn btn-ghost btn-sm" onClick={() => onEdit(listing)} disabled={saving} aria-label="Chỉnh sửa tin" type="button">
+            <Icon name="Pencil" size={16} className="icon-brand" />
           </button>
-          <button className="flex h-10 w-10 items-center justify-center rounded text-on-surface-variant transition-colors hover:bg-surface-container disabled:opacity-60" onClick={() => onStatus(listing.id, hidden ? 'AVAILABLE' : 'HIDDEN')} disabled={saving} aria-label={hidden ? 'Hiện tin' : 'Ẩn tin'} type="button">
-            <MaterialIcon>{hidden ? 'visibility' : 'visibility_off'}</MaterialIcon>
+          <button className="btn btn-ghost btn-sm" onClick={() => onStatus(listing.id, hidden ? 'AVAILABLE' : 'HIDDEN')} disabled={saving} aria-label={hidden ? 'Hiện tin' : 'Ẩn tin'} type="button">
+            <Icon name={hidden ? 'Eye' : 'EyeOff'} size={16} className="icon-muted" />
           </button>
-          <button className="flex h-10 w-10 items-center justify-center rounded text-error transition-colors hover:bg-error-container disabled:opacity-60" onClick={() => onDelete(listing.id)} disabled={saving} aria-label="Xóa tin" type="button">
-            <MaterialIcon>delete</MaterialIcon>
+          <button className="btn btn-ghost btn-sm" onClick={() => onDelete(listing.id)} disabled={saving} aria-label="Xóa tin" type="button">
+            <Icon name="Trash2" size={16} className="icon-muted" />
           </button>
         </div>
       </div>
@@ -657,25 +703,12 @@ function ListingRow({ listing, onEdit, onDelete, onStatus, saving }) {
   );
 }
 
-function Field({ label, children, className = '' }) {
+function FormField({ label, children, className = '' }) {
   return (
-    <label className={`block ${className}`}>
-      <span className="mb-2 block font-label-bold text-label-bold text-trust-navy">{label}</span>
+    <div className={`auth-field ${className}`}>
+      <label className="auth-field-label">{label}</label>
       {children}
-    </label>
-  );
-}
-
-function AccessDenied({ session, onLogout, activePath }) {
-  return (
-    <AdminLayout session={session} onLogout={onLogout} variant="broker" activePath={activePath}>
-      <main className="dashboard-main">
-        <section className="ui-panel p-stack-lg">
-          <h1 className="font-headline-lg text-headline-lg text-trust-navy mb-2">Không có quyền môi giới</h1>
-          <p className="font-body-md text-body-md text-on-surface-variant">Chỉ tài khoản môi giới do admin cấp mới được đăng và quản lý tin.</p>
-        </section>
-      </main>
-    </AdminLayout>
+    </div>
   );
 }
 
@@ -776,22 +809,6 @@ function brokerTitle(section) {
     profile: 'Hồ sơ môi giới',
     properties: 'Tin đăng của tôi',
   }[section] || 'Bảng điều khiển';
-}
-
-function brokerSubtitle(section) {
-  return {
-    dashboard: 'Theo dõi hiệu suất tin đăng, trạng thái hồ sơ và danh mục bằng biểu đồ.',
-    profile: 'Cập nhật avatar, tên và số điện thoại hiển thị trên bài đăng.',
-    properties: 'Đăng tin mới, chỉnh sửa, upload ảnh, ẩn/hiện và xóa tin của bạn.',
-  }[section] || 'Theo dõi nhanh hoạt động môi giới của bạn.';
-}
-
-function brokerTabs(stats, profileReady) {
-  return [
-    { label: 'Bảng điều khiển', href: '#/broker/dashboard', count: stats.totalListings },
-    { label: 'Hồ sơ môi giới', href: '#/broker/profile', count: profileReady ? 1 : 0 },
-    { label: 'Tin đăng của tôi', href: '#/broker/properties', count: stats.activeListings },
-  ];
 }
 
 function shortLabel(value) {

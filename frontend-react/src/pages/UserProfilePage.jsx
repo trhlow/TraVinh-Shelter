@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import MaterialIcon from '../components/MaterialIcon.jsx';
+import Icon from '../components/ui/Icon.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
 import { fetchCurrentUser, updateCurrentProfile, uploadCurrentUserAvatar } from '../services/api.js';
 import LoginPage from './LoginPage.jsx';
@@ -46,17 +46,17 @@ export default function UserProfilePage({ session, onLogin, onLogout }) {
   if (session.role === 'BROKER' || session.role === 'ADMIN') {
     return (
       <MainLayout session={session} onLogout={onLogout}>
-        <main className="mx-auto flex w-full max-w-container-max flex-grow items-center px-margin-mobile py-[72px] md:px-margin-desktop">
-          <section className="ui-panel w-full max-w-2xl p-stack-lg">
-            <h1 className="font-headline-lg text-headline-lg text-trust-navy">Hồ sơ tài khoản</h1>
-            <p className="mt-2 font-body-md text-body-md text-on-surface-variant">
+        <div className="auth-shell">
+          <div className="auth-card">
+            <h1 className="auth-title">Hồ sơ tài khoản</h1>
+            <p className="auth-subtitle">
               Tài khoản {session.role === 'ADMIN' ? 'admin' : 'môi giới'} đang có khu vực hồ sơ riêng trong dashboard.
             </p>
-            <a className="ui-action mt-stack-md" href={session.role === 'ADMIN' ? '#/admin/overview' : '#/broker/profile'}>
+            <a className="auth-btn" href={session.role === 'ADMIN' ? '#/admin/overview' : '#/broker/profile'}>
               Mở dashboard
             </a>
-          </section>
-        </main>
+          </div>
+        </div>
       </MainLayout>
     );
   }
@@ -102,63 +102,68 @@ export default function UserProfilePage({ session, onLogin, onLogout }) {
 
   return (
     <MainLayout session={session} onLogout={onLogout}>
-      <main className="w-full flex-grow bg-surface-container-low px-margin-mobile py-[64px] md:px-margin-desktop">
-        <section className="mx-auto grid max-w-container-max grid-cols-1 gap-gutter lg:grid-cols-[360px_1fr]">
-          <aside className="ui-panel h-fit p-5">
-            <div className="flex flex-col items-center text-center">
-              {avatarPreview ? (
-                <img className="h-28 w-28 rounded-full border-2 border-primary object-cover" src={avatarPreview} alt="Ảnh đại diện user" />
-              ) : (
-                <div className="flex h-28 w-28 items-center justify-center rounded-full bg-primary-fixed text-primary">
-                  <MaterialIcon className="text-4xl">person</MaterialIcon>
-                </div>
-              )}
-              <h1 className="mt-5 font-headline-lg text-headline-lg text-on-surface">{profile?.fullName || session.fullName || 'Hồ sơ user'}</h1>
-              <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">{profile?.email || session.email}</p>
-              <span className="ui-badge mt-4 bg-primary-fixed text-primary">USER</span>
-            </div>
-          </aside>
+      <div className="profile-shell">
+        <div className="profile-avatar-panel card">
+          <div className="profile-avatar-wrap">
+            {avatarPreview ? (
+              <img className="profile-avatar-img" src={avatarPreview} alt="Ảnh đại diện user" />
+            ) : (
+              <div className="profile-avatar-placeholder">
+                <Icon name="User" size={40} className="icon-muted" />
+              </div>
+            )}
+            <p className="profile-display-name">{profile?.fullName || session.fullName || 'Hồ sơ user'}</p>
+            <p className="profile-display-email">{profile?.email || session.email}</p>
+            <span className="badge badge-neutral">USER</span>
+          </div>
+        </div>
 
-          <form className="ui-panel p-5" onSubmit={saveProfile}>
-            <div className="mb-stack-md border-b border-outline-variant pb-stack-md">
-              <h2 className="font-headline-lg text-headline-lg text-trust-navy">Cập nhật hồ sơ</h2>
-              <p className="mt-2 font-body-sm text-body-sm text-on-surface-variant">Bạn có thể thay đổi thông tin cá nhân dùng cho tài khoản user.</p>
-            </div>
+        <form className="card profile-form-panel" onSubmit={saveProfile}>
+          <h1 className="dashboard-page-title">Cập nhật hồ sơ</h1>
+          <p className="profile-form-subtitle">Bạn có thể thay đổi thông tin cá nhân dùng cho tài khoản user.</p>
 
-            {notice && <div className="mb-stack-md border border-success-green/40 bg-success-green/10 p-3 font-body-sm text-body-sm text-on-surface">{notice}</div>}
-            {error && <div className="mb-stack-md border border-error-container bg-error-container/50 p-3 font-body-sm text-body-sm text-on-error-container">{error}</div>}
+          {notice && <div className="alert profile-notice">{notice}</div>}
+          {error && <div className="alert alert-error">{error}</div>}
 
-            <div className="space-y-stack-md">
-              <Field label="Ảnh đại diện">
-                <input className="input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleAvatarChange} />
-              </Field>
-              <Field label="Email">
-                <input className="input" value={profile?.email || session.email || ''} readOnly />
-              </Field>
-              <Field label="Họ tên">
-                <input className="input" value={form.fullName} onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))} disabled={loading} />
-              </Field>
-              <Field label="Số điện thoại">
-                <input className="input" value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} disabled={loading} />
-              </Field>
-              <button className="ui-action w-full disabled:opacity-60" disabled={saving || loading}>
-                <MaterialIcon className="text-sm">save</MaterialIcon>
-                {saving ? 'Đang lưu' : 'Lưu thay đổi'}
-              </button>
-            </div>
-          </form>
-        </section>
-      </main>
+          <ProfileField label="Ảnh đại diện">
+            <input className="input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleAvatarChange} />
+          </ProfileField>
+          <ProfileField label="Email">
+            <input className="input" value={profile?.email || session.email || ''} readOnly />
+          </ProfileField>
+          <ProfileField label="Họ tên">
+            <input
+              className="input"
+              value={form.fullName}
+              onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))}
+              disabled={loading}
+            />
+          </ProfileField>
+          <ProfileField label="Số điện thoại">
+            <input
+              className="input"
+              value={form.phone}
+              onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
+              disabled={loading}
+            />
+          </ProfileField>
+
+          <button className="auth-btn" type="submit" disabled={saving || loading}>
+            <Icon name="Check" size={16} className="icon-inverse" />
+            {saving ? 'Đang lưu' : 'Lưu thay đổi'}
+          </button>
+        </form>
+      </div>
     </MainLayout>
   );
 }
 
-function Field({ label, children }) {
+function ProfileField({ label, children }) {
   return (
-    <label className="block">
-      <span className="mb-2 block font-label-bold text-label-bold text-trust-navy">{label}</span>
+    <div className="auth-field">
+      <label className="auth-field-label">{label}</label>
       {children}
-    </label>
+    </div>
   );
 }
 

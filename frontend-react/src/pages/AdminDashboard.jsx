@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BarChart, DonutChart, HorizontalBarChart } from '../components/Charts.jsx';
-import { DashboardPageHeader, DashboardPanel, LoadingRows, StateBlock, StatusBadge } from '../components/DashboardWidgets.jsx';
-import MaterialIcon from '../components/MaterialIcon.jsx';
-import AdminLayout from '../layouts/AdminLayout.jsx';
+import { DashboardPanel, LoadingRows, StateBlock, StatusBadge } from '../components/DashboardWidgets.jsx';
+import BrandLogo from '../components/BrandLogo.jsx';
+import Icon from '../components/ui/Icon.jsx';
 import LoginPage from './LoginPage.jsx';
 import {
   createBroker,
@@ -12,6 +12,13 @@ import {
   updateAdminPropertyStatus,
   updateUserStatus,
 } from '../services/api.js';
+
+const ADMIN_SIDEBAR_ITEMS = [
+  { href: '#/admin/overview', icon: 'BarChart3', label: 'Tổng quan' },
+  { href: '#/admin/users', icon: 'Users', label: 'Tài khoản users' },
+  { href: '#/admin/brokers', icon: 'IdCard', label: 'Môi giới' },
+  { href: '#/admin/properties', icon: 'Building', label: 'Bài đăng' },
+];
 
 const EMPTY_BROKER = {
   username: '',
@@ -122,14 +129,15 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
   if (!session) return <LoginPage onLogin={onLogin} />;
   if (session.role !== 'ADMIN') {
     return (
-      <AdminLayout session={session} onLogout={onLogout} variant="admin" activePath={currentPath}>
-        <main className="dashboard-main">
-          <section className="ui-panel p-stack-lg">
-            <h1 className="font-headline-lg text-headline-lg text-trust-navy mb-2">Không có quyền admin</h1>
-            <p className="font-body-md text-body-md text-on-surface-variant">Chỉ admin mới được cấp tài khoản môi giới và kiểm tra toàn bộ hệ thống.</p>
-          </section>
-        </main>
-      </AdminLayout>
+      <div className="dashboard-shell">
+        <AdminSidebar currentPath={currentPath} />
+        <div className="dashboard-content">
+          <div className="dashboard-main">
+            <h1 className="dashboard-page-title">Không có quyền admin</h1>
+            <p>Chỉ admin mới được cấp tài khoản môi giới và kiểm tra toàn bộ hệ thống.</p>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -194,86 +202,78 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
   }
 
   return (
-    <AdminLayout session={session} onLogout={onLogout} variant="admin" activePath={currentPath}>
-      <main className="dashboard-main">
-        <DashboardPageHeader
-          activePath={currentPath}
-          loading={loading}
-          subtitle={adminSubtitle(section)}
-          tabs={adminTabs(stats)}
-          title={adminTitle(section)}
-        />
-
-        {notice && <div className="mb-stack-md rounded border border-success-green/40 bg-success-green/10 p-3 font-body-sm text-body-sm text-on-surface">{notice}</div>}
-        {error && <div className="mb-stack-md rounded border border-error-container bg-error-container/50 p-3 font-body-sm text-body-sm text-on-error-container">{error}</div>}
-
-        {section === 'overview' && (
-          <>
-            <section className="mb-stack-lg grid grid-cols-1 gap-gutter xl:grid-cols-3">
-              <DonutChart title="Cơ cấu tài khoản" data={roleChart} centerLabel="tài khoản" />
-              <BarChart title="Bài đăng theo danh mục" data={propertyCategoryChart} />
-              <HorizontalBarChart title="Trạng thái bài đăng" data={propertyStatusChart} />
-            </section>
-            <section className="grid grid-cols-1 gap-gutter xl:grid-cols-[1fr_360px]">
-              <DashboardPanel title="Bài đăng mới trong hệ thống" count={`${properties.slice(0, 5).length} tin gần đây`}>
-                <PropertyTable properties={properties.slice(0, 5)} loading={loading} compact />
-              </DashboardPanel>
-              <DashboardPanel title="Tình trạng hệ thống" count="Từ API hiện có">
-                <div className="space-y-3 p-5">
-                  <SystemLine label="Users đang hoạt động" value={stats.users} icon="group" />
-                  <SystemLine label="Môi giới được cấp" value={stats.brokers} icon="badge" />
-                  <SystemLine label="Bài đăng hiển thị" value={stats.visiblePosts} icon="visibility" />
-                  <SystemLine label="Tài khoản bị khóa" value={stats.locked} icon="lock" />
-                </div>
-              </DashboardPanel>
-            </section>
-          </>
-        )}
-
-        {section === 'users' && (
-          <DashboardPanel
-            title="Tài khoản users"
-            count={`${filteredUsers.length}/${customerUsers.length} user`}
-            action={(
-              <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-[260px_150px]">
-                <input className="input" placeholder="Tìm email, tên..." value={userQuery} onChange={(event) => setUserQuery(event.target.value)} />
-                <select className="input" value={userStatusFilter} onChange={(event) => setUserStatusFilter(event.target.value)}>
-                  <option value={ALL}>Tất cả trạng thái</option>
-                  <option value="ACTIVE">Hoạt động</option>
-                  <option value="LOCKED">Đã khóa</option>
-                </select>
-              </div>
+    <div className="dashboard-shell">
+      <AdminSidebar currentPath={currentPath} onLogout={onLogout} session={session} />
+      <div className="dashboard-content">
+        <div className="dashboard-topbar">
+          <span className="dashboard-topbar-title">{adminTitle(section)}</span>
+          <div className="dashboard-topbar-actions">
+            {session && (
+              <button className="btn btn-ghost btn-sm" onClick={onLogout} type="button">
+                <Icon name="LogOut" size={16} className="icon-muted" />
+                Đăng xuất
+              </button>
             )}
-          >
-            <UserTable users={filteredUsers} session={session} loading={loading} saving={saving} onToggleStatus={toggleStatus} />
-          </DashboardPanel>
-        )}
+          </div>
+        </div>
 
-        {section === 'brokers' && (
-          <section className="grid grid-cols-1 gap-gutter xl:grid-cols-[380px_1fr]">
-            <form className="ui-panel h-fit p-5" onSubmit={saveBroker}>
-              <h2 className="font-headline-md text-headline-md text-trust-navy">Cấp tài khoản môi giới</h2>
-              <p className="mb-stack-md mt-2 font-body-sm text-body-sm text-on-surface-variant">Admin tạo tài khoản và gửi thông tin đăng nhập cho broker bên ngoài hệ thống.</p>
-              <div className="space-y-stack-md">
-                <Field label="Username"><input className="input" value={brokerForm.username} onChange={(event) => setBrokerValue('username', event.target.value, setBrokerForm)} required minLength={3} /></Field>
-                <Field label="Email"><input className="input" type="email" value={brokerForm.email} onChange={(event) => setBrokerValue('email', event.target.value, setBrokerForm)} required /></Field>
-                <Field label="Mật khẩu"><input className="input" type="password" value={brokerForm.password} onChange={(event) => setBrokerValue('password', event.target.value, setBrokerForm)} required minLength={8} /></Field>
-                <Field label="Họ tên"><input className="input" value={brokerForm.fullName} onChange={(event) => setBrokerValue('fullName', event.target.value, setBrokerForm)} required /></Field>
-                <Field label="Số điện thoại"><input className="input" value={brokerForm.phone} onChange={(event) => setBrokerValue('phone', event.target.value, setBrokerForm)} required /></Field>
-                <button className="ui-action w-full disabled:opacity-60" disabled={saving}>
-                  <MaterialIcon className="text-sm">person_add</MaterialIcon>
-                  Tạo môi giới
-                </button>
+        <div className="dashboard-main">
+          <h1 className="dashboard-page-title">{adminTitle(section)}</h1>
+
+          {notice && <div className="alert dashboard-notice">{notice}</div>}
+          {error && <div className="alert alert-error">{error}</div>}
+
+          {section === 'overview' && (
+            <>
+              <div className="grid-4 dashboard-stats-row">
+                <div className="stat-card">
+                  <div className="stat-card-number">{stats.totalAccounts}</div>
+                  <div className="stat-card-label">Tổng tài khoản</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-card-number">{stats.users}</div>
+                  <div className="stat-card-label">Users</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-card-number">{stats.brokers}</div>
+                  <div className="stat-card-label">Môi giới</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-card-number">{stats.posts}</div>
+                  <div className="stat-card-label">Bài đăng</div>
+                </div>
               </div>
-            </form>
 
+              <div className="dashboard-charts-row">
+                <DonutChart title="Cơ cấu tài khoản" data={roleChart} centerLabel="tài khoản" />
+                <BarChart title="Bài đăng theo danh mục" data={propertyCategoryChart} />
+                <HorizontalBarChart title="Trạng thái bài đăng" data={propertyStatusChart} />
+              </div>
+
+              <div className="dashboard-panels-row">
+                <DashboardPanel title="Bài đăng mới trong hệ thống" count={`${properties.slice(0, 5).length} tin gần đây`}>
+                  <PropertyTable properties={properties.slice(0, 5)} loading={loading} compact />
+                </DashboardPanel>
+                <DashboardPanel title="Tình trạng hệ thống" count="Từ API hiện có">
+                  <div className="dashboard-system-lines">
+                    <SystemLine label="Users đang hoạt động" value={stats.users} icon="Users" />
+                    <SystemLine label="Môi giới được cấp" value={stats.brokers} icon="IdCard" />
+                    <SystemLine label="Bài đăng hiển thị" value={stats.visiblePosts} icon="Eye" />
+                    <SystemLine label="Tài khoản bị khóa" value={stats.locked} icon="Lock" />
+                  </div>
+                </DashboardPanel>
+              </div>
+            </>
+          )}
+
+          {section === 'users' && (
             <DashboardPanel
-              title="Môi giới đang quản lý"
-              count={`${filteredBrokers.length}/${brokers.length} hồ sơ`}
+              title="Tài khoản users"
+              count={`${filteredUsers.length}/${customerUsers.length} user`}
               action={(
-                <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-[260px_150px]">
-                  <input className="input" placeholder="Tìm tên, SĐT, email..." value={brokerQuery} onChange={(event) => setBrokerQuery(event.target.value)} />
-                  <select className="input" value={brokerStatusFilter} onChange={(event) => setBrokerStatusFilter(event.target.value)}>
+                <div className="dashboard-filter-row">
+                  <input className="input" placeholder="Tìm email, tên..." value={userQuery} onChange={(event) => setUserQuery(event.target.value)} />
+                  <select className="input" value={userStatusFilter} onChange={(event) => setUserStatusFilter(event.target.value)}>
                     <option value={ALL}>Tất cả trạng thái</option>
                     <option value="ACTIVE">Hoạt động</option>
                     <option value="LOCKED">Đã khóa</option>
@@ -281,40 +281,115 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
                 </div>
               )}
             >
-              <BrokerTable brokers={filteredBrokers} loading={loading} saving={saving} onToggleStatus={toggleStatus} />
+              <UserTable users={filteredUsers} session={session} loading={loading} saving={saving} onToggleStatus={toggleStatus} />
             </DashboardPanel>
-          </section>
-        )}
+          )}
 
-        {section === 'properties' && (
-          <DashboardPanel
-            title="Bài đăng từ môi giới"
-            count={`${filteredProperties.length}/${properties.length} tin đăng`}
-            action={(
-              <div className="grid w-full grid-cols-1 gap-2 lg:w-auto lg:grid-cols-[320px_170px]">
-                <input className="input" placeholder="Tìm tin, môi giới, SĐT..." value={propertyQuery} onChange={(event) => setPropertyQuery(event.target.value)} />
-                <select className="input" value={propertyStatusFilter} onChange={(event) => setPropertyStatusFilter(event.target.value)}>
-                  <option value={ALL}>Tất cả trạng thái</option>
-                  <option value="AVAILABLE">Đang hiển thị</option>
-                  <option value="RENTED">Đã thuê</option>
-                  <option value="SOLD">Đã bán</option>
-                  <option value="HIDDEN">Đã gỡ / tạm ẩn</option>
-                </select>
-              </div>
-            )}
+          {section === 'brokers' && (
+            <div className="dashboard-profile-grid">
+              <form className="card dashboard-form-card" onSubmit={saveBroker}>
+                <h2 className="dashboard-section-title">Cấp tài khoản môi giới</h2>
+                <p className="dashboard-section-subtitle">Admin tạo tài khoản và gửi thông tin đăng nhập cho broker bên ngoài hệ thống.</p>
+                <FormField label="Username"><input className="input" value={brokerForm.username} onChange={(event) => setBrokerValue('username', event.target.value, setBrokerForm)} required minLength={3} /></FormField>
+                <FormField label="Email"><input className="input" type="email" value={brokerForm.email} onChange={(event) => setBrokerValue('email', event.target.value, setBrokerForm)} required /></FormField>
+                <FormField label="Mật khẩu"><input className="input" type="password" value={brokerForm.password} onChange={(event) => setBrokerValue('password', event.target.value, setBrokerForm)} required minLength={8} /></FormField>
+                <FormField label="Họ tên"><input className="input" value={brokerForm.fullName} onChange={(event) => setBrokerValue('fullName', event.target.value, setBrokerForm)} required /></FormField>
+                <FormField label="Số điện thoại"><input className="input" value={brokerForm.phone} onChange={(event) => setBrokerValue('phone', event.target.value, setBrokerForm)} required /></FormField>
+                <button className="auth-btn" type="submit" disabled={saving}>
+                  <Icon name="Plus" size={16} className="icon-inverse" />
+                  Tạo môi giới
+                </button>
+              </form>
+
+              <DashboardPanel
+                title="Môi giới đang quản lý"
+                count={`${filteredBrokers.length}/${brokers.length} hồ sơ`}
+                action={(
+                  <div className="dashboard-filter-row">
+                    <input className="input" placeholder="Tìm tên, SĐT, email..." value={brokerQuery} onChange={(event) => setBrokerQuery(event.target.value)} />
+                    <select className="input" value={brokerStatusFilter} onChange={(event) => setBrokerStatusFilter(event.target.value)}>
+                      <option value={ALL}>Tất cả trạng thái</option>
+                      <option value="ACTIVE">Hoạt động</option>
+                      <option value="LOCKED">Đã khóa</option>
+                    </select>
+                  </div>
+                )}
+              >
+                <BrokerTable brokers={filteredBrokers} loading={loading} saving={saving} onToggleStatus={toggleStatus} />
+              </DashboardPanel>
+            </div>
+          )}
+
+          {section === 'properties' && (
+            <DashboardPanel
+              title="Bài đăng từ môi giới"
+              count={`${filteredProperties.length}/${properties.length} tin đăng`}
+              action={(
+                <div className="dashboard-filter-row">
+                  <input className="input" placeholder="Tìm tin, môi giới, SĐT..." value={propertyQuery} onChange={(event) => setPropertyQuery(event.target.value)} />
+                  <select className="input" value={propertyStatusFilter} onChange={(event) => setPropertyStatusFilter(event.target.value)}>
+                    <option value={ALL}>Tất cả trạng thái</option>
+                    <option value="AVAILABLE">Đang hiển thị</option>
+                    <option value="RENTED">Đã thuê</option>
+                    <option value="SOLD">Đã bán</option>
+                    <option value="HIDDEN">Đã gỡ / tạm ẩn</option>
+                  </select>
+                </div>
+              )}
+            >
+              <PropertyTable
+                properties={filteredProperties}
+                loading={loading}
+                saving={saving}
+                onStatus={changePropertyStatus}
+                onRemove={removeProperty}
+              />
+            </DashboardPanel>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminSidebar({ currentPath, onLogout, session }) {
+  const activePath = currentPath.startsWith('/') ? `#${currentPath}` : currentPath;
+  return (
+    <aside className="dashboard-sidebar">
+      <div className="dashboard-sidebar-header">
+        <a href="#/">
+          <BrandLogo />
+        </a>
+      </div>
+      <nav className="dashboard-sidebar-nav">
+        {ADMIN_SIDEBAR_ITEMS.map((item) => (
+          <a
+            key={item.href}
+            href={item.href}
+            className={`sidebar-item ${activePath === item.href ? 'is-active' : ''}`}
           >
-            <PropertyTable
-              properties={filteredProperties}
-              loading={loading}
-              saving={saving}
-              onStatus={changePropertyStatus}
-              onRemove={removeProperty}
-            />
-          </DashboardPanel>
-        )}
-
-      </main>
-    </AdminLayout>
+            <Icon name={item.icon} size={18} />
+            {item.label}
+          </a>
+        ))}
+        <a href="#/" className="sidebar-item">
+          <Icon name="Home" size={18} />
+          Trang chủ
+        </a>
+      </nav>
+      {session && (
+        <div className="dashboard-sidebar-footer">
+          <div className="dashboard-sidebar-user">
+            <Icon name="User" size={16} className="icon-muted" />
+            <span className="dashboard-sidebar-email">{session.email}</span>
+          </div>
+          <button className="sidebar-item dashboard-sidebar-logout" type="button" onClick={onLogout}>
+            <Icon name="LogOut" size={16} />
+            Đăng xuất
+          </button>
+        </div>
+      )}
+    </aside>
   );
 }
 
@@ -322,25 +397,25 @@ function UserTable({ users, session, loading, saving, onToggleStatus }) {
   if (loading) return <LoadingRows rows={5} />;
   if (users.length === 0) return <StateBlock title="Không có user phù hợp" description="Thử đổi từ khóa hoặc bộ lọc trạng thái." />;
   return (
-    <div className="overflow-x-auto">
-      <table className="ui-table w-full text-left font-body-sm text-body-sm">
-        <thead className="bg-surface-container-low text-trust-navy">
+    <div className="dashboard-table-wrap">
+      <table className="dashboard-table">
+        <thead>
           <tr>
-            <th className="px-4 py-3 font-label-bold">Tài khoản</th>
-            <th className="px-4 py-3 font-label-bold">Trạng thái</th>
-            <th className="px-4 py-3 font-label-bold text-right">Thao tác</th>
+            <th>Tài khoản</th>
+            <th>Trạng thái</th>
+            <th className="dashboard-table-right">Thao tác</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-outline-variant">
+        <tbody>
           {users.map((user) => (
-            <tr key={user.id} className="hover:bg-surface-container-low">
-              <td className="px-4 py-3">
-                <div className="font-label-bold text-label-bold text-on-surface">{user.fullName || user.username || 'Chưa cập nhật'}</div>
-                <div className="text-on-surface-variant">{user.email}</div>
+            <tr key={user.id}>
+              <td>
+                <div className="dashboard-table-name">{user.fullName || user.username || 'Chưa cập nhật'}</div>
+                <div className="dashboard-table-sub">{user.email}</div>
               </td>
-              <td className="px-4 py-3"><StatusBadge tone={user.status === 'ACTIVE' ? 'success' : 'danger'}>{userStatusLabel(user.status)}</StatusBadge></td>
-              <td className="px-4 py-3 text-right">
-                <button className="rounded border border-outline px-3 py-2 text-trust-navy transition-colors hover:bg-surface-container-low disabled:opacity-60" onClick={() => onToggleStatus(user)} disabled={saving || user.id === session.userId}>
+              <td><StatusBadge tone={user.status === 'ACTIVE' ? 'success' : 'danger'}>{userStatusLabel(user.status)}</StatusBadge></td>
+              <td className="dashboard-table-right">
+                <button className="btn btn-ghost btn-sm" onClick={() => onToggleStatus(user)} disabled={saving || user.id === session.userId}>
                   {user.status === 'ACTIVE' ? 'Khóa' : 'Mở'}
                 </button>
               </td>
@@ -356,20 +431,18 @@ function BrokerTable({ brokers, loading, saving, onToggleStatus }) {
   if (loading) return <LoadingRows rows={4} />;
   if (brokers.length === 0) return <StateBlock title="Không có môi giới phù hợp" description="Thử đổi từ khóa hoặc bộ lọc trạng thái." />;
   return (
-    <div className="divide-y divide-outline-variant">
+    <div className="dashboard-broker-list">
       {brokers.map((broker) => (
-        <div key={broker.id || broker.email} className="flex flex-col gap-3 p-4 transition-colors hover:bg-surface-container-low md:flex-row md:items-center md:justify-between">
-          <div className="min-w-0">
-            <div className="font-label-bold text-label-bold text-on-surface">{broker.fullName || broker.username}</div>
-            <div className="truncate font-body-sm text-body-sm text-on-surface-variant">{broker.phone || 'Chưa có SĐT'} · {broker.email}</div>
+        <div key={broker.id || broker.email} className="dashboard-broker-row">
+          <div>
+            <div className="dashboard-table-name">{broker.fullName || broker.username}</div>
+            <div className="dashboard-table-sub">{broker.phone || 'Chưa có SĐT'} · {broker.email}</div>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <div className="dashboard-broker-actions">
             <StatusBadge tone={broker.status === 'ACTIVE' ? 'success' : 'danger'}>{userStatusLabel(broker.status)}</StatusBadge>
-            <button className="rounded border border-outline px-3 py-2 text-trust-navy transition-colors hover:bg-surface-container-low disabled:opacity-60" onClick={() => onToggleStatus(broker)} disabled={saving} type="button">
-              <span className="inline-flex items-center gap-1">
-                <MaterialIcon className="text-sm">{broker.status === 'ACTIVE' ? 'lock' : 'verified_user'}</MaterialIcon>
-                {broker.status === 'ACTIVE' ? 'Khóa' : 'Mở'}
-              </span>
+            <button className="btn btn-ghost btn-sm" onClick={() => onToggleStatus(broker)} disabled={saving} type="button">
+              <Icon name={broker.status === 'ACTIVE' ? 'EyeOff' : 'Eye'} size={14} className="icon-muted" />
+              {broker.status === 'ACTIVE' ? 'Khóa' : 'Mở'}
             </button>
           </div>
         </div>
@@ -383,47 +456,47 @@ function PropertyTable({ properties, loading, compact = false, saving = false, o
   if (loading) return <LoadingRows rows={5} />;
   if (properties.length === 0) return <StateBlock title="Không có bài đăng phù hợp" description="Thử đổi từ khóa hoặc bộ lọc trạng thái." />;
   return (
-    <div className="overflow-x-auto">
-      <table className={`ui-table w-full ${hasActions ? 'min-w-[980px]' : 'min-w-[760px]'} text-left font-body-sm text-body-sm`}>
-        <thead className="bg-surface-container-low text-trust-navy">
+    <div className="dashboard-table-wrap">
+      <table className="dashboard-table">
+        <thead>
           <tr>
-            <th className="px-4 py-3 font-label-bold">Bài đăng</th>
-            <th className="px-4 py-3 font-label-bold">Môi giới</th>
-            {!compact && <th className="px-4 py-3 font-label-bold">Danh mục</th>}
-            <th className="px-4 py-3 font-label-bold">Giá</th>
-            <th className="px-4 py-3 font-label-bold">Trạng thái</th>
-            {!compact && <th className="px-4 py-3 font-label-bold">Ngày tạo</th>}
-            {hasActions && <th className="px-4 py-3 font-label-bold text-right">Thao tác</th>}
+            <th>Bài đăng</th>
+            <th>Môi giới</th>
+            {!compact && <th>Danh mục</th>}
+            <th>Giá</th>
+            <th>Trạng thái</th>
+            {!compact && <th>Ngày tạo</th>}
+            {hasActions && <th className="dashboard-table-right">Thao tác</th>}
           </tr>
         </thead>
-        <tbody className="divide-y divide-outline-variant">
+        <tbody>
           {properties.map((property) => (
-            <tr key={property.id} className="hover:bg-surface-container-low">
-              <td className="px-4 py-3">
-                <a className="flex min-w-0 items-center gap-3" href={`#/property/${property.id}`}>
-                  <img className="h-14 w-20 shrink-0 rounded object-cover" src={property.image} alt={property.title} />
-                  <div className="min-w-0">
-                    <div className="truncate font-label-bold text-label-bold text-on-surface">{property.title}</div>
-                    <div className="truncate text-on-surface-variant">{property.address}</div>
+            <tr key={property.id}>
+              <td>
+                <a className="dashboard-property-cell" href={`#/property/${property.id}`}>
+                  <img className="dashboard-property-thumb" src={property.image} alt={property.title} />
+                  <div>
+                    <div className="dashboard-table-name">{property.title}</div>
+                    <div className="dashboard-table-sub">{property.address}</div>
                   </div>
                 </a>
               </td>
-              <td className="px-4 py-3">{property.broker?.name || 'Công Tín Land'}</td>
-              {!compact && <td className="px-4 py-3">{categoryLabel(property.category)}</td>}
-              <td className="px-4 py-3 font-label-bold text-label-bold text-trust-navy">{property.priceLabel}</td>
-              <td className="px-4 py-3"><StatusBadge tone={propertyStatusTone(property)}>{property.statusLabel || property.rawStatus}</StatusBadge></td>
-              {!compact && <td className="px-4 py-3 text-on-surface-variant">{formatDate(property.createdAt)}</td>}
+              <td>{property.broker?.name || 'Công Tín Land'}</td>
+              {!compact && <td>{categoryLabel(property.category)}</td>}
+              <td className="dashboard-table-name">{property.priceLabel}</td>
+              <td><StatusBadge tone={propertyStatusTone(property)}>{property.statusLabel || property.rawStatus}</StatusBadge></td>
+              {!compact && <td className="dashboard-table-sub">{formatDate(property.createdAt)}</td>}
               {hasActions && (
-                <td className="px-4 py-3">
-                  <div className="flex justify-end gap-2">
-                    <select className="input min-h-10 w-40" value={property.rawStatus} onChange={(event) => onStatus(property.id, event.target.value)} disabled={saving}>
+                <td className="dashboard-table-right">
+                  <div className="dashboard-property-actions">
+                    <select className="input" value={property.rawStatus} onChange={(event) => onStatus(property.id, event.target.value)} disabled={saving}>
                       <option value="AVAILABLE">Đang hiển thị</option>
                       <option value="RENTED">Đã thuê</option>
                       <option value="SOLD">Đã bán</option>
                       <option value="HIDDEN">Đã gỡ / tạm ẩn</option>
                     </select>
-                    <button className="flex h-10 w-10 items-center justify-center rounded text-error transition-colors hover:bg-error-container disabled:opacity-60" onClick={() => onRemove(property)} disabled={saving || property.rawStatus === 'HIDDEN'} aria-label="Gỡ bài đăng" type="button">
-                      <MaterialIcon>visibility_off</MaterialIcon>
+                    <button className="btn btn-ghost btn-sm" onClick={() => onRemove(property)} disabled={saving || property.rawStatus === 'HIDDEN'} aria-label="Gỡ bài đăng" type="button">
+                      <Icon name="EyeOff" size={16} className="icon-muted" />
                     </button>
                   </div>
                 </td>
@@ -438,12 +511,21 @@ function PropertyTable({ properties, loading, compact = false, saving = false, o
 
 function SystemLine({ icon, label, value }) {
   return (
-    <div className="flex items-center justify-between gap-3 border border-outline-variant bg-surface-container-low px-4 py-3">
-      <span className="flex items-center gap-2 font-body-sm text-body-sm text-on-surface-variant">
-        <MaterialIcon className="text-sm text-primary">{icon}</MaterialIcon>
+    <div className="dashboard-system-line">
+      <span className="dashboard-system-line-label">
+        <Icon name={icon} size={16} className="icon-accent" />
         {label}
       </span>
-      <span className="font-label-bold text-label-bold text-on-surface">{value}</span>
+      <span className="dashboard-system-line-value">{value}</span>
+    </div>
+  );
+}
+
+function FormField({ label, children }) {
+  return (
+    <div className="auth-field">
+      <label className="auth-field-label">{label}</label>
+      {children}
     </div>
   );
 }
@@ -466,28 +548,10 @@ function adminTitle(section) {
   }[section] || 'Tổng quan';
 }
 
-function adminSubtitle(section) {
-  return {
-    overview: 'Theo dõi users, môi giới và bài đăng bằng biểu đồ từ dữ liệu API.',
-    users: 'Tìm kiếm, lọc vai trò/trạng thái và khóa hoặc mở tài khoản bằng API hiện có.',
-    brokers: 'Cấp tài khoản môi giới và theo dõi danh sách broker đang hoạt động.',
-    properties: 'Kiểm tra thumbnail, tiêu đề, broker, danh mục, giá và trạng thái bài đăng.',
-  }[section] || 'Theo dõi nhanh hệ thống.';
-}
-
-function adminTabs(stats) {
-  return [
-    { label: 'Tổng quan', href: '#/admin/overview', count: stats.totalAccounts },
-    { label: 'Tài khoản users', href: '#/admin/users', count: stats.users },
-    { label: 'Môi giới', href: '#/admin/brokers', count: stats.brokers },
-    { label: 'Bài đăng', href: '#/admin/properties', count: stats.posts },
-  ];
-}
-
 function Field({ label, children }) {
   return (
     <label className="block">
-      <span className="mb-2 block font-label-bold text-label-bold text-trust-navy">{label}</span>
+      <span className="auth-field-label">{label}</span>
       {children}
     </label>
   );
