@@ -6,11 +6,11 @@ describe('property filters', () => {
   test('filters by category, ward and query without accents', () => {
     const result = filterProperties(MOCK_PROPERTIES, {
       query: 'long duc',
-      category: 'land',
+      category: 'dat',
       transaction: 'sale',
       minPrice: '',
       maxPrice: '',
-      ward: 'long-duc',
+      ward: 'phuong-long-duc',
     });
 
     expect(result.map((item) => item.id)).toEqual(['p-ql53', 'p-vuon']);
@@ -19,11 +19,11 @@ describe('property filters', () => {
   test('builds API query without default filter noise', () => {
     expect(buildPropertyQuery({
       query: 'Phường 7',
-      category: 'house',
+      category: 'nha',
       transaction: 'all',
       minPrice: '1',
       maxPrice: '',
       ward: 'all',
-    })).toBe('q=Ph%C6%B0%E1%BB%9Dng+7&categorySlug=house&minPrice=1');
+    })).toBe('q=Ph%C6%B0%E1%BB%9Dng+7&categorySlug=nha&minPrice=1');
   });
 });
