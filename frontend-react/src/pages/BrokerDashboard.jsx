@@ -284,8 +284,8 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
     try {
       await updateBrokerViewingStatus(session.token, id, status);
       setViewings((vs) => vs.map((v) => v.id === id ? { ...v, status } : v));
-    } catch {
-      setError('Không thể cập nhật trạng thái lịch hẹn.');
+    } catch (err) {
+      setError(err.message || 'Không thể cập nhật trạng thái lịch hẹn.');
     } finally {
       setSaving(false);
     }
