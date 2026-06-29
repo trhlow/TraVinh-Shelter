@@ -19,6 +19,10 @@ function AdminPropertiesRoute(props) {
   return <AdminDashboard {...props} section="properties" currentPath="/admin/properties" />;
 }
 
+function AdminViewingsRoute(props) {
+  return <AdminDashboard {...props} section="viewings" currentPath="/admin/viewings" />;
+}
+
 function BrokerDashboardRoute(props) {
   return <BrokerDashboard {...props} section="dashboard" currentPath="/broker/dashboard" />;
 }
@@ -29,6 +33,10 @@ function BrokerProfileRoute(props) {
 
 function BrokerPropertiesRoute(props) {
   return <BrokerDashboard {...props} section="properties" currentPath="/broker/properties" />;
+}
+
+function BrokerViewingsRoute(props) {
+  return <BrokerDashboard {...props} section="viewings" currentPath="/broker/viewings" />;
 }
 
 function ForgotPasswordRoute(props) {
@@ -48,10 +56,12 @@ export const routes = {
   '/broker/dashboard': BrokerDashboardRoute,
   '/broker/profile': BrokerProfileRoute,
   '/broker/properties': BrokerPropertiesRoute,
+  '/broker/viewings': BrokerViewingsRoute,
   '/admin': AdminOverviewRoute,
   '/admin/overview': AdminOverviewRoute,
   '/admin/brokers': AdminBrokersRoute,
   '/admin/properties': AdminPropertiesRoute,
+  '/admin/viewings': AdminViewingsRoute,
 };
 
 export function resolveRoute(path) {

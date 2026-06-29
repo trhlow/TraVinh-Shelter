@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BarChart, DonutChart, GaugeChart, HorizontalBarChart } from '../components/Charts.jsx';
 import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../components/DashboardWidgets.jsx';
+import ViewingsPanel from '../components/dashboard/ViewingsPanel.jsx';
 import BrandLogo from '../components/BrandLogo.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import LoginPage from './LoginPage.jsx';
@@ -11,6 +12,8 @@ import {
   fetchAdminUsers,
   updateAdminPropertyStatus,
   updateUserStatus,
+  fetchAdminViewings,
+  updateViewingStatus,
 } from '../services/api.js';
 
 const CHART_COLORS = {
@@ -25,6 +28,7 @@ const ADMIN_SIDEBAR_ITEMS = [
   { href: '#/admin/overview', icon: 'BarChart3', label: 'Tổng quan' },
   { href: '#/admin/brokers', icon: 'IdCard', label: 'Môi giới' },
   { href: '#/admin/properties', icon: 'Building', label: 'Bài đăng' },
+  { href: '#/admin/viewings', icon: 'Calendar', label: 'Lịch hẹn xem' },
 ];
 
 const EMPTY_BROKER = {
@@ -50,6 +54,31 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
+  const [viewings, setViewings] = useState([]);
+  const [viewingsLoading, setViewingsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!session?.token || session.role !== 'ADMIN' || section !== 'viewings') return;
+    let alive = true;
+    setViewingsLoading(true);
+    fetchAdminViewings(session.token)
+      .then((items) => { if (alive) setViewings(Array.isArray(items) ? items : []); })
+      .catch(() => { if (alive) setViewings([]); })
+      .finally(() => { if (alive) setViewingsLoading(false); });
+    return () => { alive = false; };
+  }, [session, section]);
+
+  async function changeViewingStatus(viewingId, status) {
+    setSaving(true);
+    try {
+      await updateViewingStatus(session.token, viewingId, status);
+      setViewings((current) => current.map((item) => (item.id === viewingId ? { ...item, status } : item)));
+    } catch (exception) {
+      setError(exception.message || 'Không cập nhật được trạng thái lịch hẹn.');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   useEffect(() => {
     if (!session?.token || session.role !== 'ADMIN') return;
@@ -357,6 +386,17 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
               />
             </DashboardPanel>
           )}
+
+          {section === 'viewings' && (
+            <DashboardPanel title="Lịch hẹn xem" count={viewingsLoading ? 'Đang tải' : `${viewings.length} yêu cầu`}>
+              <ViewingsPanel
+                viewings={viewings}
+                loading={viewingsLoading}
+                onStatusChange={changeViewingStatus}
+                saving={saving}
+              />
+            </DashboardPanel>
+          )}
         </div>
       </div>
     </div>
@@ -521,6 +561,7 @@ function adminTitle(section) {
     overview: 'Tổng quan',
     brokers: 'Môi giới',
     properties: 'Bài đăng',
+    viewings: 'Lịch hẹn xem',
   }[section] || 'Tổng quan';
 }
 

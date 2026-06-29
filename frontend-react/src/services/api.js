@@ -180,6 +180,39 @@ export async function createViewing(propertyId, payload) {
   return request(`/properties/${propertyId}/viewings`, { method: 'POST', body: backendPayload });
 }
 
+export async function fetchBrokerViewings(token) {
+  if (USE_MOCK_API) return delay(readMockViewings(), 120);
+  return request('/viewings/mine', { token });
+}
+
+export async function fetchAdminViewings(token) {
+  if (USE_MOCK_API) return delay(readMockViewings(), 120);
+  return request('/admin/viewings', { token });
+}
+
+export async function updateViewingStatus(token, viewingId, status) {
+  if (USE_MOCK_API) {
+    try {
+      const existing = JSON.parse(localStorage.getItem('travinh-mock-viewings') || '[]');
+      const updated = existing.map((item) => (item.id === viewingId ? { ...item, status } : item));
+      localStorage.setItem('travinh-mock-viewings', JSON.stringify(updated));
+    } catch (_) {
+      // localStorage unavailable — ignore
+    }
+    return delay({ id: viewingId, status }, 120);
+  }
+  return request(`/admin/viewings/${viewingId}/status`, { method: 'PATCH', token, body: { status } });
+}
+
+function readMockViewings() {
+  try {
+    const items = JSON.parse(localStorage.getItem('travinh-mock-viewings') || '[]');
+    return Array.isArray(items) ? [...items].reverse() : [];
+  } catch (_) {
+    return [];
+  }
+}
+
 export async function fetchAdminUsers(token) {
   if (USE_MOCK_API) return delay(MOCK_USERS, 120);
   const response = await request('/admin/users?size=100', { token });

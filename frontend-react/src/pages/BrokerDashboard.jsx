@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { DonutChart, GaugeChart, HorizontalBarChart } from '../components/Charts.jsx';
 import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../components/DashboardWidgets.jsx';
+import ViewingsPanel from '../components/dashboard/ViewingsPanel.jsx';
 import BrandLogo from '../components/BrandLogo.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import LoginPage from './LoginPage.jsx';
@@ -14,6 +15,7 @@ import {
   updateCurrentProfile,
   updateProperty,
   updatePropertyStatus,
+  fetchBrokerViewings,
 } from '../services/api.js';
 
 const CHART_COLORS = {
@@ -28,6 +30,7 @@ const BROKER_SIDEBAR_ITEMS = [
   { href: '#/broker/dashboard', icon: 'LayoutDashboard', label: 'Bảng điều khiển' },
   { href: '#/broker/profile', icon: 'User', label: 'Hồ sơ môi giới' },
   { href: '#/broker/properties', icon: 'Building', label: 'Tin đăng của tôi' },
+  { href: '#/broker/viewings', icon: 'Calendar', label: 'Lịch hẹn xem' },
 ];
 
 const EMPTY_FORM = {
@@ -62,6 +65,8 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
+  const [viewings, setViewings] = useState([]);
+  const [viewingsLoading, setViewingsLoading] = useState(false);
 
   const listings = stats.listings || [];
   const filteredListings = useMemo(() => listings.filter((listing) => listingMatchesQuery(listing, listingQuery)), [listings, listingQuery]);
@@ -96,6 +101,17 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       alive = false;
     };
   }, [session]);
+
+  useEffect(() => {
+    if (!session?.token || session.role !== 'BROKER' || section !== 'viewings') return;
+    let alive = true;
+    setViewingsLoading(true);
+    fetchBrokerViewings(session.token)
+      .then((items) => { if (alive) setViewings(Array.isArray(items) ? items : []); })
+      .catch(() => { if (alive) setViewings([]); })
+      .finally(() => { if (alive) setViewingsLoading(false); });
+    return () => { alive = false; };
+  }, [session, section]);
 
   const dashboardStats = useMemo(() => {
     const totalListings = listings.length || stats.totalListings || 0;
@@ -543,6 +559,12 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
               </div>
             </>
           )}
+
+          {section === 'viewings' && (
+            <DashboardPanel title="Lịch hẹn xem" count={viewingsLoading ? 'Đang tải' : `${viewings.length} yêu cầu`}>
+              <ViewingsPanel viewings={viewings} loading={viewingsLoading} />
+            </DashboardPanel>
+          )}
         </div>
       </div>
     </div>
@@ -813,6 +835,7 @@ function brokerTitle(section) {
     dashboard: 'Bảng điều khiển',
     profile: 'Hồ sơ môi giới',
     properties: 'Tin đăng của tôi',
+    viewings: 'Lịch hẹn xem',
   }[section] || 'Bảng điều khiển';
 }
 
