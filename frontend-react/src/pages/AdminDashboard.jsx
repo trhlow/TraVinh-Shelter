@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BarChart, DonutChart, HorizontalBarChart } from '../components/Charts.jsx';
-import { DashboardPanel, LoadingRows, StateBlock, StatusBadge } from '../components/DashboardWidgets.jsx';
+import { BarChart, DonutChart, GaugeChart, HorizontalBarChart } from '../components/Charts.jsx';
+import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../components/DashboardWidgets.jsx';
 import BrandLogo from '../components/BrandLogo.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import LoginPage from './LoginPage.jsx';
@@ -99,6 +99,33 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
   ]), [stats]);
   const propertyCategoryChart = useMemo(() => chartBy(properties, (property) => categoryLabel(property.category)), [properties]);
   const propertyStatusChart = useMemo(() => chartBy(properties, (property) => property.statusLabel || property.rawStatus || 'Đang hiển thị'), [properties]);
+
+  const topBrokersChart = useMemo(() => {
+    const counts = new Map();
+    properties.forEach((property) => {
+      const name = property.broker?.name || 'Khác';
+      counts.set(name, (counts.get(name) || 0) + 1);
+    });
+    const sorted = [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([label, value]) => ({ label, value }));
+    return sorted.length > 0 ? sorted : [{ label: 'Chưa có dữ liệu', value: 0 }];
+  }, [properties]);
+
+  const regionData = useMemo(() => {
+    const counts = new Map();
+    properties.forEach((property) => {
+      const label = wardLabel(property.ward);
+      counts.set(label, (counts.get(label) || 0) + 1);
+    });
+    const total = properties.length || 1;
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count]) => ({ name, count, pct: Math.round((count / total) * 100) }));
+  }, [properties]);
+
+  const visiblePercent = stats.posts > 0 ? Math.round((stats.visiblePosts / stats.posts) * 100) : 0;
 
   const customerUsers = useMemo(() => users.filter((user) => user.role === 'USER'), [users]);
 
@@ -234,34 +261,43 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
           {section === 'overview' && (
             <>
               <div className="grid-4 dashboard-stats-row">
-                <div className="stat-card">
-                  <div className="stat-card-number">{stats.totalAccounts}</div>
-                  <div className="stat-card-label">Tổng tài khoản</div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-card-number">{stats.users}</div>
-                  <div className="stat-card-label">Users</div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-card-number">{stats.brokers}</div>
-                  <div className="stat-card-label">Môi giới</div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-card-number">{stats.posts}</div>
-                  <div className="stat-card-label">Bài đăng</div>
-                </div>
+                <StatCard icon="Users" title="Tổng tài khoản" value={stats.totalAccounts} tone="navy" trend={{ value: '+8%', direction: 'up' }} />
+                <StatCard icon="User" title="Người dùng" value={stats.users} tone="green" trend={{ value: '+12%', direction: 'up' }} />
+                <StatCard icon="IdCard" title="Môi giới" value={stats.brokers} tone="orange" trend={{ value: '+5%', direction: 'up' }} />
+                <StatCard icon="Building" title="Bài đăng" value={stats.posts} tone="navy" trend={{ value: '+15%', direction: 'up' }} />
               </div>
 
               <div className="dashboard-charts-row">
+                <GaugeChart title="Tỷ lệ bài đăng hiển thị" value={visiblePercent} max={100} label="Đang hiển thị" />
                 <DonutChart title="Cơ cấu tài khoản" data={roleChart} centerLabel="tài khoản" />
-                <BarChart title="Bài đăng theo danh mục" data={propertyCategoryChart} />
-                <HorizontalBarChart title="Trạng thái bài đăng" data={propertyStatusChart} />
+                <DonutChart title="Top môi giới theo tin đăng" data={topBrokersChart} centerLabel="môi giới" />
               </div>
 
               <div className="dashboard-panels-row">
+                <DashboardPanel title="BĐS theo khu vực Trà Vinh" count={`${regionData.length} khu vực`}>
+                  {regionData.length === 0 ? (
+                    <StateBlock icon="MapPin" title="Chưa có dữ liệu khu vực" description="Khi có bài đăng, phân bố theo khu vực sẽ hiển thị tại đây." />
+                  ) : (
+                    <div className="region-list">
+                      {regionData.map((region) => (
+                        <div className="region-row" key={region.name}>
+                          <div className="region-meta">
+                            <span className="region-name">{region.name}</span>
+                            <span className="region-count">{region.count} tin · {region.pct}%</span>
+                          </div>
+                          <div className="region-bar">
+                            <div className="region-fill" style={{ width: `${region.pct}%` }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </DashboardPanel>
+
                 <DashboardPanel title="Bài đăng mới trong hệ thống" count={`${properties.slice(0, 5).length} tin gần đây`}>
                   <PropertyTable properties={properties.slice(0, 5)} loading={loading} compact />
                 </DashboardPanel>
+
                 <DashboardPanel title="Tình trạng hệ thống" count="Từ API hiện có">
                   <div className="dashboard-system-lines">
                     <SystemLine label="Users đang hoạt động" value={stats.users} icon="Users" />
@@ -580,6 +616,21 @@ function categoryLabel(category) {
   if (category === 'nha' || category === 'house') return 'Nhà';
   if (category === 'apartment') return 'Căn hộ';
   return category || 'Khác';
+}
+
+function wardLabel(ward) {
+  const map = {
+    'phuong-1':   'Phường 1',
+    'phuong-7':   'Phường 7',
+    'long-duc':   'Long Đức',
+    'chau-thanh': 'Châu Thành',
+    'cau-ngang':  'Cầu Ngang',
+    'cau-ke':     'Cầu Kè',
+    'cang-long':  'Càng Long',
+    'tieu-can':   'Tiểu Cần',
+  };
+  if (!ward || ward === 'all') return 'Chưa xác định';
+  return map[ward] || 'Chưa xác định';
 }
 
 function isAvailableProperty(property) {
