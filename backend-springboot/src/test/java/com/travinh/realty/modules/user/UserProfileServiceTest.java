@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.travinh.realty.modules.auth.security.UserPrincipal;
 import com.travinh.realty.infrastructure.storage.LocalMediaStorage;
+import com.travinh.realty.modules.user.dto.ChangePasswordRequest;
 import com.travinh.realty.modules.user.dto.CreateBrokerRequest;
 import com.travinh.realty.modules.user.dto.UpdateProfileRequest;
 import com.travinh.realty.modules.user.dto.CurrentUserProfileResponse;
@@ -94,6 +95,36 @@ class UserProfileServiceTest {
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting(error -> ((ResponseStatusException) error).getStatusCode())
                 .isEqualTo(HttpStatus.CONFLICT);
+    }
+
+    @Test
+    void changePasswordSucceedsAndUpdatesStoredHash() {
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(4);
+        String originalHash = encoder.encode("old-password");
+        User user = user(UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        ReflectionTestUtils.setField(user, "passwordHash", originalHash);
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+
+        service().changePassword(UserPrincipal.from(user),
+                new ChangePasswordRequest("old-password", "new-password-secure"));
+
+        String updatedHash = (String) ReflectionTestUtils.getField(user, "passwordHash");
+        assertThat(updatedHash).isNotEqualTo(originalHash);
+        assertThat(encoder.matches("new-password-secure", updatedHash)).isTrue();
+    }
+
+    @Test
+    void changePasswordRejectsWrongCurrentPassword() {
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(4);
+        User user = user(UserRole.USER, UserStatus.ACTIVE, "User", null);
+        ReflectionTestUtils.setField(user, "passwordHash", encoder.encode("correct-password"));
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> service().changePassword(UserPrincipal.from(user),
+                new ChangePasswordRequest("wrong-password", "new-password-secure")))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(error -> ((ResponseStatusException) error).getStatusCode())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     private UserProfileService service() {

@@ -41,6 +41,15 @@ export async function updateCurrentProfile(token, payload) {
   return request('/users/me', { method: 'PATCH', token, body: payload });
 }
 
+export async function changePassword(token, currentPassword, newPassword) {
+  if (USE_MOCK_API) {
+    await delay(null, 300);
+    if (currentPassword !== 'password123') throw new Error('Mật khẩu hiện tại không đúng.');
+    return null;
+  }
+  return request('/users/me/password', { method: 'PATCH', token, body: { currentPassword, newPassword } });
+}
+
 export async function uploadCurrentUserAvatar(token, file) {
   if (USE_MOCK_API) {
     return delay({

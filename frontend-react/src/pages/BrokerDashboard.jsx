@@ -7,6 +7,7 @@ import { WARDS } from '../data/locations.js';
 import Icon from '../components/ui/Icon.jsx';
 import LoginPage from './LoginPage.jsx';
 import {
+  changePassword,
   createProperty,
   deleteProperty,
   fetchBrokerDashboard,
@@ -70,6 +71,9 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   const [error, setError] = useState('');
   const [viewings, setViewings] = useState([]);
   const [viewingsLoading, setViewingsLoading] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ current: '', next: '', confirm: '' });
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   const listings = stats.listings || [];
   const filteredListings = useMemo(() => listings.filter((listing) => listingMatchesQuery(listing, listingQuery)), [listings, listingQuery]);
@@ -186,6 +190,26 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       setNotice('Đã cập nhật hồ sơ môi giới.');
     } catch (exception) {
       setError(exception.message || 'Không cập nhật được hồ sơ.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleChangePassword(e) {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess(false);
+    if (passwordForm.next !== passwordForm.confirm) {
+      setPasswordError('Mật khẩu mới không khớp.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await changePassword(session.token, passwordForm.current, passwordForm.next);
+      setPasswordSuccess(true);
+      setPasswordForm({ current: '', next: '', confirm: '' });
+    } catch (err) {
+      setPasswordError(err.message || 'Đổi mật khẩu thất bại.');
     } finally {
       setSaving(false);
     }
@@ -427,6 +451,31 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                   Lưu hồ sơ
                 </button>
               </form>
+              <div className="profile-password-section">
+                <h3>Đổi mật khẩu</h3>
+                <form onSubmit={handleChangePassword} className="password-form">
+                  <div className="form-group">
+                    <label>Mật khẩu hiện tại</label>
+                    <input type="password" className="input" value={passwordForm.current}
+                      onChange={e => setPasswordForm(f => ({ ...f, current: e.target.value }))} />
+                  </div>
+                  <div className="form-group">
+                    <label>Mật khẩu mới</label>
+                    <input type="password" className="input" value={passwordForm.next}
+                      onChange={e => setPasswordForm(f => ({ ...f, next: e.target.value }))} />
+                  </div>
+                  <div className="form-group">
+                    <label>Xác nhận mật khẩu mới</label>
+                    <input type="password" className="input" value={passwordForm.confirm}
+                      onChange={e => setPasswordForm(f => ({ ...f, confirm: e.target.value }))} />
+                  </div>
+                  {passwordError && <p className="form-error">{passwordError}</p>}
+                  {passwordSuccess && <p className="form-success">Đổi mật khẩu thành công!</p>}
+                  <button className="auth-btn" type="submit" disabled={saving}>
+                    {saving ? 'Đang lưu...' : 'Đổi mật khẩu'}
+                  </button>
+                </form>
+              </div>
             </div>
           )}
 
