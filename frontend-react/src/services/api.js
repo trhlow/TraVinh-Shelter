@@ -1,5 +1,5 @@
 import { detailImages, searchProperties } from '../data/templateData.js';
-import { BROKER_DASHBOARD, MOCK_PROPERTIES } from './mockData.js';
+import { BROKER_DASHBOARD, MOCK_PROPERTIES, MOCK_USERS, MOCK_ADMIN_BROKERS } from './mockData.js';
 import { buildPropertyQuery, filterProperties } from './propertyFilters.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
@@ -167,29 +167,35 @@ export async function deleteProperty(token, propertyId) {
 }
 
 export async function fetchAdminUsers(token) {
+  if (USE_MOCK_API) return delay(MOCK_USERS, 120);
   const response = await request('/admin/users?size=100', { token });
   return response.content || [];
 }
 
 export async function fetchAdminBrokers(token) {
+  if (USE_MOCK_API) return delay(MOCK_ADMIN_BROKERS, 120);
   const response = await request('/admin/brokers?size=100', { token });
   return response.content || [];
 }
 
 export async function fetchAdminProperties(token) {
+  if (USE_MOCK_API) return delay(MOCK_PROPERTIES, 120);
   const response = await request('/admin/properties?size=100', { token });
   return normalizePagedProperties(response);
 }
 
 export async function createBroker(token, payload) {
+  if (USE_MOCK_API) return delay({ id: 'mock-' + Date.now(), role: 'BROKER', status: 'ACTIVE', ...payload }, 120);
   return request('/admin/brokers', { method: 'POST', token, body: payload });
 }
 
 export async function updateUserStatus(token, userId, status) {
+  if (USE_MOCK_API) return delay({ id: userId, status }, 120);
   return request(`/admin/users/${userId}/status`, { method: 'PATCH', token, body: { status } });
 }
 
 export async function updateAdminPropertyStatus(token, propertyId, status) {
+  if (USE_MOCK_API) return delay({ id: propertyId, status }, 120);
   const response = await request(`/admin/properties/${propertyId}/status`, {
     method: 'PATCH',
     token,
