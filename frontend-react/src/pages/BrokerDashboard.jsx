@@ -48,6 +48,7 @@ const EMPTY_FORM = {
   bathrooms: '',
   houseType: 'tret',
   description: '',
+  amenities: [],
   coverUrl: '',
   coverFile: null,
   coverPreview: '',
@@ -305,6 +306,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       bathrooms: property.bathrooms ? String(property.bathrooms) : '',
       houseType: property.houseType || 'tret',
       description: property.description || '',
+      amenities: Array.isArray(property.amenities) ? property.amenities : [],
       coverUrl: property.image || '',
       coverFile: null,
       coverPreview: '',
@@ -520,6 +522,26 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                   <FormField label="Mô tả" className="dashboard-listing-span3">
                     <textarea className="input" value={listingForm.description} onChange={(event) => setListingValue('description', event.target.value, setListingForm)} />
                   </FormField>
+                  <div className="form-group dashboard-listing-span3">
+                    <label className="auth-field-label">Tiện ích</label>
+                    <div className="amenity-checkboxes">
+                      {['Wifi', 'Điều hòa', 'Gác lửng', 'WC riêng', 'Chỗ để xe', 'Máy giặt', 'Tủ lạnh'].map(a => (
+                        <label key={a} className="amenity-checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={listingForm.amenities.includes(a)}
+                            onChange={e => setListingForm(f => ({
+                              ...f,
+                              amenities: e.target.checked
+                                ? [...f.amenities, a]
+                                : f.amenities.filter(x => x !== a),
+                            }))}
+                          />
+                          {a}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 </div>
                 <button className="auth-btn dashboard-submit-btn" type="submit" disabled={saving || !profileReady}>
                   <Icon name={editing ? 'Check' : 'Plus'} size={16} className="icon-inverse" />
@@ -764,6 +786,7 @@ function propertyPayload(form) {
     bedrooms: numericOrNull(form.bedrooms),
     bathrooms: numericOrNull(form.bathrooms),
     description: form.description,
+    amenities: form.amenities,
   };
   if (form.categorySlug === 'nha' && form.transaction === 'rent') {
     attributes.houseType = form.houseType;

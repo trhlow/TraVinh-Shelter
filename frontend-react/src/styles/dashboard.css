@@ -599,3 +599,26 @@
   min-width: 4px;
   transition: width 0.3s ease;
 }
+
+/* ── Amenity checkboxes ────────────────────────────────── */
+.amenity-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.amenity-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.amenity-checkbox-label:has(input:checked) {
+  background: var(--color-accent-light);
+  border-color: var(--color-accent);
+}
