@@ -241,7 +241,7 @@ function normalizeProperty(item, index = 0) {
     image: attributes.image || fallback.image || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=80',
     description: attributes.description || 'Thông tin chi tiết đang được cập nhật.',
     amenities: Array.isArray(attributes.amenities) ? attributes.amenities : [],
-    costs: attributes.costs || null,
+    costs: attributes.costs || null, // costs.*.value is a preformatted display string (e.g. '3.500đ/kWh'), not a numeric
     conditions: attributes.conditions || null,
     summary: attributes.summary || null,
     rooms: Array.isArray(attributes.rooms) ? attributes.rooms : [],

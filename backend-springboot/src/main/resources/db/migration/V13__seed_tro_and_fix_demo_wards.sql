@@ -1,14 +1,52 @@
--- Part (a): Canonicalize ward codes on existing V3 demo properties
+-- Part (a): Canonicalize ward codes and align address text on existing V3 demo properties
 UPDATE properties
-SET attributes = jsonb_set(attributes, '{ward}', '"phuong-tra-vinh"')
+SET attributes = jsonb_set(attributes, '{ward}', '"phuong-tra-vinh"'),
+    address = 'Phường Trà Vinh, TP. Trà Vinh'
 WHERE id = '22222222-2222-2222-2222-222222222221';
 
 UPDATE properties
-SET attributes = jsonb_set(attributes, '{ward}', '"phuong-hoa-thuan"')
+SET attributes = jsonb_set(attributes, '{ward}', '"phuong-hoa-thuan"'),
+    address = 'Phường Hòa Thuận, TP. Trà Vinh'
 WHERE id = '22222222-2222-2222-2222-222222222222';
 
 UPDATE properties
-SET attributes = jsonb_set(attributes, '{ward}', '"phuong-nguyet-hoa"')
+SET attributes = jsonb_set(attributes, '{ward}', '"phuong-nguyet-hoa"'),
+    address = 'Hẻm 42, Đường Điện Biên Phủ, Phường Nguyệt Hóa, TP. Trà Vinh'
+WHERE id = '22222222-2222-2222-2222-222222222223';
+
+-- Part (a-ext): Backfill extended trọ attributes on V3 demo property ...222223
+-- Merges rooms/amenities/costs/conditions/summary while preserving existing keys (ward, area, etc.)
+UPDATE properties
+SET attributes = attributes || '{
+  "transaction": "rent",
+  "ward": "phuong-nguyet-hoa",
+  "rooms": [
+    { "label": "Phòng B.01", "price": 1200000, "available": true },
+    { "label": "Phòng B.02", "price": 1200000, "available": false }
+  ],
+  "amenities": ["Giường", "Quạt trần", "Tủ quần áo", "Wifi", "Nước nóng"],
+  "costs": {
+    "electricity": { "value": "3.500đ/kWh" },
+    "water": { "value": "50.000đ/người/tháng" },
+    "service": { "value": "80.000đ/tháng" },
+    "parking": { "value": "40.000đ/xe/tháng" }
+  },
+  "conditions": {
+    "toilet": "Khép kín",
+    "hours": "Tự do 24/7",
+    "washer": "Giặt chung khu vực",
+    "window": "Có cửa sổ thoáng",
+    "balcony": "Không có",
+    "pets": "Không nuôi",
+    "parking": "Xe máy",
+    "ev": "Không"
+  },
+  "summary": {
+    "location": "Tọa lạc tại hẻm 42 đường Điện Biên Phủ, Phường Nguyệt Hóa — gần Đại học Trà Vinh và các tiện ích xung quanh.",
+    "amenities": "Phòng thoáng mát, nội thất cơ bản đủ dùng, nước nóng riêng từng phòng, wifi tốc độ cao.",
+    "convenience": "Khu vực yên tĩnh, chủ nhà thân thiện, phù hợp sinh viên. Hẻm thông xe máy, gần chợ và siêu thị."
+  }
+}'::jsonb
 WHERE id = '22222222-2222-2222-2222-222222222223';
 
 -- Part (b): Seed two trọ demo properties
