@@ -2,9 +2,9 @@ export const BRAND_NAME = 'Công Tín Land';
 
 export default function BrandLogo({ compact = false, className = '' }) {
   return (
-    <span className={`inline-flex items-center gap-2 ${className}`.trim()} aria-label={BRAND_NAME}>
+    <span className={`brand-logo ${className}`.trim()} aria-label={BRAND_NAME}>
       <svg
-        className="h-9 w-9 shrink-0"
+        className="brand-logo-icon"
         viewBox="0 0 64 64"
         role="img"
         aria-hidden="true"
@@ -17,9 +17,7 @@ export default function BrandLogo({ compact = false, className = '' }) {
         <path d="M36 24h15v6H41v22h-6V24h1Z" fill="#5DBB63" />
       </svg>
       {!compact && (
-        <span className="font-headline-md text-headline-md font-bold tracking-normal text-current whitespace-nowrap">
-          {BRAND_NAME}
-        </span>
+        <span className="brand-logo-text">{BRAND_NAME}</span>
       )}
     </span>
   );

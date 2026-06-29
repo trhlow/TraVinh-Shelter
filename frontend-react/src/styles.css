@@ -3023,3 +3023,27 @@ img { display: block; max-width: 100%; }
 .layout-main {
   flex: 1;
 }
+
+/* === LOGO === */
+
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.brand-logo-icon {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+}
+
+.brand-logo-text {
+  font-size: 19px;
+  font-weight: 700;
+  color: currentColor;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
