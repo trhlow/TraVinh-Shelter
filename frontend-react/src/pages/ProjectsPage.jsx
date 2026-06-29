@@ -106,7 +106,7 @@ export default function ProjectsPage({ session, onLogout }) {
 
               {/* Content */}
               <div className="project-card-body">
-                <div className="filter-bar-inner justify-between gap-8 mb-8">
+                <div className="card-title-row mb-8">
                   <h2 className="project-card-title">{project.name}</h2>
                   <span className="project-card-price">{project.price}</span>
                 </div>

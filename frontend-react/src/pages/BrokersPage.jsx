@@ -83,7 +83,7 @@ export default function BrokersPage({ session, onLogout }) {
         </div>
 
         {/* Broker grid */}
-        <div className="grid-4">
+        <div className="broker-grid">
           {brokers.map((broker, index) => (
             <article key={broker.email} className="broker-profile-card">
               <div className="broker-profile-header">
@@ -102,7 +102,7 @@ export default function BrokersPage({ session, onLogout }) {
 
                 {/* Info */}
                 <div className="broker-profile-info">
-                  <div className="filter-bar-inner justify-between gap-8 mb-4">
+                  <div className="card-title-row mb-4">
                     <div>
                       <h2 className="broker-profile-name">{broker.name}</h2>
                       <p className="broker-profile-meta">{broker.email}</p>

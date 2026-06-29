@@ -2447,6 +2447,7 @@ img { display: block; max-width: 100%; }
 .detail-address {
   color: var(--color-text-secondary);
   font-size: 15px;
+  flex-wrap: wrap;
 }
 
 .detail-price-rule {
@@ -3046,4 +3047,41 @@ img { display: block; max-width: 100%; }
   white-space: nowrap;
   letter-spacing: -0.01em;
   line-height: 1;
+}
+
+/* === PROJECTS/BROKERS LAYOUT === */
+
+/* Card header row: title + price or name + badge — flex-start so items sit at top */
+.card-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+/* Broker grid: 3-column at desktop, 2 at tablet, 1 at mobile */
+.broker-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 768px) {
+  .broker-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .broker-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Detail page address line — allow text to wrap on narrow viewports */
+.detail-address span {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
