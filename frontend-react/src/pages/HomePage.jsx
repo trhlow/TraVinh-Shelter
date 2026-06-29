@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import PropertyCard from '../components/PropertyCard.jsx';
+import FeaturedCarousel from '../components/FeaturedCarousel.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import Button from '../components/ui/Button.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
@@ -197,11 +197,7 @@ export default function HomePage({ session, onLogout }) {
               Xem tất cả <Icon name="ArrowRight" size={15} />
             </a>
           </div>
-          <div className="grid-3">
-            {properties.map((property, i) => (
-              <PropertyCard key={property.id || property.title || i} property={property} />
-            ))}
-          </div>
+          <FeaturedCarousel properties={properties} />
         </div>
       </section>
 

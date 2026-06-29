@@ -1,0 +1,246 @@
+/* FeaturedCarousel — banner carousel component styles */
+/* Prefix: .featured-carousel* — collision-free */
+
+/* ── Skeleton placeholder ─────────────────────────────────────── */
+.featured-carousel-skeleton {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-bg-muted);
+  min-height: 360px;
+  animation: featured-carousel-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes featured-carousel-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .featured-carousel-skeleton {
+    animation: none;
+  }
+}
+
+/* ── Root wrapper ─────────────────────────────────────────────── */
+.featured-carousel {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  background: var(--color-bg);
+}
+
+/* ── Track (slides container) ────────────────────────────────── */
+.featured-carousel-track {
+  position: relative;
+  min-height: 360px;
+}
+
+/* ── Single slide ─────────────────────────────────────────────── */
+.featured-carousel-slide {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 360px;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: translateX(20px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  pointer-events: none;
+}
+
+.featured-carousel-slide--active {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+  position: relative;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .featured-carousel-slide {
+    transition: opacity 0.15s ease;
+    transform: none;
+  }
+  .featured-carousel-slide--active {
+    transform: none;
+  }
+}
+
+/* ── Image pane ───────────────────────────────────────────────── */
+.featured-carousel-image-pane {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 3 / 2;
+}
+
+.featured-carousel-image-pane img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.6s ease;
+}
+
+.featured-carousel-slide--active .featured-carousel-image-pane img {
+  transform: scale(1);
+}
+
+/* ── Info panel ───────────────────────────────────────────────── */
+.featured-carousel-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 48px;
+  background: var(--color-bg);
+  gap: 16px;
+}
+
+.featured-carousel-price {
+  display: inline-flex;
+  align-items: center;
+}
+
+.featured-carousel-title {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.featured-carousel-location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.featured-carousel-meta {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.featured-carousel-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.featured-carousel-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-accent);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  margin-top: 8px;
+  transition: gap 0.2s ease;
+}
+
+.featured-carousel-link:hover {
+  gap: 10px;
+}
+
+/* ── Navigation arrows ────────────────────────────────────────── */
+.featured-carousel-arrows {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  justify-content: space-between;
+  padding: 0 12px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.featured-carousel-arrow {
+  pointer-events: auto;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.featured-carousel-arrow:hover,
+.featured-carousel-arrow:focus-visible {
+  background: var(--color-bg-subtle);
+  box-shadow: var(--shadow-lg);
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ── Dot indicators ───────────────────────────────────────────── */
+.featured-carousel-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 0 12px;
+  background: var(--color-bg);
+}
+
+.featured-carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--color-border-strong);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s ease, width 0.2s ease;
+}
+
+.featured-carousel-dot--active {
+  background: var(--color-accent);
+  width: 24px;
+}
+
+.featured-carousel-dot:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ── Mobile (≤767px): stack vertically ───────────────────────── */
+@media (max-width: 767px) {
+  .featured-carousel-slide {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .featured-carousel-image-pane {
+    aspect-ratio: 16 / 9;
+  }
+
+  .featured-carousel-info {
+    padding: 24px 20px;
+    gap: 12px;
+  }
+
+  .featured-carousel-title {
+    font-size: 18px;
+  }
+
+  .featured-carousel-arrows {
+    /* Keep arrows over the image on mobile */
+    top: calc(((100vw) * 9 / 16) / 2);
+  }
+
+  .featured-carousel-track {
+    min-height: unset;
+  }
+}
