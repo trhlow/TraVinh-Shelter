@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BarChart, DonutChart, HorizontalBarChart } from '../components/Charts.jsx';
-import { DashboardPanel, LoadingRows, StateBlock, StatusBadge } from '../components/DashboardWidgets.jsx';
+import { DonutChart, GaugeChart, HorizontalBarChart } from '../components/Charts.jsx';
+import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../components/DashboardWidgets.jsx';
 import BrandLogo from '../components/BrandLogo.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import LoginPage from './LoginPage.jsx';
@@ -117,10 +117,16 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
     label: shortLabel(listing.title),
     value: listingViews(listing),
   })), [listings]);
-  const profileChart = useMemo(() => ([
-    { label: 'Đã hoàn tất', value: profileReady ? 1 : 0, color: CHART_COLORS.success },
-    { label: 'Cần bổ sung', value: profileReady ? 0 : 1, color: CHART_COLORS.orange },
-  ]), [profileReady]);
+  const profileCompletion = useMemo(() => {
+    const fields = [
+      profileForm?.fullName || profile?.fullName,
+      profileForm?.phone || profile?.phone,
+      profileForm?.email || profile?.email,
+      avatarPreview || profile?.avatarUrl,
+    ];
+    const filled = fields.filter((field) => Boolean(field && String(field).trim())).length;
+    return Math.round((filled / 4) * 100);
+  }, [profileForm, profile, avatarPreview]);
 
   if (!session) return <LoginPage onLogin={onLogin} />;
   if (session.role !== 'BROKER') {
@@ -336,23 +342,14 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
           {section === 'dashboard' && (
             <>
               <div className="grid-3 dashboard-stats-row">
-                <div className="stat-card">
-                  <div className="stat-card-number">{dashboardStats.totalListings}</div>
-                  <div className="stat-card-label">Tổng tin đăng</div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-card-number">{dashboardStats.activeListings}</div>
-                  <div className="stat-card-label">Đang hiển thị</div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-card-number">{dashboardStats.leads}</div>
-                  <div className="stat-card-label">Lượt liên hệ</div>
-                </div>
+                <StatCard icon="Building" title="Tổng tin đăng" value={dashboardStats.totalListings} tone="navy" trend={{ value: '+9%', direction: 'up' }} />
+                <StatCard icon="Eye" title="Đang hiển thị" value={dashboardStats.activeListings} tone="green" trend={{ value: '+6%', direction: 'up' }} />
+                <StatCard icon="Users" title="Khách quan tâm" value={dashboardStats.leads} tone="orange" trend={{ value: '+18%', direction: 'up' }} />
               </div>
 
               <div className="dashboard-charts-row">
-                <DonutChart title="Mức sẵn sàng hồ sơ" data={profileChart} centerLabel="trạng thái" />
-                <BarChart title="Tin đăng theo danh mục" data={categoryChart} />
+                <GaugeChart title="Mức độ hoàn thiện hồ sơ" value={profileCompletion} max={100} label="hồ sơ" />
+                <DonutChart title="Tin đăng theo danh mục" data={categoryChart} centerLabel="tin" />
                 <HorizontalBarChart title="Trạng thái tin đăng" data={statusChart} />
               </div>
 
