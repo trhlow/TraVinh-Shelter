@@ -13,7 +13,8 @@ Lấy cảm hứng từ Mintlify.com: **tối giản, hiện đại, chuyên ngh
 - **Typography** là trung tâm — text sắc nét, hierarchy rõ
 - **Color** kiệm lời — chỉ accent để dẫn mắt, không decoration thừa
 - **Motion** nhẹ nhàng — `transition` đơn giản; không dùng keyframe nhiều step
-- **Dark hero + Light content** — hero tối, section nội dung trắng/xám nhạt
+- **Light hero + Light content** — hero nền sáng (theo Mintlify), chữ tối, gradient pastel rất nhẹ; chỉ CTA cuối + footer dùng nền tối
+- **Một section accent màu cam/coral** ở giữa trang tạo điểm nhấn thị giác
 
 ## Bảng màu (CSS Custom Properties)
 
@@ -116,11 +117,13 @@ Mobile-first. Không dùng `inline style`.
 ## Cấu trúc trang Landing (thứ tự sections)
 
 1. Navbar — sticky, backdrop-blur, logo trái / links giữa / CTA phải
-2. Hero — `--color-dark-bg`, display heading, search bar nhúng, 2 CTA
+2. Hero — nền sáng (`--color-bg`) + gradient pastel nhẹ, display heading chữ tối, search bar nhúng, 2 CTA
 3. Stats bar — 3–4 số liệu nổi bật
 4. Featured Properties — grid 3 cột
-5. Services / Features — grid 2–3 cột, icon + text
-6. Brokers — horizontal scroll hoặc grid
-7. Testimonials — card quote + avatar
-8. CTA Section — `--color-dark-bg`, 1 button
-9. Footer — 4 cột
+5. Services / Features — `section-pastel`, grid 2–3 cột, icon + text
+6. Coral accent — section nền cam, stats + benefits
+7. Brokers — horizontal scroll hoặc grid
+8. Testimonials — card quote + avatar
+9. News — grid 3 cột tin tức/blog
+10. CTA Section — `--color-dark-bg`, 1 button
+11. Footer — 4 cột

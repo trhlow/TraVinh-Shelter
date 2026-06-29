@@ -71,6 +71,42 @@ const TESTIMONIALS = [
   },
 ];
 
+const CORAL_STATS = [
+  { number: '98%', label: 'Khách hài lòng' },
+  { number: '24h', label: 'Phản hồi trung bình' },
+  { number: '0đ', label: 'Phí cho người mua' },
+];
+
+const CORAL_BENEFITS = [
+  { icon: 'ShieldCheck', text: 'Môi giới được xác minh danh tính' },
+  { icon: 'FileText', text: 'Hồ sơ pháp lý minh bạch' },
+  { icon: 'Phone', text: 'Hỗ trợ tư vấn 7 ngày/tuần' },
+];
+
+const NEWS = [
+  {
+    tag: 'Thị trường',
+    title: 'Giá đất nền Trà Vinh quý này tăng nhẹ ở khu vực ven đô',
+    excerpt: 'Cập nhật xu hướng giá và những khu vực đáng chú ý cho nhà đầu tư trong 3 tháng gần đây.',
+    date: '12/06/2026',
+    image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    tag: 'Kinh nghiệm',
+    title: '5 lưu ý pháp lý khi mua nhà đất tại Trà Vinh',
+    excerpt: 'Những điều cần kiểm tra về sổ đỏ, quy hoạch và hợp đồng trước khi xuống tiền.',
+    date: '08/06/2026',
+    image: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=800&q=80',
+  },
+  {
+    tag: 'Hướng dẫn',
+    title: 'Cách đăng tin bất động sản hiệu quả trên Công Tín Land',
+    excerpt: 'Bí quyết tối ưu tiêu đề, hình ảnh và mô tả để tin đăng tiếp cận nhiều khách hơn.',
+    date: '02/06/2026',
+    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80',
+  },
+];
+
 function HeroSearchBar() {
   const [query, setQuery] = useState('');
   function handleSearch(e) {
@@ -126,7 +162,7 @@ export default function HomePage({ session, onLogout }) {
               <Button as="a" href="#/search" variant="primary" size="lg">
                 <Icon name="Search" size={18} /> Tìm bất động sản
               </Button>
-              <Button as="a" href="#/brokers" variant="outline-white" size="lg">
+              <Button as="a" href="#/brokers" variant="secondary" size="lg">
                 Xem môi giới
               </Button>
             </div>
@@ -170,7 +206,7 @@ export default function HomePage({ session, onLogout }) {
       </section>
 
       {/* 4. SERVICES */}
-      <section className="section">
+      <section className="section-pastel">
         <div className="container">
           <div className="section-center">
             <h2 className="text-h2 section-center-title">Tại sao chọn Công Tín Land?</h2>
@@ -194,7 +230,45 @@ export default function HomePage({ session, onLogout }) {
         </div>
       </section>
 
-      {/* 5. BROKERS */}
+      {/* 5. CORAL ACCENT */}
+      <section className="section-coral">
+        <div className="container">
+          <div className="coral-inner">
+            <div>
+              <div className="coral-eyebrow">
+                <Icon name="Star" size={14} /> Cam kết dịch vụ
+              </div>
+              <h2 className="coral-title">
+                Đồng hành cùng hàng trăm môi giới chuyên nghiệp tại Trà Vinh
+              </h2>
+              <p className="coral-text">
+                Công Tín Land kết nối khách hàng với đội ngũ môi giới được kiểm duyệt,
+                mang lại trải nghiệm mua bán bất động sản minh bạch và an tâm.
+              </p>
+              <div className="coral-stats">
+                {CORAL_STATS.map(stat => (
+                  <div key={stat.label}>
+                    <div className="coral-stat-number">{stat.number}</div>
+                    <div className="coral-stat-label">{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="coral-card">
+              {CORAL_BENEFITS.map(benefit => (
+                <div key={benefit.text} className="coral-card-row">
+                  <span className="coral-card-icon">
+                    <Icon name={benefit.icon} size={18} />
+                  </span>
+                  {benefit.text}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. BROKERS */}
       <section className="section-subtle">
         <div className="container">
           <div className="section-header">
@@ -225,7 +299,7 @@ export default function HomePage({ session, onLogout }) {
         </div>
       </section>
 
-      {/* 6. TESTIMONIALS */}
+      {/* 7. TESTIMONIALS */}
       <section className="section">
         <div className="container">
           <div className="section-center">
@@ -253,7 +327,39 @@ export default function HomePage({ session, onLogout }) {
         </div>
       </section>
 
-      {/* 7. DARK CTA */}
+      {/* 8. NEWS / LATEST UPDATES */}
+      <section className="section-subtle">
+        <div className="container">
+          <div className="section-header">
+            <div className="section-header-text">
+              <h2 className="text-h2">Tin tức mới nhất</h2>
+              <p>Cập nhật thị trường và kinh nghiệm bất động sản Trà Vinh</p>
+            </div>
+            <a href="#/" className="section-header-link">
+              Xem tất cả <Icon name="ArrowRight" size={15} />
+            </a>
+          </div>
+          <div className="grid-3">
+            {NEWS.map(article => (
+              <a key={article.title} href="#/" className="news-card">
+                <div className="news-card-image">
+                  <img src={article.image} alt={article.title} />
+                </div>
+                <div className="news-card-body">
+                  <span className="news-card-tag">{article.tag}</span>
+                  <h3 className="news-card-title">{article.title}</h3>
+                  <p className="news-card-excerpt">{article.excerpt}</p>
+                  <div className="news-card-meta">
+                    <Icon name="Clock" size={13} /> {article.date}
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 9. DARK CTA */}
       <section className="section-dark">
         <div className="container">
           <div className="section-center">
