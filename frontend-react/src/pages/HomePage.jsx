@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Wifi, Wind, Layers, ShowerHead, Car } from 'lucide-react';
 import FeaturedCarousel from '../components/FeaturedCarousel.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import Button from '../components/ui/Button.jsx';
@@ -237,6 +238,20 @@ export default function HomePage({ session, onLogout }) {
                 </a>
               );
             })}
+          </div>
+          <div className="amenity-highlights">
+            {[
+              { icon: Wifi, label: 'Wifi miễn phí' },
+              { icon: Wind, label: 'Điều hòa' },
+              { icon: Layers, label: 'Gác lửng' },
+              { icon: ShowerHead, label: 'WC riêng' },
+              { icon: Car, label: 'Chỗ để xe' },
+            ].map(({ icon: Icon, label }) => (
+              <span key={label} className="amenity-pill">
+                <Icon size={16} />
+                {label}
+              </span>
+            ))}
           </div>
         </div>
       </section>

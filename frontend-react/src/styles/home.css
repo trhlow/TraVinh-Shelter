@@ -162,6 +162,28 @@
 }
 
 /* ============================================================
+   HOME — AMENITY HIGHLIGHTS
+   ============================================================ */
+.amenity-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.amenity-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: var(--color-bg-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+/* ============================================================
    HOME — WARD BROWSE
    ============================================================ */
 .ward-browse-grid {
