@@ -53,24 +53,6 @@ const MOCK_BROKERS = [
   { name: 'Phạm Thị Dung', area: 'Tiểu Cần', listings: 12, initial: 'D' },
 ];
 
-const TESTIMONIALS = [
-  {
-    quote: 'Nhờ Công Tín Land tôi tìm được nhà ưng ý trong vòng 2 tuần. Môi giới nhiệt tình, thông tin rõ ràng.',
-    name: 'Chị Hoa Nguyễn',
-    role: 'Khách hàng mua nhà',
-  },
-  {
-    quote: 'Đăng tin chỉ mất 5 phút, có khách liên hệ ngay trong ngày đầu. Rất hiệu quả cho môi giới.',
-    name: 'Anh Tuấn Phạm',
-    role: 'Môi giới bất động sản',
-  },
-  {
-    quote: 'Giao diện dễ dùng, lọc khu vực và giá rất tiện. Tìm được phòng trọ vừa ý chỉ sau 30 phút.',
-    name: 'Bạn Minh Trần',
-    role: 'Sinh viên tìm trọ',
-  },
-];
-
 const CORAL_STATS = [
   { number: '98%', label: 'Khách hài lòng' },
   { number: '24h', label: 'Phản hồi trung bình' },
@@ -81,30 +63,6 @@ const CORAL_BENEFITS = [
   { icon: 'ShieldCheck', text: 'Môi giới được xác minh danh tính' },
   { icon: 'FileText', text: 'Hồ sơ pháp lý minh bạch' },
   { icon: 'Phone', text: 'Hỗ trợ tư vấn 7 ngày/tuần' },
-];
-
-const NEWS = [
-  {
-    tag: 'Thị trường',
-    title: 'Giá đất nền Trà Vinh quý này tăng nhẹ ở khu vực ven đô',
-    excerpt: 'Cập nhật xu hướng giá và những khu vực đáng chú ý cho nhà đầu tư trong 3 tháng gần đây.',
-    date: '12/06/2026',
-    image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    tag: 'Kinh nghiệm',
-    title: '5 lưu ý pháp lý khi mua nhà đất tại Trà Vinh',
-    excerpt: 'Những điều cần kiểm tra về sổ đỏ, quy hoạch và hợp đồng trước khi xuống tiền.',
-    date: '08/06/2026',
-    image: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    tag: 'Hướng dẫn',
-    title: 'Cách đăng tin bất động sản hiệu quả trên Công Tín Land',
-    excerpt: 'Bí quyết tối ưu tiêu đề, hình ảnh và mô tả để tin đăng tiếp cận nhiều khách hơn.',
-    date: '02/06/2026',
-    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80',
-  },
 ];
 
 function HeroSearchBar() {
@@ -295,35 +253,7 @@ export default function HomePage({ session, onLogout }) {
         </div>
       </section>
 
-      {/* 7. TESTIMONIALS */}
-      <section className="section">
-        <div className="container">
-          <div className="section-center">
-            <h2 className="text-h2 section-center-title">Khách hàng nói gì?</h2>
-            <p className="section-center-subtitle">
-              Hàng nghìn giao dịch thành công trong 5 năm qua.
-            </p>
-          </div>
-          <div className="grid-3">
-            {TESTIMONIALS.map(t => (
-              <div key={t.name} className="testimonial-card">
-                <p className="testimonial-quote">"{t.quote}"</p>
-                <div className="testimonial-author">
-                  <div className="broker-avatar testimonial-avatar-sm">
-                    {t.name.charAt(t.name.indexOf(' ') + 1)}
-                  </div>
-                  <div>
-                    <p className="testimonial-author-name">{t.name}</p>
-                    <p className="testimonial-author-role">{t.role}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 8. NEWS / LATEST UPDATES */}
+      {/* 7. NEWS / LATEST UPDATES */}
       <section className="section-subtle">
         <div className="container">
           <div className="section-header">
@@ -335,22 +265,10 @@ export default function HomePage({ session, onLogout }) {
               Xem tất cả <Icon name="ArrowRight" size={15} />
             </a>
           </div>
-          <div className="grid-3">
-            {NEWS.map(article => (
-              <a key={article.title} href="#/" className="news-card">
-                <div className="news-card-image">
-                  <img src={article.image} alt={article.title} />
-                </div>
-                <div className="news-card-body">
-                  <span className="news-card-tag">{article.tag}</span>
-                  <h3 className="news-card-title">{article.title}</h3>
-                  <p className="news-card-excerpt">{article.excerpt}</p>
-                  <div className="news-card-meta">
-                    <Icon name="Clock" size={13} /> {article.date}
-                  </div>
-                </div>
-              </a>
-            ))}
+          <div className="news-empty">
+            <Icon name="FileText" size={28} className="icon-muted" />
+            <p className="news-empty-title">Chưa có tin tức mới</p>
+            <p className="news-empty-desc">Các bài viết về thị trường và kinh nghiệm bất động sản Trà Vinh sẽ được cập nhật tại đây.</p>
           </div>
         </div>
       </section>

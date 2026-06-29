@@ -1,0 +1,26 @@
+.news-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 56px 24px;
+  background: var(--color-bg-subtle);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-muted);
+}
+
+.news-empty-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin: 4px 0 0;
+}
+
+.news-empty-desc {
+  font-size: 15px;
+  color: var(--color-text-muted);
+  max-width: 440px;
+  margin: 0;
+}
