@@ -18,6 +18,9 @@ import com.travinh.realty.modules.property.repository.PropertyRepository;
 import com.travinh.realty.modules.user.model.User;
 import com.travinh.realty.modules.user.model.UserRole;
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,6 +33,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 class BookingServiceTest {
+    private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+
     private ViewingAppointmentRepository appointments;
     private PropertyRepository properties;
     private BookingService service;
@@ -88,6 +93,63 @@ class BookingServiceTest {
         assertThatThrownBy(() -> service.create(sold.getId(), request()))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("404");
+    }
+
+    @Test
+    void createWithPastRequestedAtReturnsBadRequest() {
+        Property property = property(broker(), PropertyStatus.AVAILABLE);
+        when(properties.findById(property.getId())).thenReturn(Optional.of(property));
+
+        CreateViewingRequest request = new CreateViewingRequest(null, "Nguyễn Văn A", "0900000000",
+                null, null, null, null, null, Instant.now().minusSeconds(3600));
+
+        assertThatThrownBy(() -> service.create(property.getId(), request))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("400");
+    }
+
+    @Test
+    void createWithMoveInBeforeViewDateReturnsBadRequest() {
+        Property property = property(broker(), PropertyStatus.AVAILABLE);
+        when(properties.findById(property.getId())).thenReturn(Optional.of(property));
+
+        Instant viewDate = LocalDate.now(VN_ZONE).plusDays(10).atStartOfDay(VN_ZONE).toInstant();
+        String moveIn = LocalDate.now(VN_ZONE).plusDays(9).toString();
+        CreateViewingRequest request = new CreateViewingRequest(null, "Nguyễn Văn A", "0900000000",
+                null, moveIn, null, null, null, viewDate);
+
+        assertThatThrownBy(() -> service.create(property.getId(), request))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("400");
+    }
+
+    @Test
+    void createWithMoveInOnOrAfterViewDatePersists() {
+        Property property = property(broker(), PropertyStatus.AVAILABLE);
+        when(properties.findById(property.getId())).thenReturn(Optional.of(property));
+        when(appointments.save(any(ViewingAppointment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Instant viewDate = LocalDate.now(VN_ZONE).plusDays(5).atStartOfDay(VN_ZONE).toInstant();
+        String moveIn = LocalDate.now(VN_ZONE).plusDays(5).toString();
+        CreateViewingRequest request = new CreateViewingRequest(null, "Nguyễn Văn A", "0900000000",
+                null, moveIn, null, null, null, viewDate);
+
+        ViewingResponse response = service.create(property.getId(), request);
+        assertThat(response.status()).isEqualTo(AppointmentStatus.PENDING);
+    }
+
+    @Test
+    void createWithUnparseableMoveInStillPersists() {
+        Property property = property(broker(), PropertyStatus.AVAILABLE);
+        when(properties.findById(property.getId())).thenReturn(Optional.of(property));
+        when(appointments.save(any(ViewingAppointment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Instant viewDate = LocalDate.now(VN_ZONE).plusDays(5).atStartOfDay(VN_ZONE).toInstant();
+        CreateViewingRequest request = new CreateViewingRequest(null, "Nguyễn Văn A", "0900000000",
+                null, "01/08/2025", null, null, null, viewDate);
+
+        ViewingResponse response = service.create(property.getId(), request);
+        assertThat(response.status()).isEqualTo(AppointmentStatus.PENDING);
     }
 
     @Test

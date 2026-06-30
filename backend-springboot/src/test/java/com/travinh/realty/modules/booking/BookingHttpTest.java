@@ -65,6 +65,18 @@ class BookingHttpTest {
     }
 
     @Test
+    void submitWithInvalidPhoneReturnsBadRequest() throws Exception {
+        UUID propertyId = UUID.randomUUID();
+        String badPhonePayload = """
+                {"visitorName":"Nguyễn Văn A","visitorPhone":"0123456789"}
+                """;
+        mockMvc.perform(post("/properties/{id}/viewings", propertyId)
+                        .header("X-Forwarded-For", "198.51.100.9")
+                        .contentType(MediaType.APPLICATION_JSON).content(badPhonePayload))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void viewingsMineRequiresBrokerRole() throws Exception {
         UUID propertyId = UUID.randomUUID();
         when(bookingService.listForBroker(any())).thenReturn(List.of(response(propertyId)));

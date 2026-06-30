@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import BookingForm from './BookingForm.jsx';
 
@@ -89,6 +89,65 @@ describe('BookingForm — trọ category', () => {
     expect(
       await screen.findByText(/Đã gửi yêu cầu đặt lịch/i),
     ).toBeInTheDocument();
+  });
+});
+
+// ── Validation: phone + dates ──────────────────────────────────────────────────
+describe('BookingForm — validation', () => {
+  function renderTro(overrides = {}) {
+    return render(
+      <BookingForm
+        propertyId="p-tro-test"
+        category="tro"
+        propertyTitle="Nhà trọ test"
+        rooms={TRO_ROOMS}
+        {...overrides}
+      />,
+    );
+  }
+
+  test('rejects an invalid VN mobile number and does not submit', async () => {
+    renderTro();
+    await userEvent.type(screen.getByLabelText(/Tên khách hàng/i), 'Nguyễn Văn A');
+    await userEvent.type(screen.getByLabelText(/Số điện thoại/i), '0123456789');
+    await userEvent.click(screen.getByRole('button', { name: /Đặt lịch hẹn/i }));
+
+    expect(await screen.findByText(/Số điện thoại di động không hợp lệ/i)).toBeInTheDocument();
+    expect(createViewing).not.toHaveBeenCalled();
+  });
+
+  test('rejects a view date in the past', async () => {
+    renderTro();
+    await userEvent.type(screen.getByLabelText(/Tên khách hàng/i), 'Nguyễn Văn A');
+    await userEvent.type(screen.getByLabelText(/Số điện thoại/i), '0901234567');
+    fireEvent.change(screen.getByLabelText(/Ngày.*muốn xem/i), { target: { value: '2020-01-01T10:00' } });
+    await userEvent.click(screen.getByRole('button', { name: /Đặt lịch hẹn/i }));
+
+    expect(await screen.findByText(/Ngày xem không được ở quá khứ/i)).toBeInTheDocument();
+    expect(createViewing).not.toHaveBeenCalled();
+  });
+
+  test('rejects a move-in date earlier than the view date', async () => {
+    renderTro();
+    await userEvent.type(screen.getByLabelText(/Tên khách hàng/i), 'Nguyễn Văn A');
+    await userEvent.type(screen.getByLabelText(/Số điện thoại/i), '0901234567');
+    fireEvent.change(screen.getByLabelText(/Ngày.*muốn xem/i), { target: { value: '2030-06-15T10:00' } });
+    fireEvent.change(screen.getByLabelText(/Dự kiến vào ở/i), { target: { value: '2030-06-14' } });
+    await userEvent.click(screen.getByRole('button', { name: /Đặt lịch hẹn/i }));
+
+    expect(await screen.findByText(/Ngày vào ở không được trước ngày xem/i)).toBeInTheDocument();
+    expect(createViewing).not.toHaveBeenCalled();
+  });
+
+  test('accepts a move-in date on/after the view date', async () => {
+    renderTro();
+    await userEvent.type(screen.getByLabelText(/Tên khách hàng/i), 'Nguyễn Văn A');
+    await userEvent.type(screen.getByLabelText(/Số điện thoại/i), '0901234567');
+    fireEvent.change(screen.getByLabelText(/Ngày.*muốn xem/i), { target: { value: '2030-06-15T10:00' } });
+    fireEvent.change(screen.getByLabelText(/Dự kiến vào ở/i), { target: { value: '2030-06-20' } });
+    await userEvent.click(screen.getByRole('button', { name: /Đặt lịch hẹn/i }));
+
+    await waitFor(() => expect(createViewing).toHaveBeenCalledTimes(1));
   });
 });
 

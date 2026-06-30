@@ -1,13 +1,33 @@
 import { useState, useEffect } from 'react';
 import Icon from '../ui/Icon.jsx';
 import { createViewing } from '../../services/api.js';
+import { VN_MOBILE_PATTERN } from '../../utils/validation.js';
 
 const isTro = (category) => category === 'tro';
+
+// Local datetime as `YYYY-MM-DDTHH:mm` for the datetime-local `min` attribute.
+function nowLocalInput() {
+  const now = new Date();
+  const offsetMs = now.getTimezoneOffset() * 60_000;
+  return new Date(now.getTime() - offsetMs).toISOString().slice(0, 16);
+}
 
 function validate(fields) {
   const errors = {};
   if (!fields.visitorName.trim()) errors.visitorName = 'Vui lòng nhập tên khách hàng.';
-  if (!fields.visitorPhone.trim()) errors.visitorPhone = 'Vui lòng nhập số điện thoại.';
+  if (!fields.visitorPhone.trim()) {
+    errors.visitorPhone = 'Vui lòng nhập số điện thoại.';
+  } else if (!VN_MOBILE_PATTERN.test(fields.visitorPhone.trim())) {
+    errors.visitorPhone = 'Số điện thoại di động không hợp lệ.';
+  }
+  if (fields.requestedAt && new Date(fields.requestedAt).getTime() < Date.now()) {
+    errors.requestedAt = 'Ngày xem không được ở quá khứ.';
+  }
+  // Both date strings are zero-padded ISO (YYYY-MM-DD), so lexical compare is chronological.
+  if (fields.requestedAt && fields.expectedMoveIn
+      && fields.expectedMoveIn < fields.requestedAt.slice(0, 10)) {
+    errors.expectedMoveIn = 'Ngày vào ở không được trước ngày xem.';
+  }
   return errors;
 }
 
@@ -99,6 +119,8 @@ export default function BookingForm({
   }
 
   const availableRooms = rooms.filter((r) => r.available);
+  const nowInput = nowLocalInput();
+  const minMoveIn = fields.requestedAt ? fields.requestedAt.slice(0, 10) : nowInput.slice(0, 10);
 
   return (
     <form className="booking-form" onSubmit={handleSubmit} noValidate>
@@ -116,10 +138,14 @@ export default function BookingForm({
           id="bf-requestedAt"
           name="requestedAt"
           type="datetime-local"
-          className="booking-form-input"
+          min={nowInput}
+          className={`booking-form-input${errors.requestedAt ? ' booking-form-input--error' : ''}`}
           value={fields.requestedAt}
           onChange={handleChange}
         />
+        {errors.requestedAt && (
+          <p className="booking-form-error">{errors.requestedAt}</p>
+        )}
       </div>
 
       {/* Expected move-in */}
@@ -130,12 +156,15 @@ export default function BookingForm({
         <input
           id="bf-expectedMoveIn"
           name="expectedMoveIn"
-          type="text"
-          placeholder="Ví dụ: 01/08/2025"
-          className="booking-form-input"
+          type="date"
+          min={minMoveIn}
+          className={`booking-form-input${errors.expectedMoveIn ? ' booking-form-input--error' : ''}`}
           value={fields.expectedMoveIn}
           onChange={handleChange}
         />
+        {errors.expectedMoveIn && (
+          <p className="booking-form-error">{errors.expectedMoveIn}</p>
+        )}
       </div>
 
       {/* Room select — trọ only */}
