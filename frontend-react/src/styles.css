@@ -69,7 +69,7 @@
 html, body, #root { min-height: 100%; }
 
 body {
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
   background: var(--color-bg);
   color: var(--color-text-primary);
   font-synthesis: none;
@@ -79,6 +79,7 @@ body {
 
 a { text-decoration: none; color: inherit; }
 button { cursor: pointer; border: none; background: none; font: inherit; }
+input, select, textarea { font: inherit; }
 img { display: block; max-width: 100%; }
 
 /* ============================================================

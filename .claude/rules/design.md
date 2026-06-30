@@ -53,7 +53,7 @@ Không bao giờ hard-code `#hex` trong JSX — chỉ dùng CSS variable.
 
 ## Typography
 
-Font stack: `'Inter', system-ui, -apple-system, sans-serif`
+Font stack: `'Be Vietnam Pro', system-ui, -apple-system, sans-serif`
 
 | Role | Size | Weight | Line-height |
 |---|---|---|---|
