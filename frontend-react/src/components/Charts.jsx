@@ -1,6 +1,6 @@
 // Mirrors design tokens; SVG fill/stroke require literal color values.
 const CHART_PALETTE = ['#16A34A', '#0A2540', '#D97706', '#0EA5E9', '#8B5CF6', '#94A3B8'];
-const TRACK_COLOR = '#E2E8F0'; // = --color-border
+const TRACK_COLOR = '#dddddd'; // = --color-hairline
 
 function withColors(data) {
   return data.map((item, index) => ({

@@ -17,7 +17,7 @@ import {
 } from '../services/api.js';
 
 const CHART_COLORS = {
-  accent: '#16A34A',   // --color-accent
+  accent: '#ff385c',   // --color-primary
   warning: '#D97706',  // --color-warning
   brand: '#2563EB',    // brand blue
   success: '#22C55E',  // green
