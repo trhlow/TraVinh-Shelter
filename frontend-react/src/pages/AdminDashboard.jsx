@@ -94,14 +94,16 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
   const stats = useMemo(() => {
     const visiblePosts = properties.filter(isAvailableProperty).length;
     const pendingPosts = properties.filter(isPendingProperty).length;
+    // `users` (GET /admin/users = findAll) already includes brokers, so it is the
+    // full account registry; `brokers` (findByRole BROKER) is a subset — never add them.
     return {
-      totalAccounts: users.length + brokers.length,
+      totalAccounts: users.length,
       brokers: brokers.length,
       admins: users.filter((user) => user.role === 'ADMIN').length,
       posts: properties.length,
       visiblePosts,
       pendingPosts,
-      locked: [...users, ...brokers].filter((u) => u.status === 'LOCKED' || u.status === 'BLOCKED').length,
+      locked: users.filter((u) => u.status === 'LOCKED' || u.status === 'BLOCKED').length,
     };
   }, [users, brokers, properties]);
 

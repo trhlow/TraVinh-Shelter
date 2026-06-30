@@ -64,9 +64,10 @@ export default function ProjectsPage({ session, onLogout }) {
         </div>
       </div>
 
+      <section className="section">
       <div className="container">
         {/* Filter bar */}
-        <div className="filter-bar-inner mt-24 mb-32">
+        <div className="filter-bar-inner mb-32">
           <select
             className="input"
             value={ward}
@@ -126,6 +127,7 @@ export default function ProjectsPage({ session, onLogout }) {
           ))}
         </div>
       </div>
+      </section>
     </MainLayout>
   );
 }

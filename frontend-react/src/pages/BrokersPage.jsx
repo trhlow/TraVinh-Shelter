@@ -47,9 +47,10 @@ export default function BrokersPage({ session, onLogout }) {
         </div>
       </div>
 
+      <section className="section">
       <div className="container">
         {/* Filter bar */}
-        <div className="filter-bar-inner mt-24 mb-32">
+        <div className="filter-bar-inner mb-32">
           <input
             className="input"
             placeholder="Tìm theo tên"
@@ -139,6 +140,7 @@ export default function BrokersPage({ session, onLogout }) {
           ))}
         </div>
       </div>
+      </section>
     </MainLayout>
   );
 }

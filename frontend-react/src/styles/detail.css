@@ -111,33 +111,6 @@
   color: var(--color-text-primary);
 }
 
-/* ── Summary paragraphs ──────────────────────────────────────── */
-.summary-block {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.summary-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.summary-item-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-accent);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.summary-item-text {
-  font-size: 14px;
-  line-height: 1.65;
-  color: var(--color-text-secondary);
-}
-
 /* ── Room list ───────────────────────────────────────────────── */
 .room-list {
   display: flex;
