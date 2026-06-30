@@ -27,39 +27,6 @@ const STATS = [
   { number: '5+', label: 'Năm kinh nghiệm' },
 ];
 
-const SERVICES = [
-  {
-    icon: 'Search',
-    title: 'Tìm kiếm thông minh',
-    desc: 'Lọc bất động sản theo khu vực, giá, diện tích và loại hình một cách dễ dàng.',
-  },
-  {
-    icon: 'ShieldCheck',
-    title: 'Môi giới uy tín',
-    desc: 'Đội ngũ môi giới được xác minh và quản lý chặt chẽ bởi Công Tín Land.',
-  },
-  {
-    icon: 'TrendingUp',
-    title: 'Thông tin thị trường',
-    desc: 'Cập nhật giá cả và xu hướng thị trường bất động sản Trà Vinh liên tục.',
-  },
-  {
-    icon: 'Phone',
-    title: 'Hỗ trợ trực tiếp',
-    desc: 'Kết nối ngay với môi giới qua điện thoại hoặc nhắn tin trong vài giây.',
-  },
-  {
-    icon: 'FileText',
-    title: 'Hồ sơ pháp lý rõ ràng',
-    desc: 'Tất cả bất động sản đều được kiểm tra hồ sơ pháp lý trước khi đăng.',
-  },
-  {
-    icon: 'DollarSign',
-    title: 'Miễn phí cho người mua',
-    desc: 'Người mua và thuê không mất phí khi sử dụng nền tảng Công Tín Land.',
-  },
-];
-
 const MOCK_BROKERS = [
   { name: 'Nguyễn Văn An', area: 'TP. Trà Vinh', listings: 24, initial: 'A' },
   { name: 'Trần Thị Bình', area: 'Châu Thành', listings: 18, initial: 'B' },
@@ -286,31 +253,6 @@ export default function HomePage({ session, onLogout }) {
                 <span className="ward-browse-name">{item.label}</span>
                 <span className="ward-browse-cta">Xem phòng trọ</span>
               </a>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 6. SERVICES */}
-      <section className="section-pastel">
-        <div className="container">
-          <div className="section-center">
-            <h2 className="text-h2 section-center-title">Tại sao chọn Công Tín Land?</h2>
-            <p className="section-center-subtitle">
-              Nền tảng bất động sản địa phương với đội ngũ môi giới được kiểm duyệt chặt chẽ.
-            </p>
-          </div>
-          <div className="features-grid">
-            {SERVICES.map(svc => (
-              <div key={svc.title} className="feature-card">
-                <div className="feature-icon">
-                  <Icon name={svc.icon} size={22} />
-                </div>
-                <h3 className="text-h3 feature-card-title">{svc.title}</h3>
-                <p className="feature-card-desc">
-                  {svc.desc}
-                </p>
-              </div>
             ))}
           </div>
         </div>
