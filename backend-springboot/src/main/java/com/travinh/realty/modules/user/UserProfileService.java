@@ -3,6 +3,7 @@ package com.travinh.realty.modules.user;
 import com.travinh.realty.infrastructure.storage.LocalMediaStorage;
 import com.travinh.realty.modules.auth.security.UserPrincipal;
 import com.travinh.realty.modules.user.dto.BrokerContactResponse;
+import com.travinh.realty.modules.user.dto.ChangePasswordRequest;
 import com.travinh.realty.modules.user.dto.CreateBrokerRequest;
 import com.travinh.realty.modules.user.dto.CurrentUserProfileResponse;
 import com.travinh.realty.modules.user.dto.UpdateProfileRequest;
@@ -69,6 +70,15 @@ public class UserProfileService {
         user.updateAvatarUrl(avatarUrl);
         storage.deleteIfLocal(previousAvatarUrl);
         return CurrentUserProfileResponse.from(user);
+    }
+
+    @Transactional
+    public void changePassword(UserPrincipal principal, ChangePasswordRequest request) {
+        User user = findUser(principal.id());
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
+        }
+        user.updatePasswordHash(passwordEncoder.encode(request.newPassword()));
     }
 
     @Transactional(readOnly = true)

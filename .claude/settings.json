@@ -7,7 +7,8 @@
       "PowerShell(gh *)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:localhost)"
+      "WebFetch(domain:localhost)",
+      "Bash(curl -s https://api.github.com/repos/Leonxlnx/taste-skill/contents/)"
     ],
     "deny": []
   }

@@ -22,7 +22,7 @@ export function createSession(auth, profile = {}) {
     token: auth.accessToken,
     userId: auth.userId || profile.id,
     email: auth.email || profile.email,
-    role: auth.role || profile.role || 'USER',
+    role: auth.role || profile.role,
     fullName: profile.fullName || auth.email,
     phone: profile.phone || '',
     avatarUrl: profile.avatarUrl || '',

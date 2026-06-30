@@ -599,3 +599,74 @@
   min-width: 4px;
   transition: width 0.3s ease;
 }
+
+/* ── Amenity checkboxes ────────────────────────────────── */
+.amenity-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.amenity-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.amenity-checkbox-label:has(input:checked) {
+  background: var(--color-accent-light);
+  border-color: var(--color-accent);
+}
+
+
+/* ── Password change section ───────────────────────────── */
+.profile-password-section {
+  margin-top: 24px;
+  padding: 24px;
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.profile-password-section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 16px;
+}
+
+.password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.password-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.password-form .form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+/* ── Form feedback messages ────────────────────────────── */
+.form-error {
+  font-size: 14px;
+  color: var(--color-error);
+  margin: 0;
+}
+
+.form-success {
+  font-size: 14px;
+  color: var(--color-success);
+  margin: 0;
+}

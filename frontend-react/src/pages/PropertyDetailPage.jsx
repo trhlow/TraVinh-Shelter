@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import ImageGallery from '../components/ImageGallery.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
+import RoomList from '../components/property/RoomList.jsx';
+import BookingForm from '../components/property/BookingForm.jsx';
 import { detailImages } from '../data/templateData.js';
 import { fetchPropertyDetail, fetchPropertyMedia } from '../services/api.js';
 
@@ -31,12 +33,61 @@ Liên hệ xem phòng gọi trước 30 phút.`,
   },
 };
 
-const fallbackBrokerAvatar = 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=300&q=80';
+const fallbackBrokerAvatar =
+  'https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=300&q=80';
+
+// Map amenity keyword → lucide icon name
+const AMENITY_ICON_MAP = [
+  [/giường|bed/i, 'BedDouble'],
+  [/tủ lạnh|refrigerator/i, 'Refrigerator'],
+  [/máy lạnh|điều hòa|air con/i, 'AirVent'],
+  [/wifi|internet/i, 'Wifi'],
+  [/nước nóng|water heater/i, 'ShowerHead'],
+  [/tủ quần áo|wardrobe/i, 'Package'],
+  [/gác|loft/i, 'Layers'],
+  [/bếp|cooking|kitchen/i, 'Utensils'],
+  [/máy giặt|washer/i, 'WashingMachine'],
+  [/sofa|ghế/i, 'Sofa'],
+  [/tv|tivi|television/i, 'Tv'],
+  [/camera|an ninh/i, 'ShieldCheck'],
+  [/sân vườn|garden/i, 'Sparkles'],
+  [/gara|garage/i, 'Car'],
+  [/sân thượng|rooftop/i, 'Wind'],
+  [/bơm nước|water pump/i, 'Droplets'],
+  [/cửa bảo vệ|security door/i, 'Lock'],
+  [/xe|parking|bãi giữ/i, 'Car'],
+];
+
+function amenityIcon(label) {
+  for (const [regex, iconName] of AMENITY_ICON_MAP) {
+    if (regex.test(label)) return iconName;
+  }
+  return 'Check';
+}
+
+const COST_CONFIG = [
+  { key: 'electricity', label: 'Điện', icon: 'Zap' },
+  { key: 'water', label: 'Nước', icon: 'Droplets' },
+  { key: 'service', label: 'Dịch vụ', icon: 'Wrench' },
+  { key: 'parking', label: 'Giữ xe', icon: 'Car' },
+];
+
+const CONDITION_LABELS = {
+  toilet: 'Toilet',
+  hours: 'Giờ giấc',
+  washer: 'Máy giặt',
+  window: 'Cửa sổ',
+  balcony: 'Ban công',
+  pets: 'Thú cưng',
+  parking: 'Chỗ để xe',
+  ev: 'Sạc xe điện',
+};
 
 export default function PropertyDetailPage({ propertyId, session, onLogout }) {
   const [property, setProperty] = useState(fallbackProperty);
   const [mediaImages, setMediaImages] = useState(detailImages);
   const [mediaLoading, setMediaLoading] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState('');
 
   useEffect(() => {
     let alive = true;
@@ -58,7 +109,9 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
     fetchPropertyMedia(propertyId)
       .then((items) => {
         if (!alive) return;
-        const images = items.filter((item) => item.mediaType === 'IMAGE').map((item) => item.url);
+        const images = items
+          .filter((item) => item.mediaType === 'IMAGE')
+          .map((item) => item.url);
         setMediaImages(images.length > 0 ? images : detailImages);
       })
       .catch(() => {
@@ -73,9 +126,22 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
   }, [propertyId]);
 
   const galleryImages = [property.image, ...mediaImages].filter(Boolean);
-  const categoryLabel = property.category === 'tro' ? 'Phòng trọ' : property.category === 'dat' ? 'Đất' : 'Nhà';
+  const categoryLabel =
+    property.category === 'tro'
+      ? 'Phòng trọ'
+      : property.category === 'dat'
+      ? 'Đất'
+      : 'Nhà';
   const brokerPhone = property.broker?.phone || '0901 234 567';
   const brokerAvatar = property.broker?.avatarUrl || fallbackBrokerAvatar;
+  const isTro = property.category === 'tro';
+
+  const hasAmenities = Array.isArray(property.amenities) && property.amenities.length > 0;
+  const hasCosts = property.costs && Object.keys(property.costs).length > 0;
+  const hasConditions = property.conditions && Object.keys(property.conditions).length > 0;
+  const hasSummary = property.summary &&
+    (property.summary.location || property.summary.amenities || property.summary.convenience);
+  const hasRooms = isTro && Array.isArray(property.rooms) && property.rooms.length > 0;
 
   return (
     <MainLayout session={session} onLogout={onLogout}>
@@ -91,17 +157,19 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
 
         {/* Main content: 2-col layout */}
         <div className="detail-layout">
-          {/* Left column — gallery + details */}
+          {/* ── Left column ── */}
           <div className="detail-main">
             {/* Gallery */}
-            <ImageGallery images={galleryImages} title={property.title} fallbackImage={detailImages[0]} />
+            <ImageGallery
+              images={galleryImages}
+              title={property.title}
+              fallbackImage={detailImages[0]}
+            />
             {mediaLoading && (
-              <div className="media-loading-notice">
-                Đang tải thư viện ảnh...
-              </div>
+              <div className="media-loading-notice">Đang tải thư viện ảnh...</div>
             )}
 
-            {/* Property header info */}
+            {/* Block 1: Basic info */}
             <div className="card card-section">
               <div className="filter-bar-inner mb-12">
                 <span className="badge badge-success">{property.statusLabel}</span>
@@ -112,43 +180,168 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
                 <Icon name="MapPin" size={16} className="icon-muted flex-shrink-0" />
                 <span>{property.address}</span>
               </div>
-              <div className="detail-price detail-price-rule">
-                {property.priceLabel}
-              </div>
+              <div className="detail-price detail-price-rule">{property.priceLabel}</div>
+
+              {/* Specs row */}
+              {(property.area || property.bedrooms || property.bathrooms || property.direction) && (
+                <div className="detail-meta-grid" style={{ marginTop: '16px' }}>
+                  {property.area > 0 && (
+                    <div className="detail-meta-item">
+                      <Icon name="Ruler" size={18} className="icon-muted" />
+                      <span className="detail-meta-label">Diện tích</span>
+                      <span className="detail-meta-value">{property.area} m²</span>
+                    </div>
+                  )}
+                  {property.bedrooms > 0 && (
+                    <div className="detail-meta-item">
+                      <Icon name="Bed" size={18} className="icon-muted" />
+                      <span className="detail-meta-label">Phòng ngủ</span>
+                      <span className="detail-meta-value">{property.bedrooms}</span>
+                    </div>
+                  )}
+                  {property.bathrooms > 0 && (
+                    <div className="detail-meta-item">
+                      <Icon name="Bath" size={18} className="icon-muted" />
+                      <span className="detail-meta-label">Phòng tắm</span>
+                      <span className="detail-meta-value">{property.bathrooms}</span>
+                    </div>
+                  )}
+                  {property.direction && property.direction !== 'Đang cập nhật' && (
+                    <div className="detail-meta-item">
+                      <Icon name="Sun" size={18} className="icon-muted" />
+                      <span className="detail-meta-label">Hướng</span>
+                      <span className="detail-meta-value">{property.direction}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Amenity icon grid */}
+              {hasAmenities && (
+                <div className="amenity-grid" style={{ marginTop: '20px' }}>
+                  {property.amenities.map((label) => (
+                    <div key={label} className="amenity-item">
+                      <Icon name={amenityIcon(label)} size={16} className="icon-accent" />
+                      <span>{label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Property specs */}
-            <div className="card p-24 mt-16">
-              <h2 className="text-h3 mb-16">Thông tin chi tiết</h2>
-              <div className="detail-meta-grid">
-                {[
-                  ['Ruler', 'Diện tích', `${property.area || 0} m²`],
-                  ['Bed', 'Phòng ngủ', property.bedrooms || 0],
-                  ['Bath', 'Phòng tắm', property.bathrooms || 0],
-                  ['Sun', 'Hướng', property.direction || 'Đang cập nhật'],
-                ].map(([iconName, label, value]) => (
-                  <div key={label} className="detail-meta-item">
-                    <Icon name={iconName} size={18} className="icon-muted" />
-                    <span className="detail-meta-label">{label}</span>
-                    <span className="detail-meta-value">{value}</span>
-                  </div>
-                ))}
+            {/* Block 2: Costs */}
+            {hasCosts && (
+              <div className="card p-24 mt-16">
+                <h2 className="detail-block-title">
+                  <Icon name="DollarSign" size={18} className="icon-accent" />
+                  Chi phí &amp; Điều kiện
+                </h2>
+                <div className="cost-list">
+                  {COST_CONFIG.map(({ key, label, icon }) => {
+                    const cost = property.costs[key];
+                    if (!cost) return null;
+                    return (
+                      <div key={key} className="cost-row">
+                        <div className="cost-row-left">
+                          <Icon name={icon} size={15} className="icon-muted" />
+                          {label}
+                        </div>
+                        <div className="cost-row-right">
+                          {cost.free ? (
+                            <span className="badge-free">Miễn phí</span>
+                          ) : (
+                            cost.value
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Description */}
-            <div className="card p-24 mt-16">
-              <h2 className="text-h3 mb-16">Mô tả</h2>
-              <p className="detail-description whitespace-pre">
-                {property.description}
-              </p>
-            </div>
+            {/* Block 3: Conditions */}
+            {hasConditions && (
+              <div className="card p-24 mt-16">
+                <h2 className="detail-block-title">
+                  <Icon name="Info" size={18} className="icon-accent" />
+                  Thông tin chi tiết
+                </h2>
+                <div className="conditions-grid">
+                  {Object.entries(property.conditions).map(([key, value]) => {
+                    const label = CONDITION_LABELS[key];
+                    if (!label || !value) return null;
+                    return (
+                      <div key={key} className="conditions-item">
+                        <span className="conditions-label">{label}</span>
+                        <span className="conditions-value">{value}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Block 4: Summary */}
+            {hasSummary && (
+              <div className="card p-24 mt-16">
+                <h2 className="detail-block-title">
+                  <Icon name="FileText" size={18} className="icon-accent" />
+                  Mô tả tóm tắt
+                </h2>
+                <div className="summary-block">
+                  {property.summary.location && (
+                    <div className="summary-item">
+                      <span className="summary-item-label">Vị trí</span>
+                      <p className="summary-item-text">{property.summary.location}</p>
+                    </div>
+                  )}
+                  {property.summary.amenities && (
+                    <div className="summary-item">
+                      <span className="summary-item-label">Tiện ích</span>
+                      <p className="summary-item-text">{property.summary.amenities}</p>
+                    </div>
+                  )}
+                  {property.summary.convenience && (
+                    <div className="summary-item">
+                      <span className="summary-item-label">Thuận tiện</span>
+                      <p className="summary-item-text">{property.summary.convenience}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Block 5: Description */}
+            {property.description && (
+              <div className="card p-24 mt-16">
+                <h2 className="detail-block-title">
+                  <Icon name="FileText" size={18} className="icon-muted" />
+                  Mô tả
+                </h2>
+                <p className="detail-description whitespace-pre">{property.description}</p>
+              </div>
+            )}
+
+            {/* Block 6: Room list — trọ only */}
+            {hasRooms && (
+              <div className="card p-24 mt-16">
+                <h2 className="detail-block-title">
+                  <Icon name="BedDouble" size={18} className="icon-accent" />
+                  Danh sách phòng trống
+                </h2>
+                <RoomList
+                  rooms={property.rooms}
+                  onSelectRoom={(label) => setSelectedRoom(label)}
+                />
+              </div>
+            )}
           </div>
 
-          {/* Right column — broker contact */}
+          {/* ── Right column — broker + booking ── */}
           <div className="detail-sidebar">
+            {/* Broker contact card */}
             <div className="contact-card">
-              {/* Broker info */}
               <div className="contact-card-broker">
                 <img
                   alt="Broker Avatar"
@@ -156,7 +349,9 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
                   src={brokerAvatar}
                 />
                 <div>
-                  <p className="contact-card-name">{property.broker?.name || 'Nguyễn Văn A'}</p>
+                  <p className="contact-card-name">
+                    {property.broker?.name || 'Nguyễn Văn A'}
+                  </p>
                   <p className="contact-card-verified">
                     <Icon name="ShieldCheck" size={14} className="icon-accent" />
                     Môi giới uy tín
@@ -164,7 +359,6 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
                 </div>
               </div>
 
-              {/* CTA buttons */}
               <div className="contact-buttons">
                 <button className="btn btn-primary btn-md btn-full">
                   <Icon name="Phone" size={18} />
@@ -180,6 +374,15 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
                 Vui lòng báo bạn xem tin trên Công Tín Land
               </p>
             </div>
+
+            {/* Booking form */}
+            <BookingForm
+              propertyId={propertyId}
+              category={property.category}
+              propertyTitle={property.title}
+              selectedRoom={selectedRoom}
+              rooms={property.rooms || []}
+            />
           </div>
         </div>
       </div>

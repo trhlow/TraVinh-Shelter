@@ -2,21 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import PropertyCard from '../components/PropertyCard.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
 import { searchProperties } from '../data/templateData.js';
+import { WARDS } from '../data/locations.js';
 import { fetchCategories, fetchProperties } from '../services/api.js';
 
 const DEFAULT_CATEGORIES = [
   { name: 'Trọ', slug: 'tro' },
   { name: 'Nhà', slug: 'nha' },
   { name: 'Đất', slug: 'dat' },
-];
-
-const WARDS = [
-  { label: 'Tất cả Trà Vinh', value: 'all' },
-  { label: 'Phường 6', value: 'phuong-6' },
-  { label: 'Phường 7', value: 'phuong-7' },
-  { label: 'Cầu Ngang', value: 'cau-ngang' },
-  { label: 'Châu Thành', value: 'chau-thanh' },
-  { label: 'Long Đức', value: 'long-duc' },
 ];
 
 const PRICE_GROUPS = {
@@ -52,8 +44,8 @@ function filtersFromQuery(queryParams = {}) {
     transaction,
     ward: queryParams.ward || 'all',
     houseType: queryParams.houseType || 'all',
-    minPrice: '',
-    maxPrice: '',
+    minPrice: queryParams.minPrice || '',
+    maxPrice: queryParams.maxPrice || '',
     minArea: '',
     maxArea: '',
   };
@@ -211,7 +203,7 @@ export default function SearchPage({ queryParams, session, onLogout }) {
                 onChange={(event) => updateFilter('ward', event.target.value)}
               >
                 {WARDS.map((ward) => (
-                  <option key={ward.value} value={ward.value}>{ward.label}</option>
+                  <option key={ward.code} value={ward.code}>{ward.label}</option>
                 ))}
               </select>
             </div>

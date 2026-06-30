@@ -4,18 +4,6 @@ import Badge from './ui/Badge.jsx';
 
 const AUTO_ADVANCE_MS = 5000;
 
-function prefersReducedMotion() {
-  try {
-    return (
-      typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    );
-  } catch {
-    return false;
-  }
-}
-
 function normalizeProperty(property) {
   const price = property.priceLabel || property.price;
   const location = property.address || property.location;
@@ -50,7 +38,7 @@ export default function FeaturedCarousel({ properties }) {
 
   // Auto-advance interval — cleaned up properly for StrictMode
   const startInterval = useCallback(() => {
-    if (prefersReducedMotion() || single || empty) return;
+    if (single || empty) return;
     intervalRef.current = setInterval(() => {
       setIndex(prev => (prev + 1) % items.length);
     }, AUTO_ADVANCE_MS);

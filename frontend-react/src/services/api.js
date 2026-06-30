@@ -7,29 +7,12 @@ const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true';
 
 export async function login(email, password) {
   if (USE_MOCK_API) {
-    const role = email.includes('admin') ? 'ADMIN' : email.includes('broker') ? 'BROKER' : 'USER';
+    const role = email.includes('admin') ? 'ADMIN' : 'BROKER';
     return delay({ accessToken: 'mock-token', tokenType: 'Bearer', expiresIn: 3600, email, role, userId: role.toLowerCase() });
   }
   return request('/auth/login', {
     method: 'POST',
     body: { email, password },
-  });
-}
-
-export async function registerUser(payload) {
-  if (USE_MOCK_API) {
-    return delay({
-      accessToken: 'mock-user-token',
-      tokenType: 'Bearer',
-      expiresIn: 3600,
-      email: payload.email,
-      role: 'USER',
-      userId: 'mock-user',
-    });
-  }
-  return request('/auth/register', {
-    method: 'POST',
-    body: payload,
   });
 }
 
@@ -58,6 +41,15 @@ export async function updateCurrentProfile(token, payload) {
   return request('/users/me', { method: 'PATCH', token, body: payload });
 }
 
+export async function changePassword(token, currentPassword, newPassword) {
+  if (USE_MOCK_API) {
+    await delay(null, 300);
+    if (currentPassword !== 'password123') throw new Error('Mật khẩu hiện tại không đúng.');
+    return null;
+  }
+  return request('/users/me/password', { method: 'PATCH', token, body: { currentPassword, newPassword } });
+}
+
 export async function uploadCurrentUserAvatar(token, file) {
   if (USE_MOCK_API) {
     return delay({
@@ -81,7 +73,7 @@ export async function fetchProperties(filters) {
 export async function fetchPropertyDetail(propertyId) {
   if (USE_MOCK_API || !propertyId) {
     const items = await fetchProperties({});
-    return items[0] ?? null;
+    return items.find((item) => item.id === propertyId) ?? items[0] ?? null;
   }
   const response = await request(`/properties/${propertyId}`);
   return normalizeProperty(response, 0);
@@ -164,6 +156,75 @@ export async function updatePropertyStatus(token, propertyId, status) {
 
 export async function deleteProperty(token, propertyId) {
   return request(`/properties/${propertyId}`, { method: 'DELETE', token });
+}
+
+export async function createViewing(propertyId, payload) {
+  if (USE_MOCK_API) {
+    const record = {
+      id: 'mock-viewing-' + Date.now(),
+      status: 'PENDING',
+      propertyId,
+      propertyTitle: payload.propertyTitle,
+      visitorName: payload.visitorName,
+      visitorPhone: payload.visitorPhone,
+      note: payload.note,
+      roomLabel: payload.roomLabel,
+      expectedMoveIn: payload.expectedMoveIn,
+      occupants: payload.occupants,
+      vehicles: payload.vehicles,
+      pets: payload.pets,
+      requestedAt: payload.requestedAt,
+      createdAt: new Date().toISOString(),
+    };
+    try {
+      const existing = JSON.parse(localStorage.getItem('travinh-mock-viewings') || '[]');
+      existing.push(record);
+      localStorage.setItem('travinh-mock-viewings', JSON.stringify(existing));
+    } catch (_) {
+      // localStorage unavailable — ignore
+    }
+    return delay(record, 150);
+  }
+  const { propertyTitle: _title, ...backendPayload } = payload;
+  return request(`/properties/${propertyId}/viewings`, { method: 'POST', body: backendPayload });
+}
+
+export async function fetchBrokerViewings(token) {
+  if (USE_MOCK_API) return delay(readMockViewings(), 120);
+  return request('/viewings/mine', { token });
+}
+
+export async function fetchAdminViewings(token) {
+  if (USE_MOCK_API) return delay(readMockViewings(), 120);
+  return request('/admin/viewings', { token });
+}
+
+export async function updateViewingStatus(token, viewingId, status) {
+  if (USE_MOCK_API) {
+    try {
+      const existing = JSON.parse(localStorage.getItem('travinh-mock-viewings') || '[]');
+      const updated = existing.map((item) => (item.id === viewingId ? { ...item, status } : item));
+      localStorage.setItem('travinh-mock-viewings', JSON.stringify(updated));
+    } catch (_) {
+      // localStorage unavailable — ignore
+    }
+    return delay({ id: viewingId, status }, 120);
+  }
+  return request(`/admin/viewings/${viewingId}/status`, { method: 'PATCH', token, body: { status } });
+}
+
+export async function updateBrokerViewingStatus(token, viewingId, status) {
+  if (USE_MOCK_API) return delay({ id: viewingId, status }, 120);
+  return request(`/viewings/mine/${viewingId}/status`, { method: 'PATCH', token, body: { status } });
+}
+
+function readMockViewings() {
+  try {
+    const items = JSON.parse(localStorage.getItem('travinh-mock-viewings') || '[]');
+    return Array.isArray(items) ? [...items].reverse() : [];
+  } catch (_) {
+    return [];
+  }
 }
 
 export async function fetchAdminUsers(token) {
@@ -257,6 +318,11 @@ function normalizeProperty(item, index = 0) {
     legal: attributes.legal || 'Đang cập nhật',
     image: attributes.image || fallback.image || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=80',
     description: attributes.description || 'Thông tin chi tiết đang được cập nhật.',
+    amenities: Array.isArray(attributes.amenities) ? attributes.amenities : [],
+    costs: attributes.costs || null, // costs.*.value is a preformatted display string (e.g. '3.500đ/kWh'), not a numeric
+    conditions: attributes.conditions || null,
+    summary: attributes.summary || null,
+    rooms: Array.isArray(attributes.rooms) ? attributes.rooms : [],
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
     attributes,

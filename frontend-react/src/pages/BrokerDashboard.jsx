@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { DonutChart, GaugeChart, HorizontalBarChart } from '../components/Charts.jsx';
 import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../components/DashboardWidgets.jsx';
+import ViewingsPanel from '../components/dashboard/ViewingsPanel.jsx';
 import BrandLogo from '../components/BrandLogo.jsx';
+import { WARDS } from '../data/locations.js';
 import Icon from '../components/ui/Icon.jsx';
 import LoginPage from './LoginPage.jsx';
 import {
+  changePassword,
   createProperty,
   deleteProperty,
   fetchBrokerDashboard,
@@ -14,6 +17,8 @@ import {
   updateCurrentProfile,
   updateProperty,
   updatePropertyStatus,
+  fetchBrokerViewings,
+  updateBrokerViewingStatus,
 } from '../services/api.js';
 
 const CHART_COLORS = {
@@ -28,6 +33,7 @@ const BROKER_SIDEBAR_ITEMS = [
   { href: '#/broker/dashboard', icon: 'LayoutDashboard', label: 'Bảng điều khiển' },
   { href: '#/broker/profile', icon: 'User', label: 'Hồ sơ môi giới' },
   { href: '#/broker/properties', icon: 'Building', label: 'Tin đăng của tôi' },
+  { href: '#/broker/viewings', icon: 'Calendar', label: 'Lịch hẹn xem' },
 ];
 
 const EMPTY_FORM = {
@@ -36,13 +42,14 @@ const EMPTY_FORM = {
   categorySlug: 'tro',
   transaction: 'rent',
   address: '',
-  ward: 'phuong-6',
+  ward: 'phuong-tra-vinh',
   price: '',
   area: '',
   bedrooms: '',
   bathrooms: '',
   houseType: 'tret',
   description: '',
+  amenities: [],
   coverUrl: '',
   coverFile: null,
   coverPreview: '',
@@ -62,6 +69,13 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
+  const [viewings, setViewings] = useState([]);
+  const [viewingsLoading, setViewingsLoading] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ current: '', next: '', confirm: '' });
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [savingViewing, setSavingViewing] = useState(false);
 
   const listings = stats.listings || [];
   const filteredListings = useMemo(() => listings.filter((listing) => listingMatchesQuery(listing, listingQuery)), [listings, listingQuery]);
@@ -96,6 +110,22 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       alive = false;
     };
   }, [session]);
+
+  useEffect(() => {
+    if (!session?.token || session.role !== 'BROKER' || section !== 'viewings') return;
+    let alive = true;
+    setViewingsLoading(true);
+    fetchBrokerViewings(session.token)
+      .then((items) => { if (alive) setViewings(Array.isArray(items) ? items : []); })
+      .catch(() => { if (alive) setViewings([]); })
+      .finally(() => { if (alive) setViewingsLoading(false); });
+    return () => { alive = false; };
+  }, [session, section]);
+
+  useEffect(() => {
+    setPasswordSuccess(false);
+    setPasswordError('');
+  }, [section]);
 
   const dashboardStats = useMemo(() => {
     const totalListings = listings.length || stats.totalListings || 0;
@@ -169,6 +199,26 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       setError(exception.message || 'Không cập nhật được hồ sơ.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleChangePassword(e) {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess(false);
+    if (passwordForm.next !== passwordForm.confirm) {
+      setPasswordError('Mật khẩu mới không khớp.');
+      return;
+    }
+    setSavingPassword(true);
+    try {
+      await changePassword(session.token, passwordForm.current, passwordForm.next);
+      setPasswordSuccess(true);
+      setPasswordForm({ current: '', next: '', confirm: '' });
+    } catch (err) {
+      setPasswordError(err.message || 'Đổi mật khẩu thất bại.');
+    } finally {
+      setSavingPassword(false);
     }
   }
 
@@ -261,6 +311,18 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
     }
   }
 
+  async function changeViewingStatus(id, status) {
+    setSavingViewing(true);
+    try {
+      await updateBrokerViewingStatus(session.token, id, status);
+      setViewings((vs) => vs.map((v) => v.id === id ? { ...v, status } : v));
+    } catch (err) {
+      setError(err.message || 'Không thể cập nhật trạng thái lịch hẹn.');
+    } finally {
+      setSavingViewing(false);
+    }
+  }
+
   function editListing(property) {
     setListingForm({
       id: property.id,
@@ -275,6 +337,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       bathrooms: property.bathrooms ? String(property.bathrooms) : '',
       houseType: property.houseType || 'tret',
       description: property.description || '',
+      amenities: Array.isArray(property.amenities) ? property.amenities : [],
       coverUrl: property.image || '',
       coverFile: null,
       coverPreview: '',
@@ -322,12 +385,6 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
               >
                 <Icon name="Plus" size={16} className="icon-inverse" />
                 Đăng tin mới
-              </button>
-            )}
-            {session && (
-              <button className="btn btn-ghost btn-sm" onClick={onLogout} type="button">
-                <Icon name="LogOut" size={16} className="icon-muted" />
-                Đăng xuất
               </button>
             )}
           </div>
@@ -395,6 +452,31 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                   Lưu hồ sơ
                 </button>
               </form>
+              <div className="profile-password-section">
+                <h3>Đổi mật khẩu</h3>
+                <form onSubmit={handleChangePassword} className="password-form">
+                  <div className="form-group">
+                    <label>Mật khẩu hiện tại</label>
+                    <input type="password" className="input" value={passwordForm.current}
+                      onChange={e => setPasswordForm(f => ({ ...f, current: e.target.value }))} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Mật khẩu mới</label>
+                    <input type="password" className="input" value={passwordForm.next}
+                      onChange={e => setPasswordForm(f => ({ ...f, next: e.target.value }))} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Xác nhận mật khẩu mới</label>
+                    <input type="password" className="input" value={passwordForm.confirm}
+                      onChange={e => setPasswordForm(f => ({ ...f, confirm: e.target.value }))} required />
+                  </div>
+                  {passwordError && <p className="form-error">{passwordError}</p>}
+                  {passwordSuccess && <p className="form-success">Đổi mật khẩu thành công!</p>}
+                  <button className="auth-btn" type="submit" disabled={savingPassword}>
+                    {savingPassword ? 'Đang lưu...' : 'Đổi mật khẩu'}
+                  </button>
+                </form>
+              </div>
             </div>
           )}
 
@@ -441,11 +523,9 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                   )}
                   <FormField label="Khu vực">
                     <select className="input" value={listingForm.ward} onChange={(event) => setListingValue('ward', event.target.value, setListingForm)}>
-                      <option value="phuong-6">Phường 6</option>
-                      <option value="phuong-7">Phường 7</option>
-                      <option value="cau-ngang">Cầu Ngang</option>
-                      <option value="chau-thanh">Châu Thành</option>
-                      <option value="long-duc">Long Đức</option>
+                      {WARDS.filter((ward) => ward.code !== 'all').map((ward) => (
+                        <option key={ward.code} value={ward.code}>{ward.label}</option>
+                      ))}
                     </select>
                   </FormField>
                   <FormField label="Địa chỉ" className="dashboard-listing-span2">
@@ -492,6 +572,26 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                   <FormField label="Mô tả" className="dashboard-listing-span3">
                     <textarea className="input" value={listingForm.description} onChange={(event) => setListingValue('description', event.target.value, setListingForm)} />
                   </FormField>
+                  <div className="form-group dashboard-listing-span3">
+                    <label className="auth-field-label">Tiện ích</label>
+                    <div className="amenity-checkboxes">
+                      {['Wifi', 'Điều hòa', 'Gác lửng', 'WC riêng', 'Chỗ để xe', 'Máy giặt', 'Tủ lạnh'].map(a => (
+                        <label key={a} className="amenity-checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={listingForm.amenities.includes(a)}
+                            onChange={e => setListingForm(f => ({
+                              ...f,
+                              amenities: e.target.checked
+                                ? [...f.amenities, a]
+                                : f.amenities.filter(x => x !== a),
+                            }))}
+                          />
+                          {a}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 </div>
                 <button className="auth-btn dashboard-submit-btn" type="submit" disabled={saving || !profileReady}>
                   <Icon name={editing ? 'Check' : 'Plus'} size={16} className="icon-inverse" />
@@ -542,6 +642,17 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                 </DashboardPanel>
               </div>
             </>
+          )}
+
+          {section === 'viewings' && (
+            <DashboardPanel title="Lịch hẹn xem" count={viewingsLoading ? 'Đang tải' : `${viewings.length} yêu cầu`}>
+              <ViewingsPanel
+                viewings={viewings}
+                loading={viewingsLoading}
+                onStatusChange={changeViewingStatus}
+                saving={savingViewing}
+              />
+            </DashboardPanel>
           )}
         </div>
       </div>
@@ -725,6 +836,7 @@ function propertyPayload(form) {
     bedrooms: numericOrNull(form.bedrooms),
     bathrooms: numericOrNull(form.bathrooms),
     description: form.description,
+    amenities: form.amenities,
   };
   if (form.categorySlug === 'nha' && form.transaction === 'rent') {
     attributes.houseType = form.houseType;
@@ -813,6 +925,7 @@ function brokerTitle(section) {
     dashboard: 'Bảng điều khiển',
     profile: 'Hồ sơ môi giới',
     properties: 'Tin đăng của tôi',
+    viewings: 'Lịch hẹn xem',
   }[section] || 'Bảng điều khiển';
 }
 

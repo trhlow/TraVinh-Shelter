@@ -3,14 +3,11 @@ package com.travinh.realty.modules.auth;
 import com.travinh.realty.common.config.JwtProperties;
 import com.travinh.realty.modules.auth.dto.AuthResponse;
 import com.travinh.realty.modules.auth.dto.LoginRequest;
-import com.travinh.realty.modules.auth.dto.RegisterRequest;
 import com.travinh.realty.modules.auth.security.JwtService;
 import com.travinh.realty.modules.auth.security.UserPrincipal;
-import com.travinh.realty.modules.user.UserIdentityConstraints;
 import com.travinh.realty.modules.user.model.User;
 import com.travinh.realty.modules.user.repository.UserRepository;
 import org.springframework.http.HttpStatus;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -26,29 +23,6 @@ public class AuthService {
     public AuthService(UserRepository users, PasswordEncoder encoder, AuthenticationManager auth, JwtService jwt, JwtProperties properties) {
         this.users = users; this.encoder = encoder; this.auth = auth; this.jwt = jwt; this.properties = properties;
     }
-    @Transactional
-    public AuthResponse register(RegisterRequest request) {
-        String email = request.email().trim().toLowerCase(); String username = request.username().trim();
-        String phone = blankToNull(request.phone());
-        if (users.existsByEmail(email)) throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already registered");
-        if (users.existsByUsername(username)) throw new ResponseStatusException(HttpStatus.CONFLICT, "Username is already registered");
-        if (phone != null && users.existsByNormalizedPhone(normalizePhoneForLookup(phone))) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Phone number is already registered");
-        }
-        try {
-            User saved = users.save(User.register(username, email, encoder.encode(request.password()), request.fullName().trim(), phone));
-            users.flush();
-            return AuthResponse.of(jwt.generateToken(saved), properties.expiration(), saved);
-        } catch (DataIntegrityViolationException exception) {
-            if (UserIdentityConstraints.isDuplicateEmailOrUsername(exception)) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Email or username is already registered", exception);
-            }
-            if (UserIdentityConstraints.isDuplicatePhone(exception)) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Phone number is already registered", exception);
-            }
-            throw exception;
-        }
-    }
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
         Authentication authentication = auth.authenticate(new UsernamePasswordAuthenticationToken(request.email().trim().toLowerCase(), request.password()));
@@ -63,9 +37,5 @@ public class AuthService {
         }
         jwt.revoke(authorizationHeader.substring(7));
     }
-
-    private String blankToNull(String value) { return value == null || value.isBlank() ? null : value.trim(); }
-
-    private String normalizePhoneForLookup(String value) { return value.replaceAll("\\s+", ""); }
 
 }

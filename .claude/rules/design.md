@@ -118,12 +118,10 @@ Mobile-first. Không dùng `inline style`.
 
 1. Navbar — sticky, backdrop-blur, logo trái / links giữa / CTA phải
 2. Hero — nền sáng (`--color-bg`) + gradient pastel nhẹ, display heading chữ tối, search bar nhúng, 2 CTA
-3. Stats bar — 3–4 số liệu nổi bật
-4. Featured Properties — grid 3 cột
-5. Services / Features — `section-pastel`, grid 2–3 cột, icon + text
-6. Coral accent — section nền cam, stats + benefits
-7. Brokers — horizontal scroll hoặc grid
-8. Testimonials — card quote + avatar
-9. News — grid 3 cột tin tức/blog
-10. CTA Section — `--color-dark-bg`, 1 button
-11. Footer — 4 cột
+3. Featured Properties — grid 3 cột
+4. Coral accent — section nền cam, stats + benefits
+5. Brokers — horizontal scroll hoặc grid
+6. Testimonials — card quote + avatar
+7. News — grid 3 cột tin tức/blog
+8. CTA Section — `--color-dark-bg`, 1 button
+9. Footer — 4 cột

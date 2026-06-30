@@ -15,6 +15,9 @@ public interface PropertyRepository extends JpaRepository<Property, UUID>, Prope
     Page<Property> findByStatus(PropertyStatus status, Pageable pageable);
     Page<Property> findByBrokerId(UUID brokerId, Pageable pageable);
 
+    @Query("select p.id from Property p where p.broker.id = :brokerId")
+    java.util.List<UUID> findIdsByBrokerId(@Param("brokerId") UUID brokerId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Property p where p.id = :id")
     java.util.Optional<Property> findByIdForUpdate(@Param("id") UUID id);

@@ -2,6 +2,7 @@ package com.travinh.realty.modules.user;
 
 import com.travinh.realty.modules.auth.security.UserPrincipal;
 import com.travinh.realty.modules.user.dto.BrokerContactResponse;
+import com.travinh.realty.modules.user.dto.ChangePasswordRequest;
 import com.travinh.realty.modules.user.dto.CurrentUserProfileResponse;
 import com.travinh.realty.modules.user.dto.UpdateProfileRequest;
 import jakarta.validation.Valid;
@@ -38,6 +39,13 @@ public class UserProfileController {
     public CurrentUserProfileResponse updateCurrentProfile(@AuthenticationPrincipal UserPrincipal principal,
                                                             @Valid @RequestBody UpdateProfileRequest request) {
         return profiles.updateCurrentProfile(principal, request);
+    }
+
+    @PatchMapping("/users/me/password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void changePassword(@AuthenticationPrincipal UserPrincipal principal,
+                               @Valid @RequestBody ChangePasswordRequest request) {
+        profiles.changePassword(principal, request);
     }
 
     @PostMapping(path = "/users/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

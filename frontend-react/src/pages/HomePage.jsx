@@ -1,49 +1,24 @@
 import { useEffect, useState } from 'react';
+import { Wifi, Wind, Layers, ShowerHead, Car } from 'lucide-react';
 import FeaturedCarousel from '../components/FeaturedCarousel.jsx';
+import TroShowcaseCard from '../components/TroShowcaseCard.jsx';
+import WardMap from '../components/WardMap.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import Button from '../components/ui/Button.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
 import { featuredProperties } from '../data/templateData.js';
+import { WARDS, CATEGORIES } from '../data/locations.js';
 import { fetchProperties } from '../services/api.js';
 
-const STATS = [
-  { number: '500+', label: 'Bất động sản' },
-  { number: '50+', label: 'Môi giới chuyên nghiệp' },
-  { number: '1,200+', label: 'Giao dịch thành công' },
-  { number: '5+', label: 'Năm kinh nghiệm' },
-];
-
-const SERVICES = [
-  {
-    icon: 'Search',
-    title: 'Tìm kiếm thông minh',
-    desc: 'Lọc bất động sản theo khu vực, giá, diện tích và loại hình một cách dễ dàng.',
-  },
-  {
-    icon: 'ShieldCheck',
-    title: 'Môi giới uy tín',
-    desc: 'Đội ngũ môi giới được xác minh và quản lý chặt chẽ bởi Công Tín Land.',
-  },
-  {
-    icon: 'TrendingUp',
-    title: 'Thông tin thị trường',
-    desc: 'Cập nhật giá cả và xu hướng thị trường bất động sản Trà Vinh liên tục.',
-  },
-  {
-    icon: 'Phone',
-    title: 'Hỗ trợ trực tiếp',
-    desc: 'Kết nối ngay với môi giới qua điện thoại hoặc nhắn tin trong vài giây.',
-  },
-  {
-    icon: 'FileText',
-    title: 'Hồ sơ pháp lý rõ ràng',
-    desc: 'Tất cả bất động sản đều được kiểm tra hồ sơ pháp lý trước khi đăng.',
-  },
-  {
-    icon: 'DollarSign',
-    title: 'Miễn phí cho người mua',
-    desc: 'Người mua và thuê không mất phí khi sử dụng nền tảng Công Tín Land.',
-  },
+// Price brackets (VND) emitted as minPrice/maxPrice query params.
+const HERO_PRICE_RANGES = [
+  { label: 'Mọi mức giá', min: '', max: '' },
+  { label: 'Dưới 1 triệu', min: '', max: '1000000' },
+  { label: '1 - 3 triệu', min: '1000000', max: '3000000' },
+  { label: '3 - 5 triệu', min: '3000000', max: '5000000' },
+  { label: 'Dưới 1 tỷ', min: '', max: '1000000000' },
+  { label: '1 - 3 tỷ', min: '1000000000', max: '3000000000' },
+  { label: 'Trên 3 tỷ', min: '3000000000', max: '' },
 ];
 
 const MOCK_BROKERS = [
@@ -66,31 +41,82 @@ const CORAL_BENEFITS = [
 ];
 
 function HeroSearchBar() {
-  const [query, setQuery] = useState('');
+  const [ward, setWard] = useState('all');
+  const [category, setCategory] = useState('all');
+  const [priceIndex, setPriceIndex] = useState('0');
+
   function handleSearch(e) {
     e.preventDefault();
     const params = new URLSearchParams();
-    if (query.trim()) params.set('query', query.trim());
-    window.location.hash = params.toString() ? `#/search?${params}` : '#/search';
+    if (category !== 'all') params.set('category', category);
+    if (ward !== 'all') params.set('ward', ward);
+    const range = HERO_PRICE_RANGES[Number(priceIndex)] || HERO_PRICE_RANGES[0];
+    if (range.min) params.set('minPrice', range.min);
+    if (range.max) params.set('maxPrice', range.max);
+    const qs = params.toString();
+    window.location.hash = qs ? `#/search?${qs}` : '#/search';
   }
+
   return (
-    <form className="hero-search" onSubmit={handleSearch}>
-      <Icon name="Search" size={18} className="hero-search-icon" />
-      <input
-        className="hero-search-input"
-        placeholder="Tìm theo khu vực, giá, loại bất động sản..."
-        value={query}
-        onChange={e => setQuery(e.target.value)}
-      />
-      <button type="submit" className="hero-search-btn">
-        <Icon name="Search" size={16} /> Tìm kiếm
-      </button>
+    <form className="hero-search-panel" onSubmit={handleSearch}>
+      <div className="hero-search-row">
+        <label className="hero-search-group">
+          <span className="hero-search-group-label">
+            <Icon name="MapPin" size={14} /> Khu vực
+          </span>
+          <select
+            className="hero-search-select"
+            value={ward}
+            onChange={e => setWard(e.target.value)}
+          >
+            {WARDS.map(item => (
+              <option key={item.code} value={item.code}>{item.label}</option>
+            ))}
+          </select>
+        </label>
+
+        <label className="hero-search-group">
+          <span className="hero-search-group-label">
+            <Icon name="LayoutGrid" size={14} /> Loại
+          </span>
+          <select
+            className="hero-search-select"
+            value={category}
+            onChange={e => setCategory(e.target.value)}
+          >
+            <option value="all">Tất cả loại hình</option>
+            {CATEGORIES.map(item => (
+              <option key={item.slug} value={item.slug}>{item.label}</option>
+            ))}
+          </select>
+        </label>
+
+        <label className="hero-search-group">
+          <span className="hero-search-group-label">
+            <Icon name="Wallet" size={14} /> Khoảng giá
+          </span>
+          <select
+            className="hero-search-select"
+            value={priceIndex}
+            onChange={e => setPriceIndex(e.target.value)}
+          >
+            {HERO_PRICE_RANGES.map((range, index) => (
+              <option key={range.label} value={String(index)}>{range.label}</option>
+            ))}
+          </select>
+        </label>
+
+        <button type="submit" className="hero-search-submit">
+          <Icon name="Search" size={18} /> Tìm kiếm
+        </button>
+      </div>
     </form>
   );
 }
 
 export default function HomePage({ session, onLogout }) {
   const [properties, setProperties] = useState(featuredProperties);
+  const [troProperties, setTroProperties] = useState([]);
 
   useEffect(() => {
     let alive = true;
@@ -100,22 +126,25 @@ export default function HomePage({ session, onLogout }) {
     return () => { alive = false; };
   }, []);
 
+  // Fetch tro listings separately — the `properties` state above is sliced to 3 for the
+  // carousel and may not contain any 'tro' entries (mock has them past index 3).
+  useEffect(() => {
+    let alive = true;
+    fetchProperties({ category: 'tro', transaction: 'all' })
+      .then(items => { if (alive) setTroProperties(items.slice(0, 8)); })
+      .catch(() => { if (alive) setTroProperties([]); });
+    return () => { alive = false; };
+  }, []);
+
+  // Fall back to the featured carousel data only if the tro fetch yields nothing.
+  const showcaseProperties = troProperties.length > 0 ? troProperties : properties;
+
   return (
     <MainLayout session={session} onLogout={onLogout}>
       {/* 1. HERO */}
       <section className="hero">
         <div className="container">
           <div className="hero-content">
-            <div className="hero-eyebrow">
-              <Icon name="MapPin" size={14} />
-              Bất động sản Trà Vinh
-            </div>
-            <h1 className="hero-title">
-              Công Tín Land - tìm nhà trọ, bất động sản Trà Vinh nhanh chóng
-            </h1>
-            <p className="hero-subtitle">
-              Kết nối người mua — người bán — môi giới uy tín. Hàng trăm bất động sản được cập nhật hằng ngày tại Trà Vinh.
-            </p>
             <div className="hero-ctas">
               <Button as="a" href="#/search" variant="primary" size="lg">
                 <Icon name="Search" size={18} /> Tìm bất động sản
@@ -129,21 +158,41 @@ export default function HomePage({ session, onLogout }) {
         </div>
       </section>
 
-      {/* 2. STATS */}
-      <div className="stats-bar">
+      {/* 3. TRO SHOWCASE */}
+      <section className="section">
         <div className="container">
-          <div className="stats-grid">
-            {STATS.map(stat => (
-              <div key={stat.label}>
-                <div className="stat-number">{stat.number}</div>
-                <div className="stat-label">{stat.label}</div>
-              </div>
+          <div className="section-header">
+            <div className="section-header-text">
+              <h2 className="text-h2">Phòng trọ nổi bật</h2>
+              <p>Phòng trọ mới, đã xác thực tại Trà Vinh</p>
+            </div>
+            <a href="#/search?category=tro" className="section-header-link">
+              Xem tất cả <Icon name="ArrowRight" size={15} />
+            </a>
+          </div>
+          <div className="tro-showcase-row">
+            {showcaseProperties.map(property => (
+              <TroShowcaseCard key={property.id || property.title} property={property} />
+            ))}
+          </div>
+          <div className="amenity-highlights">
+            {[
+              { icon: Wifi, label: 'Wifi miễn phí' },
+              { icon: Wind, label: 'Điều hòa' },
+              { icon: Layers, label: 'Gác lửng' },
+              { icon: ShowerHead, label: 'WC riêng' },
+              { icon: Car, label: 'Chỗ để xe' },
+            ].map(({ icon: Icon, label }) => (
+              <span key={label} className="amenity-pill">
+                <Icon size={16} />
+                {label}
+              </span>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* 3. FEATURED PROPERTIES */}
+      {/* 4. FEATURED PROPERTIES */}
       <section className="section-subtle">
         <div className="container">
           <div className="section-header">
@@ -159,28 +208,19 @@ export default function HomePage({ session, onLogout }) {
         </div>
       </section>
 
-      {/* 4. SERVICES */}
-      <section className="section-pastel">
+      {/* 5. WARD BROWSE — Phòng trọ theo Khu vực Trà Vinh */}
+      <section className="section">
         <div className="container">
-          <div className="section-center">
-            <h2 className="text-h2 section-center-title">Tại sao chọn Công Tín Land?</h2>
-            <p className="section-center-subtitle">
-              Nền tảng bất động sản địa phương với đội ngũ môi giới được kiểm duyệt chặt chẽ.
-            </p>
+          <div className="section-header">
+            <div className="section-header-text">
+              <h2 className="text-h2">Phòng trọ theo Khu vực Trà Vinh</h2>
+              <p>Tìm phòng trọ theo từng phường tại Trà Vinh</p>
+            </div>
+            <a href="#/search?category=tro" className="section-header-link">
+              Xem tất cả phòng trọ <Icon name="ArrowRight" size={15} />
+            </a>
           </div>
-          <div className="features-grid">
-            {SERVICES.map(svc => (
-              <div key={svc.title} className="feature-card">
-                <div className="feature-icon">
-                  <Icon name={svc.icon} size={22} />
-                </div>
-                <h3 className="text-h3 feature-card-title">{svc.title}</h3>
-                <p className="feature-card-desc">
-                  {svc.desc}
-                </p>
-              </div>
-            ))}
-          </div>
+          <WardMap />
         </div>
       </section>
 
@@ -281,14 +321,14 @@ export default function HomePage({ session, onLogout }) {
               Bắt đầu tìm bất động sản ngay hôm nay
             </h2>
             <p className="cta-dark-subtitle">
-              Đăng ký miễn phí để lưu tin yêu thích và nhận thông báo khi có bất động sản mới.
+              Tìm kiếm bất động sản phù hợp và kết nối với đội ngũ môi giới uy tín tại Trà Vinh.
             </p>
             <div className="cta-dark-buttons">
-              <Button as="a" href="#/register" variant="primary" size="lg">
-                Đăng ký miễn phí
-              </Button>
-              <Button as="a" href="#/search" variant="outline-white" size="lg">
+              <Button as="a" href="#/search" variant="primary" size="lg">
                 Khám phá ngay
+              </Button>
+              <Button as="a" href="#/brokers" variant="outline-white" size="lg">
+                Liên hệ môi giới
               </Button>
             </div>
           </div>

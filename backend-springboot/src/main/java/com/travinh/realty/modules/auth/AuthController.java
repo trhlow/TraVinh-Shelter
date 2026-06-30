@@ -2,7 +2,6 @@ package com.travinh.realty.modules.auth;
 
 import com.travinh.realty.modules.auth.dto.AuthResponse;
 import com.travinh.realty.modules.auth.dto.LoginRequest;
-import com.travinh.realty.modules.auth.dto.RegisterRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,14 +17,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/auth")
-@Tag(name = "Authentication", description = "Register, login, and JWT session lifecycle")
+@Tag(name = "Authentication", description = "Login and JWT session lifecycle")
 public class AuthController {
     private final AuthService authService;
     public AuthController(AuthService authService) { this.authService = authService; }
-
-    @PostMapping("/register") @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Register a user account")
-    public AuthResponse register(@Valid @RequestBody RegisterRequest request) { return authService.register(request); }
 
     @PostMapping("/login")
     @Operation(summary = "Authenticate and return a JWT")

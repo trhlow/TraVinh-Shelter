@@ -24,3 +24,231 @@
   max-width: 440px;
   margin: 0;
 }
+
+/* ============================================================
+   HOME — MULTI-FIELD HERO SEARCH
+   ============================================================ */
+.hero-search-panel {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 12px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.hero-search-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hero-search-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.hero-search-group-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.hero-search-select {
+  min-height: 48px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  padding: 0 12px;
+  font-size: 15px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.hero-search-select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.hero-search-submit {
+  min-height: 48px;
+  margin-top: 4px;
+  padding: 0 24px;
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 160ms ease;
+}
+
+.hero-search-submit:hover { background: var(--color-accent-hover); }
+
+@media (min-width: 768px) {
+  .hero-search-row {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+  .hero-search-submit { margin-top: 0; flex-shrink: 0; }
+}
+
+/* ============================================================
+   HOME — TRO SHOWCASE (horizontal scroll)
+   ============================================================ */
+.tro-showcase-row {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tro-showcase-card {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 280px;
+  scroll-snap-align: start;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.tro-showcase-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-border-strong);
+  transform: translateY(-2px);
+}
+
+.tro-showcase-image {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  background: var(--color-bg-muted);
+}
+
+.tro-showcase-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.tro-showcase-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tro-showcase-rooms {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-brand);
+  color: var(--color-text-inverse);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.tro-showcase-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+}
+
+.tro-showcase-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--color-text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tro-showcase-address {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.tro-showcase-price {
+  margin: 2px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.tro-showcase-total {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* ============================================================
+   HOME — AMENITY HIGHLIGHTS
+   ============================================================ */
+.amenity-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.amenity-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: var(--color-bg-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+/* ============================================================
+   HOME — WARD MAP (Leaflet)
+   ============================================================ */
+.ward-map {
+  height: 360px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  /* Keep Leaflet panes/controls below sticky navbar and other page chrome. */
+  z-index: 0;
+}
+
+@media (min-width: 1024px) {
+  .ward-map { height: 460px; }
+}

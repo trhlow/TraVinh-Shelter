@@ -8,6 +8,7 @@ dist/
 .env
 /media/
 *.log
+.mcp.json
 .agents/
 .codex/
 skills-lock.json
