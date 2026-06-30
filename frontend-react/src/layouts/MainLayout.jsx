@@ -81,7 +81,7 @@ export function Header({ session, onLogout }) {
                 <div
                   key={cat.title}
                   className="navbar-dropdown-col"
-                  style={i > 0 ? { borderLeft: '1px solid var(--color-border)' } : {}}
+                  style={i > 0 ? { borderLeft: '1px solid var(--color-hairline)' } : {}}
                 >
                   <div className="navbar-dropdown-cat-header">
                     <span className="navbar-dropdown-cat-icon">
@@ -153,7 +153,7 @@ export function Footer() {
     <footer className="footer">
       <div className="container">
         <div className="footer-top">
-          <a href="#/" aria-label={BRAND_NAME} style={{ color: '#fff', display: 'flex' }}>
+          <a href="#/" aria-label={BRAND_NAME} className="footer-logo-link">
             <BrandLogo />
           </a>
         </div>
