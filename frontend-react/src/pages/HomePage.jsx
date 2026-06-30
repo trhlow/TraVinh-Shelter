@@ -44,56 +44,50 @@ function HeroSearchBar() {
   }
 
   return (
-    <form className="hero-search-panel" onSubmit={handleSearch}>
-      <div className="hero-search-row">
-        <label className="hero-search-group">
-          <span className="hero-search-group-label">
-            <Icon name="MapPin" size={14} /> Khu vực
-          </span>
-          <select
-            className="hero-search-select"
-            value={ward}
-            onChange={e => setWard(e.target.value)}
-          >
-            {WARDS.map(item => (
-              <option key={item.code} value={item.code}>{item.label}</option>
-            ))}
-          </select>
-        </label>
+    <form className="search-pill" onSubmit={handleSearch}>
+      <div className="search-pill-segment">
+        <span className="search-pill-label">Khu vực</span>
+        <select
+          className="search-pill-select"
+          value={ward}
+          onChange={e => setWard(e.target.value)}
+        >
+          {WARDS.map(item => (
+            <option key={item.code} value={item.code}>{item.label}</option>
+          ))}
+        </select>
+      </div>
 
-        <label className="hero-search-group">
-          <span className="hero-search-group-label">
-            <Icon name="LayoutGrid" size={14} /> Loại
-          </span>
-          <select
-            className="hero-search-select"
-            value={category}
-            onChange={e => setCategory(e.target.value)}
-          >
-            <option value="all">Tất cả loại hình</option>
-            {CATEGORIES.map(item => (
-              <option key={item.slug} value={item.slug}>{item.label}</option>
-            ))}
-          </select>
-        </label>
+      <div className="search-pill-segment">
+        <span className="search-pill-label">Loại hình</span>
+        <select
+          className="search-pill-select"
+          value={category}
+          onChange={e => setCategory(e.target.value)}
+        >
+          <option value="all">Tất cả</option>
+          {CATEGORIES.map(item => (
+            <option key={item.slug} value={item.slug}>{item.label}</option>
+          ))}
+        </select>
+      </div>
 
-        <label className="hero-search-group">
-          <span className="hero-search-group-label">
-            <Icon name="Wallet" size={14} /> Khoảng giá
-          </span>
-          <select
-            className="hero-search-select"
-            value={priceIndex}
-            onChange={e => setPriceIndex(e.target.value)}
-          >
-            {HERO_PRICE_RANGES.map((range, index) => (
-              <option key={range.label} value={String(index)}>{range.label}</option>
-            ))}
-          </select>
-        </label>
+      <div className="search-pill-segment">
+        <span className="search-pill-label">Khoảng giá</span>
+        <select
+          className="search-pill-select"
+          value={priceIndex}
+          onChange={e => setPriceIndex(e.target.value)}
+        >
+          {HERO_PRICE_RANGES.map((range, index) => (
+            <option key={range.label} value={String(index)}>{range.label}</option>
+          ))}
+        </select>
+      </div>
 
-        <button type="submit" className="hero-search-submit">
-          <Icon name="Search" size={18} /> Tìm kiếm
+      <div className="search-pill-orb-wrap">
+        <button type="submit" className="search-pill-orb" aria-label="Tìm kiếm">
+          <Icon name="Search" size={20} />
         </button>
       </div>
     </form>
@@ -136,9 +130,12 @@ export default function HomePage({ session, onLogout }) {
       <section className="hero">
         <div className="container">
           <div className="hero-content">
+            <h1 className="text-display-xl hero-headline">
+              Tìm bất động sản tại Trà Vinh
+            </h1>
             <div className="hero-ctas">
               <Button as="a" href="#/search" variant="primary" size="lg">
-                <Icon name="Search" size={18} /> Tìm bất động sản
+                <Icon name="Search" size={18} /> Tìm kiếm ngay
               </Button>
               <Button as="a" href="#/brokers" variant="secondary" size="lg">
                 Xem môi giới
