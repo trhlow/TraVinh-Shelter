@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import BrandLogo, { BRAND_NAME } from '../components/BrandLogo.jsx';
 import Icon from '../components/ui/Icon.jsx';
 
@@ -150,7 +149,6 @@ export function Header({ session, onLogout }) {
 }
 
 export function Footer() {
-  const [email, setEmail] = useState('');
   return (
     <footer className="footer">
       <div className="container">
@@ -158,21 +156,6 @@ export function Footer() {
           <a href="#/" aria-label={BRAND_NAME} style={{ color: '#fff', display: 'flex' }}>
             <BrandLogo />
           </a>
-          <div className="footer-email-row">
-            <label htmlFor="footer-email" className="sr-only">Email nhận tin</label>
-            <input
-              id="footer-email"
-              type="email"
-              className="footer-email-input"
-              placeholder="Nhập email để nhận tin mới..."
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              style={{ flex: 1 }}
-            />
-            <button type="button" className="btn btn-primary btn-sm" style={{ flexShrink: 0 }}>
-              Theo dõi
-            </button>
-          </div>
         </div>
 
         <div className="footer-grid">
@@ -213,11 +196,6 @@ export function Footer() {
 
         <div className="footer-bottom">
           <p className="footer-copyright">{BRAND_NAME} © 2025. All rights reserved.</p>
-          <div className="footer-links-row">
-            {[['Trang chủ', '#/'], ['Dự án', '#/projects'], ['Môi giới', '#/brokers']].map(([label, href]) => (
-              <a key={label} className="footer-link" href={href}>{label}</a>
-            ))}
-          </div>
         </div>
       </div>
     </footer>

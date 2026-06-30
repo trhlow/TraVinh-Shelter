@@ -26,13 +26,6 @@ const SHOWCASE_ROWS = [
   { slug: 'dat', title: 'Đất nền', subtitle: 'Đất thổ cư, đất nền pháp lý rõ ràng' },
 ];
 
-const MOCK_BROKERS = [
-  { name: 'Nguyễn Văn An', area: 'TP. Trà Vinh', listings: 24, initial: 'A' },
-  { name: 'Trần Thị Bình', area: 'Châu Thành', listings: 18, initial: 'B' },
-  { name: 'Lê Văn Cường', area: 'Cầu Ngang', listings: 15, initial: 'C' },
-  { name: 'Phạm Thị Dung', area: 'Tiểu Cần', listings: 12, initial: 'D' },
-];
-
 const CORAL_STATS = [
   { number: '98%', label: 'Khách hài lòng' },
   { number: '24h', label: 'Phản hồi trung bình' },
@@ -243,79 +236,6 @@ export default function HomePage({ session, onLogout }) {
                   {benefit.text}
                 </div>
               ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 6. BROKERS */}
-      <section className="section-subtle">
-        <div className="container">
-          <div className="section-header">
-            <div className="section-header-text">
-              <h2 className="text-h2">Đội ngũ môi giới</h2>
-              <p>Môi giới được xác minh và đào tạo bởi Công Tín Land</p>
-            </div>
-            <a href="#/brokers" className="section-header-link">
-              Xem tất cả môi giới <Icon name="ArrowRight" size={15} />
-            </a>
-          </div>
-          <div className="grid-4">
-            {MOCK_BROKERS.map(broker => (
-              <div key={broker.name} className="broker-card">
-                <div className="broker-avatar-lg">{broker.initial}</div>
-                <p className="broker-card-name">
-                  {broker.name}
-                </p>
-                <p className="broker-card-area">
-                  <Icon name="MapPin" size={12} /> {broker.area}
-                </p>
-                <p className="broker-card-count">
-                  {broker.listings} tin đăng
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 7. NEWS / LATEST UPDATES */}
-      <section className="section-subtle">
-        <div className="container">
-          <div className="section-header">
-            <div className="section-header-text">
-              <h2 className="text-h2">Tin tức mới nhất</h2>
-              <p>Cập nhật thị trường và kinh nghiệm bất động sản Trà Vinh</p>
-            </div>
-            <a href="#/" className="section-header-link">
-              Xem tất cả <Icon name="ArrowRight" size={15} />
-            </a>
-          </div>
-          <div className="news-empty">
-            <Icon name="FileText" size={28} className="icon-muted" />
-            <p className="news-empty-title">Chưa có tin tức mới</p>
-            <p className="news-empty-desc">Các bài viết về thị trường và kinh nghiệm bất động sản Trà Vinh sẽ được cập nhật tại đây.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* 9. DARK CTA */}
-      <section className="section-dark">
-        <div className="container">
-          <div className="section-center">
-            <h2 className="text-h2 cta-dark-title">
-              Bắt đầu tìm bất động sản ngay hôm nay
-            </h2>
-            <p className="cta-dark-subtitle">
-              Tìm kiếm bất động sản phù hợp và kết nối với đội ngũ môi giới uy tín tại Trà Vinh.
-            </p>
-            <div className="cta-dark-buttons">
-              <Button as="a" href="#/search" variant="primary" size="lg">
-                Khám phá ngay
-              </Button>
-              <Button as="a" href="#/brokers" variant="outline-white" size="lg">
-                Liên hệ môi giới
-              </Button>
             </div>
           </div>
         </div>

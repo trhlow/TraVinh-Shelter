@@ -94,10 +94,12 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
   const stats = useMemo(() => {
     const visiblePosts = properties.filter(isAvailableProperty).length;
     const pendingPosts = properties.filter(isPendingProperty).length;
-    // `users` (GET /admin/users = findAll) already includes brokers, so it is the
-    // full account registry; `brokers` (findByRole BROKER) is a subset — never add them.
+    // `users` (GET /admin/users = findAll) is the full account registry; `brokers`
+    // (findByRole BROKER) is a subset — never add them. The USER actor was removed in
+    // Pass 3, so count only active account roles (ADMIN + BROKER); leftover USER seed
+    // rows are not active accounts and stay out of the total to match the role donut.
     return {
-      totalAccounts: users.length,
+      totalAccounts: users.filter((user) => user.role === 'ADMIN' || user.role === 'BROKER').length,
       brokers: brokers.length,
       admins: users.filter((user) => user.role === 'ADMIN').length,
       posts: properties.length,
@@ -140,6 +142,13 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
   }, [properties]);
 
   const visiblePercent = stats.posts > 0 ? Math.round((stats.visiblePosts / stats.posts) * 100) : 0;
+
+  // Recent-posts feed: newest 5 by createdAt — a curated stream, not the full count.
+  const recentProperties = useMemo(() => (
+    [...properties]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 5)
+  ), [properties]);
 
   const filteredBrokers = useMemo(() => brokers.filter((broker) => {
     const query = brokerQuery.trim().toLowerCase();
@@ -291,8 +300,8 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
                   )}
                 </DashboardPanel>
 
-                <DashboardPanel title="Bài đăng mới trong hệ thống" count={`${properties.slice(0, 5).length} tin gần đây`}>
-                  <PropertyTable properties={properties.slice(0, 5)} loading={loading} compact />
+                <DashboardPanel title="Bài đăng mới trong hệ thống" count={`${recentProperties.length} tin mới nhất`}>
+                  <PropertyTable properties={recentProperties} loading={loading} compact />
                 </DashboardPanel>
 
                 <DashboardPanel title="Tình trạng hệ thống" count="Từ API hiện có">
