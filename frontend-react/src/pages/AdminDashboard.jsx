@@ -245,14 +245,6 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
       <div className="dashboard-content">
         <div className="dashboard-topbar">
           <span className="dashboard-topbar-title">{adminTitle(section)}</span>
-          <div className="dashboard-topbar-actions">
-            {session && (
-              <button className="btn btn-ghost btn-sm" onClick={onLogout} type="button">
-                <Icon name="LogOut" size={16} className="icon-muted" />
-                Đăng xuất
-              </button>
-            )}
-          </div>
         </div>
 
         <div className="dashboard-main">

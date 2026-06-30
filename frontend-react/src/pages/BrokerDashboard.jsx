@@ -387,12 +387,6 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                 Đăng tin mới
               </button>
             )}
-            {session && (
-              <button className="btn btn-ghost btn-sm" onClick={onLogout} type="button">
-                <Icon name="LogOut" size={16} className="icon-muted" />
-                Đăng xuất
-              </button>
-            )}
           </div>
         </div>
 
