@@ -173,7 +173,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
                 <span className="badge badge-success">{property.statusLabel}</span>
                 <span className="badge badge-neutral">{categoryLabel}</span>
               </div>
-              <h1 className="text-h2 mb-12">{property.title}</h1>
+              <h1 className="text-display-lg mb-12">{property.title}</h1>
               <div className="filter-bar-inner detail-address mb-16">
                 <Icon name="MapPin" size={16} className="icon-muted flex-shrink-0" />
                 <span>{property.address}</span>

@@ -154,7 +154,7 @@ export default function HomePage({ session, onLogout }) {
         <div className="container">
           <div className="section-header">
             <div className="section-header-text">
-              <h2 className="text-h2">Tin nổi bật</h2>
+              <h2 className="text-display-md">Tin nổi bật</h2>
               <p>Khám phá các bất động sản tốt nhất tại Trà Vinh</p>
             </div>
             <a href="#/search" className="section-header-link">
@@ -174,7 +174,7 @@ export default function HomePage({ session, onLogout }) {
             <div className="container">
               <div className="section-header">
                 <div className="section-header-text">
-                  <h2 className="text-h2">{title}</h2>
+                  <h2 className="text-display-md">{title}</h2>
                   <p>{subtitle}</p>
                 </div>
                 <a href={`#/search?category=${slug}`} className="section-header-link">

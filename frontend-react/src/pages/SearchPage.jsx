@@ -152,7 +152,7 @@ export default function SearchPage({ queryParams, session, onLogout }) {
         <div className="search-layout">
           {/* Filter sidebar */}
           <aside className="filter-sidebar">
-            <h2 className="text-h3 filter-sidebar-heading">Bộ lọc tìm kiếm</h2>
+            <h2 className="text-display-sm filter-sidebar-heading">Bộ lọc tìm kiếm</h2>
 
             <div className="filter-group">
               <label className="filter-label">Từ khóa</label>
