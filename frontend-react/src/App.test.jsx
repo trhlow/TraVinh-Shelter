@@ -19,16 +19,7 @@ test('renders the template home page', async () => {
   render(<App />);
 
   expect(screen.getByRole('heading', { name: 'Tin nổi bật' })).toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: 'Phòng trọ nổi bật' })).toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: 'Phòng trọ theo Khu vực Trà Vinh' })).toBeInTheDocument();
   await waitFor(() => expect(screen.getAllByText('Công Tín Land').length).toBeGreaterThan(0));
-});
-
-test('home renders the Trà Vinh ward map', () => {
-  render(<App />);
-  expect(
-    screen.getByRole('region', { name: /Bản đồ phòng trọ theo khu vực Trà Vinh/i }),
-  ).toBeInTheDocument();
 });
 
 test('routes to search page', async () => {

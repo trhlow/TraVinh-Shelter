@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Wifi, Wind, Layers, ShowerHead, Car } from 'lucide-react';
 import FeaturedCarousel from '../components/FeaturedCarousel.jsx';
 import TroShowcaseCard from '../components/TroShowcaseCard.jsx';
-import WardMap from '../components/WardMap.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import Button from '../components/ui/Button.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
@@ -19,6 +17,13 @@ const HERO_PRICE_RANGES = [
   { label: 'Dưới 1 tỷ', min: '', max: '1000000000' },
   { label: '1 - 3 tỷ', min: '1000000000', max: '3000000000' },
   { label: 'Trên 3 tỷ', min: '3000000000', max: '' },
+];
+
+// Category showcase rows — each fetched separately and rendered as its own row.
+const SHOWCASE_ROWS = [
+  { slug: 'tro', title: 'Phòng trọ cho thuê', subtitle: 'Phòng trọ mới, đã xác thực tại Trà Vinh' },
+  { slug: 'nha', title: 'Nhà bán & cho thuê', subtitle: 'Nhà phố, nhà riêng tại Trà Vinh' },
+  { slug: 'dat', title: 'Đất nền', subtitle: 'Đất thổ cư, đất nền pháp lý rõ ràng' },
 ];
 
 const MOCK_BROKERS = [
@@ -117,6 +122,8 @@ function HeroSearchBar() {
 export default function HomePage({ session, onLogout }) {
   const [properties, setProperties] = useState(featuredProperties);
   const [troProperties, setTroProperties] = useState([]);
+  const [nhaProperties, setNhaProperties] = useState([]);
+  const [datProperties, setDatProperties] = useState([]);
 
   useEffect(() => {
     let alive = true;
@@ -126,18 +133,21 @@ export default function HomePage({ session, onLogout }) {
     return () => { alive = false; };
   }, []);
 
-  // Fetch tro listings separately — the `properties` state above is sliced to 3 for the
-  // carousel and may not contain any 'tro' entries (mock has them past index 3).
+  // Fetch each category separately. A single `category:'all'` fetch is paged
+  // (backend default size=20) and can starve a category, hiding its row even
+  // when listings of that type exist on later pages.
   useEffect(() => {
     let alive = true;
-    fetchProperties({ category: 'tro', transaction: 'all' })
-      .then(items => { if (alive) setTroProperties(items.slice(0, 8)); })
-      .catch(() => { if (alive) setTroProperties([]); });
+    const setters = { tro: setTroProperties, nha: setNhaProperties, dat: setDatProperties };
+    Object.entries(setters).forEach(([slug, setItems]) => {
+      fetchProperties({ category: slug, transaction: 'all' })
+        .then(items => { if (alive) setItems(items.slice(0, 8)); })
+        .catch(() => { if (alive) setItems([]); });
+    });
     return () => { alive = false; };
   }, []);
 
-  // Fall back to the featured carousel data only if the tro fetch yields nothing.
-  const showcaseProperties = troProperties.length > 0 ? troProperties : properties;
+  const rowItems = { tro: troProperties, nha: nhaProperties, dat: datProperties };
 
   return (
     <MainLayout session={session} onLogout={onLogout}>
@@ -158,41 +168,7 @@ export default function HomePage({ session, onLogout }) {
         </div>
       </section>
 
-      {/* 3. TRO SHOWCASE */}
-      <section className="section">
-        <div className="container">
-          <div className="section-header">
-            <div className="section-header-text">
-              <h2 className="text-h2">Phòng trọ nổi bật</h2>
-              <p>Phòng trọ mới, đã xác thực tại Trà Vinh</p>
-            </div>
-            <a href="#/search?category=tro" className="section-header-link">
-              Xem tất cả <Icon name="ArrowRight" size={15} />
-            </a>
-          </div>
-          <div className="tro-showcase-row">
-            {showcaseProperties.map(property => (
-              <TroShowcaseCard key={property.id || property.title} property={property} />
-            ))}
-          </div>
-          <div className="amenity-highlights">
-            {[
-              { icon: Wifi, label: 'Wifi miễn phí' },
-              { icon: Wind, label: 'Điều hòa' },
-              { icon: Layers, label: 'Gác lửng' },
-              { icon: ShowerHead, label: 'WC riêng' },
-              { icon: Car, label: 'Chỗ để xe' },
-            ].map(({ icon: Icon, label }) => (
-              <span key={label} className="amenity-pill">
-                <Icon size={16} />
-                {label}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 4. FEATURED PROPERTIES */}
+      {/* 2. FEATURED PROPERTIES — newest across all categories, leads the page */}
       <section className="section-subtle">
         <div className="container">
           <div className="section-header">
@@ -208,23 +184,33 @@ export default function HomePage({ session, onLogout }) {
         </div>
       </section>
 
-      {/* 5. WARD BROWSE — Phòng trọ theo Khu vực Trà Vinh */}
-      <section className="section">
-        <div className="container">
-          <div className="section-header">
-            <div className="section-header-text">
-              <h2 className="text-h2">Phòng trọ theo Khu vực Trà Vinh</h2>
-              <p>Tìm phòng trọ theo từng phường tại Trà Vinh</p>
+      {/* 3. CATEGORY SHOWCASE ROWS — Trọ / Nhà / Đất */}
+      {SHOWCASE_ROWS.map(({ slug, title, subtitle }, index) => {
+        const items = rowItems[slug];
+        if (items.length === 0) return null;
+        return (
+          <section key={slug} className={index % 2 === 0 ? 'section' : 'section-subtle'}>
+            <div className="container">
+              <div className="section-header">
+                <div className="section-header-text">
+                  <h2 className="text-h2">{title}</h2>
+                  <p>{subtitle}</p>
+                </div>
+                <a href={`#/search?category=${slug}`} className="section-header-link">
+                  Xem tất cả <Icon name="ArrowRight" size={15} />
+                </a>
+              </div>
+              <div className="tro-showcase-row">
+                {items.map(property => (
+                  <TroShowcaseCard key={property.id || property.title} property={property} />
+                ))}
+              </div>
             </div>
-            <a href="#/search?category=tro" className="section-header-link">
-              Xem tất cả phòng trọ <Icon name="ArrowRight" size={15} />
-            </a>
-          </div>
-          <WardMap />
-        </div>
-      </section>
+          </section>
+        );
+      })}
 
-      {/* 5. CORAL ACCENT */}
+      {/* 4. CORAL ACCENT */}
       <section className="section-coral">
         <div className="container">
           <div className="coral-inner">
