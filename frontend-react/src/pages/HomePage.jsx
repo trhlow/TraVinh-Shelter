@@ -26,18 +26,6 @@ const SHOWCASE_ROWS = [
   { slug: 'dat', title: 'Đất nền', subtitle: 'Đất thổ cư, đất nền pháp lý rõ ràng' },
 ];
 
-const CORAL_STATS = [
-  { number: '98%', label: 'Khách hài lòng' },
-  { number: '24h', label: 'Phản hồi trung bình' },
-  { number: '0đ', label: 'Phí cho người mua' },
-];
-
-const CORAL_BENEFITS = [
-  { icon: 'ShieldCheck', text: 'Môi giới được xác minh danh tính' },
-  { icon: 'FileText', text: 'Hồ sơ pháp lý minh bạch' },
-  { icon: 'Phone', text: 'Hỗ trợ tư vấn 7 ngày/tuần' },
-];
-
 function HeroSearchBar() {
   const [ward, setWard] = useState('all');
   const [category, setCategory] = useState('all');
@@ -202,44 +190,6 @@ export default function HomePage({ session, onLogout }) {
           </section>
         );
       })}
-
-      {/* 4. CORAL ACCENT */}
-      <section className="section-coral">
-        <div className="container">
-          <div className="coral-inner">
-            <div>
-              <div className="coral-eyebrow">
-                <Icon name="Star" size={14} /> Cam kết dịch vụ
-              </div>
-              <h2 className="coral-title">
-                Đồng hành cùng hàng trăm môi giới chuyên nghiệp tại Trà Vinh
-              </h2>
-              <p className="coral-text">
-                Công Tín Land kết nối khách hàng với đội ngũ môi giới được kiểm duyệt,
-                mang lại trải nghiệm mua bán bất động sản minh bạch và an tâm.
-              </p>
-              <div className="coral-stats">
-                {CORAL_STATS.map(stat => (
-                  <div key={stat.label}>
-                    <div className="coral-stat-number">{stat.number}</div>
-                    <div className="coral-stat-label">{stat.label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="coral-card">
-              {CORAL_BENEFITS.map(benefit => (
-                <div key={benefit.text} className="coral-card-row">
-                  <span className="coral-card-icon">
-                    <Icon name={benefit.icon} size={18} />
-                  </span>
-                  {benefit.text}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
     </MainLayout>
   );
 }
