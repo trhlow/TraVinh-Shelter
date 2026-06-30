@@ -139,8 +139,6 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
   const hasAmenities = Array.isArray(property.amenities) && property.amenities.length > 0;
   const hasCosts = property.costs && Object.keys(property.costs).length > 0;
   const hasConditions = property.conditions && Object.keys(property.conditions).length > 0;
-  const hasSummary = property.summary &&
-    (property.summary.location || property.summary.amenities || property.summary.convenience);
   const hasRooms = isTro && Array.isArray(property.rooms) && property.rooms.length > 0;
 
   return (
@@ -282,37 +280,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
               </div>
             )}
 
-            {/* Block 4: Summary */}
-            {hasSummary && (
-              <div className="card p-24 mt-16">
-                <h2 className="detail-block-title">
-                  <Icon name="FileText" size={18} className="icon-accent" />
-                  Mô tả tóm tắt
-                </h2>
-                <div className="summary-block">
-                  {property.summary.location && (
-                    <div className="summary-item">
-                      <span className="summary-item-label">Vị trí</span>
-                      <p className="summary-item-text">{property.summary.location}</p>
-                    </div>
-                  )}
-                  {property.summary.amenities && (
-                    <div className="summary-item">
-                      <span className="summary-item-label">Tiện ích</span>
-                      <p className="summary-item-text">{property.summary.amenities}</p>
-                    </div>
-                  )}
-                  {property.summary.convenience && (
-                    <div className="summary-item">
-                      <span className="summary-item-label">Thuận tiện</span>
-                      <p className="summary-item-text">{property.summary.convenience}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Block 5: Description */}
+            {/* Block 4: Description */}
             {property.description && (
               <div className="card p-24 mt-16">
                 <h2 className="detail-block-title">
