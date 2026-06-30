@@ -20,13 +20,6 @@ const HERO_PRICE_RANGES = [
   { label: 'Trên 3 tỷ', min: '3000000000', max: '' },
 ];
 
-const STATS = [
-  { number: '500+', label: 'Bất động sản' },
-  { number: '50+', label: 'Môi giới chuyên nghiệp' },
-  { number: '1,200+', label: 'Giao dịch thành công' },
-  { number: '5+', label: 'Năm kinh nghiệm' },
-];
-
 const MOCK_BROKERS = [
   { name: 'Nguyễn Văn An', area: 'TP. Trà Vinh', listings: 24, initial: 'A' },
   { name: 'Trần Thị Bình', area: 'Châu Thành', listings: 18, initial: 'B' },
@@ -163,20 +156,6 @@ export default function HomePage({ session, onLogout }) {
           </div>
         </div>
       </section>
-
-      {/* 2. STATS */}
-      <div className="stats-bar">
-        <div className="container">
-          <div className="stats-grid">
-            {STATS.map(stat => (
-              <div key={stat.label}>
-                <div className="stat-number">{stat.number}</div>
-                <div className="stat-label">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
 
       {/* 3. TRO SHOWCASE */}
       <section className="section">

@@ -663,39 +663,6 @@ img { display: block; max-width: 100%; }
 .hero-search-btn:hover { background: var(--color-accent-hover); }
 
 /* ============================================================
-   HOME — STATS
-   ============================================================ */
-.stats-bar {
-  background: var(--color-bg);
-  border-bottom: 1px solid var(--color-border);
-  padding: 40px 0;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
-  text-align: center;
-}
-
-@media (min-width: 640px) {
-  .stats-grid { grid-template-columns: repeat(4, 1fr); }
-}
-
-.stat-number {
-  font-size: 48px;
-  font-weight: 700;
-  color: var(--color-brand);
-  line-height: 1;
-  margin-bottom: 6px;
-}
-
-.stat-label {
-  font-size: 16px;
-  color: var(--color-text-secondary);
-}
-
-/* ============================================================
    HOME — SECTION HEADERS
    ============================================================ */
 .section-header {
