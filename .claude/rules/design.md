@@ -1,52 +1,52 @@
 ---
-description: Design system — màu sắc, typography, spacing, shadow, component conventions cho Công Tín Land
+description: Design system — Airbnb-inspired, light-only. Màu sắc, typography, spacing, shadow, component conventions cho Công Tín Land.
 paths: ["frontend-react/src/**"]
 ---
 
-# Design System — Công Tín Land
+# Design System — Công Tín Land (Airbnb-inspired)
 
 ## Triết lý
 
-Lấy cảm hứng từ Mintlify.com: **tối giản, hiện đại, chuyên nghiệp**.
+Lấy cảm hứng từ Airbnb: **generous, photography-led, warm marketplace**.
 
-- **White space** rộng rãi — thở được
-- **Typography** là trung tâm — text sắc nét, hierarchy rõ
-- **Color** kiệm lời — chỉ accent để dẫn mắt, không decoration thừa
-- **Motion** nhẹ nhàng — `transition` đơn giản; không dùng keyframe nhiều step
-- **Light hero + Light content** — hero nền sáng (theo Mintlify), chữ tối, gradient pastel rất nhẹ; chỉ CTA cuối + footer dùng nền tối
-- **Một section accent màu cam/coral** ở giữa trang tạo điểm nhấn thị giác
+- **Light only** — canvas trắng (#ffffff) là nền mặc định cho mọi section; không có nền tối
+- **Single accent** — chỉ một màu nhấn (`--color-primary`) cho mọi CTA, search orb, và brand moment
+- **Modest typography** — hero headline tối đa 28px; ảnh và card card tạo visual weight, không phải chữ to
+- **Rounded everything** — pill search bar, card 14px, button 8px; không có góc vuông trên interactive element
+- **Photography-first** — PropertyCard phải prioritize ảnh; meta text nhỏ, nằm dưới ảnh
+- **Marketplace density** — card grid sát nhau (gap 16px); section padding 64px, không phải 80px+
 
 ## Bảng màu (CSS Custom Properties)
 
 ```css
-/* Brand */
---color-brand: #0A2540;
---color-brand-mid: #1A3F6F;
---color-accent: #16A34A;
---color-accent-light: #DCFCE7;
+/* Brand accent — single voltage */
+--color-primary:          #ff385c;   /* Rausch — CTA, search orb, heart save, brand links */
+--color-primary-active:   #e00b41;   /* Press / pointer-down state */
+--color-primary-disabled: #ffd1da;   /* Disabled CTA */
 
-/* Neutrals */
---color-bg: #FFFFFF;
---color-bg-subtle: #F8FAFC;
---color-bg-muted: #F1F5F9;
---color-border: #E2E8F0;
---color-border-strong: #CBD5E1;
+/* Canvas & surfaces */
+--color-canvas:           #ffffff;
+--color-surface-soft:     #f7f7f7;   /* Disabled fields, sub-nav hover, filter band */
+--color-surface-strong:   #f2f2f2;   /* Icon-button circle surface */
 
 /* Text */
---color-text-primary: #0F172A;
---color-text-secondary: #475569;
---color-text-muted: #94A3B8;
---color-text-inverse: #FFFFFF;
+--color-ink:              #222222;   /* Headlines, body, primary nav links */
+--color-body:             #3f3f3f;   /* Running-text trong review / amenity copy */
+--color-muted:            #6a6a6a;   /* Sub-labels, inactive tabs, footer sub-labels */
+--color-muted-soft:       #929292;   /* Disabled link text */
+--color-on-primary:       #ffffff;   /* Text trên Rausch CTA */
 
-/* Dark sections */
---color-dark-bg: #0A2540;
---color-dark-surface: #112B4F;
---color-dark-border: #1E3A5F;
+/* Borders */
+--color-hairline:         #dddddd;   /* Default 1px divider */
+--color-hairline-soft:    #ebebeb;   /* Editorial separator */
+--color-border-strong:    #c1c1c1;   /* Disabled outline, focused input */
 
 /* Semantic */
---color-success: #16A34A;
---color-warning: #D97706;
---color-error: #DC2626;
+--color-error:            #c13515;
+--color-error-hover:      #b32505;
+
+/* Scrim — apply opacity at render time */
+--color-scrim:            #000000;   /* Modal backdrop tại 50% opacity */
 ```
 
 Không bao giờ hard-code `#hex` trong JSX — chỉ dùng CSS variable.
@@ -55,73 +55,110 @@ Không bao giờ hard-code `#hex` trong JSX — chỉ dùng CSS variable.
 
 Font stack: `'Be Vietnam Pro', system-ui, -apple-system, sans-serif`
 
-| Role | Size | Weight | Line-height |
-|---|---|---|---|
-| Display (hero H1) | 56–72px | 700 | 1.1 |
-| H1 | 40–48px | 700 | 1.15 |
-| H2 | 28–36px | 600 | 1.25 |
-| H3 | 20–24px | 600 | 1.35 |
-| Body large | 18px | 400 | 1.7 |
-| Body | 16px | 400 | 1.65 |
-| Small / caption | 14px | 400 | 1.5 |
-| Label / badge | 12px | 500 | 1.4 |
+(Be Vietnam Pro thay cho Airbnb Cereal VF — cùng weight scale, đầy đủ dấu tiếng Việt)
+
+| Token | Size | Weight | Line-height | Letter-spacing | Dùng cho |
+|---|---|---|---|---|---|
+| display-xl | 28px | 700 | 1.43 | 0 | Hero h1 |
+| display-lg | 22px | 500 | 1.18 | -0.44px | Property detail h1 |
+| display-md | 21px | 700 | 1.43 | 0 | Section heads ("Tin nổi bật") |
+| display-sm | 20px | 600 | 1.20 | -0.18px | Sub-section titles |
+| title-md | 16px | 600 | 1.25 | 0 | Card title, ward link |
+| title-sm | 16px | 500 | 1.25 | 0 | Footer column heads |
+| body-md | 16px | 400 | 1.50 | 0 | Running text |
+| body-sm | 14px | 400 | 1.43 | 0 | Card meta, date, price, distance |
+| caption | 14px | 500 | 1.29 | 0 | Search field labels (Địa điểm / Loại) |
+| caption-sm | 13px | 400 | 1.23 | 0 | Footer legal text |
+| badge | 11px | 600 | 1.18 | 0 | Floating badge text |
+| micro-label | 12px | 700 | 1.33 | 0 | Card amenity micro-labels |
+| button-md | 16px | 500 | 1.25 | 0 | Primary CTA label |
+| button-sm | 14px | 500 | 1.29 | 0 | Pill button label |
+| nav-link | 16px | 600 | 1.25 | 0 | Top nav labels |
+
+**Nguyên tắc**: Không dùng heading to hơn 28px. Ảnh và card tạo hierarchy — typography chỉ hỗ trợ.
 
 ## Spacing
 
-Bội số 4px: `4 8 12 16 20 24 32 40 48 64 80 96 128`px  
-Section padding: `80px 0` desktop / `48px 0` mobile.
+Base unit: 4px (micro-step 2px).
 
-## Shadows
+| Token | Value |
+|---|---|
+| xxs | 2px |
+| xs | 4px |
+| sm | 8px |
+| md | 12px |
+| base | 16px |
+| lg | 24px |
+| xl | 32px |
+| xxl | 48px |
+| section | 64px |
+
+Section padding: `64px 0` desktop / `48px 0` mobile.  
+Card grid gap: `16px`. Footer column gutter: `24px`.
+
+## Elevation
+
+Chỉ **một shadow tier** duy nhất trong toàn hệ thống:
 
 ```css
---shadow-sm:  0 1px 2px 0 rgb(0 0 0 / 0.05);
---shadow-md:  0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -1px rgb(0 0 0 / 0.04);
---shadow-lg:  0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -2px rgb(0 0 0 / 0.04);
---shadow-xl:  0 20px 25px -5px rgb(0 0 0 / 0.1),  0 10px 10px -5px rgb(0 0 0 / 0.04);
+--shadow-card: rgba(0, 0, 0, 0.02) 0 0 0 1px,
+               rgba(0, 0, 0, 0.04) 0 2px 6px 0,
+               rgba(0, 0, 0, 0.10) 0 4px 8px 0;
 ```
+
+Dùng cho: hover state của property card, search bar at rest, dropdown menu.  
+Phần lớn surface là **flat (no shadow)**. Không có progressive tiers.
 
 ## Border radius
 
 ```css
---radius-sm:   6px;
---radius-md:   10px;
---radius-lg:   16px;
---radius-xl:   24px;
---radius-full: 9999px;
+--radius-none: 0px;
+--radius-xs:   4px;
+--radius-sm:   8px;    /* Button */
+--radius-md:   14px;   /* Property card, host card, dropdown */
+--radius-lg:   20px;
+--radius-xl:   32px;   /* Category strip pill */
+--radius-full: 9999px; /* Search bar, search orb, badge, date-picker day */
 ```
+
+Không có góc vuông trên bất kỳ interactive element nào.
 
 ## Responsive breakpoints
 
 ```css
-/* mobile:  default (< 768px)  */
-/* tablet:  min-width: 768px   */
-/* desktop: min-width: 1024px  */
-/* wide:    min-width: 1280px  */
+/* mobile:  default (< 744px)  */
+/* tablet:  min-width: 744px   */
+/* desktop: min-width: 1128px  */
+/* wide:    min-width: 1440px  */
 ```
 
-Mobile-first. Không dùng `inline style`.
+Mobile-first. Không dùng `inline style`.  
+Property card grid: 1-up mobile → 2-up tablet → 3–4-up desktop.
 
 ## Component primitives
 
 ```jsx
-<Button variant="primary|secondary|ghost" size="sm|md|lg" />
-<Badge variant="success|warning|error|neutral" />
-<PropertyCard property={...} />   // luôn có: image, price, title, location, badge trạng thái
+<Button variant="primary|secondary|tertiary" size="sm|md" />
+<SearchBarPill />                  // pill-shaped, segments + search orb
+<PropertyCard property={...} />    // photo-first, rounded-md, meta bên dưới
 <BrokerCard broker={...} />
+<Badge variant="guest-favorite|new|status" />
+<CategoryStrip />                  // horizontal scroll, pill-shaped tabs
 ```
 
 - Chỉ dùng `lucide-react` cho icon
-- Image BĐS: `aspect-ratio: 16/9` hoặc `3/2`, `object-fit: cover`
+- Image BĐS: `aspect-ratio: 1/1` hoặc `4/3`, `object-fit: cover`, `border-radius: var(--radius-md)`
 - Không import thư viện UI ngoài (MUI, Ant Design, Chakra)
+- Border mặc định: `1px solid var(--color-hairline)`
+- Text input: focus state dùng `2px solid var(--color-ink)` — không dùng glow hay ring màu
 
-## Cấu trúc trang Landing (thứ tự sections)
+## Cấu trúc trang (light-only)
 
-1. Navbar — sticky, backdrop-blur, logo trái / links giữa / CTA phải
-2. Hero — nền sáng (`--color-bg`) + gradient pastel nhẹ, display heading chữ tối, search bar nhúng, 2 CTA
-3. Featured Properties — grid 3 cột
-4. Coral accent — section nền cam, stats + benefits
-5. Brokers — horizontal scroll hoặc grid
-6. Testimonials — card quote + avatar
-7. News — grid 3 cột tin tức/blog
-8. CTA Section — `--color-dark-bg`, 1 button
-9. Footer — 4 cột
+1. **Navbar** — sticky, `--color-canvas`, 80px height, 1px bottom hairline; logo trái / links / account phải
+2. **Hero** — canvas trắng, search bar pill nhúng, headline display-xl (28px), không gradient nặng
+3. **Category Strip** — horizontal scroll pill tabs (Trọ / Nhà / Đất / ...)
+4. **Featured rows** — per-category showcase, card grid 3–4 cột
+5. **Footer** — canvas trắng, 3–4 cột link, legal band bên dưới
+
+**Không bao giờ** dùng: nền tối, coral section, dark CTA band, gradient nặng.  
+Toàn trang là white canvas với một accent màu `--color-primary`.
