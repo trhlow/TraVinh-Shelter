@@ -110,7 +110,7 @@ export function DashboardPageHeader({ title, subtitle, tabs = [], activePath, lo
         <div>
           <h1 className="dashboard-page-title">{title}</h1>
           {subtitle && (
-            <p style={{ marginTop: 8, fontSize: 15, color: 'var(--color-body)' }}>
+            <p className="widget-empty-desc">
               {subtitle}
             </p>
           )}

@@ -439,11 +439,16 @@
   max-width: 400px;
 }
 
+.widget-empty-desc {
+  margin-top: 8px;
+  font-size: 15px;
+  color: var(--color-body);
+}
+
 /* ── LoadingRows skeleton ──────────────────────────────── */
 .widget-loading-rows {
   display: flex;
   flex-direction: column;
-  divide-y: var(--color-hairline);
 }
 
 .widget-loading-row {
