@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Wifi, Wind, Layers, ShowerHead, Car } from 'lucide-react';
 import FeaturedCarousel from '../components/FeaturedCarousel.jsx';
+import TroShowcaseCard from '../components/TroShowcaseCard.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import Button from '../components/ui/Button.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
@@ -17,13 +18,6 @@ const HERO_PRICE_RANGES = [
   { label: 'Dưới 1 tỷ', min: '', max: '1000000000' },
   { label: '1 - 3 tỷ', min: '1000000000', max: '3000000000' },
   { label: 'Trên 3 tỷ', min: '3000000000', max: '' },
-];
-
-// Category browse cards (Trọ / Nhà / Đất).
-const CATEGORY_CARDS = [
-  { slug: 'tro', icon: 'BedDouble', desc: 'Phòng trọ, nhà trọ cho thuê quanh khu vực Trà Vinh.' },
-  { slug: 'nha', icon: 'Home', desc: 'Nhà phố, nhà riêng mua bán và cho thuê.' },
-  { slug: 'dat', icon: 'Map', desc: 'Đất nền, đất thổ cư, đất vườn pháp lý rõ ràng.' },
 ];
 
 const STATS = [
@@ -161,6 +155,7 @@ function HeroSearchBar() {
 
 export default function HomePage({ session, onLogout }) {
   const [properties, setProperties] = useState(featuredProperties);
+  const [troProperties, setTroProperties] = useState([]);
 
   useEffect(() => {
     let alive = true;
@@ -169,6 +164,19 @@ export default function HomePage({ session, onLogout }) {
       .catch(() => { if (alive) setProperties(featuredProperties); });
     return () => { alive = false; };
   }, []);
+
+  // Fetch tro listings separately — the `properties` state above is sliced to 3 for the
+  // carousel and may not contain any 'tro' entries (mock has them past index 3).
+  useEffect(() => {
+    let alive = true;
+    fetchProperties({ category: 'tro', transaction: 'all' })
+      .then(items => { if (alive) setTroProperties(items.slice(0, 8)); })
+      .catch(() => { if (alive) setTroProperties([]); });
+    return () => { alive = false; };
+  }, []);
+
+  // Fall back to the featured carousel data only if the tro fetch yields nothing.
+  const showcaseProperties = troProperties.length > 0 ? troProperties : properties;
 
   return (
     <MainLayout session={session} onLogout={onLogout}>
@@ -203,31 +211,22 @@ export default function HomePage({ session, onLogout }) {
         </div>
       </div>
 
-      {/* 3. CATEGORY BROWSE */}
+      {/* 3. TRO SHOWCASE */}
       <section className="section">
         <div className="container">
-          <div className="section-center">
-            <h2 className="text-h2 section-center-title">Khám phá theo loại hình</h2>
-            <p className="section-center-subtitle">
-              Chọn loại bất động sản bạn quan tâm tại Trà Vinh.
-            </p>
+          <div className="section-header">
+            <div className="section-header-text">
+              <h2 className="text-h2">Phòng trọ nổi bật</h2>
+              <p>Phòng trọ mới, đã xác thực tại Trà Vinh</p>
+            </div>
+            <a href="#/search?category=tro" className="section-header-link">
+              Xem tất cả <Icon name="ArrowRight" size={15} />
+            </a>
           </div>
-          <div className="category-browse-grid">
-            {CATEGORY_CARDS.map(card => {
-              const label = CATEGORIES.find(c => c.slug === card.slug)?.label || card.slug;
-              return (
-                <a key={card.slug} href={`#/search?category=${card.slug}`} className="category-browse-card">
-                  <span className="category-browse-icon">
-                    <Icon name={card.icon} size={26} />
-                  </span>
-                  <div>
-                    <h3 className="text-h3 category-browse-title">{label}</h3>
-                    <p className="category-browse-desc">{card.desc}</p>
-                  </div>
-                  <Icon name="ArrowRight" size={18} className="category-browse-arrow" />
-                </a>
-              );
-            })}
+          <div className="tro-showcase-row">
+            {showcaseProperties.map(property => (
+              <TroShowcaseCard key={property.id || property.title} property={property} />
+            ))}
           </div>
           <div className="amenity-highlights">
             {[
