@@ -24,10 +24,11 @@ test('renders the template home page', async () => {
   await waitFor(() => expect(screen.getAllByText('Công Tín Land').length).toBeGreaterThan(0));
 });
 
-test('home ward browse links to filtered trọ search', () => {
+test('home renders the Trà Vinh ward map', () => {
   render(<App />);
-  const wardLink = screen.getByRole('link', { name: /Phường Trà Vinh/ });
-  expect(wardLink).toHaveAttribute('href', '#/search?category=tro&ward=phuong-tra-vinh');
+  expect(
+    screen.getByRole('region', { name: /Bản đồ phòng trọ theo khu vực Trà Vinh/i }),
+  ).toBeInTheDocument();
 });
 
 test('routes to search page', async () => {

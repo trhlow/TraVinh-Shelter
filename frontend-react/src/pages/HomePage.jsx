@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Wifi, Wind, Layers, ShowerHead, Car } from 'lucide-react';
 import FeaturedCarousel from '../components/FeaturedCarousel.jsx';
 import TroShowcaseCard from '../components/TroShowcaseCard.jsx';
+import WardMap from '../components/WardMap.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import Button from '../components/ui/Button.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
@@ -219,21 +220,7 @@ export default function HomePage({ session, onLogout }) {
               Xem tất cả phòng trọ <Icon name="ArrowRight" size={15} />
             </a>
           </div>
-          <div className="ward-browse-grid">
-            {WARDS.filter(item => item.code !== 'all').map(item => (
-              <a
-                key={item.code}
-                href={`#/search?category=tro&ward=${item.code}`}
-                className="ward-browse-card"
-              >
-                <span className="ward-browse-icon">
-                  <Icon name="MapPin" size={18} />
-                </span>
-                <span className="ward-browse-name">{item.label}</span>
-                <span className="ward-browse-cta">Xem phòng trọ</span>
-              </a>
-            ))}
-          </div>
+          <WardMap />
         </div>
       </section>
 
