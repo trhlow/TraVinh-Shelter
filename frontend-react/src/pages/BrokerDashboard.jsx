@@ -75,6 +75,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [savingViewing, setSavingViewing] = useState(false);
 
   const listings = stats.listings || [];
   const filteredListings = useMemo(() => listings.filter((listing) => listingMatchesQuery(listing, listingQuery)), [listings, listingQuery]);
@@ -311,14 +312,14 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   }
 
   async function changeViewingStatus(id, status) {
-    setSaving(true);
+    setSavingViewing(true);
     try {
       await updateBrokerViewingStatus(session.token, id, status);
       setViewings((vs) => vs.map((v) => v.id === id ? { ...v, status } : v));
     } catch (err) {
       setError(err.message || 'Không thể cập nhật trạng thái lịch hẹn.');
     } finally {
-      setSaving(false);
+      setSavingViewing(false);
     }
   }
 
@@ -655,7 +656,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                 viewings={viewings}
                 loading={viewingsLoading}
                 onStatusChange={changeViewingStatus}
-                saving={saving}
+                saving={savingViewing}
               />
             </DashboardPanel>
           )}
