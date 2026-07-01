@@ -83,7 +83,7 @@ const CONDITION_LABELS = {
   ev: 'Sạc xe điện',
 };
 
-export default function PropertyDetailPage({ propertyId, session, onLogout }) {
+export default function PropertyDetailPage({ propertyId, session, onLogout, theme, onToggleTheme }) {
   const [property, setProperty] = useState(fallbackProperty);
   const [mediaImages, setMediaImages] = useState(detailImages);
   const [mediaLoading, setMediaLoading] = useState(false);
@@ -142,7 +142,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
   const hasRooms = isTro && Array.isArray(property.rooms) && property.rooms.length > 0;
 
   return (
-    <MainLayout session={session} onLogout={onLogout}>
+    <MainLayout session={session} onLogout={onLogout} theme={theme} onToggleTheme={onToggleTheme}>
       <div className="container">
         {/* Breadcrumb */}
         <nav className="breadcrumb">

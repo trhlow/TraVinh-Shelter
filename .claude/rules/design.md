@@ -1,5 +1,5 @@
 ---
-description: Design system — Airbnb-inspired, light-only. Màu sắc, typography, spacing, shadow, component conventions cho Công Tín Land.
+description: Design system — Airbnb-inspired, dual-mode (light + dark). Màu sắc, typography, spacing, shadow, component conventions cho Công Tín Land.
 paths: ["frontend-react/src/**"]
 ---
 
@@ -9,8 +9,11 @@ paths: ["frontend-react/src/**"]
 
 Lấy cảm hứng từ Airbnb: **generous, photography-led, warm marketplace**.
 
-- **Light only** — canvas trắng (#ffffff) là nền mặc định cho mọi section; không có nền tối
-- **Single accent** — chỉ một màu nhấn (`--color-primary`) cho mọi CTA, search orb, và brand moment
+- **Dual-mode** — light là mặc định (canvas trắng #ffffff); dark có sẵn qua `[data-theme="dark"]` và nút
+  toggle ở navbar (`hooks/useTheme.js`). Mọi token semantic (`--color-canvas/ink/body/muted/hairline/surface-*`)
+  đổi giá trị theo theme; component chỉ tham chiếu token, không tự if/else theo theme.
+- **Single accent** — chỉ một màu nhấn (`--color-primary`) cho mọi CTA, search orb, và brand moment — giữ
+  nguyên giá trị ở cả 2 theme (Rausch đủ tương phản trên cả nền sáng lẫn tối)
 - **Modest typography** — hero headline tối đa 28px; ảnh và card card tạo visual weight, không phải chữ to
 - **Rounded everything** — pill search bar, card 14px, button 8px; không có góc vuông trên interactive element
 - **Photography-first** — PropertyCard phải prioritize ảnh; meta text nhỏ, nằm dưới ảnh
@@ -18,38 +21,44 @@ Lấy cảm hứng từ Airbnb: **generous, photography-led, warm marketplace**.
 
 ## Bảng màu (CSS Custom Properties)
 
-```css
-/* Brand accent — single voltage */
---color-primary:          #ff385c;   /* Rausch — CTA, search orb, heart save, brand links */
---color-primary-active:   #e00b41;   /* Press / pointer-down state */
---color-primary-disabled: #ffd1da;   /* Disabled CTA */
+Token semantic — đổi giá trị giữa 2 theme (`:root` = light, `[data-theme="dark"]` override):
 
-/* Canvas & surfaces */
---color-canvas:           #ffffff;
---color-surface-soft:     #f7f7f7;   /* Disabled fields, sub-nav hover, filter band */
---color-surface-strong:   #f2f2f2;   /* Icon-button circle surface */
+| Token | Light | Dark | Dùng cho |
+|---|---|---|---|
+| `--color-primary` | `#ff385c` | *(giữ nguyên)* | CTA, search orb, brand links |
+| `--color-primary-active` | `#e00b41` | *(giữ nguyên)* | Press / pointer-down state |
+| `--color-primary-disabled` | `#ffd1da` | `#7a1e30` | Disabled CTA |
+| `--color-canvas` | `#ffffff` | `#121212` | Nền mặc định mọi section |
+| `--color-surface-soft` | `#f7f7f7` | `#1c1c1c` | Disabled fields, sub-nav hover |
+| `--color-surface-strong` | `#f2f2f2` | `#262626` | Icon-button circle surface |
+| `--color-ink` | `#222222` | `#f2f2f2` | Headlines, body, primary nav links |
+| `--color-body` | `#3f3f3f` | `#d4d4d4` | Running-text |
+| `--color-muted` | `#6a6a6a` | `#a3a3a3` | Sub-labels, inactive tabs |
+| `--color-muted-soft` | `#929292` | `#737373` | Disabled link text |
+| `--color-on-primary` | `#ffffff` | *(giữ nguyên)* | Text trên Rausch CTA |
+| `--color-hairline` | `#dddddd` | `#333333` | Default 1px divider |
+| `--color-hairline-soft` | `#ebebeb` | `#2a2a2a` | Editorial separator |
+| `--color-border-strong` | `#c1c1c1` | `#525252` | Disabled outline, focused input |
+| `--color-success` / `-bg` | `#16a34a` / `#dcfce7` | `#4ade80` / `#14532d` | Trạng thái thành công |
+| `--color-warning` / `-bg` | `#d97706` / `#fef3c7` | `#fbbf24` / `#78350f` | Trạng thái cảnh báo |
+| `--color-error` / `-bg` | `#c13515` / `#fee2e2` | `#f87171` / `#7f1d1d` | Trạng thái lỗi |
+| `--color-zalo` | `#0068ff` | *(giữ nguyên)* | Brand bên thứ ba, cố định |
+| `--color-scrim` | `#000000` | *(giữ nguyên)* | Modal backdrop tại 50% opacity |
 
-/* Text */
---color-ink:              #222222;   /* Headlines, body, primary nav links */
---color-body:             #3f3f3f;   /* Running-text trong review / amenity copy */
---color-muted:            #6a6a6a;   /* Sub-labels, inactive tabs, footer sub-labels */
---color-muted-soft:       #929292;   /* Disabled link text */
---color-on-primary:       #ffffff;   /* Text trên Rausch CTA */
+Token **cố định** (không đổi theo theme — dùng cho chip/badge đè lên ảnh, hoặc navigation chrome
+cố định tối theo chủ đích thiết kế):
 
-/* Borders */
---color-hairline:         #dddddd;   /* Default 1px divider */
---color-hairline-soft:    #ebebeb;   /* Editorial separator */
---color-border-strong:    #c1c1c1;   /* Disabled outline, focused input */
+| Token | Value | Dùng cho |
+|---|---|---|
+| `--color-sidebar-bg` | `#1a1a1a` | Dashboard sidebar (navigation rail luôn tối) |
+| `--color-sidebar-text` | `rgb(255 255 255 / 0.8)` | Text trong sidebar |
+| `--color-ink-fixed` | `#222222` | Badge đè lên ảnh, avatar fallback, page-header band |
 
-/* Semantic */
---color-error:            #c13515;
---color-error-hover:      #b32505;
+Token **chart** (data-viz palette, tách khỏi single-accent vì chart cần nhiều màu phân biệt):
+`--chart-1` đến `--chart-6`, xem `styles.css`. `--chart-2` tái dùng `var(--color-success)` để tự đổi theo theme.
 
-/* Scrim — apply opacity at render time */
---color-scrim:            #000000;   /* Modal backdrop tại 50% opacity */
-```
-
-Không bao giờ hard-code `#hex` trong JSX — chỉ dùng CSS variable.
+Không bao giờ hard-code `#hex` trong JSX — chỉ dùng CSS variable. Ngoại lệ: SVG brand mark (`BrandLogo.jsx`)
+được dùng `var(--color-primary)`/`var(--color-on-primary)` (không phải hex thô) nên vẫn tuân thủ quy tắc.
 
 ## Typography
 
@@ -98,12 +107,18 @@ Card grid gap: `16px`. Footer column gutter: `24px`.
 
 ## Elevation
 
-Chỉ **một shadow tier** duy nhất trong toàn hệ thống:
+Chỉ **một shadow tier** duy nhất trong toàn hệ thống, giá trị khác nhau theo theme:
 
 ```css
+/* light */
 --shadow-card: rgba(0, 0, 0, 0.02) 0 0 0 1px,
                rgba(0, 0, 0, 0.04) 0 2px 6px 0,
                rgba(0, 0, 0, 0.10) 0 4px 8px 0;
+
+/* dark — viền sáng mờ thay cho đổ bóng đen (không đọc được trên nền tối) */
+--shadow-card: rgba(255, 255, 255, 0.06) 0 0 0 1px,
+               rgba(0, 0, 0, 0.4) 0 2px 6px 0,
+               rgba(0, 0, 0, 0.5) 0 4px 8px 0;
 ```
 
 Dùng cho: hover state của property card, search bar at rest, dropdown menu.  
@@ -147,18 +162,37 @@ Property card grid: 1-up mobile → 2-up tablet → 3–4-up desktop.
 ```
 
 - Chỉ dùng `lucide-react` cho icon
-- Image BĐS: `aspect-ratio: 1/1` hoặc `4/3`, `object-fit: cover`, `border-radius: var(--radius-md)`
+- Ảnh đại diện BĐS (property card, showcase card, dashboard listing thumb/cover preview): luôn
+  `aspect-ratio: 1/1`, `object-fit: cover`, `object-position: center`, `border-radius: var(--radius-md)`.
+  Chuẩn hóa bắt buộc — không phụ thuộc ảnh nguồn dọc/ngang, tránh lệch khung giữa các bài đăng.
+  (Ngoại lệ: gallery chi tiết BĐS và banner carousel trang chủ giữ tỉ lệ rộng riêng.)
 - Không import thư viện UI ngoài (MUI, Ant Design, Chakra)
 - Border mặc định: `1px solid var(--color-hairline)`
 - Text input: focus state dùng `2px solid var(--color-ink)` — không dùng glow hay ring màu
 
-## Cấu trúc trang (light-only)
+## Cấu trúc trang
 
-1. **Navbar** — sticky, `--color-canvas`, 80px height, 1px bottom hairline; logo trái / links / account phải
-2. **Hero** — canvas trắng, search bar pill nhúng, headline display-xl (28px), không gradient nặng
+1. **Navbar** — sticky, `--color-canvas`, 80px height, 1px bottom hairline; logo trái / links / account phải;
+   nút toggle theme (icon Sun/Moon) nằm trong `navbar-actions`
+2. **Hero** — `--color-canvas`, search bar pill nhúng, headline display-xl (28px), backdrop ảnh mờ + scrim
+   dùng `var(--color-canvas)` (tự đổi theo theme), không gradient nặng
 3. **Category Strip** — horizontal scroll pill tabs (Trọ / Nhà / Đất / ...)
 4. **Featured rows** — per-category showcase, card grid 3–4 cột
-5. **Footer** — canvas trắng, 3–4 cột link, legal band bên dưới
+5. **Footer** — `--color-canvas`, 3 cột link, legal band bên dưới
 
-**Không bao giờ** dùng: nền tối, coral section, dark CTA band, gradient nặng.  
-Toàn trang là white canvas với một accent màu `--color-primary`.
+**Không bao giờ** dùng: coral section, dark CTA band tùy tiện, gradient nặng. Toàn trang là single-canvas
+với một accent màu `--color-primary` — ở light mode canvas trắng, ở dark mode canvas tối (`#121212`), không
+trộn lẫn 2 nền trong cùng section trừ các chip cố định đã liệt kê ở mục "Token cố định".
+
+## Dark mode — vận hành
+
+- Bật/tắt qua `hooks/useTheme.js`: đọc/ghi `localStorage['travinh-theme']`, mặc định theo
+  `prefers-color-scheme` nếu chưa có lựa chọn lưu, set attribute `data-theme` trên `<html>`.
+  Hook được gọi **một lần duy nhất** ở `App.jsx` (root) — đảm bảo áp dụng cho mọi route, kể cả trang
+  không dùng `MainLayout` (VD: `LoginPage`). Các trang dùng `MainLayout` nhận `theme`/`onToggleTheme`
+  qua props (cùng pattern với `session`/`onLogout`) để render nút toggle trong `Header`.
+- Component **không** tự viết `if (theme === 'dark')` — chỉ tham chiếu token semantic; toàn bộ việc đổi
+  màu nằm ở khối `[data-theme="dark"]` trong `styles.css`.
+- Khi thêm màu mới: nếu là nền/chữ/border theo ngữ cảnh trang → thêm token semantic + override dark.
+  Nếu là badge/chip đè lên ảnh hoặc navigation chrome cố định tối theo chủ đích (như sidebar) → dùng
+  hoặc thêm token cố định (`--color-*-fixed`, `--color-sidebar-*`), không đổi theo theme.

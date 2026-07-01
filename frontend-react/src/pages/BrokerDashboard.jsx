@@ -21,14 +21,6 @@ import {
   updateBrokerViewingStatus,
 } from '../services/api.js';
 
-const CHART_COLORS = {
-  accent: '#ff385c',   // --color-primary
-  warning: '#D97706',  // --color-warning
-  brand: '#2563EB',    // brand blue
-  success: '#22C55E',  // green
-  orange: '#F97316',   // orange
-};
-
 const BROKER_SIDEBAR_ITEMS = [
   { href: '#/broker/dashboard', icon: 'LayoutDashboard', label: 'Bảng điều khiển' },
   { href: '#/broker/profile', icon: 'User', label: 'Hồ sơ môi giới' },

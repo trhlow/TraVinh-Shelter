@@ -26,6 +26,15 @@ const SHOWCASE_ROWS = [
   { slug: 'dat', title: 'Đất nền', subtitle: 'Đất thổ cư, đất nền pháp lý rõ ràng' },
 ];
 
+// Decorative hero backdrop — reuses the same Unsplash real estate photography
+// already used across mockData.js/ProjectsPage.jsx, dimmed by .hero-bg-scrim
+// so the headline stays legible on top.
+const HERO_BG_IMAGES = [
+  'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=1200&q=80',
+];
+
 function HeroSearchBar() {
   const [ward, setWard] = useState('all');
   const [category, setCategory] = useState('all');
@@ -94,7 +103,7 @@ function HeroSearchBar() {
   );
 }
 
-export default function HomePage({ session, onLogout }) {
+export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
   const [properties, setProperties] = useState(featuredProperties);
   const [troProperties, setTroProperties] = useState([]);
   const [nhaProperties, setNhaProperties] = useState([]);
@@ -125,9 +134,15 @@ export default function HomePage({ session, onLogout }) {
   const rowItems = { tro: troProperties, nha: nhaProperties, dat: datProperties };
 
   return (
-    <MainLayout session={session} onLogout={onLogout}>
+    <MainLayout session={session} onLogout={onLogout} theme={theme} onToggleTheme={onToggleTheme}>
       {/* 1. HERO */}
       <section className="hero">
+        <div className="hero-bg" aria-hidden="true">
+          {HERO_BG_IMAGES.map(url => (
+            <img key={url} className="hero-bg-img" src={url} alt="" loading="lazy" />
+          ))}
+          <div className="hero-bg-scrim" />
+        </div>
         <div className="container">
           <div className="hero-content">
             <h1 className="text-display-xl hero-headline">
