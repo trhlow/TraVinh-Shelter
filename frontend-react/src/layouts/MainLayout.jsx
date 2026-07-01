@@ -1,6 +1,32 @@
 import BrandLogo, { BRAND_NAME } from '../components/BrandLogo.jsx';
 import Icon from '../components/ui/Icon.jsx';
 
+// lucide-react has no TikTok mark — hand-drawn to match the surrounding
+// lucide icons' size/stroke weight (currentColor so it themes automatically).
+function TikTokIcon({ size = 16 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+    </svg>
+  );
+}
+
+const FOOTER_SOCIALS = [
+  { label: 'Youtube', icon: 'Youtube' },
+  { label: 'TikTok', icon: 'TikTok' },
+  { label: 'Facebook', icon: 'Facebook' },
+];
+
 const NAV_CATEGORIES = [
   {
     title: 'Trọ', icon: 'Home', caption: 'Giá trọ, khu vực',
@@ -52,7 +78,7 @@ const FOOTER_COLS = [
   },
 ];
 
-export function Header({ session, onLogout }) {
+export function Header({ session, onLogout, theme, onToggleTheme }) {
   const isBroker = session?.role === 'BROKER';
   const isAdmin = session?.role === 'ADMIN';
 
@@ -67,22 +93,14 @@ export function Header({ session, onLogout }) {
         {/* Nav links */}
         <nav className="navbar-nav" aria-label="Điều hướng chính">
           <div className="navbar-dropdown">
-            <button
-              className="navbar-link"
-              type="button"
-              style={{ background: 'none', border: 'none' }}
-            >
+            <button className="navbar-link" type="button">
               <Icon name="SlidersHorizontal" size={16} />
               Danh mục
               <Icon name="ChevronDown" size={14} />
             </button>
             <div className="navbar-dropdown-panel">
-              {NAV_CATEGORIES.map((cat, i) => (
-                <div
-                  key={cat.title}
-                  className="navbar-dropdown-col"
-                  style={i > 0 ? { borderLeft: '1px solid var(--color-hairline)' } : {}}
-                >
+              {NAV_CATEGORIES.map((cat) => (
+                <div key={cat.title} className="navbar-dropdown-col">
                   <div className="navbar-dropdown-cat-header">
                     <span className="navbar-dropdown-cat-icon">
                       <Icon name={cat.icon} size={18} />
@@ -117,6 +135,14 @@ export function Header({ session, onLogout }) {
 
         {/* Right actions */}
         <div className="navbar-actions">
+          <button
+            type="button"
+            onClick={onToggleTheme}
+            className="theme-toggle-btn"
+            aria-label={theme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
+          >
+            <Icon name={theme === 'dark' ? 'Sun' : 'Moon'} size={17} />
+          </button>
           {!session && (
             <a href="#/login" className="btn btn-ghost btn-sm">
               <Icon name="User" size={15} /> Đăng nhập
@@ -162,7 +188,7 @@ export function Footer() {
           {FOOTER_COLS.map(col => (
             <div key={col.title}>
               <p className="footer-col-title">{col.title}</p>
-              <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              <ul className="footer-link-list">
                 {col.links.map(([label, href]) => (
                   <li key={label}>
                     <a className="footer-link" href={href}>{label}</a>
@@ -177,17 +203,14 @@ export function Footer() {
               Cổng thông tin bất động sản Trà Vinh, kết nối khách hàng với môi giới chuyên nghiệp.
             </p>
             <div className="footer-social-icons">
-              {[
-                ['Youtube', 'Youtube'], ['Facebook', 'Facebook'],
-                ['Twitter', 'Twitter'], ['Instagram', 'Instagram'], ['Linkedin', 'Linkedin'],
-              ].map(([icon, label]) => (
+              {FOOTER_SOCIALS.map(({ label, icon }) => (
                 <a
                   key={label}
                   href="#/"
                   aria-label={label}
                   className="footer-social-icon"
                 >
-                  <Icon name={icon} size={16} />
+                  {icon === 'TikTok' ? <TikTokIcon size={16} /> : <Icon name={icon} size={16} />}
                 </a>
               ))}
             </div>
@@ -202,10 +225,10 @@ export function Footer() {
   );
 }
 
-export default function MainLayout({ children, session, onLogout }) {
+export default function MainLayout({ children, session, onLogout, theme, onToggleTheme }) {
   return (
     <div className="layout-root">
-      <Header session={session} onLogout={onLogout} />
+      <Header session={session} onLogout={onLogout} theme={theme} onToggleTheme={onToggleTheme} />
       <main className="layout-main">{children}</main>
       <Footer />
       <nav className="mobile-nav" aria-label="Điều hướng mobile">
