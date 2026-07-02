@@ -100,7 +100,7 @@ export default function BookingForm({
 
       await createViewing(propertyId, payload);
       setSubmitted(true);
-    } catch (err) {
+    } catch {
       setSubmitError('Có lỗi xảy ra. Vui lòng thử lại hoặc liên hệ trực tiếp.');
     } finally {
       setSending(false);

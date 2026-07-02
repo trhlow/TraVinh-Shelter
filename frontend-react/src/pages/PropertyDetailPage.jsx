@@ -328,14 +328,19 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
               </div>
 
               <div className="contact-buttons">
-                <button className="btn btn-primary btn-md btn-full">
+                <a href={`tel:${brokerPhone.replace(/\s+/g, '')}`} className="btn btn-primary btn-md btn-full">
                   <Icon name="Phone" size={18} />
                   Gọi ngay: {brokerPhone}
-                </button>
-                <button className="contact-btn-zalo">
-                  <Icon name="Mail" size={18} />
+                </a>
+                <a
+                  href={`https://zalo.me/${brokerPhone.replace(/\D/g, '').replace(/^0/, '84')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="contact-btn-zalo"
+                >
+                  <Icon name="MessageCircle" size={18} />
                   Chat Zalo
-                </button>
+                </a>
               </div>
 
               <p className="contact-footer-note">
