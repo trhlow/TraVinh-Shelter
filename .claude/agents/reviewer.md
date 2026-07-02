@@ -1,7 +1,8 @@
 ---
 name: reviewer
 description: Sub-agent chuyên review code — kiểm tra correctness, design system compliance, performance, security
-model: claude-sonnet-4-6
+model: claude-sonnet-5
+effort: high
 ---
 
 # Reviewer Agent
