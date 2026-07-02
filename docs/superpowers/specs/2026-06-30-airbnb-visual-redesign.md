@@ -167,8 +167,8 @@ Thêm:
 **Layout:**
 - Ảnh: `aspect-ratio: 4/3`, `object-fit: cover`, `border-radius: var(--radius-md)`, overflow hidden
 - Wrapper ảnh: `position: relative` (chứa badge + heart)
-- Badge "Nổi bật" top-left: white pill, `padding: 4px 10px`, `--radius-full`, `--text-badge` (11px/600), `--shadow-card`
-- Heart button top-right: 32×32px circle, `--color-surface-strong` bg, `--radius-full`, Rausch khi saved
+- Badge "Nổi bật" top-left: white pill, `padding: 4px 10px`, `--radius-full`, `.text-badge` (11px/600), `--shadow-card`. Hiển thị khi `property.status === 'AVAILABLE'` và có ảnh. Không cần field mới từ backend.
+- Heart button: **bỏ khỏi scope** — `SavedProperty` đã drop từ Pass 3, không có USER actor, không có functionality.
 - Meta block: `margin-top: 8px`, `display: flex; flex-direction: column; gap: 4px`
   - Line 1: title — `.text-title-md` (16px/600 `--color-ink`)
   - Line 2: ward + loại giao dịch — `.text-body-sm` (14px `--color-muted`)
@@ -243,7 +243,7 @@ Thêm:
 ### Cleanup (`styles.css`)
 
 Xóa sau khi tất cả references đã được đổi:
-- Variables: tất cả listed trong Task 1 "Variables bị xóa"
+- Variables: tất cả listed trong Task 1 "Variables bị xóa". Lưu ý `--color-border-strong` giữ tên nhưng đổi value từ `#CBD5E1` → `#c1c1c1`; `--color-border` → xóa hẳn (thay bằng `--color-hairline`)
 - Typography classes: `text-display`, `text-h1`, `text-h2`, `text-h3`, `text-body-lg`, `text-body`, `text-sm`, `text-xs`
 - Shadow variables: `--shadow-sm`, `--shadow-md`, `--shadow-lg`, `--shadow-xl`
 - Layout class: `.section-subtle` nếu không còn dùng
