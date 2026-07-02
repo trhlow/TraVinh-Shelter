@@ -12,7 +12,7 @@ import {
   Wind, BedDouble, Calendar, Users2, Bike, Dog, CalendarCheck,
   PawPrint, Refrigerator, AirVent, WashingMachine, Utensils,
   ShowerHead, Layers, Sofa, Tv, Sparkles,
-  LayoutGrid, Wallet, Map,
+  LayoutGrid, Wallet, Map, MessageCircle,
 } from 'lucide-react';
 
 const ICON_MAP = {
@@ -31,7 +31,7 @@ const ICON_MAP = {
   Wind, BedDouble, Calendar, Users2, Bike, Dog, CalendarCheck,
   PawPrint, Refrigerator, AirVent, WashingMachine, Utensils,
   ShowerHead, Layers, Sofa, Tv, Sparkles,
-  LayoutGrid, Wallet, Map,
+  LayoutGrid, Wallet, Map, MessageCircle,
 };
 
 export default function Icon({ name, size = 20, className = '', strokeWidth = 1.75 }) {

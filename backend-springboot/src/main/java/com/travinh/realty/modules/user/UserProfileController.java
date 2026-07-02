@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -44,8 +45,9 @@ public class UserProfileController {
     @PatchMapping("/users/me/password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void changePassword(@AuthenticationPrincipal UserPrincipal principal,
+                               @RequestHeader("Authorization") String authorizationHeader,
                                @Valid @RequestBody ChangePasswordRequest request) {
-        profiles.changePassword(principal, request);
+        profiles.changePassword(principal, request, authorizationHeader.substring(7));
     }
 
     @PostMapping(path = "/users/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

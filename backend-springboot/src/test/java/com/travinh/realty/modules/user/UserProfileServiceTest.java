@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import com.travinh.realty.modules.auth.security.JwtService;
 import com.travinh.realty.modules.auth.security.UserPrincipal;
 import com.travinh.realty.infrastructure.storage.LocalMediaStorage;
 import com.travinh.realty.modules.user.dto.ChangePasswordRequest;
@@ -32,6 +33,7 @@ class UserProfileServiceTest {
 
     @Mock private UserRepository users;
     @Mock private LocalMediaStorage storage;
+    @Mock private JwtService jwt;
 
     @Test
     void updatesOwnUserProfile() {
@@ -106,11 +108,12 @@ class UserProfileServiceTest {
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
 
         service().changePassword(UserPrincipal.from(user),
-                new ChangePasswordRequest("old-password", "new-password-secure"));
+                new ChangePasswordRequest("old-password", "new-password-secure"), "current-jwt-token");
 
         String updatedHash = (String) ReflectionTestUtils.getField(user, "passwordHash");
         assertThat(updatedHash).isNotEqualTo(originalHash);
         assertThat(encoder.matches("new-password-secure", updatedHash)).isTrue();
+        org.mockito.Mockito.verify(jwt).revoke("current-jwt-token");
     }
 
     @Test
@@ -121,14 +124,14 @@ class UserProfileServiceTest {
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
 
         assertThatThrownBy(() -> service().changePassword(UserPrincipal.from(user),
-                new ChangePasswordRequest("wrong-password", "new-password-secure")))
+                new ChangePasswordRequest("wrong-password", "new-password-secure"), "current-jwt-token"))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting(error -> ((ResponseStatusException) error).getStatusCode())
                 .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     private UserProfileService service() {
-        return new UserProfileService(users, new BCryptPasswordEncoder(4), storage);
+        return new UserProfileService(users, new BCryptPasswordEncoder(4), storage, jwt);
     }
 
     private User user(UserRole role, UserStatus status, String fullName, String phone) {

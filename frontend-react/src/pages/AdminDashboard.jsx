@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BarChart, DonutChart, GaugeChart, HorizontalBarChart } from '../components/Charts.jsx';
+import { DonutChart, GaugeChart } from '../components/Charts.jsx';
 import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../components/DashboardWidgets.jsx';
 import ViewingsPanel from '../components/dashboard/ViewingsPanel.jsx';
 import BrandLogo from '../components/BrandLogo.jsx';
@@ -110,9 +110,6 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
     { label: 'Môi giới', value: stats.brokers, color: CHART_COLORS.orange },
     { label: 'Admin', value: stats.admins, color: CHART_COLORS.success },
   ]), [stats]);
-  const propertyCategoryChart = useMemo(() => chartBy(properties, (property) => categoryLabel(property.category)), [properties]);
-  const propertyStatusChart = useMemo(() => chartBy(properties, (property) => property.statusLabel || property.rawStatus || 'Đang hiển thị'), [properties]);
-
   const topBrokersChart = useMemo(() => {
     const counts = new Map();
     properties.forEach((property) => {
@@ -554,16 +551,6 @@ function userStatusLabel(status) {
 
 function setBrokerValue(name, value, setBrokerForm) {
   setBrokerForm((current) => ({ ...current, [name]: value }));
-}
-
-function chartBy(items, getLabel) {
-  const counts = new Map();
-  items.forEach((item) => {
-    const label = getLabel(item);
-    counts.set(label, (counts.get(label) || 0) + 1);
-  });
-  const result = [...counts.entries()].map(([label, value]) => ({ label, value }));
-  return result.length > 0 ? result : [{ label: 'Chưa có dữ liệu', value: 0 }];
 }
 
 function isAvailableProperty(property) {
