@@ -61,9 +61,10 @@ When starting a task:
 
 ## Recent Work
 
-**Active plan** (not yet started): `.claude/plans/t-i-c-th-c-hi-n-serialized-axolotl.md`
-- Nâng cấp dashboard admin & broker (live charts, ward stats, block admin self-lock)
-- See plan file for details.
+**Dashboard upgrade** (branch `feat/dashboard-live-charts`, done): live activity charts
+(`useLiveSeries`/`LiveLineChart`), ward stats (`WardBarChart`, always 4 phường), and
+admin self-lock guard in `/admin` user list. Plan executed from
+`~/.claude/plans/t-i-c-th-c-hi-n-serialized-axolotl.md`.
 
 ---
 
