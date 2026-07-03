@@ -127,8 +127,12 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   }, [section]);
 
   const dashboardStats = useMemo(() => {
-    const totalListings = rangedListings.length || stats.totalListings || 0;
-    const activeListings = rangedListings.filter(isAvailableListing).length || stats.activeListings || 0;
+    // Fallback to server-wide stats only when the range is unbounded ("all") — data
+    // has not loaded yet. A bounded range that legitimately matches nothing must
+    // show 0, not silently un-filter to the unfiltered totals.
+    const unbounded = !listingRange.from && !listingRange.to;
+    const totalListings = rangedListings.length || (unbounded ? stats.totalListings : 0) || 0;
+    const activeListings = rangedListings.filter(isAvailableListing).length || (unbounded ? stats.activeListings : 0) || 0;
     const pendingListings = rangedListings.filter(isPendingListing).length;
     const estimatedViews = rangedListings.reduce((sum, listing) => sum + listingViews(listing), 0);
     return {
@@ -138,7 +142,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       estimatedViews,
       leads: stats.pendingLeads || Math.max(0, totalListings * 2),
     };
-  }, [rangedListings, stats]);
+  }, [rangedListings, stats, listingRange]);
 
   const statusChart = useMemo(() => chartBy(rangedListings, (listing) => listing.statusLabel || 'Đang hiển thị'), [rangedListings]);
   const categoryChart = useMemo(() => chartBy(rangedListings, (listing) => categoryLabel(listing.category)), [rangedListings]);
