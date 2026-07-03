@@ -18,6 +18,7 @@ import {
   fetchAdminViewings,
   updateAdminPropertyStatus,
   updateUserStatus,
+  updateViewingStatus,
 } from '../../services/api.js';
 
 const ADMIN_SIDEBAR_ITEMS = [
@@ -107,6 +108,10 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
     createBrokerAccount: (payload) => runAction(
       () => createBroker(session.token, payload),
       'Đã cấp tài khoản môi giới.',
+    ),
+    changeViewingStatus: (viewingId, status) => runAction(
+      () => updateViewingStatus(session.token, viewingId, status),
+      'Đã cập nhật lịch hẹn.',
     ),
   };
 

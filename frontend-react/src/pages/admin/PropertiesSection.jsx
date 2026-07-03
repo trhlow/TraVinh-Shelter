@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DashboardPanel, StatusBadge } from '../../components/DashboardWidgets.jsx';
 import DataTable from '../../components/dashboard/DataTable.jsx';
 import Icon from '../../components/ui/Icon.jsx';
@@ -24,6 +24,15 @@ export default function PropertiesSection({ data, loading, saving, actions, quer
   const [category, setCategory] = useState(queryParams.category || 'all');
   const [status, setStatus] = useState(queryParams.status || 'all');
 
+  // The admin shell reuses this mounted component across hashchanges (no key remount),
+  // so the useState seeds above only run once — re-sync when a new drill-down/quick-action
+  // navigates here while the section is already mounted.
+  useEffect(() => {
+    setWard(queryParams.ward || 'all');
+    setCategory(queryParams.category || 'all');
+    setStatus(queryParams.status || 'all');
+  }, [queryParams.ward, queryParams.category, queryParams.status]);
+
   const filtered = useMemo(() => data.properties.filter((property) => (
     (ward === 'all' || property.ward === ward)
     && (category === 'all' || property.category === category)
@@ -34,13 +43,14 @@ export default function PropertiesSection({ data, loading, saving, actions, quer
     { key: 'title', label: 'Bài đăng', render: (property) => (
       <a className="dashboard-table-name" href={`#/property/${property.id}`}>{property.title}</a>
     ) },
+    { key: 'broker', label: 'Môi giới', sortable: false, render: (property) => property.broker?.name || 'Công Tín Land', csv: (property) => property.broker?.name || 'Công Tín Land' },
     { key: 'ward', label: 'Phường', render: (property) => wardLabel(property.ward), csv: (property) => wardLabel(property.ward) },
     { key: 'category', label: 'Danh mục', render: (property) => categoryLabel(property.category), csv: (property) => categoryLabel(property.category) },
     { key: 'priceLabel', label: 'Giá' },
     { key: 'rawStatus', label: 'Trạng thái', render: (property) => (
       <StatusBadge tone={statusTone(property.rawStatus)}>{property.adminStatusLabel || property.statusLabel || property.rawStatus}</StatusBadge>
     ), csv: (property) => property.adminStatusLabel || property.statusLabel || property.rawStatus },
-    { key: 'createdAt', label: 'Ngày tạo', render: (property) => formatDate(property.createdAt) },
+    { key: 'createdAt', label: 'Ngày tạo', render: (property) => formatDate(property.createdAt), csv: (property) => formatDate(property.createdAt) },
     { key: 'actions', label: 'Thao tác', sortable: false, csv: () => '', render: (property) => (
       <div className="dashboard-property-actions">
         <select

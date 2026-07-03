@@ -39,3 +39,22 @@ test('seeds status filter from quick-action query param', () => {
   expect(screen.getByText('Nhà Long Đức')).toBeInTheDocument();
   expect(screen.queryByText('Trọ Trà Vinh')).not.toBeInTheDocument();
 });
+
+test('re-syncs status filter when queryParams change on an already-mounted section', () => {
+  const { rerender } = renderSection();
+  expect(screen.getByText('Trọ Trà Vinh')).toBeInTheDocument();
+  expect(screen.getByText('Nhà Long Đức')).toBeInTheDocument();
+
+  rerender(
+    <PropertiesSection
+      data={{ users: [], brokers: [], properties, viewings: [] }}
+      loading={false}
+      saving={false}
+      actions={{ changePropertyStatus: vi.fn() }}
+      queryParams={{ status: 'PENDING' }}
+    />,
+  );
+
+  expect(screen.getByText('Nhà Long Đức')).toBeInTheDocument();
+  expect(screen.queryByText('Trọ Trà Vinh')).not.toBeInTheDocument();
+});

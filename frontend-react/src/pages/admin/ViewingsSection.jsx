@@ -1,6 +1,5 @@
 import { DashboardPanel } from '../../components/DashboardWidgets.jsx';
 import ViewingsPanel from '../../components/dashboard/ViewingsPanel.jsx';
-import { updateViewingStatus } from '../../services/api.js';
 import { downloadCsv } from '../../utils/exportCsv.js';
 
 const VIEWING_COLUMNS = [
@@ -11,9 +10,9 @@ const VIEWING_COLUMNS = [
   { key: 'status', label: 'Trạng thái' },
 ];
 
-export default function ViewingsSection({ session, data, loading, saving, actions }) {
+export default function ViewingsSection({ data, loading, saving, actions }) {
   function handleStatusChange(viewingId, status) {
-    updateViewingStatus(session.token, viewingId, status).then(() => actions.reload());
+    actions.changeViewingStatus(viewingId, status);
   }
 
   return (
