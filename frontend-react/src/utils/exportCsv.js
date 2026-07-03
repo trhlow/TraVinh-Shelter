@@ -13,7 +13,7 @@ export function toCsvString(rows, columns) {
 
 // BOM so Excel opens Vietnamese text as UTF-8 instead of mojibake.
 export function downloadCsv(filename, rows, columns) {
-  const blob = new Blob([`﻿${toCsvString(rows, columns)}`], { type: 'text/csv;charset=utf-8' });
+  const blob = new Blob(['﻿' + toCsvString(rows, columns)], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;

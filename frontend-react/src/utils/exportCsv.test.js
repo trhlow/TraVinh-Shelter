@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import { toCsvString, downloadCsv } from './exportCsv.js';
 
 const columns = [
