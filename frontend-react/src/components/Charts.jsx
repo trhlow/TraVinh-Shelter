@@ -270,29 +270,46 @@ export function LiveLineChart({ title, baseValue, unit }) {
  * percent share underneath (chart + number + text combined).
  * Expects `data` from buildWardData so all 4 wards always render.
  */
-export function WardBarChart({ title, data }) {
+export function WardBarChart({ title, data, onSelectWard }) {
   const max = Math.max(...data.map((ward) => ward.count), 1);
 
   return (
     <section className="chart-panel">
       <h2 className="chart-title">{title}</h2>
       <div className="ward-bar-cols">
-        {data.map((ward, index) => (
-          <div className="ward-bar-col" key={ward.code}>
-            <span className="ward-bar-count">{ward.count}</span>
-            <div className="ward-bar-track">
-              <span
-                className="ward-bar-fill"
-                style={{
-                  height: `${Math.max(4, (ward.count / max) * 100)}%`,
-                  backgroundColor: CHART_PALETTE[index % CHART_PALETTE.length],
-                }}
-              />
+        {data.map((ward, index) => {
+          const bar = (
+            <>
+              <span className="ward-bar-count">{ward.count}</span>
+              <div className="ward-bar-track">
+                <span
+                  className="ward-bar-fill"
+                  style={{
+                    height: `${Math.max(4, (ward.count / max) * 100)}%`,
+                    backgroundColor: CHART_PALETTE[index % CHART_PALETTE.length],
+                  }}
+                />
+              </div>
+              <span className="ward-bar-name">{ward.label}</span>
+              <span className="ward-bar-pct">{ward.pct}%</span>
+            </>
+          );
+          return onSelectWard ? (
+            <button
+              type="button"
+              className="ward-bar-col"
+              key={ward.code}
+              aria-label={`${ward.label}: ${ward.count} tin`}
+              onClick={() => onSelectWard(ward.code)}
+            >
+              {bar}
+            </button>
+          ) : (
+            <div className="ward-bar-col" key={ward.code}>
+              {bar}
             </div>
-            <span className="ward-bar-name">{ward.label}</span>
-            <span className="ward-bar-pct">{ward.pct}%</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

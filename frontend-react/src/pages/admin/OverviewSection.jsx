@@ -1,69 +1,133 @@
-import { useMemo } from 'react';
-import { buildWardData, DonutChart, GaugeChart, LiveLineChart, WardBarChart } from '../../components/Charts.jsx';
+import { useMemo, useState } from 'react';
+import {
+  buildHeatmapData, buildWardData, DonutChart, GaugeChart, HeatmapChart, LiveLineChart, WardBarChart,
+} from '../../components/Charts.jsx';
 import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../../components/DashboardWidgets.jsx';
-import { categoryLabel } from '../../data/locations.js';
+import DateRangeFilter from '../../components/dashboard/DateRangeFilter.jsx';
+import { WARDS, CATEGORIES, categoryLabel } from '../../data/locations.js';
+import { isInRange, previousRange, percentDelta, resolveDateRange } from '../../utils/dateRange.js';
+import { downloadCsv } from '../../utils/exportCsv.js';
 
-// Carried over from admin-ra/dashboard/OverviewDashboard.jsx, adapted to consume
-// data/loading from the AdminDashboard shell instead of fetching itself.
-// Fancy overview (heatmap, drill-down) lands in Task 11.
 export default function OverviewSection({ data, loading }) {
-  const { users, brokers, properties } = data;
+  const { users, brokers, properties, viewings } = data;
+  const [preset, setPreset] = useState('all');
+  const [custom, setCustom] = useState({});
+  const [ward, setWard] = useState('all');
+  const [category, setCategory] = useState('all');
 
-  const stats = useMemo(() => ({
-    totalAccounts: users.filter((user) => user.role === 'ADMIN' || user.role === 'BROKER').length,
-    brokers: brokers.length,
-    admins: users.filter((user) => user.role === 'ADMIN').length,
-    posts: properties.length,
-    visiblePosts: properties.filter((property) => property.rawStatus === 'AVAILABLE').length,
-    locked: users.filter((user) => user.status === 'LOCKED' || user.status === 'BLOCKED').length,
-  }), [users, brokers, properties]);
+  const range = useMemo(() => resolveDateRange(preset, custom), [preset, custom]);
 
+  const filteredProperties = useMemo(() => properties.filter((property) => (
+    isInRange(property.createdAt, range)
+    && (ward === 'all' || property.ward === ward)
+    && (category === 'all' || property.category === category)
+  )), [properties, range, ward, category]);
+
+  const prevRange = useMemo(() => previousRange(range), [range]);
+  const prevProperties = useMemo(() => (prevRange ? properties.filter((property) => (
+    isInRange(property.createdAt, prevRange)
+    && (ward === 'all' || property.ward === ward)
+    && (category === 'all' || property.category === category)
+  )) : null), [properties, prevRange, ward, category]);
+
+  const pendingViewings = useMemo(
+    () => viewings.filter((viewing) => viewing.status === 'PENDING' && isInRange(viewing.requestedAt, range)),
+    [viewings, range],
+  );
+  const pendingPosts = useMemo(
+    () => properties.filter((property) => property.rawStatus === 'PENDING').length,
+    [properties],
+  );
+
+  const visibleCount = filteredProperties.filter((property) => property.rawStatus === 'AVAILABLE').length;
+  const kpis = [
+    { icon: 'Building', title: 'Bài đăng mới', value: filteredProperties.length, tone: 'navy', delta: prevProperties ? percentDelta(filteredProperties.length, prevProperties.length) : null },
+    { icon: 'Eye', title: 'Đang hiển thị', value: visibleCount, tone: 'green', delta: prevProperties ? percentDelta(visibleCount, prevProperties.filter((property) => property.rawStatus === 'AVAILABLE').length) : null },
+    { icon: 'IdCard', title: 'Môi giới', value: brokers.length, tone: 'orange', delta: null },
+    { icon: 'Calendar', title: 'Lịch hẹn chờ', value: pendingViewings.length, tone: 'navy', delta: null },
+  ];
+
+  const wardData = useMemo(() => buildWardData(filteredProperties, (property) => property.ward), [filteredProperties]);
+  const heatmapData = useMemo(
+    () => buildHeatmapData(filteredProperties, (property) => property.ward, (property) => property.category),
+    [filteredProperties],
+  );
   const roleChart = useMemo(() => ([
-    { label: 'Môi giới', value: stats.brokers },
-    { label: 'Admin', value: stats.admins },
-  ]), [stats]);
-
-  const topBrokersChart = useMemo(() => {
-    const counts = new Map();
-    properties.forEach((property) => {
-      const name = property.broker?.name || 'Khác';
-      counts.set(name, (counts.get(name) || 0) + 1);
-    });
-    const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5)
-      .map(([label, value]) => ({ label, value }));
-    return sorted.length > 0 ? sorted : [{ label: 'Chưa có dữ liệu', value: 0 }];
-  }, [properties]);
-
-  const wardData = useMemo(() => buildWardData(properties, (property) => property.ward), [properties]);
+    { label: 'Môi giới', value: brokers.length },
+    { label: 'Admin', value: users.filter((user) => user.role === 'ADMIN').length },
+  ]), [users, brokers]);
+  const visiblePercent = filteredProperties.length > 0 ? Math.round((visibleCount / filteredProperties.length) * 100) : 0;
 
   const recentProperties = useMemo(() => (
-    [...properties].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5)
-  ), [properties]);
+    [...filteredProperties].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5)
+  ), [filteredProperties]);
 
-  const visiblePercent = stats.posts > 0 ? Math.round((stats.visiblePosts / stats.posts) * 100) : 0;
+  const drillTo = (params) => {
+    const query = new URLSearchParams(params).toString();
+    window.location.hash = `#/admin/properties?${query}`;
+  };
+
+  const exportOverview = () => {
+    downloadCsv('bao-cao-tong-quan.csv', kpis.map((kpi) => ({ metric: kpi.title, value: kpi.value })), [
+      { key: 'metric', label: 'Chỉ số' },
+      { key: 'value', label: 'Giá trị' },
+    ]);
+  };
 
   return (
     <>
+      <div className="admin-quick-actions">
+        <a className="btn btn-primary btn-sm" href="#/admin/brokers">
+          ＋ Cấp tài khoản môi giới
+        </a>
+        <a className="btn btn-ghost btn-sm" href="#/admin/properties?status=PENDING">
+          Duyệt tin chờ ({pendingPosts})
+        </a>
+        <button className="btn btn-ghost btn-sm" type="button" onClick={exportOverview}>Xuất báo cáo</button>
+      </div>
+
+      <div className="admin-filter-bar">
+        <DateRangeFilter
+          preset={preset}
+          custom={custom}
+          onChange={(nextPreset, nextCustom) => { setPreset(nextPreset); setCustom(nextCustom); }}
+        />
+        <label className="dashboard-table-sub" htmlFor="overview-ward-filter">Lọc theo phường</label>
+        <select id="overview-ward-filter" className="input" aria-label="Lọc theo phường" value={ward} onChange={(event) => setWard(event.target.value)}>
+          {WARDS.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
+        </select>
+        <select className="input" aria-label="Lọc theo danh mục" value={category} onChange={(event) => setCategory(event.target.value)}>
+          <option value="all">Tất cả danh mục</option>
+          {CATEGORIES.map((item) => <option key={item.slug} value={item.slug}>{item.label}</option>)}
+        </select>
+      </div>
+
       <div className="grid-4 dashboard-stats-row">
-        <StatCard icon="Users" title="Tổng tài khoản" value={stats.totalAccounts} tone="navy" />
-        <StatCard icon="IdCard" title="Môi giới" value={stats.brokers} tone="orange" />
-        <StatCard icon="ShieldCheck" title="Admin" value={stats.admins} tone="green" />
-        <StatCard icon="Building" title="Bài đăng" value={stats.posts} tone="navy" />
+        {kpis.map((kpi) => (
+          <StatCard
+            key={kpi.title}
+            icon={kpi.icon}
+            title={kpi.title}
+            value={kpi.value}
+            tone={kpi.tone}
+            trend={kpi.delta == null ? undefined : { value: `${kpi.delta >= 0 ? '+' : ''}${kpi.delta}%`, direction: kpi.delta >= 0 ? 'up' : 'down' }}
+          />
+        ))}
       </div>
 
       <div className="dashboard-live-row">
         <LiveLineChart
           title="Hoạt động hệ thống (thời gian thực)"
-          baseValue={stats.visiblePosts * 12 + stats.posts}
+          baseValue={visibleCount * 12 + filteredProperties.length}
           unit="điểm hoạt động"
         />
-        <WardBarChart title="BĐS theo khu vực Trà Vinh" data={wardData} />
+        <WardBarChart title="BĐS theo khu vực Trà Vinh" data={wardData} onSelectWard={(code) => drillTo({ ward: code })} />
       </div>
 
       <div className="dashboard-charts-row">
-        <GaugeChart title="Tỷ lệ bài đăng hiển thị" value={visiblePercent} max={100} label="Đang hiển thị" />
+        <HeatmapChart title="Mật độ tin theo phường" data={heatmapData} onSelectCell={({ ward: cellWard, category: cellCategory }) => drillTo({ ward: cellWard, category: cellCategory })} />
         <DonutChart title="Cơ cấu tài khoản" data={roleChart} centerLabel="tài khoản" />
-        <DonutChart title="Top môi giới theo tin đăng" data={topBrokersChart} centerLabel="môi giới" />
+        <GaugeChart title="Tỷ lệ bài đăng hiển thị" value={visiblePercent} max={100} label="Đang hiển thị" />
       </div>
 
       <div className="dashboard-panels-row">
@@ -86,25 +150,15 @@ export default function OverviewSection({ data, loading }) {
             </div>
           )}
         </DashboardPanel>
-
         <DashboardPanel title="Tình trạng hệ thống" count="Từ API hiện có">
           <div className="dashboard-system-lines">
-            <SystemLine label="Môi giới được cấp" value={stats.brokers} />
-            <SystemLine label="Admin trong hệ thống" value={stats.admins} />
-            <SystemLine label="Bài đăng hiển thị" value={stats.visiblePosts} />
-            <SystemLine label="Tài khoản bị khóa" value={stats.locked} />
+            <div className="dashboard-system-line"><span className="dashboard-system-line-label">Môi giới được cấp</span><span className="dashboard-system-line-value">{brokers.length}</span></div>
+            <div className="dashboard-system-line"><span className="dashboard-system-line-label">Tin chờ duyệt</span><span className="dashboard-system-line-value">{pendingPosts}</span></div>
+            <div className="dashboard-system-line"><span className="dashboard-system-line-label">Lịch hẹn chờ</span><span className="dashboard-system-line-value">{pendingViewings.length}</span></div>
+            <div className="dashboard-system-line"><span className="dashboard-system-line-label">Tài khoản bị khóa</span><span className="dashboard-system-line-value">{users.filter((user) => user.status === 'LOCKED' || user.status === 'BLOCKED').length}</span></div>
           </div>
         </DashboardPanel>
       </div>
     </>
-  );
-}
-
-function SystemLine({ label, value }) {
-  return (
-    <div className="dashboard-system-line">
-      <span className="dashboard-system-line-label">{label}</span>
-      <span className="dashboard-system-line-value">{value}</span>
-    </div>
   );
 }

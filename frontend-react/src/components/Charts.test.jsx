@@ -60,6 +60,14 @@ test('WardBarChart renders a column with count, name, and percent per ward', () 
   expect(screen.getByText('100%')).toBeInTheDocument();
 });
 
+test('WardBarChart columns are clickable when onSelectWard is provided', () => {
+  const data = buildWardData([{ ward: 'phuong-tra-vinh' }], (item) => item.ward);
+  const onSelectWard = vi.fn();
+  render(<WardBarChart title="Theo phường" data={data} onSelectWard={onSelectWard} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Phường Trà Vinh: 1 tin' }));
+  expect(onSelectWard).toHaveBeenCalledWith('phuong-tra-vinh');
+});
+
 // ── useLiveSeries ─────────────────────────────────────────
 
 test('useLiveSeries seeds a full window around the base value', () => {

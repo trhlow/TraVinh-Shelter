@@ -638,6 +638,10 @@
   text-align: center;
 }
 
+.ward-bar-cols button.ward-bar-col {
+  padding: 0;
+}
+
 .ward-bar-count {
   font-size: 14px;
   font-weight: 600;
