@@ -2,6 +2,8 @@ package com.travinh.realty.modules.property;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -71,7 +73,7 @@ class PropertyHttpTest {
         Category category = category(1L, "Trọ", "tro");
         Property property = property(broker, category, "Phòng trọ", PropertyStatus.AVAILABLE,
                 Map.of("area", 30, "rooms", 1, "has_ac", true));
-        when(properties.search(any(PropertySearchCriteria.class), any(Pageable.class)))
+        when(properties.search(any(PropertySearchCriteria.class), any(Pageable.class), anyBoolean()))
                 .thenReturn(new PageImpl<>(List.of(property), PageRequest.of(0, 20), 42));
 
         mockMvc.perform(get("/properties")
@@ -96,7 +98,7 @@ class PropertyHttpTest {
                 .andExpect(jsonPath("$.sort").doesNotExist());
 
         ArgumentCaptor<PropertySearchCriteria> criteria = ArgumentCaptor.forClass(PropertySearchCriteria.class);
-        org.mockito.Mockito.verify(properties).search(criteria.capture(), any(Pageable.class));
+        org.mockito.Mockito.verify(properties).search(criteria.capture(), any(Pageable.class), eq(false));
         assertThat(criteria.getValue().categorySlug()).isEqualTo("tro");
         assertThat(criteria.getValue().status()).isNull();
         assertThat(criteria.getValue().minPrice()).isEqualByComparingTo("1000000");

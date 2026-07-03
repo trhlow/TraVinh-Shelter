@@ -76,11 +76,64 @@ class PropertySearchRepositoryIntegrationTest {
                 Map.of("area", BigDecimal.valueOf(25)),
                 Map.of("area", BigDecimal.valueOf(35)));
 
-        Page<Property> result = properties.search(criteria, PageRequest.of(0, 10));
+        Page<Property> result = properties.search(criteria, PageRequest.of(0, 10), false);
 
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent()).extracting(Property::getId).containsExactly(matching.getId());
         assertThat(result.getContent().getFirst().getAttributes()).containsEntry("has_ac", true);
+    }
+
+    @Test
+    void includeHiddenTrueReturnsAllStatusesIncludingHidden() {
+        User broker = users.save(User.createBroker("hidden.true.broker", "hidden.true.broker@example.com",
+                "hash", "Hidden True Broker", "0900000011"));
+        Category tro = categories.findBySlug("tro").orElseThrow();
+        String marker = "zzadminhiddentrue";
+
+        Property available = properties.save(Property.create(broker, tro, marker + " available", "Trà Vinh",
+                BigDecimal.valueOf(1_500_000), attributes(30, 1, true, "adminonly")));
+        Property rented = Property.create(broker, tro, marker + " rented", "Trà Vinh",
+                BigDecimal.valueOf(1_500_000), attributes(30, 1, true, "adminonly"));
+        rented.changeStatus(PropertyStatus.RENTED);
+        properties.save(rented);
+        Property hidden = Property.create(broker, tro, marker + " hidden", "Trà Vinh",
+                BigDecimal.valueOf(1_500_000), attributes(30, 1, true, "adminonly"));
+        hidden.changeStatus(PropertyStatus.HIDDEN);
+        properties.save(hidden);
+
+        PropertySearchCriteria criteria = new PropertySearchCriteria(marker, null, null, null, null,
+                Map.of(), Map.of(), Map.of());
+
+        Page<Property> result = properties.search(criteria, PageRequest.of(0, 10), true);
+
+        assertThat(result.getContent()).extracting(Property::getId)
+                .containsExactlyInAnyOrder(available.getId(), rented.getId(), hidden.getId());
+    }
+
+    @Test
+    void includeHiddenFalseKeepsPublicBehaviourExcludingHidden() {
+        User broker = users.save(User.createBroker("hidden.false.broker", "hidden.false.broker@example.com",
+                "hash", "Hidden False Broker", "0900000022"));
+        Category tro = categories.findBySlug("tro").orElseThrow();
+        String marker = "zzadminhiddenfalse";
+
+        Property available = properties.save(Property.create(broker, tro, marker + " available", "Trà Vinh",
+                BigDecimal.valueOf(1_500_000), attributes(30, 1, true, "adminonly")));
+        Property rented = Property.create(broker, tro, marker + " rented", "Trà Vinh",
+                BigDecimal.valueOf(1_500_000), attributes(30, 1, true, "adminonly"));
+        rented.changeStatus(PropertyStatus.RENTED);
+        properties.save(rented);
+        Property hidden = Property.create(broker, tro, marker + " hidden", "Trà Vinh",
+                BigDecimal.valueOf(1_500_000), attributes(30, 1, true, "adminonly"));
+        hidden.changeStatus(PropertyStatus.HIDDEN);
+        properties.save(hidden);
+
+        PropertySearchCriteria criteria = new PropertySearchCriteria(marker, null, null, null, null,
+                Map.of(), Map.of(), Map.of());
+
+        Page<Property> result = properties.search(criteria, PageRequest.of(0, 10), false);
+
+        assertThat(result.getContent()).extracting(Property::getId).containsExactly(available.getId());
     }
 
     private Map<String, Object> attributes(Object area, int rooms, boolean hasAc, String note) {

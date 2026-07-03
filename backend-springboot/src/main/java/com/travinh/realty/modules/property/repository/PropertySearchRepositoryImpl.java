@@ -30,8 +30,8 @@ public class PropertySearchRepositoryImpl implements PropertySearchRepository {
     }
 
     @Override
-    public Page<Property> search(PropertySearchCriteria criteria, Pageable pageable) {
-        QueryParts parts = buildWhere(criteria);
+    public Page<Property> search(PropertySearchCriteria criteria, Pageable pageable, boolean includeHidden) {
+        QueryParts parts = buildWhere(criteria, includeHidden);
         String orderBy = " ORDER BY p.created_at DESC, p.id DESC";
         Query content = entityManager.createNativeQuery("""
                 SELECT p.*
@@ -76,17 +76,20 @@ public class PropertySearchRepositoryImpl implements PropertySearchRepository {
         return ids.stream().map(byId::get).toList();
     }
 
-    private QueryParts buildWhere(PropertySearchCriteria criteria) {
+    private QueryParts buildWhere(PropertySearchCriteria criteria, boolean includeHidden) {
         List<String> predicates = new ArrayList<>();
         Map<String, Object> parameters = new LinkedHashMap<>();
 
-        if (criteria.status() == null) {
-            predicates.add("p.status = CAST('AVAILABLE' AS property_status)");
-        } else {
+        if (criteria.status() != null) {
             predicates.add("p.status = CAST(:status AS property_status)");
             parameters.put("status", criteria.status().name());
+        } else if (!includeHidden) {
+            predicates.add("p.status = CAST('AVAILABLE' AS property_status)");
         }
-        predicates.add("p.status <> CAST('HIDDEN' AS property_status)");
+        // Public search hides HIDDEN listings unconditionally; admin (includeHidden) must see them.
+        if (!includeHidden) {
+            predicates.add("p.status <> CAST('HIDDEN' AS property_status)");
+        }
 
         if (criteria.categorySlug() != null) {
             predicates.add("c.slug = :categorySlug");
@@ -130,7 +133,8 @@ public class PropertySearchRepositoryImpl implements PropertySearchRepository {
             parameters.put(value, entry.getValue());
         }
 
-        return new QueryParts(" WHERE " + String.join(" AND ", predicates), parameters);
+        String where = predicates.isEmpty() ? "" : " WHERE " + String.join(" AND ", predicates);
+        return new QueryParts(where, parameters);
     }
 
     private String jsonObject(String key, Object value) {

@@ -16,6 +16,7 @@ import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -129,13 +130,18 @@ public class UserProfileService {
     }
 
     @Transactional(readOnly = true)
-    public Page<UserProfileResponse> listUsers(Pageable pageable) {
-        return users.findAll(pageable).map(UserProfileResponse::from);
+    public Page<UserProfileResponse> listUsers(String query, UserStatus status, Pageable pageable) {
+        Specification<User> spec = Specification.where(UserSpecifications.matchesQuery(query))
+                .and(UserSpecifications.hasStatus(status));
+        return users.findAll(spec, pageable).map(UserProfileResponse::from);
     }
 
     @Transactional(readOnly = true)
-    public Page<UserProfileResponse> listBrokers(Pageable pageable) {
-        return users.findByRole(UserRole.BROKER, pageable).map(UserProfileResponse::from);
+    public Page<UserProfileResponse> listBrokers(String query, UserStatus status, Pageable pageable) {
+        Specification<User> spec = Specification.where(UserSpecifications.hasRole(UserRole.BROKER))
+                .and(UserSpecifications.matchesQuery(query))
+                .and(UserSpecifications.hasStatus(status));
+        return users.findAll(spec, pageable).map(UserProfileResponse::from);
     }
 
     private User findUser(UUID userId) {

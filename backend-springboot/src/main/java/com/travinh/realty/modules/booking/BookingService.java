@@ -14,6 +14,11 @@ import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -79,10 +84,14 @@ public class BookingService {
     }
 
     @Transactional(readOnly = true)
-    public List<ViewingResponse> listAll() {
-        return appointments.findAllByOrderByCreatedAtDesc().stream()
-                .map(ViewingResponse::of)
-                .toList();
+    public Page<ViewingResponse> listAll(String query, AppointmentStatus status, Pageable pageable) {
+        Specification<ViewingAppointment> spec = Specification.where(ViewingSpecifications.matchesQuery(query))
+                .and(ViewingSpecifications.hasStatus(status));
+        Pageable effective = pageable.getSort().isSorted()
+                ? pageable
+                : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                        Sort.by(Sort.Direction.DESC, "createdAt"));
+        return appointments.findAll(spec, effective).map(ViewingResponse::of);
     }
 
     @Transactional

@@ -28,7 +28,13 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -177,12 +183,16 @@ class BookingServiceTest {
     }
 
     @Test
-    void listAllReturnsEveryAppointment() {
-        when(appointments.findAllByOrderByCreatedAtDesc())
-                .thenReturn(List.of(appointment(UUID.randomUUID(), AppointmentStatus.PENDING),
-                        appointment(UUID.randomUUID(), AppointmentStatus.CONFIRMED)));
+    void listAllReturnsPagedAppointments() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(appointments.findAll(ArgumentMatchers.<Specification<ViewingAppointment>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(appointment(UUID.randomUUID(), AppointmentStatus.PENDING),
+                        appointment(UUID.randomUUID(), AppointmentStatus.CONFIRMED)), pageable, 2));
 
-        assertThat(service.listAll()).hasSize(2);
+        Page<ViewingResponse> result = service.listAll(null, null, pageable);
+
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getContent()).hasSize(2);
     }
 
     @Test

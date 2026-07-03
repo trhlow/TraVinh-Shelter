@@ -47,7 +47,7 @@ public class PropertyService {
 
     @Transactional(readOnly = true)
     public Page<PropertyResponse> search(MultiValueMap<String, String> params, Pageable pageable) {
-        return properties.search(criteriaFrom(params), pageable).map(PropertyResponse::from);
+        return properties.search(criteriaFrom(params), pageable, false).map(PropertyResponse::from);
     }
 
     @Transactional(readOnly = true)
@@ -57,8 +57,8 @@ public class PropertyService {
     }
 
     @Transactional(readOnly = true)
-    public Page<PropertyResponse> adminList(Pageable pageable) {
-        return properties.findAll(pageable).map(PropertyResponse::from);
+    public Page<PropertyResponse> adminList(MultiValueMap<String, String> params, Pageable pageable) {
+        return properties.search(criteriaFrom(params), pageable, true).map(PropertyResponse::from);
     }
 
     @Transactional(readOnly = true)
