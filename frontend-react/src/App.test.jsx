@@ -3,7 +3,7 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import App from './App.jsx';
 import { resolveRoute } from './routes/index.jsx';
-import AdminApp from './admin-ra/AdminApp.jsx';
+import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 
 beforeEach(() => {
   window.location.hash = '#/';
@@ -67,11 +67,19 @@ test('routes to broker properties page for broker sessions', () => {
   expect(screen.getAllByRole('heading', { name: 'Tin đăng của tôi' }).length).toBeGreaterThan(0);
 });
 
-test('resolves every admin sub-path to the react-admin app', () => {
-  // /admin/* is now owned by react-admin's own router; the outer hash router maps every
-  // admin path to the single AdminApp component (see routes/index.jsx).
-  for (const path of ['/admin', '/admin/brokers', '/admin/properties', '/admin/users', '/admin/viewings']) {
-    expect(resolveRoute(path).Page).toBe(AdminApp);
+test('resolves every admin sub-path to the custom admin dashboard with a section', () => {
+  const cases = [
+    ['/admin', 'overview'],
+    ['/admin/brokers', 'brokers'],
+    ['/admin/accounts', 'accounts'],
+    ['/admin/properties', 'properties'],
+    ['/admin/viewings', 'viewings'],
+    ['/admin/audit', 'audit'],
+  ];
+  for (const [path, section] of cases) {
+    const resolved = resolveRoute(path);
+    expect(resolved.Page).toBe(AdminDashboard);
+    expect(resolved.params.section).toBe(section);
   }
 });
 

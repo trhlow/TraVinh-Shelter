@@ -1,4 +1,4 @@
-import AdminApp from '../admin-ra/AdminApp.jsx';
+import AdminDashboard from '../pages/admin/AdminDashboard.jsx';
 import BrokersPage from '../pages/BrokersPage.jsx';
 import BrokerDashboard from '../pages/BrokerDashboard.jsx';
 import HomePage from '../pages/HomePage.jsx';
@@ -27,6 +27,16 @@ function ForgotPasswordRoute(props) {
   return <LoginPage {...props} initialMode="forgot" />;
 }
 
+const ADMIN_SECTIONS = {
+  '/admin': 'overview',
+  '/admin/overview': 'overview',
+  '/admin/brokers': 'brokers',
+  '/admin/accounts': 'accounts',
+  '/admin/properties': 'properties',
+  '/admin/viewings': 'viewings',
+  '/admin/audit': 'audit',
+};
+
 export const routes = {
   '/': HomePage,
   '/search': SearchPage,
@@ -46,10 +56,9 @@ export const routes = {
 export function resolveRoute(path) {
   const [pathname, queryString = ''] = path.split('?');
   const queryParams = Object.fromEntries(new URLSearchParams(queryString));
-  // Every /admin* path resolves to the SAME component so react-admin's own HashRouter
-  // owns the sub-routing and the outer hash router never remounts <Admin> (see Task 0 spike).
   if (pathname.startsWith('/admin')) {
-    return { Page: AdminApp, params: { queryParams } };
+    const section = ADMIN_SECTIONS[pathname] || 'overview';
+    return { Page: AdminDashboard, params: { section, queryParams } };
   }
   if (pathname.startsWith('/property/') && pathname !== '/property/detail') {
     return { Page: PropertyDetailPage, params: { propertyId: pathname.replace('/property/', ''), queryParams } };
