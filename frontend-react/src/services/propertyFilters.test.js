@@ -13,7 +13,9 @@ describe('property filters', () => {
       ward: 'phuong-long-duc',
     });
 
-    expect(result.map((item) => item.id)).toEqual(['p-ql53', 'p-vuon']);
+    // MOCK_PROPERTIES now clones each raw listing into 3 ward/category-rotated variants
+    // (see mockData.js) so only the variant landing on dat + phuong-long-duc matches here.
+    expect(result.map((item) => item.id)).toEqual(['p-ql53-v2']);
   });
 
   test('builds API query without default filter noise', () => {

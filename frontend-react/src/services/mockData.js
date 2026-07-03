@@ -232,16 +232,43 @@ const RAW_MOCK_PROPERTIES = [
 
 // Admin-facing fields the react-admin resources rely on (enum status, sortable createdAt,
 // broker id matching MOCK_ADMIN_BROKERS). Kept out of the raw literals above so the public
-// site data stays untouched; a HIDDEN item is included so admin listing can be seen to
+// site data stays untouched; HIDDEN items are included so admin listing can be seen to
 // surface listings the public search hides.
-const ADMIN_STATUS_CYCLE = ['AVAILABLE', 'AVAILABLE', 'HIDDEN', 'PENDING', 'SOLD', 'RENTED'];
+const DAY_MS = 24 * 60 * 60 * 1000;
+const WARD_CYCLE = ['phuong-tra-vinh', 'phuong-long-duc', 'phuong-nguyet-hoa', 'phuong-hoa-thuan'];
+const CATEGORY_CYCLE = ['tro', 'nha', 'dat'];
+const STATUS_CYCLE = ['AVAILABLE', 'AVAILABLE', 'PENDING', 'AVAILABLE', 'RENTED', 'SOLD', 'AVAILABLE', 'HIDDEN'];
+const MOCK_NOW = Date.UTC(2026, 6, 1); // fixed so tests stay deterministic
 
-export const MOCK_PROPERTIES = RAW_MOCK_PROPERTIES.map((item, index) => ({
-  ...item,
-  rawStatus: ADMIN_STATUS_CYCLE[index % ADMIN_STATUS_CYCLE.length],
-  createdAt: new Date(Date.UTC(2026, 0, 1 + index)).toISOString(),
-  broker: { ...item.broker, id: `b-${(index % 3) + 1}` },
-}));
+function statusLabelOf(status) {
+  return {
+    AVAILABLE: 'Đang hiển thị',
+    PENDING: 'Chờ duyệt',
+    RENTED: 'Đã thuê',
+    SOLD: 'Đã bán',
+    HIDDEN: 'Đã ẩn',
+  }[status] || status;
+}
+
+// 3 variants per raw item (~24 listings) spread over ~6 months so the admin
+// date filter, heatmap, and drill-down have believable density.
+export const MOCK_PROPERTIES = RAW_MOCK_PROPERTIES.flatMap((item, rawIndex) => (
+  [0, 1, 2].map((variant) => {
+    const index = rawIndex * 3 + variant;
+    const rawStatus = STATUS_CYCLE[index % STATUS_CYCLE.length];
+    return {
+      ...item,
+      id: variant === 0 ? item.id : `${item.id}-v${variant}`,
+      title: variant === 0 ? item.title : `${item.title} (khu ${variant + 1})`,
+      ward: WARD_CYCLE[index % WARD_CYCLE.length],
+      category: CATEGORY_CYCLE[index % CATEGORY_CYCLE.length],
+      rawStatus,
+      statusLabel: statusLabelOf(rawStatus),
+      createdAt: new Date(MOCK_NOW - index * 8 * DAY_MS).toISOString(),
+      broker: { ...item.broker, id: `b-${(index % 3) + 1}` },
+    };
+  })
+));
 
 export const BROKER_DASHBOARD = {
   activeListings: 18,
@@ -334,3 +361,25 @@ export const MOCK_ADMIN_BROKERS = [
     avatarUrl: '',
   },
 ];
+
+export const MOCK_AUDIT_LOGS = [
+  ['CREATE_BROKER', 'Trần Mỹ Linh', 'Cấp tài khoản môi giới mới'],
+  ['UPDATE_PROPERTY_STATUS', 'Nhà mới đường Nguyễn Đáng', 'AVAILABLE → RENTED'],
+  ['LOCK_USER', 'Phạm Quốc Huy', 'Khóa do vi phạm quy định đăng tin'],
+  ['UPDATE_PROPERTY_STATUS', 'Đất vườn Long Đức', 'PENDING → AVAILABLE'],
+  ['HIDE_PROPERTY', 'Phòng trọ Hòa Thuận', 'Gỡ khỏi trang công khai'],
+  ['UNLOCK_USER', 'Phạm Quốc Huy', 'Mở khóa sau khi xác minh'],
+  ['CREATE_BROKER', 'Võ Hoàng Nam', 'Cấp tài khoản môi giới mới'],
+  ['UPDATE_PROPERTY_STATUS', 'Nhà phố khu dân cư Phú Gia', 'AVAILABLE → SOLD'],
+  ['UPDATE_PROPERTY_STATUS', 'Nhà trọ Điện Biên Phủ', 'PENDING → AVAILABLE'],
+  ['HIDE_PROPERTY', 'Đất nền mặt tiền Quốc lộ 53', 'Gỡ theo yêu cầu môi giới'],
+  ['LOCK_USER', 'Lê Minh Khang', 'Khóa tạm thời theo yêu cầu'],
+  ['UNLOCK_USER', 'Lê Minh Khang', 'Mở khóa sau 24 giờ'],
+].map(([action, targetLabel, detail], index) => ({
+  id: `audit-${index + 1}`,
+  action,
+  actorEmail: 'admin@congtinland.vn',
+  targetLabel,
+  detail,
+  createdAt: new Date(MOCK_NOW - index * 5 * DAY_MS - 7200000).toISOString(),
+}));

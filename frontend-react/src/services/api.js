@@ -1,5 +1,5 @@
 import { detailImages, searchProperties } from '../data/templateData.js';
-import { BROKER_DASHBOARD, MOCK_PROPERTIES, MOCK_USERS, MOCK_ADMIN_BROKERS } from './mockData.js';
+import { BROKER_DASHBOARD, MOCK_PROPERTIES, MOCK_USERS, MOCK_ADMIN_BROKERS, MOCK_AUDIT_LOGS } from './mockData.js';
 import { buildAdminQuery, buildPropertyQuery, filterProperties } from './propertyFilters.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
@@ -255,6 +255,15 @@ export async function createBroker(token, payload) {
 export async function updateUserStatus(token, userId, status) {
   if (USE_MOCK_API) return delay({ id: userId, status }, 120);
   return request(`/admin/users/${userId}/status`, { method: 'PATCH', token, body: { status } });
+}
+
+export async function fetchAdminAuditLogs(_token) {
+  if (USE_MOCK_API) {
+    return delay([...MOCK_AUDIT_LOGS].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)), 120);
+  }
+  // Backend has the AuditLog entity but no write-path or endpoint yet — the UI
+  // shows an explanatory empty state until that lands.
+  return [];
 }
 
 export async function updateAdminPropertyStatus(token, propertyId, status) {
