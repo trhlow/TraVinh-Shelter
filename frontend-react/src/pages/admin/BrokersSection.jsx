@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import Icon from '../../components/ui/Icon.jsx';
-import { DashboardPanel, LoadingRows, StateBlock, StatusBadge } from '../../components/DashboardWidgets.jsx';
+import { DashboardPanel } from '../../components/DashboardWidgets.jsx';
+import DataTable from '../../components/dashboard/DataTable.jsx';
+import { AccountStatusToggle } from './AccountsSection.jsx';
 
 const EMPTY_BROKER = {
   username: '',
@@ -10,22 +12,11 @@ const EMPTY_BROKER = {
   phone: '',
 };
 
-const ALL = 'all';
-
 // Ported from the pre-react-admin AdminDashboard brokers section.
 // Table-ified with the shared DataTable in Task 12.
 export default function BrokersSection({ data, loading, saving, actions }) {
   const { brokers } = data;
   const [brokerForm, setBrokerForm] = useState(EMPTY_BROKER);
-  const [brokerQuery, setBrokerQuery] = useState('');
-  const [brokerStatusFilter, setBrokerStatusFilter] = useState(ALL);
-
-  const filteredBrokers = useMemo(() => brokers.filter((broker) => {
-    const query = brokerQuery.trim().toLowerCase();
-    const matchesQuery = !query || [broker.email, broker.username, broker.fullName, broker.phone].some((value) => String(value || '').toLowerCase().includes(query));
-    const matchesStatus = brokerStatusFilter === ALL || broker.status === brokerStatusFilter;
-    return matchesQuery && matchesStatus;
-  }), [brokers, brokerQuery, brokerStatusFilter]);
 
   function setBrokerValue(name, value) {
     setBrokerForm((current) => ({ ...current, [name]: value }));
@@ -33,9 +24,24 @@ export default function BrokersSection({ data, loading, saving, actions }) {
 
   async function saveBroker(event) {
     event.preventDefault();
-    await actions.createBrokerAccount(brokerForm);
-    setBrokerForm(EMPTY_BROKER);
+    const ok = await actions.createBrokerAccount(brokerForm);
+    if (ok) setBrokerForm(EMPTY_BROKER);
   }
+
+  const columns = [
+    { key: 'fullName', label: 'Họ tên', render: (broker) => broker.fullName || broker.username },
+    { key: 'phone', label: 'SĐT', render: (broker) => broker.phone || 'Chưa có SĐT' },
+    { key: 'email', label: 'Email' },
+    {
+      key: 'status',
+      label: 'Trạng thái',
+      render: (broker) => (
+        <AccountStatusToggle user={broker} saving={saving} onToggle={actions.toggleUserStatus} />
+      ),
+      sortable: false,
+      csv: (broker) => (broker.status === 'ACTIVE' ? 'Hoạt động' : 'Đã khóa'),
+    },
+  ];
 
   return (
     <div className="dashboard-profile-grid">
@@ -53,46 +59,18 @@ export default function BrokersSection({ data, loading, saving, actions }) {
         </button>
       </form>
 
-      <DashboardPanel
-        title="Môi giới đang quản lý"
-        count={`${filteredBrokers.length}/${brokers.length} hồ sơ`}
-        action={(
-          <div className="dashboard-filter-row">
-            <input className="input" placeholder="Tìm tên, SĐT, email..." value={brokerQuery} onChange={(event) => setBrokerQuery(event.target.value)} />
-            <select className="input" value={brokerStatusFilter} onChange={(event) => setBrokerStatusFilter(event.target.value)}>
-              <option value={ALL}>Tất cả trạng thái</option>
-              <option value="ACTIVE">Hoạt động</option>
-              <option value="LOCKED">Đã khóa</option>
-            </select>
-          </div>
-        )}
-      >
-        <BrokerTable brokers={filteredBrokers} loading={loading} saving={saving} onToggleStatus={actions.toggleUserStatus} />
+      <DashboardPanel title="Môi giới đang quản lý" count={`${brokers.length} hồ sơ`}>
+        <DataTable
+          columns={columns}
+          rows={brokers}
+          searchKeys={['fullName', 'username', 'email', 'phone']}
+          searchPlaceholder="Tìm tên, SĐT, email..."
+          exportFilename="moi-gioi.csv"
+          loading={loading}
+          emptyTitle="Không có môi giới phù hợp"
+          emptyDescription="Thử đổi từ khóa hoặc bộ lọc trạng thái."
+        />
       </DashboardPanel>
-    </div>
-  );
-}
-
-function BrokerTable({ brokers, loading, saving, onToggleStatus }) {
-  if (loading) return <LoadingRows rows={4} />;
-  if (brokers.length === 0) return <StateBlock title="Không có môi giới phù hợp" description="Thử đổi từ khóa hoặc bộ lọc trạng thái." />;
-  return (
-    <div className="dashboard-broker-list">
-      {brokers.map((broker) => (
-        <div key={broker.id || broker.email} className="dashboard-broker-row">
-          <div>
-            <div className="dashboard-table-name">{broker.fullName || broker.username}</div>
-            <div className="dashboard-table-sub">{broker.phone || 'Chưa có SĐT'} · {broker.email}</div>
-          </div>
-          <div className="dashboard-broker-actions">
-            <StatusBadge tone={broker.status === 'ACTIVE' ? 'success' : 'danger'}>{userStatusLabel(broker.status)}</StatusBadge>
-            <button className="btn btn-ghost btn-sm" onClick={() => onToggleStatus(broker)} disabled={saving} type="button">
-              <Icon name={broker.status === 'ACTIVE' ? 'EyeOff' : 'Eye'} size={14} className="icon-muted" />
-              {broker.status === 'ACTIVE' ? 'Khóa' : 'Mở'}
-            </button>
-          </div>
-        </div>
-      ))}
     </div>
   );
 }
@@ -104,8 +82,4 @@ function FormField({ label, children }) {
       {children}
     </div>
   );
-}
-
-function userStatusLabel(status) {
-  return status === 'ACTIVE' ? 'Đang hoạt động' : 'Đã khóa';
 }

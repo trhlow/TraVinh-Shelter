@@ -85,8 +85,10 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
       await work();
       setNotice(successMessage);
       await reload();
+      return true;
     } catch (exception) {
       setError(exception.message || 'Thao tác thất bại.');
+      return false;
     } finally {
       setSaving(false);
     }
