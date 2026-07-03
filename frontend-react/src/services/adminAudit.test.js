@@ -1,6 +1,9 @@
-import { expect, test } from 'vitest';
-import { MOCK_PROPERTIES } from './mockData.js';
-import { fetchAdminAuditLogs } from './api.js';
+import { expect, test, vi } from 'vitest';
+
+vi.stubEnv('VITE_USE_MOCK_API', 'true');
+vi.resetModules();
+const { MOCK_PROPERTIES } = await import('./mockData.js');
+const { fetchAdminAuditLogs } = await import('./api.js');
 
 test('mock properties span multiple months for date filtering', () => {
   expect(MOCK_PROPERTIES.length).toBeGreaterThanOrEqual(20);

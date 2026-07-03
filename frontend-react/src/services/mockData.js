@@ -263,7 +263,7 @@ export const MOCK_PROPERTIES = RAW_MOCK_PROPERTIES.flatMap((item, rawIndex) => (
       ward: WARD_CYCLE[index % WARD_CYCLE.length],
       category: CATEGORY_CYCLE[index % CATEGORY_CYCLE.length],
       rawStatus,
-      statusLabel: statusLabelOf(rawStatus),
+      adminStatusLabel: statusLabelOf(rawStatus),
       createdAt: new Date(MOCK_NOW - index * 8 * DAY_MS).toISOString(),
       broker: { ...item.broker, id: `b-${(index % 3) + 1}` },
     };
