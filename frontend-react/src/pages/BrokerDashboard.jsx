@@ -2,10 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { buildWardData, DonutChart, GaugeChart, HorizontalBarChart, LiveLineChart, WardBarChart } from '../components/Charts.jsx';
 import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../components/DashboardWidgets.jsx';
 import ViewingsPanel from '../components/dashboard/ViewingsPanel.jsx';
+import DateRangeFilter from '../components/dashboard/DateRangeFilter.jsx';
 import BrandLogo from '../components/BrandLogo.jsx';
 import { WARDS } from '../data/locations.js';
 import Icon from '../components/ui/Icon.jsx';
 import LoginPage from './LoginPage.jsx';
+import { isInRange, resolveDateRange } from '../utils/dateRange.js';
+import { downloadCsv } from '../utils/exportCsv.js';
 import {
   changePassword,
   createProperty,
@@ -68,8 +71,12 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
   const [savingViewing, setSavingViewing] = useState(false);
+  const [rangePreset, setRangePreset] = useState('all');
+  const [rangeCustom, setRangeCustom] = useState({});
 
   const listings = stats.listings || [];
+  const listingRange = useMemo(() => resolveDateRange(rangePreset, rangeCustom), [rangePreset, rangeCustom]);
+  const rangedListings = useMemo(() => listings.filter((listing) => isInRange(listing.createdAt, listingRange)), [listings, listingRange]);
   const filteredListings = useMemo(() => listings.filter((listing) => listingMatchesQuery(listing, listingQuery)), [listings, listingQuery]);
   const visibleListings = useMemo(() => filteredListings.filter((listing) => listing.rawStatus !== 'HIDDEN'), [filteredListings]);
   const hiddenListings = useMemo(() => filteredListings.filter((listing) => listing.rawStatus === 'HIDDEN'), [filteredListings]);
@@ -120,10 +127,10 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   }, [section]);
 
   const dashboardStats = useMemo(() => {
-    const totalListings = listings.length || stats.totalListings || 0;
-    const activeListings = listings.filter(isAvailableListing).length || stats.activeListings || 0;
-    const pendingListings = listings.filter(isPendingListing).length;
-    const estimatedViews = listings.reduce((sum, listing) => sum + listingViews(listing), 0);
+    const totalListings = rangedListings.length || stats.totalListings || 0;
+    const activeListings = rangedListings.filter(isAvailableListing).length || stats.activeListings || 0;
+    const pendingListings = rangedListings.filter(isPendingListing).length;
+    const estimatedViews = rangedListings.reduce((sum, listing) => sum + listingViews(listing), 0);
     return {
       totalListings,
       activeListings,
@@ -131,11 +138,11 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       estimatedViews,
       leads: stats.pendingLeads || Math.max(0, totalListings * 2),
     };
-  }, [listings, stats]);
+  }, [rangedListings, stats]);
 
-  const statusChart = useMemo(() => chartBy(listings, (listing) => listing.statusLabel || 'Đang hiển thị'), [listings]);
-  const categoryChart = useMemo(() => chartBy(listings, (listing) => categoryLabel(listing.category)), [listings]);
-  const wardChart = useMemo(() => buildWardData(listings, (listing) => listing.ward), [listings]);
+  const statusChart = useMemo(() => chartBy(rangedListings, (listing) => listing.statusLabel || 'Đang hiển thị'), [rangedListings]);
+  const categoryChart = useMemo(() => chartBy(rangedListings, (listing) => categoryLabel(listing.category)), [rangedListings]);
+  const wardChart = useMemo(() => buildWardData(rangedListings, (listing) => listing.ward), [rangedListings]);
   const profileCompletion = useMemo(() => {
     const fields = [
       profileForm?.fullName || profile?.fullName,
@@ -367,14 +374,29 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
           <span className="dashboard-topbar-title">{brokerTitle(section)}</span>
           <div className="dashboard-topbar-actions">
             {section === 'properties' && (
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={() => document.getElementById('listing-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                type="button"
-              >
-                <Icon name="Plus" size={16} className="icon-inverse" />
-                Đăng tin mới
-              </button>
+              <>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  type="button"
+                  onClick={() => downloadCsv('tin-dang-cua-toi.csv', listings, [
+                    { key: 'title', label: 'Tiêu đề' },
+                    { key: 'address', label: 'Địa chỉ' },
+                    { key: 'priceLabel', label: 'Giá' },
+                    { key: 'statusLabel', label: 'Trạng thái' },
+                    { key: 'createdAt', label: 'Ngày tạo' },
+                  ])}
+                >
+                  Xuất CSV
+                </button>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => document.getElementById('listing-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  type="button"
+                >
+                  <Icon name="Plus" size={16} className="icon-inverse" />
+                  Đăng tin mới
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -387,6 +409,14 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
 
           {section === 'dashboard' && (
             <>
+              <div className="admin-filter-bar">
+                <DateRangeFilter
+                  preset={rangePreset}
+                  custom={rangeCustom}
+                  onChange={(nextPreset, nextCustom) => { setRangePreset(nextPreset); setRangeCustom(nextCustom); }}
+                />
+              </div>
+
               <div className="grid-3 dashboard-stats-row">
                 <StatCard icon="Building" title="Tổng tin đăng" value={dashboardStats.totalListings} tone="navy" trend={{ value: '+9%', direction: 'up' }} />
                 <StatCard icon="Eye" title="Đang hiển thị" value={dashboardStats.activeListings} tone="green" trend={{ value: '+6%', direction: 'up' }} />
@@ -412,8 +442,8 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                 <DashboardPanel title="Trạng thái hồ sơ" count={profileReady ? 'Đủ thông tin liên hệ' : 'Cần bổ sung'}>
                   <ProfileSummary profile={profile} profileForm={profileForm} avatarPreview={avatarPreview} profileReady={profileReady} />
                 </DashboardPanel>
-                <DashboardPanel title="Tin gần đây" count={`${listings.slice(0, 4).length} tin mới`}>
-                  <RecentListings listings={listings} loading={loading} />
+                <DashboardPanel title="Tin gần đây" count={`${rangedListings.slice(0, 4).length} tin mới`}>
+                  <RecentListings listings={rangedListings} loading={loading} />
                 </DashboardPanel>
               </div>
             </>
