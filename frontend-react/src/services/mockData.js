@@ -230,7 +230,7 @@ const RAW_MOCK_PROPERTIES = [
   },
 ];
 
-// Admin-facing fields the react-admin resources rely on (enum status, sortable createdAt,
+// Admin-facing fields the admin resources rely on (enum status, sortable createdAt,
 // broker id matching MOCK_ADMIN_BROKERS). Kept out of the raw literals above so the public
 // site data stays untouched; HIDDEN items are included so admin listing can be seen to
 // surface listings the public search hides.

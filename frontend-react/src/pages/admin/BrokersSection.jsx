@@ -12,7 +12,7 @@ const EMPTY_BROKER = {
   phone: '',
 };
 
-// Ported from the pre-react-admin AdminDashboard brokers section.
+// Ported from the legacy AdminDashboard brokers section.
 // Table-ified with the shared DataTable in Task 12.
 export default function BrokersSection({ data, loading, saving, actions }) {
   const { brokers } = data;

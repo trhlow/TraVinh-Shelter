@@ -22,7 +22,7 @@ Run: `cd frontend-react && npm run dev` (http://localhost:5173)
 
 See **@rules/** for details:
 
-- **design.md** — Airbnb-inspired: single accent (#ff385c), modest typography (max 28px), photography-first, no external UI libs. Dual theme (light/dark) via CSS tokens. **Exception**: `/admin/*` uses react-admin Material UI only (no site tokens there).
+- **design.md** — Airbnb-inspired: single accent (#ff385c), modest typography (max 28px), photography-first, no external UI libs. Dual theme (light/dark) via CSS tokens. **Exception**: `/admin/*` uses a fixed đen-tím theme (`.admin-theme` scope) that never follows the site's light/dark toggle.
 - **tech-defaults.md** — Architecture, stack choices, mock API layer, auth flow, property JSONB attributes (ward, houseType, bedrooms...).
 - **workflow.md** — Vietnamese UI, English code. Conventional commits. TDD mandatory for business logic. No hard-coded colors. No `inline style`.
 
@@ -61,10 +61,9 @@ When starting a task:
 
 ## Recent Work
 
-**Dashboard upgrade** (branch `feat/dashboard-live-charts`, done): live activity charts
-(`useLiveSeries`/`LiveLineChart`), ward stats (`WardBarChart`, always 4 phường), and
-admin self-lock guard in `/admin` user list. Plan executed from
-`~/.claude/plans/t-i-c-th-c-hi-n-serialized-axolotl.md`.
+**Admin rebuild** (branch `feat/admin-custom-rebuild`, done): custom admin (đen-tím theme,
+`pages/admin/`) replaces react-admin/MUI (removed). Broker got date-range filter + CSV export.
+Spec: `docs/superpowers/specs/2026-07-03-admin-custom-rebuild-design.md`. Branch chờ merge.
 
 ---
 

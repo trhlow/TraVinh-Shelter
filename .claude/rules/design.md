@@ -170,10 +170,10 @@ Property card grid: 1-up mobile → 2-up tablet → 3–4-up desktop.
 - Border mặc định: `1px solid var(--color-hairline)`
 - Text input: focus state dùng `2px solid var(--color-ink)` — không dùng glow hay ring màu
 
-> **Ngoại lệ `/admin`**: khu vực quản trị `/admin/*` (react-admin) dùng Material UI mặc định của
-> react-admin, KHÔNG áp dụng token/typography/component ở trên. Ngoại lệ có chủ đích, chỉ giới hạn
-> trong `/admin`, không áp dụng cho bất kỳ route nào khác. (Tab "Tổng quan" là component custom
-> `admin-ra/dashboard/OverviewDashboard.jsx` vẫn dùng widget/token của site.)
+> **Ngoại lệ `/admin`**: khu vực quản trị dùng theme **đen-tím cố định** qua class `.admin-theme`
+> (scope-level override các token semantic: canvas `#141218`, accent tím `#8b5cf6`...), không đổi
+> theo toggle sáng/tối của site. Component bên trong vẫn chỉ tham chiếu token semantic — không
+> if/else theme, không hex trong JSX. Ngoại lệ có chủ đích, chỉ giới hạn trong `/admin`.
 
 ## Cấu trúc trang
 
