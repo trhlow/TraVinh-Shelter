@@ -1,6 +1,9 @@
-// Mirrors design tokens; SVG fill/stroke require literal color values.
-const CHART_PALETTE = ['#16A34A', '#0A2540', '#D97706', '#0EA5E9', '#8B5CF6', '#94A3B8'];
-const TRACK_COLOR = '#dddddd'; // = --color-hairline
+// Inline SVG resolves var(--color-*) fine, so charts stay theme-reactive.
+const CHART_PALETTE = [
+  'var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)',
+  'var(--chart-4)', 'var(--chart-5)', 'var(--chart-6)',
+];
+const TRACK_COLOR = 'var(--color-hairline)';
 
 function withColors(data) {
   return data.map((item, index) => ({
@@ -193,7 +196,7 @@ export function GaugeChart({ title, value, max = 100, label }) {
             cy="21"
             r="15.915"
             fill="transparent"
-            stroke="#16A34A"
+            stroke="var(--color-success)"
             strokeWidth="5"
             strokeDasharray={`${filled} ${gap}`}
             strokeDashoffset="0"

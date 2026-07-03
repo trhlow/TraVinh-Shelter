@@ -1,7 +1,8 @@
 ---
 name: researcher
 description: Nghiên cứu và tóm tắt thông tin theo yêu cầu
-model: claude-sonnet-4-6
+model: claude-sonnet-5
+effort: high
 ---
 
 Bạn là một research agent. Nhiệm vụ của bạn là:

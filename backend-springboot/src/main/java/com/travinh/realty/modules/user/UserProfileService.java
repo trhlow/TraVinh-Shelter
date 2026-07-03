@@ -1,6 +1,7 @@
 package com.travinh.realty.modules.user;
 
 import com.travinh.realty.infrastructure.storage.LocalMediaStorage;
+import com.travinh.realty.modules.auth.security.JwtService;
 import com.travinh.realty.modules.auth.security.UserPrincipal;
 import com.travinh.realty.modules.user.dto.BrokerContactResponse;
 import com.travinh.realty.modules.user.dto.ChangePasswordRequest;
@@ -29,11 +30,13 @@ public class UserProfileService {
     private final UserRepository users;
     private final PasswordEncoder passwordEncoder;
     private final LocalMediaStorage storage;
+    private final JwtService jwt;
 
-    public UserProfileService(UserRepository users, PasswordEncoder passwordEncoder, LocalMediaStorage storage) {
+    public UserProfileService(UserRepository users, PasswordEncoder passwordEncoder, LocalMediaStorage storage, JwtService jwt) {
         this.users = users;
         this.passwordEncoder = passwordEncoder;
         this.storage = storage;
+        this.jwt = jwt;
     }
 
     @Transactional(readOnly = true)
@@ -74,12 +77,13 @@ public class UserProfileService {
     }
 
     @Transactional
-    public void changePassword(UserPrincipal principal, ChangePasswordRequest request) {
+    public void changePassword(UserPrincipal principal, ChangePasswordRequest request, String currentToken) {
         User user = findUser(principal.id());
         if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
         }
         user.updatePasswordHash(passwordEncoder.encode(request.newPassword()));
+        jwt.revoke(currentToken);
     }
 
     @Transactional(readOnly = true)

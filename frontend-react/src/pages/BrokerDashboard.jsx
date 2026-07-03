@@ -21,14 +21,6 @@ import {
   updateBrokerViewingStatus,
 } from '../services/api.js';
 
-const CHART_COLORS = {
-  accent: '#ff385c',   // --color-primary
-  warning: '#D97706',  // --color-warning
-  brand: '#2563EB',    // brand blue
-  success: '#22C55E',  // green
-  orange: '#F97316',   // orange
-};
-
 const BROKER_SIDEBAR_ITEMS = [
   { href: '#/broker/dashboard', icon: 'LayoutDashboard', label: 'Bảng điều khiển' },
   { href: '#/broker/profile', icon: 'User', label: 'Hồ sơ môi giới' },
@@ -143,10 +135,6 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
 
   const statusChart = useMemo(() => chartBy(listings, (listing) => listing.statusLabel || 'Đang hiển thị'), [listings]);
   const categoryChart = useMemo(() => chartBy(listings, (listing) => categoryLabel(listing.category)), [listings]);
-  const viewChart = useMemo(() => listings.slice(0, 6).map((listing) => ({
-    label: shortLabel(listing.title),
-    value: listingViews(listing),
-  })), [listings]);
   const profileCompletion = useMemo(() => {
     const fields = [
       profileForm?.fullName || profile?.fullName,
@@ -927,10 +915,6 @@ function brokerTitle(section) {
     properties: 'Tin đăng của tôi',
     viewings: 'Lịch hẹn xem',
   }[section] || 'Bảng điều khiển';
-}
-
-function shortLabel(value) {
-  return value.length > 22 ? `${value.slice(0, 22)}...` : value;
 }
 
 function objectUrlFor(file) {

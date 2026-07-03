@@ -14,7 +14,7 @@ const STATUS_VARIANT = {
 
 const NON_FEATURED = new Set(['Đã bán', 'SOLD', 'Đã thuê', 'RENTED', 'Đã ẩn', 'PENDING']);
 
-export default function PropertyCard({ property, compact = false }) {
+export default function PropertyCard({ property }) {
   const price = property.priceLabel || property.price;
   const location = property.address || property.location;
   const href = property.id ? `#/property/${property.id}` : '#/property';

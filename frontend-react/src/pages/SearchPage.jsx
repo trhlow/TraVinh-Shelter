@@ -51,7 +51,7 @@ function filtersFromQuery(queryParams = {}) {
   };
 }
 
-export default function SearchPage({ queryParams, session, onLogout }) {
+export default function SearchPage({ queryParams, session, onLogout, theme, onToggleTheme }) {
   const queryKey = JSON.stringify(queryParams || {});
   const [filters, setFilters] = useState(() => filtersFromQuery(queryParams));
   const [appliedFilters, setAppliedFilters] = useState(() => filtersFromQuery(queryParams));
@@ -137,7 +137,7 @@ export default function SearchPage({ queryParams, session, onLogout }) {
   }
 
   return (
-    <MainLayout session={session} onLogout={onLogout}>
+    <MainLayout session={session} onLogout={onLogout} theme={theme} onToggleTheme={onToggleTheme}>
       {/* Page header */}
       <div className="page-header">
         <div className="container">

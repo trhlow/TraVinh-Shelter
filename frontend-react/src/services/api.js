@@ -180,7 +180,7 @@ export async function createViewing(propertyId, payload) {
       const existing = JSON.parse(localStorage.getItem('travinh-mock-viewings') || '[]');
       existing.push(record);
       localStorage.setItem('travinh-mock-viewings', JSON.stringify(existing));
-    } catch (_) {
+    } catch {
       // localStorage unavailable — ignore
     }
     return delay(record, 150);
@@ -206,7 +206,7 @@ export async function updateViewingStatus(token, viewingId, status) {
       const existing = JSON.parse(localStorage.getItem('travinh-mock-viewings') || '[]');
       const updated = existing.map((item) => (item.id === viewingId ? { ...item, status } : item));
       localStorage.setItem('travinh-mock-viewings', JSON.stringify(updated));
-    } catch (_) {
+    } catch {
       // localStorage unavailable — ignore
     }
     return delay({ id: viewingId, status }, 120);
@@ -223,7 +223,7 @@ function readMockViewings() {
   try {
     const items = JSON.parse(localStorage.getItem('travinh-mock-viewings') || '[]');
     return Array.isArray(items) ? [...items].reverse() : [];
-  } catch (_) {
+  } catch {
     return [];
   }
 }

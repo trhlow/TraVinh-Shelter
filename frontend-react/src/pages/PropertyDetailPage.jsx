@@ -83,7 +83,7 @@ const CONDITION_LABELS = {
   ev: 'Sạc xe điện',
 };
 
-export default function PropertyDetailPage({ propertyId, session, onLogout }) {
+export default function PropertyDetailPage({ propertyId, session, onLogout, theme, onToggleTheme }) {
   const [property, setProperty] = useState(fallbackProperty);
   const [mediaImages, setMediaImages] = useState(detailImages);
   const [mediaLoading, setMediaLoading] = useState(false);
@@ -142,7 +142,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
   const hasRooms = isTro && Array.isArray(property.rooms) && property.rooms.length > 0;
 
   return (
-    <MainLayout session={session} onLogout={onLogout}>
+    <MainLayout session={session} onLogout={onLogout} theme={theme} onToggleTheme={onToggleTheme}>
       <div className="container">
         {/* Breadcrumb */}
         <nav className="breadcrumb">
@@ -328,14 +328,19 @@ export default function PropertyDetailPage({ propertyId, session, onLogout }) {
               </div>
 
               <div className="contact-buttons">
-                <button className="btn btn-primary btn-md btn-full">
+                <a href={`tel:${brokerPhone.replace(/\s+/g, '')}`} className="btn btn-primary btn-md btn-full">
                   <Icon name="Phone" size={18} />
                   Gọi ngay: {brokerPhone}
-                </button>
-                <button className="contact-btn-zalo">
-                  <Icon name="Mail" size={18} />
+                </a>
+                <a
+                  href={`https://zalo.me/${brokerPhone.replace(/\D/g, '').replace(/^0/, '84')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="contact-btn-zalo"
+                >
+                  <Icon name="MessageCircle" size={18} />
                   Chat Zalo
-                </button>
+                </a>
               </div>
 
               <p className="contact-footer-note">

@@ -1,7 +1,8 @@
 ---
 name: fixer
 description: Sub-agent fix các issue được reviewer báo cáo — không tự ý thay đổi ngoài scope
-model: claude-sonnet-4-6
+model: claude-haiku-4-5
+effort: high
 ---
 
 # Fixer Agent

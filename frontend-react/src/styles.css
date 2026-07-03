@@ -34,6 +34,23 @@
   --color-zalo:             #0068ff;
   --color-scrim:            #000000;
 
+  /* Dashboard sidebar — fixed dark navigation rail, same in both themes */
+  --color-sidebar-bg:       #1a1a1a;
+  --color-sidebar-text:     rgb(255 255 255 / 0.8);
+
+  /* Fixed dark ink — for on-photo badges, avatar fallbacks, statement
+     bands: needs permanent dark contrast, unlike --color-ink which is
+     theme-reactive and flips light in dark mode */
+  --color-ink-fixed:        #222222;
+
+  /* Charts — data-series palette, distinct from the single brand accent */
+  --chart-1: #2563eb;
+  --chart-2: var(--color-success);
+  --chart-3: #f97316;
+  --chart-4: #0ea5e9;
+  --chart-5: #8b5cf6;
+  --chart-6: #94a3b8;
+
   /* Shadows — single tier */
   --shadow-card:     rgba(0,0,0,0.02) 0 0 0 1px,
                      rgba(0,0,0,0.04) 0 2px 6px 0,
@@ -53,6 +70,57 @@
   --container-max:     1280px;
   --section-py:        64px;
   --section-py-mobile: 48px;
+
+  /* Tells the browser to render native controls (select dropdown popups,
+     checkboxes, date pickers, scrollbars) with light chrome — without
+     this, dark-mode text color on our custom form styling can end up
+     unreadable against the browser's default-light native popup. */
+  color-scheme: light;
+}
+
+/* ============================================================
+   DESIGN TOKENS — DARK MODE
+   Same token names, dark-appropriate values. Everything downstream
+   already reads these vars (Pass 8 tokenized the whole app), so this
+   block alone re-themes the site — no per-component CSS needed.
+   Sidebar tokens are intentionally absent here: it's a fixed dark
+   navigation rail in both themes (see --color-sidebar-* above).
+   ============================================================ */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-primary-disabled: #7a1e30;
+
+  --color-canvas:           #121212;
+  --color-surface-soft:     #1c1c1c;
+  --color-surface-strong:   #262626;
+
+  --color-ink:              #f2f2f2;
+  --color-body:             #d4d4d4;
+  --color-muted:            #a3a3a3;
+  --color-muted-soft:       #737373;
+
+  --color-hairline:         #333333;
+  --color-hairline-soft:    #2a2a2a;
+  --color-border-strong:    #525252;
+
+  --color-success:          #4ade80;
+  --color-success-bg:       #14532d;
+  --color-warning:          #fbbf24;
+  --color-warning-bg:       #78350f;
+  --color-error:            #f87171;
+  --color-error-bg:         #7f1d1d;
+
+  --chart-1: #60a5fa;
+  --chart-3: #fb923c;
+  --chart-4: #38bdf8;
+  --chart-5: #a78bfa;
+  --chart-6: #cbd5e1;
+
+  --shadow-card:     rgba(255,255,255,0.06) 0 0 0 1px,
+                     rgba(0,0,0,0.4) 0 2px 6px 0,
+                     rgba(0,0,0,0.5) 0 4px 8px 0;
+  --shadow-dropdown: 0 4px 16px rgba(0,0,0,0.5);
 }
 
 /* ============================================================
@@ -295,6 +363,22 @@ img { display: block; max-width: 100%; }
   gap: 8px;
 }
 
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-soft);
+  color: var(--color-ink);
+  transition: background 160ms ease;
+}
+
+.theme-toggle-btn:hover {
+  background: var(--color-surface-strong);
+}
+
 .navbar-dropdown {
   position: relative;
 }
@@ -347,8 +431,10 @@ img { display: block; max-width: 100%; }
 
 .navbar-dropdown-cat-caption {
   font-size: 13px;
+  line-height: 1.3;
   color: var(--color-muted);
   margin: 0;
+  min-height: 34px; /* reserve 2 lines so all 3 dropdown columns start their link list at the same y */
 }
 
 .navbar-dropdown-link {
@@ -400,6 +486,8 @@ img { display: block; max-width: 100%; }
   .mobile-nav { display: grid; }
   .navbar-nav { display: none; }
   .navbar-desktop-only { display: none; }
+  .navbar-inner { padding: 0 16px; gap: 8px; }
+  .navbar-actions { gap: 6px; }
   body { padding-bottom: 60px; }
 }
 
@@ -451,6 +539,12 @@ img { display: block; max-width: 100%; }
   margin-bottom: 16px;
   text-transform: none;
   letter-spacing: 0;
+}
+
+.footer-link-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .footer-link {
@@ -523,7 +617,7 @@ img { display: block; max-width: 100%; }
 .property-card-image-wrap {
   display: block;
   position: relative;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 1 / 1;
   overflow: hidden;
   border-radius: var(--radius-md);
   background: var(--color-surface-strong);
@@ -533,6 +627,7 @@ img { display: block; max-width: 100%; }
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   transition: transform 300ms ease;
 }
 
@@ -604,12 +699,39 @@ img { display: block; max-width: 100%; }
    HOME — HERO
    ============================================================ */
 .hero {
+  position: relative;
+  overflow: hidden;
   background: var(--color-canvas);
   padding: 64px 0 48px;
   border-bottom: 1px solid var(--color-hairline);
 }
 
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  z-index: 0;
+}
+
+.hero-bg-img {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(3px) saturate(0.9);
+  opacity: 0.85;
+}
+
+.hero-bg-scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--color-canvas);
+  opacity: 0.82;
+}
+
 .hero-content {
+  position: relative;
+  z-index: 1;
   text-align: center;
   max-width: 860px;
   margin: 0 auto;
@@ -895,8 +1017,8 @@ img { display: block; max-width: 100%; }
 
 .dashboard-sidebar {
   width: 240px;
-  background: #1a1a1a;
-  color: rgb(255 255 255 / 0.8);
+  background: var(--color-sidebar-bg);
+  color: var(--color-sidebar-text);
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -1219,8 +1341,8 @@ img { display: block; max-width: 100%; }
 
 .dashboard-cover-preview {
   margin-top: 12px;
-  width: 200px;
-  height: 120px;
+  width: 160px;
+  aspect-ratio: 1 / 1;
   border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid var(--color-hairline);
@@ -1230,6 +1352,7 @@ img { display: block; max-width: 100%; }
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
 }
 
 .dashboard-gallery-grid {
@@ -1307,8 +1430,8 @@ img { display: block; max-width: 100%; }
 
 .dashboard-listing-thumb-wrap {
   position: relative;
-  width: 160px;
-  height: 110px;
+  width: 110px;
+  aspect-ratio: 1 / 1;
   flex-shrink: 0;
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -1318,6 +1441,7 @@ img { display: block; max-width: 100%; }
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
 }
 
 .dashboard-listing-thumb-badge {
@@ -1613,7 +1737,7 @@ img { display: block; max-width: 100%; }
   .dashboard-content { margin-left: 0; }
   .dashboard-main { padding: 20px; }
   .dashboard-topbar { padding: 12px 16px; }
-  .dashboard-listing-thumb-wrap { width: 100%; height: 180px; }
+  .dashboard-listing-thumb-wrap { width: 100%; aspect-ratio: 1 / 1; }
   .dashboard-listing-row { flex-direction: column; }
   .dashboard-listing-actions { width: 100%; }
 }
@@ -1622,7 +1746,7 @@ img { display: block; max-width: 100%; }
    PAGE HEADERS (dark brand top bar)
    ============================================================ */
 .page-header {
-  background: var(--color-ink);
+  background: var(--color-ink-fixed);
   padding: 40px 0;
   color: var(--color-on-primary);
 }
@@ -2125,7 +2249,7 @@ img { display: block; max-width: 100%; }
 }
 
 .sort-select {
-  background: transparent;
+  background: var(--color-canvas);
   border: none;
   font-weight: 600;
   color: var(--color-ink);
@@ -2170,7 +2294,7 @@ img { display: block; max-width: 100%; }
   width: 72px;
   height: 72px;
   border-radius: var(--radius-full);
-  background: var(--color-ink);
+  background: var(--color-ink-fixed);
   color: var(--color-on-primary);
   display: flex;
   align-items: center;
@@ -2430,25 +2554,6 @@ img { display: block; max-width: 100%; }
 .navbar-logo {
   display: flex;
   align-items: center;
-}
-
-.navbar-theme-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-muted);
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: background 160ms ease;
-}
-
-.navbar-theme-btn:hover {
-  background: var(--color-surface-soft);
-  color: var(--color-ink);
 }
 
 .layout-root {

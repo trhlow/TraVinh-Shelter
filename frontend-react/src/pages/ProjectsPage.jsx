@@ -45,7 +45,7 @@ const STATUS_BADGE = {
   'Sắp mở bán': 'neutral',
 };
 
-export default function ProjectsPage({ session, onLogout }) {
+export default function ProjectsPage({ session, onLogout, theme, onToggleTheme }) {
   const [ward, setWard] = useState('all');
   const [status, setStatus] = useState('all');
 
@@ -55,7 +55,7 @@ export default function ProjectsPage({ session, onLogout }) {
   )), [status, ward]);
 
   return (
-    <MainLayout session={session} onLogout={onLogout}>
+    <MainLayout session={session} onLogout={onLogout} theme={theme} onToggleTheme={onToggleTheme}>
       {/* Page header */}
       <div className="page-header">
         <div className="container">

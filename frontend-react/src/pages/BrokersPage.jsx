@@ -5,7 +5,7 @@ import { fetchProperties } from '../services/api.js';
 import { MOCK_PROPERTIES } from '../services/mockData.js';
 import { WARDS } from '../data/locations.js';
 
-export default function BrokersPage({ session, onLogout }) {
+export default function BrokersPage({ session, onLogout, theme, onToggleTheme }) {
   const [properties, setProperties] = useState(MOCK_PROPERTIES);
   const [query, setQuery] = useState('');
   const [ward, setWard] = useState('all');
@@ -38,7 +38,7 @@ export default function BrokersPage({ session, onLogout }) {
   }, [properties, query, sort, ward]);
 
   return (
-    <MainLayout session={session} onLogout={onLogout}>
+    <MainLayout session={session} onLogout={onLogout} theme={theme} onToggleTheme={onToggleTheme}>
       {/* Page header */}
       <div className="page-header">
         <div className="container">
