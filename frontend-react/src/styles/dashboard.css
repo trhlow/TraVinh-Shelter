@@ -743,3 +743,46 @@
   color: var(--color-success);
   margin: 0;
 }
+
+/* ── Heatmap (ward × category) ─────────────────────────── */
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: minmax(110px, auto) repeat(3, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+
+.heatmap-col-label,
+.heatmap-row-label {
+  font-size: 13px;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+.heatmap-row-label { text-align: left; }
+
+.heatmap-cell {
+  position: relative;
+  height: 44px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.heatmap-cell-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--color-primary);
+  pointer-events: none;
+}
+
+.heatmap-cell-count {
+  position: relative;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}

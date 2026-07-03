@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { WARDS } from '../data/locations.js';
+import { Fragment, useEffect, useState } from 'react';
+import { CATEGORIES, WARDS } from '../data/locations.js';
 
 // Inline SVG resolves var(--color-*) fine, so charts stay theme-reactive.
 const CHART_PALETTE = [
@@ -345,6 +345,61 @@ export function GaugeChart({ title, value, max = 100, label }) {
           <span className="gauge-pct">{pct}%</span>
           {label && <span className="gauge-sub-label">{label}</span>}
         </div>
+      </div>
+    </section>
+  );
+}
+
+// Ward × category matrix; full grid always renders so density is comparable between loads.
+export function buildHeatmapData(items, getWardCode, getCategorySlug) {
+  let max = 1;
+  const rows = WARDS.filter((ward) => ward.code !== 'all').map((ward) => ({
+    code: ward.code,
+    label: ward.label,
+    cells: CATEGORIES.map((category) => {
+      const count = items.filter((item) => (
+        getWardCode(item) === ward.code && getCategorySlug(item) === category.slug
+      )).length;
+      if (count > max) max = count;
+      return { category: category.slug, categoryLabel: category.label, count };
+    }),
+  }));
+  return { rows, max };
+}
+
+/**
+ * HeatmapChart — ward rows × category columns; cell opacity scales with count.
+ * Cells are buttons so the admin can drill down into the matching property list.
+ */
+export function HeatmapChart({ title, data, onSelectCell }) {
+  return (
+    <section className="chart-panel">
+      <h2 className="chart-title">{title}</h2>
+      <div className="heatmap-grid">
+        <span className="heatmap-corner" />
+        {CATEGORIES.map((category) => (
+          <span className="heatmap-col-label" key={category.slug}>{category.label}</span>
+        ))}
+        {data.rows.map((row) => (
+          <Fragment key={row.code}>
+            <span className="heatmap-row-label">{row.label}</span>
+            {row.cells.map((cell) => (
+              <button
+                type="button"
+                className="heatmap-cell"
+                key={cell.category}
+                aria-label={`${row.label} · ${cell.categoryLabel}: ${cell.count} tin`}
+                onClick={() => onSelectCell?.({ ward: row.code, category: cell.category })}
+              >
+                <span
+                  className="heatmap-cell-fill"
+                  style={{ opacity: cell.count === 0 ? 0.06 : 0.15 + 0.85 * (cell.count / data.max) }}
+                />
+                <span className="heatmap-cell-count">{cell.count}</span>
+              </button>
+            ))}
+          </Fragment>
+        ))}
       </div>
     </section>
   );

@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { act, cleanup, render, renderHook, screen } from '@testing-library/react';
-import { buildWardData, LiveLineChart, useLiveSeries, WardBarChart } from './Charts.jsx';
+import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
+import { buildHeatmapData, buildWardData, HeatmapChart, LiveLineChart, useLiveSeries, WardBarChart } from './Charts.jsx';
 
 function stubMatchMedia(reducedMotion) {
   vi.stubGlobal('matchMedia', vi.fn(() => ({
@@ -112,4 +112,34 @@ test('LiveLineChart shows title, current value, and a percent-change badge', () 
   expect(screen.getByRole('heading', { name: 'Hoạt động hệ thống' })).toBeInTheDocument();
   expect(screen.getByText('điểm')).toBeInTheDocument();
   expect(screen.getByText(/^[+-]?\d+(\.\d+)?%$/)).toBeInTheDocument();
+});
+
+// ── HeatmapChart ──────────────────────────────────────────
+
+test('buildHeatmapData always yields 4 wards x 3 categories with counts and max', () => {
+  const items = [
+    { ward: 'phuong-tra-vinh', category: 'tro' },
+    { ward: 'phuong-tra-vinh', category: 'tro' },
+    { ward: 'phuong-long-duc', category: 'dat' },
+  ];
+  const data = buildHeatmapData(items, (item) => item.ward, (item) => item.category);
+
+  expect(data.rows).toHaveLength(4);
+  expect(data.rows[0].cells).toHaveLength(3);
+  const traVinhTro = data.rows.find((row) => row.code === 'phuong-tra-vinh').cells
+    .find((cell) => cell.category === 'tro');
+  expect(traVinhTro.count).toBe(2);
+  expect(data.max).toBe(2);
+});
+
+test('HeatmapChart renders labels and fires onSelectCell with ward + category', () => {
+  const items = [{ ward: 'phuong-hoa-thuan', category: 'nha' }];
+  const data = buildHeatmapData(items, (item) => item.ward, (item) => item.category);
+  const onSelectCell = vi.fn();
+  render(<HeatmapChart title="Mật độ tin theo phường" data={data} onSelectCell={onSelectCell} />);
+
+  expect(screen.getByRole('heading', { name: 'Mật độ tin theo phường' })).toBeInTheDocument();
+  expect(screen.getByText('Phường Hòa Thuận')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Phường Hòa Thuận · Nhà: 1 tin' }));
+  expect(onSelectCell).toHaveBeenCalledWith({ ward: 'phuong-hoa-thuan', category: 'nha' });
 });
