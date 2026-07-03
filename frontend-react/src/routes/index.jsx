@@ -1,4 +1,4 @@
-import AdminDashboard from '../pages/AdminDashboard.jsx';
+import AdminApp from '../admin-ra/AdminApp.jsx';
 import BrokersPage from '../pages/BrokersPage.jsx';
 import BrokerDashboard from '../pages/BrokerDashboard.jsx';
 import HomePage from '../pages/HomePage.jsx';
@@ -6,22 +6,6 @@ import LoginPage from '../pages/LoginPage.jsx';
 import ProjectsPage from '../pages/ProjectsPage.jsx';
 import PropertyDetailPage from '../pages/PropertyDetailPage.jsx';
 import SearchPage from '../pages/SearchPage.jsx';
-
-function AdminOverviewRoute(props) {
-  return <AdminDashboard {...props} section="overview" currentPath="/admin/overview" />;
-}
-
-function AdminBrokersRoute(props) {
-  return <AdminDashboard {...props} section="brokers" currentPath="/admin/brokers" />;
-}
-
-function AdminPropertiesRoute(props) {
-  return <AdminDashboard {...props} section="properties" currentPath="/admin/properties" />;
-}
-
-function AdminViewingsRoute(props) {
-  return <AdminDashboard {...props} section="viewings" currentPath="/admin/viewings" />;
-}
 
 function BrokerDashboardRoute(props) {
   return <BrokerDashboard {...props} section="dashboard" currentPath="/broker/dashboard" />;
@@ -57,16 +41,16 @@ export const routes = {
   '/broker/profile': BrokerProfileRoute,
   '/broker/properties': BrokerPropertiesRoute,
   '/broker/viewings': BrokerViewingsRoute,
-  '/admin': AdminOverviewRoute,
-  '/admin/overview': AdminOverviewRoute,
-  '/admin/brokers': AdminBrokersRoute,
-  '/admin/properties': AdminPropertiesRoute,
-  '/admin/viewings': AdminViewingsRoute,
 };
 
 export function resolveRoute(path) {
   const [pathname, queryString = ''] = path.split('?');
   const queryParams = Object.fromEntries(new URLSearchParams(queryString));
+  // Every /admin* path resolves to the SAME component so react-admin's own HashRouter
+  // owns the sub-routing and the outer hash router never remounts <Admin> (see Task 0 spike).
+  if (pathname.startsWith('/admin')) {
+    return { Page: AdminApp, params: { queryParams } };
+  }
   if (pathname.startsWith('/property/') && pathname !== '/property/detail') {
     return { Page: PropertyDetailPage, params: { propertyId: pathname.replace('/property/', ''), queryParams } };
   }

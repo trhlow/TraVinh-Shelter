@@ -53,7 +53,7 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
       const profile = await fetchCurrentUser(auth.accessToken).catch(() => ({}));
       const nextSession = createSession(auth, profile);
       onLogin(nextSession);
-      window.location.hash = nextSession.role === 'ADMIN' ? '#/admin/overview' : nextSession.role === 'BROKER' ? '#/broker/dashboard' : '#/';
+      window.location.hash = nextSession.role === 'ADMIN' ? '#/admin' : nextSession.role === 'BROKER' ? '#/broker/dashboard' : '#/';
     } catch (exception) {
       setServerError(exception.message || 'Đăng nhập thất bại.');
     } finally {
@@ -74,7 +74,7 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
   }
 
   if (session) {
-    const href = session.role === 'ADMIN' ? '#/admin/overview' : session.role === 'BROKER' ? '#/broker/dashboard' : '#/login';
+    const href = session.role === 'ADMIN' ? '#/admin' : session.role === 'BROKER' ? '#/broker/dashboard' : '#/login';
     return (
       <div className="auth-shell">
         <div className="auth-card">

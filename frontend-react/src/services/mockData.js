@@ -1,4 +1,4 @@
-export const MOCK_PROPERTIES = [
+const RAW_MOCK_PROPERTIES = [
   {
     id: 'p-586',
     title: 'Nhà phố 1 trệt 2 lầu, KDC 586',
@@ -229,6 +229,19 @@ export const MOCK_PROPERTIES = [
     },
   },
 ];
+
+// Admin-facing fields the react-admin resources rely on (enum status, sortable createdAt,
+// broker id matching MOCK_ADMIN_BROKERS). Kept out of the raw literals above so the public
+// site data stays untouched; a HIDDEN item is included so admin listing can be seen to
+// surface listings the public search hides.
+const ADMIN_STATUS_CYCLE = ['AVAILABLE', 'AVAILABLE', 'HIDDEN', 'PENDING', 'SOLD', 'RENTED'];
+
+export const MOCK_PROPERTIES = RAW_MOCK_PROPERTIES.map((item, index) => ({
+  ...item,
+  rawStatus: ADMIN_STATUS_CYCLE[index % ADMIN_STATUS_CYCLE.length],
+  createdAt: new Date(Date.UTC(2026, 0, 1 + index)).toISOString(),
+  broker: { ...item.broker, id: `b-${(index % 3) + 1}` },
+}));
 
 export const BROKER_DASHBOARD = {
   activeListings: 18,

@@ -149,7 +149,7 @@ export function Header({ session, onLogout, theme, onToggleTheme }) {
             </a>
           )}
           {isAdmin && (
-            <a href="#/admin/overview" className="btn btn-ghost btn-sm navbar-desktop-only">
+            <a href="#/admin" className="btn btn-ghost btn-sm navbar-desktop-only">
               <Icon name="ShieldCheck" size={15} /> Admin
             </a>
           )}
@@ -238,7 +238,7 @@ export default function MainLayout({ children, session, onLogout, theme, onToggl
           { href: '#/projects', icon: 'Building', label: 'Dự án' },
           { href: '#/brokers', icon: 'IdCard', label: 'Môi giới' },
           {
-            href: session?.role === 'BROKER' ? '#/broker/properties' : session?.role === 'ADMIN' ? '#/admin/overview' : '#/login',
+            href: session?.role === 'BROKER' ? '#/broker/properties' : session?.role === 'ADMIN' ? '#/admin' : '#/login',
             icon: session?.role === 'BROKER' ? 'Plus' : 'User',
             label: session?.role === 'BROKER' ? 'Đăng tin' : 'Tài khoản',
           },

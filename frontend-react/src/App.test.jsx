@@ -2,6 +2,8 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import App from './App.jsx';
+import { resolveRoute } from './routes/index.jsx';
+import AdminApp from './admin-ra/AdminApp.jsx';
 
 beforeEach(() => {
   window.location.hash = '#/';
@@ -65,26 +67,24 @@ test('routes to broker properties page for broker sessions', () => {
   expect(screen.getAllByRole('heading', { name: 'Tin đăng của tôi' }).length).toBeGreaterThan(0);
 });
 
-test('routes to all required admin pages for admin sessions', () => {
-  const adminSession = {
+test('resolves every admin sub-path to the react-admin app', () => {
+  // /admin/* is now owned by react-admin's own router; the outer hash router maps every
+  // admin path to the single AdminApp component (see routes/index.jsx).
+  for (const path of ['/admin', '/admin/brokers', '/admin/properties', '/admin/users', '/admin/viewings']) {
+    expect(resolveRoute(path).Page).toBe(AdminApp);
+  }
+});
+
+test('mounts the admin overview dashboard for an admin session', async () => {
+  window.localStorage.setItem('travinh-realty-session', JSON.stringify({
     token: 'test-token',
     email: 'admin@congtinland.vn',
     role: 'ADMIN',
     userId: 'admin-id',
-  };
-  const cases = [
-    ['#/admin/overview', 'Tổng quan'],
-    ['#/admin/brokers', 'Môi giới'],
-    ['#/admin/properties', 'Bài đăng'],
-  ];
-
-  for (const [hash, heading] of cases) {
-    cleanup();
-    window.localStorage.setItem('travinh-realty-session', JSON.stringify(adminSession));
-    window.location.hash = hash;
-    render(<App />);
-    expect(screen.getAllByRole('heading', { name: heading }).length).toBeGreaterThan(0);
-  }
+  }));
+  window.location.hash = '#/admin';
+  render(<App />);
+  expect(await screen.findByRole('heading', { name: 'Tổng quan' }, { timeout: 5000 })).toBeInTheDocument();
 });
 
 test('login page hides demo role account shortcuts', () => {

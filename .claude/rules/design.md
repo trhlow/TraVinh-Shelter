@@ -170,6 +170,11 @@ Property card grid: 1-up mobile → 2-up tablet → 3–4-up desktop.
 - Border mặc định: `1px solid var(--color-hairline)`
 - Text input: focus state dùng `2px solid var(--color-ink)` — không dùng glow hay ring màu
 
+> **Ngoại lệ `/admin`**: khu vực quản trị `/admin/*` (react-admin) dùng Material UI mặc định của
+> react-admin, KHÔNG áp dụng token/typography/component ở trên. Ngoại lệ có chủ đích, chỉ giới hạn
+> trong `/admin`, không áp dụng cho bất kỳ route nào khác. (Tab "Tổng quan" là component custom
+> `admin-ra/dashboard/OverviewDashboard.jsx` vẫn dùng widget/token của site.)
+
 ## Cấu trúc trang
 
 1. **Navbar** — sticky, `--color-canvas`, 80px height, 1px bottom hairline; logo trái / links / account phải;

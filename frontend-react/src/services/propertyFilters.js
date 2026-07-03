@@ -37,6 +37,19 @@ export function buildPropertyQuery(filters) {
   return params.toString();
 }
 
+// Serializes react-admin list params (already 0-indexed page + `field,dir` sort) into a
+// backend query string for the /admin/* endpoints. Empty values are skipped.
+export function buildAdminQuery(params = {}) {
+  const { page, size, sort, q, status } = params;
+  const search = new URLSearchParams();
+  if (page != null) search.set('page', String(page));
+  if (size != null) search.set('size', String(size));
+  if (sort) search.set('sort', sort);
+  if (q) search.set('q', q);
+  if (status) search.set('status', status);
+  return search.toString();
+}
+
 function withDefaultFilters(filters = {}) {
   return {
     query: '',

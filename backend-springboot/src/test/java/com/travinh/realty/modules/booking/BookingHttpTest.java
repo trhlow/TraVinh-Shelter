@@ -25,13 +25,19 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
+import com.travinh.realty.modules.booking.model.ViewingAppointment;
 import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
@@ -101,7 +107,9 @@ class BookingHttpTest {
     @Test
     void adminViewingsRequireAdminRole() throws Exception {
         UUID appointmentId = UUID.randomUUID();
-        when(bookingService.listAll()).thenReturn(List.of(response(UUID.randomUUID())));
+        UUID viewingPropertyId = UUID.randomUUID();
+        when(bookingService.listAll(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.<Pageable>any()))
+                .thenReturn(new PageImpl<>(List.of(response(viewingPropertyId)), PageRequest.of(0, 50), 1));
         when(bookingService.updateStatus(eq(appointmentId), eq(AppointmentStatus.CONFIRMED)))
                 .thenReturn(response(UUID.randomUUID()));
 
@@ -116,7 +124,9 @@ class BookingHttpTest {
         User admin = user("admin@example.com", UserRole.ADMIN);
         authenticate(admin);
         mockMvc.perform(get("/admin/viewings").header("Authorization", bearer(admin)))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].propertyId").value(viewingPropertyId.toString()))
+                .andExpect(jsonPath("$.totalElements").value(1));
         mockMvc.perform(patch("/admin/viewings/{id}/status", appointmentId).header("Authorization", bearer(admin))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"CONFIRMED\"}"))
                 .andExpect(status().isOk());

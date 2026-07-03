@@ -5,17 +5,20 @@ import com.travinh.realty.modules.user.UserProfileService;
 import com.travinh.realty.modules.user.dto.CreateBrokerRequest;
 import com.travinh.realty.modules.user.dto.UpdateUserStatusRequest;
 import com.travinh.realty.modules.user.dto.UserProfileResponse;
+import com.travinh.realty.modules.user.model.UserStatus;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -35,14 +38,18 @@ public class AdminBrokerController {
         return profiles.createBroker(request);
     }
 
-    @org.springframework.web.bind.annotation.GetMapping("/users")
-    public PagedResponse<UserProfileResponse> listUsers(@PageableDefault(size = 50) Pageable pageable) {
-        return PagedResponse.from(profiles.listUsers(pageable));
+    @GetMapping("/users")
+    public PagedResponse<UserProfileResponse> listUsers(@RequestParam(required = false) String q,
+                                                        @RequestParam(required = false) UserStatus status,
+                                                        @PageableDefault(size = 50) Pageable pageable) {
+        return PagedResponse.from(profiles.listUsers(q, status, pageable));
     }
 
-    @org.springframework.web.bind.annotation.GetMapping("/brokers")
-    public PagedResponse<UserProfileResponse> listBrokers(@PageableDefault(size = 50) Pageable pageable) {
-        return PagedResponse.from(profiles.listBrokers(pageable));
+    @GetMapping("/brokers")
+    public PagedResponse<UserProfileResponse> listBrokers(@RequestParam(required = false) String q,
+                                                          @RequestParam(required = false) UserStatus status,
+                                                          @PageableDefault(size = 50) Pageable pageable) {
+        return PagedResponse.from(profiles.listBrokers(q, status, pageable));
     }
 
     @PatchMapping("/users/{userId}/status")

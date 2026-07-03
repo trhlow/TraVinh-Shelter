@@ -1,6 +1,6 @@
 import { detailImages, searchProperties } from '../data/templateData.js';
 import { BROKER_DASHBOARD, MOCK_PROPERTIES, MOCK_USERS, MOCK_ADMIN_BROKERS } from './mockData.js';
-import { buildPropertyQuery, filterProperties } from './propertyFilters.js';
+import { buildAdminQuery, buildPropertyQuery, filterProperties } from './propertyFilters.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true';
@@ -194,9 +194,10 @@ export async function fetchBrokerViewings(token) {
   return request('/viewings/mine', { token });
 }
 
-export async function fetchAdminViewings(token) {
+export async function fetchAdminViewings(token, params) {
   if (USE_MOCK_API) return delay(readMockViewings(), 120);
-  return request('/admin/viewings', { token });
+  const qs = buildAdminQuery(params);
+  return request(`/admin/viewings${qs ? `?${qs}` : ''}`, { token });
 }
 
 export async function updateViewingStatus(token, viewingId, status) {
@@ -227,22 +228,23 @@ function readMockViewings() {
   }
 }
 
-export async function fetchAdminUsers(token) {
+export async function fetchAdminUsers(token, params) {
   if (USE_MOCK_API) return delay(MOCK_USERS, 120);
-  const response = await request('/admin/users?size=100', { token });
-  return response.content || [];
+  const qs = buildAdminQuery(params);
+  return request(`/admin/users${qs ? `?${qs}` : ''}`, { token });
 }
 
-export async function fetchAdminBrokers(token) {
+export async function fetchAdminBrokers(token, params) {
   if (USE_MOCK_API) return delay(MOCK_ADMIN_BROKERS, 120);
-  const response = await request('/admin/brokers?size=100', { token });
-  return response.content || [];
+  const qs = buildAdminQuery(params);
+  return request(`/admin/brokers${qs ? `?${qs}` : ''}`, { token });
 }
 
-export async function fetchAdminProperties(token) {
+export async function fetchAdminProperties(token, params) {
   if (USE_MOCK_API) return delay(MOCK_PROPERTIES, 120);
-  const response = await request('/admin/properties?size=100', { token });
-  return normalizePagedProperties(response);
+  const qs = buildAdminQuery(params);
+  const response = await request(`/admin/properties${qs ? `?${qs}` : ''}`, { token });
+  return { ...response, content: (response.content || []).map((item) => normalizeProperty(item)) };
 }
 
 export async function createBroker(token, payload) {
@@ -278,7 +280,9 @@ async function request(path, options = {}) {
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(body.message || `Request failed with ${response.status}`);
+    const error = new Error(body.message || `Request failed with ${response.status}`);
+    error.status = response.status;
+    throw error;
   }
   if (response.status === 204) return null;
   return response.json();
