@@ -1,3 +1,6 @@
+import { useEffect, useState } from 'react';
+import { WARDS } from '../data/locations.js';
+
 // Inline SVG resolves var(--color-*) fine, so charts stay theme-reactive.
 const CHART_PALETTE = [
   'var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)',
@@ -153,6 +156,141 @@ export function HorizontalBarChart({ title, data }) {
                 }}
               />
             </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// Groups items into one entry per real ward (all 4, even at 0) so ward charts
+// stay visually comparable between renders and dashboards.
+export function buildWardData(items, getWardCode) {
+  const total = items.length;
+  return WARDS.filter((ward) => ward.code !== 'all').map((ward) => {
+    const count = items.filter((item) => getWardCode(item) === ward.code).length;
+    return {
+      code: ward.code,
+      label: ward.label,
+      count,
+      pct: total > 0 ? Math.round((count / total) * 100) : 0,
+    };
+  });
+}
+
+function prefersReducedMotion() {
+  return typeof window !== 'undefined'
+    && typeof window.matchMedia === 'function'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+// Mean-reverting random walk: drifts back toward the anchor so the simulated
+// activity stays believable instead of wandering off.
+function nextPoint(previous, anchor, volatility) {
+  const reversion = (anchor - previous) * 0.2;
+  const noise = (Math.random() * 2 - 1) * anchor * volatility;
+  return Math.max(0, previous + reversion + noise);
+}
+
+function seedSeries(anchor, points, volatility) {
+  const series = [];
+  let value = anchor;
+  for (let index = 0; index < points; index += 1) {
+    value = nextPoint(value, anchor, volatility);
+    series.push(value);
+  }
+  return series;
+}
+
+// Sliding window of simulated live values anchored to a real metric.
+// Static under prefers-reduced-motion: the current series stays visible, it just stops ticking.
+export function useLiveSeries(baseValue, { points = 32, intervalMs = 1200, volatility = 0.04 } = {}) {
+  const anchor = Math.max(1, baseValue || 0);
+  const [series, setSeries] = useState(() => seedSeries(anchor, points, volatility));
+
+  useEffect(() => {
+    // Dashboards mount with zeroed stats, then fetch — reseed so the window (and the
+    // percent-change badge) reflects the real anchor instead of the initial drift.
+    setSeries(seedSeries(anchor, points, volatility));
+    if (prefersReducedMotion()) return undefined;
+    const id = setInterval(() => {
+      setSeries((current) => [
+        ...current.slice(1),
+        nextPoint(current[current.length - 1], anchor, volatility),
+      ]);
+    }, intervalMs);
+    return () => clearInterval(id);
+  }, [anchor, points, intervalMs, volatility]);
+
+  return series;
+}
+
+/**
+ * LiveLineChart — stock-ticker style line: big current value plus the percent
+ * change over the visible window, green when up / red when down.
+ */
+export function LiveLineChart({ title, baseValue, unit }) {
+  const series = useLiveSeries(baseValue);
+  const current = series[series.length - 1];
+  const first = series[0] || 1;
+  const changePct = ((current - first) / first) * 100;
+  const rising = changePct >= 0;
+
+  const width = 100;
+  const height = 32;
+  const min = Math.min(...series);
+  const span = Math.max(...series) - min || 1;
+  const stepX = width / (series.length - 1);
+  const coords = series.map((value, index) => (
+    `${(index * stepX).toFixed(2)},${(height - ((value - min) / span) * height).toFixed(2)}`
+  ));
+  const linePath = `M${coords.join(' L')}`;
+  const areaPath = `${linePath} L${width},${height} L0,${height} Z`;
+
+  return (
+    <section className="chart-panel live-chart-panel">
+      <h2 className="chart-title">{title}</h2>
+      <div className="live-chart-value-row">
+        <span className="live-chart-value">{Math.round(current)}</span>
+        {unit && <span className="live-chart-unit">{unit}</span>}
+        <span className={`live-chart-change ${rising ? 'is-up' : 'is-down'}`}>
+          {`${rising ? '+' : ''}${changePct.toFixed(1)}%`}
+        </span>
+      </div>
+      <svg className="live-chart-svg" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
+        <path className="live-chart-area" d={areaPath} />
+        <path className="live-chart-line" d={linePath} />
+      </svg>
+    </section>
+  );
+}
+
+/**
+ * WardBarChart — one real column per ward with the count on top, ward name and
+ * percent share underneath (chart + number + text combined).
+ * Expects `data` from buildWardData so all 4 wards always render.
+ */
+export function WardBarChart({ title, data }) {
+  const max = Math.max(...data.map((ward) => ward.count), 1);
+
+  return (
+    <section className="chart-panel">
+      <h2 className="chart-title">{title}</h2>
+      <div className="ward-bar-cols">
+        {data.map((ward, index) => (
+          <div className="ward-bar-col" key={ward.code}>
+            <span className="ward-bar-count">{ward.count}</span>
+            <div className="ward-bar-track">
+              <span
+                className="ward-bar-fill"
+                style={{
+                  height: `${Math.max(4, (ward.count / max) * 100)}%`,
+                  backgroundColor: CHART_PALETTE[index % CHART_PALETTE.length],
+                }}
+              />
+            </div>
+            <span className="ward-bar-name">{ward.label}</span>
+            <span className="ward-bar-pct">{ward.pct}%</span>
           </div>
         ))}
       </div>

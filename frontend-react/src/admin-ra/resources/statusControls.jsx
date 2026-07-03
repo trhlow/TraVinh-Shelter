@@ -81,6 +81,11 @@ export function ToggleAccountStatus({ resource }) {
   const [update, { isPending }] = useUpdate();
   if (!record) return null;
 
+  // The system has a single admin — locking it would lose access permanently.
+  if (record.role === 'ADMIN') {
+    return <Chip size="small" variant="outlined" disabled label="Quản trị viên" />;
+  }
+
   const locked = record.status !== 'ACTIVE';
   const next = locked ? 'ACTIVE' : 'LOCKED';
 

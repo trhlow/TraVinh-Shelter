@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { DonutChart, GaugeChart } from '../../components/Charts.jsx';
+import { buildWardData, DonutChart, GaugeChart, LiveLineChart, WardBarChart } from '../../components/Charts.jsx';
 import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../../components/DashboardWidgets.jsx';
-import { wardLabel, categoryLabel } from '../../data/locations.js';
+import { categoryLabel } from '../../data/locations.js';
 import { fetchAdminBrokers, fetchAdminProperties, fetchAdminUsers } from '../../services/api.js';
 import { loadStoredSession } from '../../services/session.js';
 
@@ -72,16 +72,7 @@ export default function OverviewDashboard() {
     return sorted.length > 0 ? sorted : [{ label: 'Chưa có dữ liệu', value: 0 }];
   }, [properties]);
 
-  const regionData = useMemo(() => {
-    const counts = new Map();
-    properties.forEach((property) => {
-      const label = wardLabel(property.ward);
-      counts.set(label, (counts.get(label) || 0) + 1);
-    });
-    const total = properties.length || 1;
-    return [...counts.entries()].sort((a, b) => b[1] - a[1])
-      .map(([name, count]) => ({ name, count, pct: Math.round((count / total) * 100) }));
-  }, [properties]);
+  const wardData = useMemo(() => buildWardData(properties, (property) => property.ward), [properties]);
 
   const recentProperties = useMemo(() => (
     [...properties].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5)
@@ -101,6 +92,15 @@ export default function OverviewDashboard() {
         <StatCard icon="Building" title="Bài đăng" value={stats.posts} tone="navy" />
       </div>
 
+      <div className="dashboard-live-row">
+        <LiveLineChart
+          title="Hoạt động hệ thống (thời gian thực)"
+          baseValue={stats.visiblePosts * 12 + stats.posts}
+          unit="điểm hoạt động"
+        />
+        <WardBarChart title="BĐS theo khu vực Trà Vinh" data={wardData} />
+      </div>
+
       <div className="dashboard-charts-row">
         <GaugeChart title="Tỷ lệ bài đăng hiển thị" value={visiblePercent} max={100} label="Đang hiển thị" />
         <DonutChart title="Cơ cấu tài khoản" data={roleChart} centerLabel="tài khoản" />
@@ -108,26 +108,6 @@ export default function OverviewDashboard() {
       </div>
 
       <div className="dashboard-panels-row">
-        <DashboardPanel title="BĐS theo khu vực Trà Vinh" count={`${regionData.length} khu vực`}>
-          {loading ? <LoadingRows rows={4} /> : regionData.length === 0 ? (
-            <StateBlock icon="MapPin" title="Chưa có dữ liệu khu vực" description="Khi có bài đăng, phân bố theo khu vực sẽ hiển thị tại đây." />
-          ) : (
-            <div className="region-list">
-              {regionData.map((region) => (
-                <div className="region-row" key={region.name}>
-                  <div className="region-meta">
-                    <span className="region-name">{region.name}</span>
-                    <span className="region-count">{region.count} tin · {region.pct}%</span>
-                  </div>
-                  <div className="region-bar">
-                    <div className="region-fill" style={{ width: `${region.pct}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </DashboardPanel>
-
         <DashboardPanel title="Bài đăng mới trong hệ thống" count={`${recentProperties.length} tin mới nhất`}>
           {loading ? <LoadingRows rows={5} /> : recentProperties.length === 0 ? (
             <StateBlock title="Chưa có bài đăng" description="Bài đăng mới sẽ hiển thị tại đây." />

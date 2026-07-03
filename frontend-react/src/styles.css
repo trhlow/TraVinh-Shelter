@@ -1220,6 +1220,17 @@ img { display: block; max-width: 100%; }
   .dashboard-charts-row { grid-template-columns: 1fr; }
 }
 
+.dashboard-live-row {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-live-row { grid-template-columns: 1fr; }
+}
+
 .dashboard-panels-row {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

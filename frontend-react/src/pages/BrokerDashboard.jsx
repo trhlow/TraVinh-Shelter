@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { DonutChart, GaugeChart, HorizontalBarChart } from '../components/Charts.jsx';
+import { buildWardData, DonutChart, GaugeChart, HorizontalBarChart, LiveLineChart, WardBarChart } from '../components/Charts.jsx';
 import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../components/DashboardWidgets.jsx';
 import ViewingsPanel from '../components/dashboard/ViewingsPanel.jsx';
 import BrandLogo from '../components/BrandLogo.jsx';
@@ -135,6 +135,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
 
   const statusChart = useMemo(() => chartBy(listings, (listing) => listing.statusLabel || 'Đang hiển thị'), [listings]);
   const categoryChart = useMemo(() => chartBy(listings, (listing) => categoryLabel(listing.category)), [listings]);
+  const wardChart = useMemo(() => buildWardData(listings, (listing) => listing.ward), [listings]);
   const profileCompletion = useMemo(() => {
     const fields = [
       profileForm?.fullName || profile?.fullName,
@@ -390,6 +391,15 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                 <StatCard icon="Building" title="Tổng tin đăng" value={dashboardStats.totalListings} tone="navy" trend={{ value: '+9%', direction: 'up' }} />
                 <StatCard icon="Eye" title="Đang hiển thị" value={dashboardStats.activeListings} tone="green" trend={{ value: '+6%', direction: 'up' }} />
                 <StatCard icon="Users" title="Khách quan tâm" value={dashboardStats.leads} tone="orange" trend={{ value: '+18%', direction: 'up' }} />
+              </div>
+
+              <div className="dashboard-live-row">
+                <LiveLineChart
+                  title="Hoạt động tin đăng"
+                  baseValue={dashboardStats.estimatedViews + dashboardStats.totalListings}
+                  unit="lượt quan tâm"
+                />
+                <WardBarChart title="Tin đăng theo phường" data={wardChart} />
               </div>
 
               <div className="dashboard-charts-row">
