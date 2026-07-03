@@ -20,9 +20,9 @@ export function AccountStatusToggle({ user, saving, onToggle }) {
 
 export default function AccountsSection({ data, loading, saving, actions }) {
   const columns = [
-    { key: 'fullName', label: 'Họ tên', render: (user) => user.fullName || user.username },
+    { key: 'fullName', label: 'Họ tên', render: (user) => user.fullName || user.username, csv: (user) => user.fullName || user.username },
     { key: 'email', label: 'Email' },
-    { key: 'role', label: 'Vai trò', render: (user) => ROLE_LABELS[user.role] || user.role },
+    { key: 'role', label: 'Vai trò', render: (user) => ROLE_LABELS[user.role] || user.role, csv: (user) => ROLE_LABELS[user.role] || user.role },
     {
       key: 'status',
       label: 'Trạng thái',

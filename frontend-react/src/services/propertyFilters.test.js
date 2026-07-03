@@ -13,9 +13,13 @@ describe('property filters', () => {
       ward: 'phuong-long-duc',
     });
 
-    // MOCK_PROPERTIES now clones each raw listing into 3 ward/category-rotated variants
-    // (see mockData.js) so only the variant landing on dat + phuong-long-duc matches here.
-    expect(result.map((item) => item.id)).toEqual(['p-ql53-v2']);
+    // MOCK_PROPERTIES clones each raw listing into 3 variants; variant 0 keeps the original
+    // ward/category (p-ql53, p-vuon are both dat + phuong-long-duc originals), and only
+    // variants 1-2 rotate through WARD_CYCLE/CATEGORY_CYCLE (see mockData.js). Of those,
+    // only p-ql53's variant 2 lands back on dat + phuong-long-duc; p-vuon's rotated variants
+    // land elsewhere, and p-cau-ke's rotated variant 2 matches ward+category but its address
+    // ("Phường Hòa Thuận") never matches the "long duc" query text.
+    expect(result.map((item) => item.id)).toEqual(['p-ql53', 'p-ql53-v2', 'p-vuon']);
   });
 
   test('builds API query without default filter noise', () => {

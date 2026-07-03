@@ -323,6 +323,7 @@ function normalizeProperty(item, index = 0) {
     rawStatus: item.status || 'AVAILABLE',
     statusLabel: statusLabel(item.status),
     status: statusLabel(item.status),
+    adminStatusLabel: statusLabel(item.status),
     area: Number(attributes.area || 0),
     size: attributes.size || (attributes.area ? `${attributes.area}m²` : 'Đang cập nhật'),
     bedrooms: Number(attributes.bedrooms || 0),
@@ -354,6 +355,7 @@ function normalizeProperty(item, index = 0) {
 function statusLabel(status) {
   const labels = {
     AVAILABLE: 'Đang hiển thị',
+    PENDING: 'Chờ duyệt',
     RENTED: 'Đã thuê',
     SOLD: 'Đã bán',
     HIDDEN: 'Đã ẩn',

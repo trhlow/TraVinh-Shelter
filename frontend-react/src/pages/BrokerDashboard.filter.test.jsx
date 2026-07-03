@@ -1,6 +1,43 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+
+// Hermetic: BrokerDashboard must not hit the real network / mock-API branch in api.js.
+// Mock every named export BrokerDashboard destructures from '../services/api.js' so the
+// test only exercises the component's own date-range/KPI logic.
+vi.mock('../services/api.js', () => ({
+  fetchCurrentUser: vi.fn().mockResolvedValue({
+    id: 'broker-id', fullName: 'Nguyễn Văn Toàn', phone: '0912345678', email: 'broker@congtinland.vn', avatarUrl: '',
+  }),
+  fetchBrokerDashboard: vi.fn().mockResolvedValue({
+    activeListings: 2,
+    totalListings: 2,
+    pendingLeads: 3,
+    listings: [
+      {
+        id: 'l1', title: 'Nhà phố Long Đức', address: 'Phường Long Đức, TP. Trà Vinh',
+        ward: 'phuong-long-duc', category: 'nha', rawStatus: 'AVAILABLE', statusLabel: 'Đang hiển thị',
+        priceLabel: '2 tỷ', createdAt: '2026-06-15T00:00:00Z',
+      },
+      {
+        id: 'l2', title: 'Đất nền Trà Vinh', address: 'Phường Trà Vinh, TP. Trà Vinh',
+        ward: 'phuong-tra-vinh', category: 'dat', rawStatus: 'AVAILABLE', statusLabel: 'Đang hiển thị',
+        priceLabel: '1,5 tỷ', createdAt: '2026-07-01T00:00:00Z',
+      },
+    ],
+  }),
+  fetchBrokerViewings: vi.fn().mockResolvedValue([]),
+  changePassword: vi.fn(),
+  createProperty: vi.fn(),
+  deleteProperty: vi.fn(),
+  uploadCurrentUserAvatar: vi.fn(),
+  uploadPropertyImage: vi.fn(),
+  updateCurrentProfile: vi.fn(),
+  updateProperty: vi.fn(),
+  updatePropertyStatus: vi.fn(),
+  updateBrokerViewingStatus: vi.fn(),
+}));
+
 import BrokerDashboard from './BrokerDashboard.jsx';
 
 beforeEach(() => {
@@ -33,5 +70,9 @@ test('KPI cards show 0 when the date filter excludes all listings, not the unfil
 
   const label = screen.getAllByText('Tổng tin đăng').find((el) => el.className === 'stat-card-label');
   const kpi = label.closest('.stat-card-article, .stat-card-link');
+  // Mocked stats.totalListings is 2 and both mocked listings have 2026 createdAt dates, so
+  // a custom 2020 range must exclude them entirely. Pre-fix code fell back to stats.totalListings
+  // (2) whenever the bounded range produced an empty rangedListings array; this only proves the
+  // fix if the mocked data can actually produce that empty-vs-fallback distinction, which it does.
   expect(kpi.querySelector('.stat-card-value')).toHaveTextContent('0');
 });

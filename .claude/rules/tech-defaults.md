@@ -126,7 +126,7 @@ Các trường mềm của BĐS lưu trong cột `attributes jsonb`: `ward`, `ho
 | `AuditLog` | Log hành động admin |
 | `SavedProperty` | BĐS đã lưu của user (composite key) |
 
-Property status: `AVAILABLE` | `PENDING` | `SOLD` | `RENTED`
+Property status (backend enum): `AVAILABLE` | `RENTED` | `SOLD` | `HIDDEN`. PENDING chỉ tồn tại ở mock data (chờ duyệt) — backend chưa hỗ trợ, không gửi PENDING qua API.
 
 ### Auth flow
 

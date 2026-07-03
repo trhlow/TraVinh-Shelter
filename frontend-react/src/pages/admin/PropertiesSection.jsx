@@ -4,9 +4,20 @@ import DataTable from '../../components/dashboard/DataTable.jsx';
 import Icon from '../../components/ui/Icon.jsx';
 import { CATEGORIES, WARDS, categoryLabel, wardLabel } from '../../data/locations.js';
 
-const STATUS_OPTIONS = [
+// Used for the toolbar filter select — PENDING is a mock-only display status, not a
+// value users search by beyond that, so it's kept here for filtering existing listings.
+const STATUS_FILTER_OPTIONS = [
   { id: 'AVAILABLE', label: 'Đang hiển thị' },
   { id: 'PENDING', label: 'Chờ duyệt' },
+  { id: 'RENTED', label: 'Đã thuê' },
+  { id: 'SOLD', label: 'Đã bán' },
+  { id: 'HIDDEN', label: 'Đã gỡ / tạm ẩn' },
+];
+
+// Backend PropertyStatus enum has no PENDING (AVAILABLE/RENTED/SOLD/HIDDEN only) — these
+// are the only valid mutation targets for the per-row status select.
+const STATUS_MUTATION_OPTIONS = [
+  { id: 'AVAILABLE', label: 'Đang hiển thị' },
   { id: 'RENTED', label: 'Đã thuê' },
   { id: 'SOLD', label: 'Đã bán' },
   { id: 'HIDDEN', label: 'Đã gỡ / tạm ẩn' },
@@ -59,7 +70,8 @@ export default function PropertiesSection({ data, loading, saving, actions, quer
           disabled={saving}
           onChange={(event) => actions.changePropertyStatus(property.id, event.target.value)}
         >
-          {STATUS_OPTIONS.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+          {property.rawStatus === 'PENDING' && <option value="PENDING" disabled>Chờ duyệt</option>}
+          {STATUS_MUTATION_OPTIONS.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
         </select>
         <button
           className="btn btn-ghost btn-sm"
@@ -89,7 +101,7 @@ export default function PropertiesSection({ data, loading, saving, actions, quer
       </select>
       <select className="input" aria-label="Lọc theo trạng thái" value={status} onChange={(event) => setStatus(event.target.value)}>
         <option value="all">Tất cả trạng thái</option>
-        {STATUS_OPTIONS.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+        {STATUS_FILTER_OPTIONS.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
       </select>
     </>
   );

@@ -260,8 +260,10 @@ export const MOCK_PROPERTIES = RAW_MOCK_PROPERTIES.flatMap((item, rawIndex) => (
       ...item,
       id: variant === 0 ? item.id : `${item.id}-v${variant}`,
       title: variant === 0 ? item.title : `${item.title} (khu ${variant + 1})`,
-      ward: WARD_CYCLE[index % WARD_CYCLE.length],
-      category: CATEGORY_CYCLE[index % CATEGORY_CYCLE.length],
+      // Variant 0 must stay the canonical listing (original ward/category) so drill-downs
+      // and filters find the item they expect; only variants 1-2 rotate for data variety.
+      ward: variant === 0 ? item.ward : WARD_CYCLE[index % WARD_CYCLE.length],
+      category: variant === 0 ? item.category : CATEGORY_CYCLE[index % CATEGORY_CYCLE.length],
       rawStatus,
       adminStatusLabel: statusLabelOf(rawStatus),
       createdAt: new Date(MOCK_NOW - index * 8 * DAY_MS).toISOString(),
