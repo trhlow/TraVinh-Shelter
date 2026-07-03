@@ -786,3 +786,162 @@
   color: var(--color-ink);
   font-variant-numeric: tabular-nums;
 }
+
+/* ── DataTable ─────────────────────────────────────────── */
+.data-table-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.data-table-search { flex: 1 1 220px; max-width: 320px; }
+
+.data-table-sort-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.data-table-pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.data-table-pager .btn[disabled] { opacity: 0.4; cursor: default; }
+
+/* ── DateRangeFilter ───────────────────────────────────── */
+.date-range-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.date-range-pill {
+  border: 1px solid var(--color-hairline);
+  background: transparent;
+  color: var(--color-body);
+  border-radius: var(--radius-full);
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.date-range-pill.is-active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.date-range-custom { display: flex; align-items: center; gap: 6px; }
+.date-range-custom .input { padding: 6px 10px; font-size: 13px; }
+
+/* ── NotificationBell ──────────────────────────────────── */
+.notif-bell { position: relative; }
+
+.notif-bell-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-hairline);
+  background: transparent;
+  color: var(--color-body);
+  cursor: pointer;
+}
+
+.notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  background: var(--color-error);
+  color: var(--color-on-primary);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+}
+
+.notif-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 300px;
+  background: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 8px;
+  z-index: 40;
+}
+
+.notif-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  color: var(--color-body);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.notif-item:hover { background: var(--color-surface-soft); }
+
+.notif-empty {
+  padding: 16px 10px;
+  font-size: 13px;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+/* ── Admin quick actions + filter bar ──────────────────── */
+.admin-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-soft);
+  margin-bottom: 24px;
+}
+
+.admin-filter-bar .input { width: auto; }
+
+.admin-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}

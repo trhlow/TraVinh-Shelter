@@ -123,6 +123,40 @@
   --shadow-dropdown: 0 4px 16px rgba(0,0,0,0.5);
 }
 
+/* ── Admin area: fixed đen-tím theme ─────────────────────
+ * Intentional exception (see .claude/rules/design.md): /admin is always dark
+ * with a purple accent, regardless of the site light/dark toggle. Components
+ * keep referencing semantic tokens — only the values change inside this scope. */
+.admin-theme {
+  --color-canvas: #141218;
+  --color-surface-soft: #1e1a28;
+  --color-surface-strong: #262130;
+  --color-ink: #f2f0f7;
+  --color-body: #d6d1e0;
+  --color-muted: #a29bb8;
+  --color-muted-soft: #736c8a;
+  --color-primary: #8b5cf6;
+  --color-primary-active: #7c3aed;
+  --color-primary-disabled: #3b2a63;
+  --color-on-primary: #ffffff;
+  --color-hairline: #332d40;
+  --color-hairline-soft: #2a2536;
+  --color-border-strong: #4c4560;
+  --color-success: #4ade80;
+  --color-success-bg: #14532d;
+  --color-warning: #fbbf24;
+  --color-warning-bg: #78350f;
+  --color-error: #f87171;
+  --color-error-bg: #7f1d1d;
+  --color-sidebar-bg: #0f0d14;
+  --shadow-card: rgba(255, 255, 255, 0.06) 0 0 0 1px,
+                 rgba(0, 0, 0, 0.4) 0 2px 6px 0,
+                 rgba(0, 0, 0, 0.5) 0 4px 8px 0;
+  --chart-1: #a78bfa;
+  background: var(--color-canvas);
+  color: var(--color-body);
+}
+
 /* ============================================================
    RESET & BASE
    ============================================================ */
