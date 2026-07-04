@@ -1906,6 +1906,28 @@ img { display: block; max-width: 100%; }
   margin-top: 12px;
 }
 
+.broker-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-hairline-soft);
+}
+
+.broker-card-viewall {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.broker-card-viewall:hover {
+  text-decoration: underline;
+}
+
 /* ============================================================
    PROJECT CARD
    ============================================================ */
