@@ -1,6 +1,7 @@
 export function filterProperties(properties, filters) {
   const safeFilters = withDefaultFilters(filters);
   const query = normalize(safeFilters.query);
+  const brokerEmail = normalize(safeFilters.broker);
   const minPrice = parseOptionalNumber(safeFilters.minPrice);
   const maxPrice = parseOptionalNumber(safeFilters.maxPrice);
   const minArea = parseOptionalNumber(safeFilters.minArea);
@@ -9,6 +10,7 @@ export function filterProperties(properties, filters) {
   return properties.filter((property) => {
     const comparablePrice = property.rawPrice ?? property.price;
     const matchesQuery = !query || normalize(`${property.title} ${property.address} ${property.category} ${property.broker?.name}`).includes(query);
+    const matchesBroker = !brokerEmail || normalize(property.broker?.email) === brokerEmail;
     const matchesCategory = safeFilters.category === 'all' || property.category === safeFilters.category;
     const matchesTransaction = safeFilters.transaction === 'all' || property.transaction === safeFilters.transaction;
     const matchesWard = safeFilters.ward === 'all' || property.ward === safeFilters.ward;
@@ -17,7 +19,7 @@ export function filterProperties(properties, filters) {
     const matchesMax = maxPrice == null || comparablePrice <= maxPrice;
     const matchesMinArea = minArea == null || Number(property.area || 0) >= minArea;
     const matchesMaxArea = maxArea == null || Number(property.area || 0) <= maxArea;
-    return matchesQuery && matchesCategory && matchesTransaction && matchesWard
+    return matchesQuery && matchesBroker && matchesCategory && matchesTransaction && matchesWard
       && matchesHouseType && matchesMin && matchesMax && matchesMinArea && matchesMaxArea;
   });
 }
@@ -34,6 +36,7 @@ export function buildPropertyQuery(filters) {
   if (safeFilters.maxPrice) params.set('maxPrice', safeFilters.maxPrice);
   if (safeFilters.minArea) params.set('attr.area.min', safeFilters.minArea);
   if (safeFilters.maxArea) params.set('attr.area.max', safeFilters.maxArea);
+  if (safeFilters.broker) params.set('brokerEmail', safeFilters.broker.trim());
   return params.toString();
 }
 
@@ -61,6 +64,7 @@ function withDefaultFilters(filters = {}) {
     maxArea: '',
     ward: 'all',
     houseType: 'all',
+    broker: '',
     ...filters,
   };
 }
