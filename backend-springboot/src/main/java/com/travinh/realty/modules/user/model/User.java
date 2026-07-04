@@ -40,6 +40,12 @@ public class User {
     @Column(name = "avatar_url", length = 2048)
     private String avatarUrl;
 
+    @Column(name = "zalo_url", length = 2048)
+    private String zaloUrl;
+
+    @Column(name = "facebook_url", length = 2048)
+    private String facebookUrl;
+
     @Column(nullable = false, unique = true, length = 254)
     private String email;
 
@@ -103,6 +109,8 @@ public class User {
     public String getFullName() { return fullName; }
     public String getPhone() { return phone; }
     public String getAvatarUrl() { return avatarUrl; }
+    public String getZaloUrl() { return zaloUrl; }
+    public String getFacebookUrl() { return facebookUrl; }
     public String getEmail() { return email; }
     public UserRole getRole() { return role; }
     public UserStatus getStatus() { return status; }
