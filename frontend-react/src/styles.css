@@ -1926,10 +1926,33 @@ img { display: block; max-width: 100%; }
 
 .broker-card-footer {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--color-hairline-soft);
+}
+
+.broker-card-socials {
+  display: flex;
+  gap: 8px;
+}
+
+.broker-card-social-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-hairline);
+  color: var(--color-ink);
+  transition: color 160ms ease, border-color 160ms ease;
+}
+
+.broker-card-social-icon:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .broker-card-viewall {

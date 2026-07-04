@@ -96,7 +96,6 @@ export default function BrokersPage({ session, onLogout, theme, onToggleTheme })
                   <div className="card-title-row mb-4">
                     <div>
                       <h2 className="broker-profile-name">{broker.name}</h2>
-                      <p className="broker-profile-meta">{broker.email}</p>
                     </div>
                     <span className="badge badge-neutral flex-shrink-0">Top {index + 1}</span>
                   </div>
@@ -135,6 +134,18 @@ export default function BrokersPage({ session, onLogout, theme, onToggleTheme })
               </div>
 
               <div className="broker-card-footer">
+                <div className="broker-card-socials">
+                  {broker.zalo && (
+                    <a className="broker-card-social-icon" href={broker.zalo} target="_blank" rel="noopener noreferrer" aria-label="Zalo">
+                      <Icon name="MessageCircle" size={16} />
+                    </a>
+                  )}
+                  {broker.facebook && (
+                    <a className="broker-card-social-icon" href={broker.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                      <Icon name="Facebook" size={16} />
+                    </a>
+                  )}
+                </div>
                 <a
                   className="broker-card-viewall"
                   href={`#/search?broker=${encodeURIComponent(broker.email)}&brokerName=${encodeURIComponent(broker.name)}`}
@@ -171,6 +182,8 @@ export function brokerStatsFrom(properties) {
       name,
       email,
       avatarUrl: broker.avatarUrl || '',
+      zalo: broker.zalo || '',
+      facebook: broker.facebook || '',
       listings: [],
       wards: new Set(),
       categories: new Set(),
