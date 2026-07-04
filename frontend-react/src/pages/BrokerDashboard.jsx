@@ -541,6 +541,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                   </FormField>
                   <FormField label="Ảnh đại diện" className="dashboard-listing-span3">
                     <input className="input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleCoverChange} />
+                    <p className="form-hint">Tỷ lệ 4:3 — tối thiểu 800×600px. Ảnh sẽ được cắt tự động khi hiển thị.</p>
                     {(listingForm.coverPreview || listingForm.coverUrl) && (
                       <div className="dashboard-cover-preview">
                         <img src={listingForm.coverPreview || listingForm.coverUrl} alt="Ảnh đại diện tin đăng" />
@@ -549,6 +550,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                   </FormField>
                   <FormField label="Ảnh bổ sung (4-6 ảnh)" className="dashboard-listing-span3">
                     <input className="input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple onChange={handleGalleryChange} />
+                    <p className="form-hint">Tỷ lệ 4:3 — tối thiểu 800×600px mỗi ảnh.</p>
                     {listingForm.galleryPreviews.length > 0 && (
                       <div className="dashboard-gallery-grid">
                         {listingForm.galleryPreviews.map((preview, index) => (
