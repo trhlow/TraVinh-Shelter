@@ -32,7 +32,6 @@ export default function BrokersPage({ session, onLogout, theme, onToggleTheme })
       .filter((broker) => !normalizedQuery || broker.name.toLowerCase().includes(normalizedQuery))
       .sort((a, b) => {
         if (sort === 'most-listings') return b.listings.length - a.listings.length;
-        if (sort === 'fast-response') return a.responseMinutes - b.responseMinutes;
         return b.closedDeals - a.closedDeals;
       });
   }, [properties, query, sort, ward]);
@@ -71,7 +70,6 @@ export default function BrokersPage({ session, onLogout, theme, onToggleTheme })
           >
             <option value="top-sales">Người bán nhiều nhất</option>
             <option value="most-listings">Đăng tin nhiều nhất</option>
-            <option value="fast-response">Phản hồi nhanh nhất</option>
           </select>
         </div>
 
@@ -107,7 +105,6 @@ export default function BrokersPage({ session, onLogout, theme, onToggleTheme })
                   <div className="broker-metric-grid">
                     <Metric label="Đã bán" value={broker.closedDeals} />
                     <Metric label="Tin đăng" value={broker.listings.length} />
-                    <Metric label="Phút p/hồi" value={broker.responseMinutes} />
                   </div>
 
                   {/* Specialties */}
@@ -136,6 +133,16 @@ export default function BrokersPage({ session, onLogout, theme, onToggleTheme })
                   </a>
                 ))}
               </div>
+
+              <div className="broker-card-footer">
+                <a
+                  className="broker-card-viewall"
+                  href={`#/search?broker=${encodeURIComponent(broker.email)}&brokerName=${encodeURIComponent(broker.name)}`}
+                >
+                  Xem tất cả
+                  <Icon name="ArrowRight" size={16} className="icon-brand" />
+                </a>
+              </div>
             </article>
           ))}
         </div>
@@ -154,9 +161,9 @@ function Metric({ label, value }) {
   );
 }
 
-function brokerStatsFrom(properties) {
+export function brokerStatsFrom(properties) {
   const groups = new Map();
-  properties.forEach((property, index) => {
+  properties.forEach((property) => {
     const broker = property.broker || {};
     const name = broker.name || broker.fullName || 'Môi giới Công Tín Land';
     const email = broker.email || `${name.toLowerCase().replace(/\s+/g, '.')}@congtinland.vn`;
@@ -164,7 +171,6 @@ function brokerStatsFrom(properties) {
       name,
       email,
       avatarUrl: broker.avatarUrl || '',
-      responseMinutes: responseMinutesFrom(broker.responseTime, index),
       listings: [],
       wards: new Set(),
       categories: new Set(),
@@ -175,7 +181,7 @@ function brokerStatsFrom(properties) {
     groups.set(email, current);
   });
 
-  return [...groups.values()].map((broker, index) => {
+  return [...groups.values()].map((broker) => {
     const sold = broker.listings.filter((listing) => (
       listing.rawStatus === 'SOLD' || listing.statusLabel === 'Đã bán' || listing.status === 'Đã bán'
     )).length;
@@ -183,7 +189,7 @@ function brokerStatsFrom(properties) {
       ...broker,
       wards: [...broker.wards],
       specialties: [...broker.categories],
-      closedDeals: Math.max(sold, broker.listings.length + 2 - (index % 2)),
+      closedDeals: sold,
     };
   });
 }
@@ -195,7 +201,3 @@ function categoryLabel(category) {
   return 'Nhà phố';
 }
 
-function responseMinutesFrom(value, fallbackIndex) {
-  const parsed = Number(String(value || '').match(/\d+/)?.[0]);
-  return Number.isFinite(parsed) ? parsed : 5 + fallbackIndex * 2;
-}

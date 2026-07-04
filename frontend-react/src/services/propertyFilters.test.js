@@ -32,4 +32,15 @@ describe('property filters', () => {
       ward: 'all',
     })).toBe('q=Ph%C6%B0%E1%BB%9Dng+7&categorySlug=nha&minPrice=1');
   });
+
+  test('filters by broker email', () => {
+    const result = filterProperties(MOCK_PROPERTIES, { broker: 'toan@congtinland.vn' });
+
+    expect(result.length).toBeGreaterThan(0);
+    expect(result.every((item) => item.broker.email === 'toan@congtinland.vn')).toBe(true);
+  });
+
+  test('includes broker in API query when set', () => {
+    expect(buildPropertyQuery({ broker: 'toan@congtinland.vn' })).toBe('brokerEmail=toan%40congtinland.vn');
+  });
 });

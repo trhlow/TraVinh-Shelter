@@ -48,11 +48,13 @@ function filtersFromQuery(queryParams = {}) {
     maxPrice: queryParams.maxPrice || '',
     minArea: '',
     maxArea: '',
+    broker: queryParams.broker || '',
   };
 }
 
 export default function SearchPage({ queryParams, session, onLogout, theme, onToggleTheme }) {
   const queryKey = JSON.stringify(queryParams || {});
+  const brokerName = queryParams?.brokerName || '';
   const [filters, setFilters] = useState(() => filtersFromQuery(queryParams));
   const [appliedFilters, setAppliedFilters] = useState(() => filtersFromQuery(queryParams));
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
@@ -109,7 +111,7 @@ export default function SearchPage({ queryParams, session, onLogout, theme, onTo
     return items;
   }, [properties, sort]);
 
-  const subtitle = subtitleFor(appliedFilters);
+  const subtitle = subtitleFor(appliedFilters, brokerName);
   const priceOptions = priceOptionsFor(filters);
 
   function updateFilter(name, value) {
@@ -125,6 +127,7 @@ export default function SearchPage({ queryParams, session, onLogout, theme, onTo
           maxPrice: '',
           minArea: '',
           maxArea: '',
+          broker: current.broker,
         };
       }
       return { ...current, [name]: value };
@@ -320,7 +323,8 @@ function priceOptionsFor(filters) {
   return filters.transaction === 'rent' ? PRICE_GROUPS.rent : PRICE_GROUPS.sale;
 }
 
-function subtitleFor(filters) {
+function subtitleFor(filters, brokerName = '') {
+  if (filters.broker) return `Tin đăng của ${brokerName || 'môi giới'}`;
   if (filters.query?.trim()) return `Kết quả cho "${filters.query.trim()}"`;
   if (filters.category === 'tro') return 'Phòng trọ tại Trà Vinh';
   if (filters.category === 'nha' && filters.transaction === 'rent') return 'Nhà cho thuê tại Trà Vinh';

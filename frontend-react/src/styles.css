@@ -651,7 +651,7 @@ img { display: block; max-width: 100%; }
 .property-card-image-wrap {
   display: block;
   position: relative;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
   border-radius: var(--radius-md);
   background: var(--color-surface-strong);
@@ -1276,12 +1276,6 @@ img { display: block; max-width: 100%; }
   .dashboard-panels-row { grid-template-columns: 1fr; }
 }
 
-.dashboard-panels-col {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
 .dashboard-profile-grid {
   display: grid;
   grid-template-columns: 300px 1fr;
@@ -1384,10 +1378,17 @@ img { display: block; max-width: 100%; }
   .dashboard-listing-span3 { grid-column: span 1; }
 }
 
+.form-hint {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--color-muted);
+  line-height: 1.5;
+}
+
 .dashboard-cover-preview {
   margin-top: 12px;
-  width: 160px;
-  aspect-ratio: 1 / 1;
+  max-width: 240px;
+  aspect-ratio: 4 / 3;
   border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid var(--color-hairline);
@@ -1413,7 +1414,7 @@ img { display: block; max-width: 100%; }
 
 .dashboard-gallery-thumb {
   width: 100%;
-  height: 80px;
+  aspect-ratio: 4 / 3;
   object-fit: cover;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-hairline);
@@ -1942,6 +1943,28 @@ img { display: block; max-width: 100%; }
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 12px;
+}
+
+.broker-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-hairline-soft);
+}
+
+.broker-card-viewall {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.broker-card-viewall:hover {
+  text-decoration: underline;
 }
 
 /* ============================================================

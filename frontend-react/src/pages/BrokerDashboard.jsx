@@ -60,6 +60,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   const [stats, setStats] = useState({ activeListings: 0, totalListings: 0, pendingLeads: 0, listings: [] });
   const [listingForm, setListingForm] = useState(EMPTY_FORM);
   const [listingQuery, setListingQuery] = useState('');
+  const [listingStatusTab, setListingStatusTab] = useState('AVAILABLE');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState('');
@@ -78,8 +79,8 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   const listingRange = useMemo(() => resolveDateRange(rangePreset, rangeCustom), [rangePreset, rangeCustom]);
   const rangedListings = useMemo(() => listings.filter((listing) => isInRange(listing.createdAt, listingRange)), [listings, listingRange]);
   const filteredListings = useMemo(() => listings.filter((listing) => listingMatchesQuery(listing, listingQuery)), [listings, listingQuery]);
-  const visibleListings = useMemo(() => filteredListings.filter((listing) => listing.rawStatus !== 'HIDDEN'), [filteredListings]);
-  const hiddenListings = useMemo(() => filteredListings.filter((listing) => listing.rawStatus === 'HIDDEN'), [filteredListings]);
+  const statusFilteredListings = useMemo(() => filterListingsByStatus(filteredListings, listingStatusTab), [filteredListings, listingStatusTab]);
+  const statusCounts = useMemo(() => countListingsByStatus(filteredListings), [filteredListings]);
   const profileReady = Boolean((profile?.fullName || profileForm.fullName).trim() && (profile?.phone || profileForm.phone).trim());
   const editing = Boolean(listingForm.id);
 
@@ -585,6 +586,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                   </FormField>
                   <FormField label="Ảnh đại diện" className="dashboard-listing-span3">
                     <input className="input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleCoverChange} />
+                    <p className="form-hint">Tỷ lệ 4:3 — tối thiểu 800×600px. Ảnh sẽ được cắt tự động khi hiển thị.</p>
                     {(listingForm.coverPreview || listingForm.coverUrl) && (
                       <div className="dashboard-cover-preview">
                         <img src={listingForm.coverPreview || listingForm.coverUrl} alt="Ảnh đại diện tin đăng" />
@@ -593,6 +595,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                   </FormField>
                   <FormField label="Ảnh bổ sung (4-6 ảnh)" className="dashboard-listing-span3">
                     <input className="input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple onChange={handleGalleryChange} />
+                    <p className="form-hint">Tỷ lệ 4:3 — tối thiểu 800×600px mỗi ảnh.</p>
                     {listingForm.galleryPreviews.length > 0 && (
                       <div className="dashboard-gallery-grid">
                         {listingForm.galleryPreviews.map((preview, index) => (
@@ -647,32 +650,34 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                 </p>
               </div>
 
-              <div className="dashboard-panels-col">
-                <DashboardPanel title="Đang hoạt động hoặc đã bán" count={loading ? 'Đang tải' : `${visibleListings.length} tin`}>
-                  <ListingList
-                    listings={visibleListings}
-                    loading={loading}
-                    saving={saving}
-                    onEdit={editListing}
-                    onDelete={removeListing}
-                    onStatus={changeStatus}
-                    emptyTitle="Không có tin đang hoạt động hoặc đã bán"
-                    emptyDescription="Thử đổi từ khóa tìm kiếm hoặc mở lại tin đang tạm ẩn."
-                  />
-                </DashboardPanel>
-                <DashboardPanel title="Tạm ẩn" count={loading ? 'Đang tải' : `${hiddenListings.length} tin`}>
-                  <ListingList
-                    listings={hiddenListings}
-                    loading={loading}
-                    saving={saving}
-                    onEdit={editListing}
-                    onDelete={removeListing}
-                    onStatus={changeStatus}
-                    emptyTitle="Không có tin tạm ẩn"
-                    emptyDescription="Tin bị ẩn khỏi trang công khai sẽ được gom riêng tại đây."
-                  />
-                </DashboardPanel>
+              <div className="dashboard-status-tabs">
+                {LISTING_STATUS_TABS.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    className={`dashboard-status-tab${listingStatusTab === tab.id ? ' is-active' : ''}`}
+                    onClick={() => setListingStatusTab(tab.id)}
+                  >
+                    {tab.label}
+                    <span className="dashboard-status-tab-count">{statusCounts[tab.id] || 0}</span>
+                  </button>
+                ))}
               </div>
+              <DashboardPanel
+                title={LISTING_STATUS_TABS.find((tab) => tab.id === listingStatusTab)?.label || 'Tin đăng'}
+                count={loading ? 'Đang tải' : `${statusFilteredListings.length} tin`}
+              >
+                <ListingList
+                  listings={statusFilteredListings}
+                  loading={loading}
+                  saving={saving}
+                  onEdit={editListing}
+                  onDelete={removeListing}
+                  onStatus={changeStatus}
+                  emptyTitle="Không có tin ở trạng thái này"
+                  emptyDescription="Chọn trạng thái khác hoặc đổi từ khóa tìm kiếm."
+                />
+              </DashboardPanel>
             </>
           )}
 
@@ -933,6 +938,27 @@ function listingMatchesQuery(listing, query) {
     listing.rawStatus,
     categoryLabel(listing.category),
   ].some((value) => String(value || '').toLowerCase().includes(normalizedQuery));
+}
+
+const LISTING_STATUS_TABS = [
+  { id: 'AVAILABLE', label: 'Đang hoạt động' },
+  { id: 'SOLD', label: 'Đã bán' },
+  { id: 'RENTED', label: 'Đã thuê' },
+  { id: 'HIDDEN', label: 'Đã ẩn' },
+];
+
+export function filterListingsByStatus(listings, status) {
+  if (status === 'AVAILABLE') {
+    return listings.filter((listing) => isAvailableListing(listing));
+  }
+  return listings.filter((listing) => listing.rawStatus === status);
+}
+
+export function countListingsByStatus(listings) {
+  return LISTING_STATUS_TABS.reduce((counts, tab) => {
+    counts[tab.id] = filterListingsByStatus(listings, tab.id).length;
+    return counts;
+  }, {});
 }
 
 function isAvailableListing(listing) {
