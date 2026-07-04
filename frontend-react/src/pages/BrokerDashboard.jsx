@@ -39,7 +39,8 @@ const EMPTY_FORM = {
   address: '',
   ward: 'phuong-tra-vinh',
   price: '',
-  area: '',
+  length: '',
+  width: '',
   bedrooms: '',
   bathrooms: '',
   houseType: 'tret',
@@ -333,7 +334,8 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       address: property.address,
       ward: property.ward || 'all',
       price: String(Math.round(property.rawPrice || 0)),
-      area: property.area ? String(property.area) : '',
+      length: property.length ? String(property.length) : '',
+      width: property.width ? String(property.width) : '',
       bedrooms: property.bedrooms ? String(property.bedrooms) : '',
       bathrooms: property.bathrooms ? String(property.bathrooms) : '',
       houseType: property.houseType || 'tret',
@@ -567,8 +569,11 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                   <FormField label="Giá (VNĐ)">
                     <input className="input" type="number" min="0" value={listingForm.price} onChange={(event) => setListingValue('price', event.target.value, setListingForm)} required />
                   </FormField>
-                  <FormField label="Diện tích (m²)">
-                    <input className="input" type="number" min="0" value={listingForm.area} onChange={(event) => setListingValue('area', event.target.value, setListingForm)} />
+                  <FormField label="Chiều dài (m)">
+                    <input className="input" type="number" min="0" step="0.01" value={listingForm.length} onChange={(event) => setListingValue('length', event.target.value, setListingForm)} />
+                  </FormField>
+                  <FormField label="Chiều rộng (m)">
+                    <input className="input" type="number" min="0" step="0.01" value={listingForm.width} onChange={(event) => setListingValue('width', event.target.value, setListingForm)} />
                   </FormField>
                   {listingForm.categorySlug === 'nha' && listingForm.transaction === 'rent' && (
                     <FormField label="Loại nhà">
@@ -578,12 +583,16 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                       </select>
                     </FormField>
                   )}
-                  <FormField label="Phòng ngủ">
-                    <input className="input" type="number" min="0" value={listingForm.bedrooms} onChange={(event) => setListingValue('bedrooms', event.target.value, setListingForm)} />
-                  </FormField>
-                  <FormField label="Phòng tắm">
-                    <input className="input" type="number" min="0" value={listingForm.bathrooms} onChange={(event) => setListingValue('bathrooms', event.target.value, setListingForm)} />
-                  </FormField>
+                  {listingForm.categorySlug !== 'dat' && (
+                    <>
+                      <FormField label="Phòng ngủ">
+                        <input className="input" type="number" min="0" value={listingForm.bedrooms} onChange={(event) => setListingValue('bedrooms', event.target.value, setListingForm)} />
+                      </FormField>
+                      <FormField label="Nhà vệ sinh">
+                        <input className="input" type="number" min="0" value={listingForm.bathrooms} onChange={(event) => setListingValue('bathrooms', event.target.value, setListingForm)} />
+                      </FormField>
+                    </>
+                  )}
                   <FormField label="Ảnh đại diện" className="dashboard-listing-span3">
                     <input className="input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleCoverChange} />
                     <p className="form-hint">Tỷ lệ 4:3 — tối thiểu 800×600px. Ảnh sẽ được cắt tự động khi hiển thị.</p>
@@ -865,16 +874,22 @@ function FormField({ label, children, className = '' }) {
   );
 }
 
-function propertyPayload(form) {
+export function propertyPayload(form) {
+  const length = numericOrNull(form.length);
+  const width = numericOrNull(form.width);
   const attributes = {
     transaction: form.categorySlug === 'tro' ? 'rent' : form.transaction,
     ward: form.ward,
-    area: numericOrNull(form.area),
-    bedrooms: numericOrNull(form.bedrooms),
-    bathrooms: numericOrNull(form.bathrooms),
+    length,
+    width,
+    area: length != null && width != null ? Number((length * width).toFixed(2)) : null,
     description: form.description,
     amenities: form.amenities,
   };
+  if (form.categorySlug !== 'dat') {
+    attributes.bedrooms = numericOrNull(form.bedrooms);
+    attributes.bathrooms = numericOrNull(form.bathrooms);
+  }
   if (form.categorySlug === 'nha' && form.transaction === 'rent') {
     attributes.houseType = form.houseType;
   }
