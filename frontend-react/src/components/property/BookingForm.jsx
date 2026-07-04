@@ -1,16 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Icon from '../ui/Icon.jsx';
 import { createViewing } from '../../services/api.js';
 import { VN_MOBILE_PATTERN } from '../../utils/validation.js';
-
-const isTro = (category) => category === 'tro';
-
-// Local datetime as `YYYY-MM-DDTHH:mm` for the datetime-local `min` attribute.
-function nowLocalInput() {
-  const now = new Date();
-  const offsetMs = now.getTimezoneOffset() * 60_000;
-  return new Date(now.getTime() - offsetMs).toISOString().slice(0, 16);
-}
 
 function validate(fields) {
   const errors = {};
@@ -20,36 +11,14 @@ function validate(fields) {
   } else if (!VN_MOBILE_PATTERN.test(fields.visitorPhone.trim())) {
     errors.visitorPhone = 'Số điện thoại di động không hợp lệ.';
   }
-  if (fields.requestedAt && new Date(fields.requestedAt).getTime() < Date.now()) {
-    errors.requestedAt = 'Ngày xem không được ở quá khứ.';
-  }
-  // Both date strings are zero-padded ISO (YYYY-MM-DD), so lexical compare is chronological.
-  if (fields.requestedAt && fields.expectedMoveIn
-      && fields.expectedMoveIn < fields.requestedAt.slice(0, 10)) {
-    errors.expectedMoveIn = 'Ngày vào ở không được trước ngày xem.';
-  }
   return errors;
 }
 
-export default function BookingForm({
-  propertyId,
-  category,
-  propertyTitle,
-  selectedRoom,
-  rooms = [],
-}) {
-  const troMode = isTro(category);
-
+export default function BookingForm({ propertyId, propertyTitle }) {
   const [fields, setFields] = useState({
     visitorName: '',
     visitorPhone: '',
     note: '',
-    requestedAt: '',
-    expectedMoveIn: '',
-    roomLabel: '',
-    occupants: '',
-    vehicles: '',
-    pets: false,
   });
 
   const [errors, setErrors] = useState({});
@@ -57,16 +26,9 @@ export default function BookingForm({
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-  // Sync selectedRoom prop into roomLabel field
-  useEffect(() => {
-    if (selectedRoom) {
-      setFields((prev) => ({ ...prev, roomLabel: selectedRoom }));
-    }
-  }, [selectedRoom]);
-
   function handleChange(e) {
-    const { name, value, type, checked } = e.target;
-    setFields((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    const { name, value } = e.target;
+    setFields((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   }
 
@@ -82,23 +44,12 @@ export default function BookingForm({
     setSubmitError('');
 
     try {
-      const payload = {
+      await createViewing(propertyId, {
         propertyTitle,
         visitorName: fields.visitorName.trim(),
         visitorPhone: fields.visitorPhone.trim(),
         note: fields.note.trim() || undefined,
-        requestedAt: fields.requestedAt ? new Date(fields.requestedAt).toISOString() : undefined,
-        expectedMoveIn: fields.expectedMoveIn.trim() || undefined,
-      };
-
-      if (troMode) {
-        if (fields.roomLabel) payload.roomLabel = fields.roomLabel;
-        if (fields.occupants) payload.occupants = Number(fields.occupants);
-        if (fields.vehicles) payload.vehicles = Number(fields.vehicles);
-        payload.pets = fields.pets;
-      }
-
-      await createViewing(propertyId, payload);
+      });
       setSubmitted(true);
     } catch {
       setSubmitError('Có lỗi xảy ra. Vui lòng thử lại hoặc liên hệ trực tiếp.');
@@ -118,10 +69,6 @@ export default function BookingForm({
     );
   }
 
-  const availableRooms = rooms.filter((r) => r.available);
-  const nowInput = nowLocalInput();
-  const minMoveIn = fields.requestedAt ? fields.requestedAt.slice(0, 10) : nowInput.slice(0, 10);
-
   return (
     <form className="booking-form" onSubmit={handleSubmit} noValidate>
       <h3 className="booking-form-title">
@@ -129,68 +76,6 @@ export default function BookingForm({
         Đặt lịch xem
       </h3>
 
-      {/* Datetime */}
-      <div className="booking-form-field">
-        <label className="booking-form-label" htmlFor="bf-requestedAt">
-          Ngày &amp; giờ muốn xem
-        </label>
-        <input
-          id="bf-requestedAt"
-          name="requestedAt"
-          type="datetime-local"
-          min={nowInput}
-          className={`booking-form-input${errors.requestedAt ? ' booking-form-input--error' : ''}`}
-          value={fields.requestedAt}
-          onChange={handleChange}
-        />
-        {errors.requestedAt && (
-          <p className="booking-form-error">{errors.requestedAt}</p>
-        )}
-      </div>
-
-      {/* Expected move-in */}
-      <div className="booking-form-field">
-        <label className="booking-form-label" htmlFor="bf-expectedMoveIn">
-          Dự kiến vào ở
-        </label>
-        <input
-          id="bf-expectedMoveIn"
-          name="expectedMoveIn"
-          type="date"
-          min={minMoveIn}
-          className={`booking-form-input${errors.expectedMoveIn ? ' booking-form-input--error' : ''}`}
-          value={fields.expectedMoveIn}
-          onChange={handleChange}
-        />
-        {errors.expectedMoveIn && (
-          <p className="booking-form-error">{errors.expectedMoveIn}</p>
-        )}
-      </div>
-
-      {/* Room select — trọ only */}
-      {troMode && availableRooms.length > 0 && (
-        <div className="booking-form-field">
-          <label className="booking-form-label" htmlFor="bf-roomLabel">
-            Phòng muốn xem
-          </label>
-          <select
-            id="bf-roomLabel"
-            name="roomLabel"
-            className="booking-form-input booking-form-select"
-            value={fields.roomLabel}
-            onChange={handleChange}
-          >
-            <option value="">— Chọn phòng —</option>
-            {availableRooms.map((r) => (
-              <option key={r.label} value={r.label}>
-                {r.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {/* Visitor name */}
       <div className="booking-form-field">
         <label className="booking-form-label" htmlFor="bf-visitorName">
           Tên khách hàng <span className="booking-form-required">*</span>
@@ -209,7 +94,6 @@ export default function BookingForm({
         )}
       </div>
 
-      {/* Visitor phone */}
       <div className="booking-form-field">
         <label className="booking-form-label" htmlFor="bf-visitorPhone">
           Số điện thoại <span className="booking-form-required">*</span>
@@ -228,7 +112,6 @@ export default function BookingForm({
         )}
       </div>
 
-      {/* Note */}
       <div className="booking-form-field">
         <label className="booking-form-label" htmlFor="bf-note">
           Ghi chú
@@ -243,63 +126,6 @@ export default function BookingForm({
           onChange={handleChange}
         />
       </div>
-
-      {/* Trọ-only fields */}
-      {troMode && (
-        <>
-          <div className="booking-form-tro-row">
-            <div className="booking-form-field booking-form-field--half">
-              <label className="booking-form-label" htmlFor="bf-occupants">
-                <Icon name="Users2" size={14} className="icon-muted" />
-                Số người ở
-              </label>
-              <input
-                id="bf-occupants"
-                name="occupants"
-                type="number"
-                min={1}
-                max={10}
-                placeholder="1"
-                className="booking-form-input"
-                value={fields.occupants}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="booking-form-field booking-form-field--half">
-              <label className="booking-form-label" htmlFor="bf-vehicles">
-                <Icon name="Bike" size={14} className="icon-muted" />
-                Số lượng xe
-              </label>
-              <input
-                id="bf-vehicles"
-                name="vehicles"
-                type="number"
-                min={0}
-                max={10}
-                placeholder="1"
-                className="booking-form-input"
-                value={fields.vehicles}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          <div className="booking-form-field booking-form-field--checkbox">
-            <label className="booking-form-checkbox-label" htmlFor="bf-pets">
-              <input
-                id="bf-pets"
-                name="pets"
-                type="checkbox"
-                className="booking-form-checkbox"
-                checked={fields.pets}
-                onChange={handleChange}
-              />
-              <Icon name="PawPrint" size={14} className="icon-muted" />
-              Nuôi thú cưng
-            </label>
-          </div>
-        </>
-      )}
 
       {submitError && (
         <p className="booking-form-error booking-form-error--submit">{submitError}</p>
