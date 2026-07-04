@@ -32,6 +32,7 @@
   --color-error:            #c13515;
   --color-error-bg:         #fee2e2;
   --color-zalo:             #0068ff;
+  --color-facebook:         #1877f2;
   --color-scrim:            #000000;
 
   /* Dashboard sidebar — fixed dark navigation rail, same in both themes */
@@ -2140,6 +2141,25 @@ img { display: block; max-width: 100%; }
 }
 
 .contact-btn-zalo:hover {
+  opacity: 0.9;
+}
+
+.contact-btn-facebook {
+  width: 100%;
+  min-height: 44px;
+  background: var(--color-facebook);
+  color: #fff;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 160ms ease;
+}
+
+.contact-btn-facebook:hover {
   opacity: 0.9;
 }
 

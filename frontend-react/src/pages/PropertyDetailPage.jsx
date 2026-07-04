@@ -87,7 +87,6 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
   const [property, setProperty] = useState(fallbackProperty);
   const [mediaImages, setMediaImages] = useState(detailImages);
   const [mediaLoading, setMediaLoading] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState('');
 
   useEffect(() => {
     let alive = true;
@@ -133,6 +132,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
       ? 'Đất'
       : 'Nhà';
   const brokerPhone = property.broker?.phone || '0901 234 567';
+  const brokerFacebook = property.broker?.facebook || '';
   const brokerAvatar = property.broker?.avatarUrl || fallbackBrokerAvatar;
   const isTro = property.category === 'tro';
 
@@ -200,7 +200,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
                   {property.bathrooms > 0 && (
                     <div className="detail-meta-item">
                       <Icon name="Bath" size={18} className="icon-muted" />
-                      <span className="detail-meta-label">Phòng tắm</span>
+                      <span className="detail-meta-label">Nhà vệ sinh</span>
                       <span className="detail-meta-value">{property.bathrooms}</span>
                     </div>
                   )}
@@ -298,10 +298,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
                   <Icon name="BedDouble" size={18} className="icon-accent" />
                   Danh sách phòng trống
                 </h2>
-                <RoomList
-                  rooms={property.rooms}
-                  onSelectRoom={(label) => setSelectedRoom(label)}
-                />
+                <RoomList rooms={property.rooms} />
               </div>
             )}
           </div>
@@ -341,6 +338,17 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
                   <Icon name="MessageCircle" size={18} />
                   Chat Zalo
                 </a>
+                {brokerFacebook && (
+                  <a
+                    href={brokerFacebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="contact-btn-facebook"
+                  >
+                    <Icon name="Facebook" size={18} />
+                    Facebook
+                  </a>
+                )}
               </div>
 
               <p className="contact-footer-note">
@@ -351,10 +359,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
             {/* Booking form */}
             <BookingForm
               propertyId={propertyId}
-              category={property.category}
               propertyTitle={property.title}
-              selectedRoom={selectedRoom}
-              rooms={property.rooms || []}
             />
           </div>
         </div>
