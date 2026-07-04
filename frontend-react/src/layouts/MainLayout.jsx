@@ -1,32 +1,6 @@
 import BrandLogo, { BRAND_NAME } from '../components/BrandLogo.jsx';
 import Icon from '../components/ui/Icon.jsx';
 
-// lucide-react has no TikTok mark — hand-drawn to match the surrounding
-// lucide icons' size/stroke weight (currentColor so it themes automatically).
-function TikTokIcon({ size = 16 }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
-    </svg>
-  );
-}
-
-const FOOTER_SOCIALS = [
-  { label: 'Youtube', icon: 'Youtube' },
-  { label: 'TikTok', icon: 'TikTok' },
-  { label: 'Facebook', icon: 'Facebook' },
-];
-
 const NAV_CATEGORIES = [
   {
     title: 'Trọ', icon: 'Home', caption: 'Giá trọ, khu vực',
@@ -202,18 +176,6 @@ export function Footer() {
             <p className="footer-about-text">
               Cổng thông tin bất động sản Trà Vinh, kết nối khách hàng với môi giới chuyên nghiệp.
             </p>
-            <div className="footer-social-icons">
-              {FOOTER_SOCIALS.map(({ label, icon }) => (
-                <a
-                  key={label}
-                  href="#/"
-                  aria-label={label}
-                  className="footer-social-icon"
-                >
-                  {icon === 'TikTok' ? <TikTokIcon size={16} /> : <Icon name={icon} size={16} />}
-                </a>
-              ))}
-            </div>
           </div>
         </div>
 
