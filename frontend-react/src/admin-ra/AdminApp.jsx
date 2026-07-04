@@ -5,6 +5,7 @@ import LoginPage from '../pages/LoginPage.jsx';
 import { createAuthProvider } from './authProvider.js';
 import { createDataProvider } from './dataProvider.js';
 import { i18nProvider } from './i18nProvider.js';
+import AdminLayout from './AdminLayout.jsx';
 import OverviewDashboard from './dashboard/OverviewDashboard.jsx';
 import { BrokerList, BrokerCreate } from './resources/brokers.jsx';
 import { PropertyList } from './resources/properties.jsx';
@@ -36,6 +37,7 @@ export default function AdminApp({ session, onLogin, onLogout }) {
         authProvider={authProvider}
         i18nProvider={i18nProvider}
         dashboard={OverviewDashboard}
+        layout={AdminLayout}
         loginPage={false}
         disableTelemetry
       >
