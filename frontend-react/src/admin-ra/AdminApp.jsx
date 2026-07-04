@@ -8,7 +8,6 @@ import { i18nProvider } from './i18nProvider.js';
 import OverviewDashboard from './dashboard/OverviewDashboard.jsx';
 import { BrokerList, BrokerCreate } from './resources/brokers.jsx';
 import { PropertyList } from './resources/properties.jsx';
-import { UserList } from './resources/users.jsx';
 import { ViewingList } from './resources/viewings.jsx';
 
 // Mounted for every /#/admin* path (see routes/index.jsx). The auth gate lives OUTSIDE
@@ -42,7 +41,6 @@ export default function AdminApp({ session, onLogin, onLogout }) {
       >
         <Resource name="brokers" list={BrokerList} create={BrokerCreate} />
         <Resource name="properties" list={PropertyList} />
-        <Resource name="users" list={UserList} />
         <Resource name="viewings" list={ViewingList} />
       </Admin>
     </HashRouter>
