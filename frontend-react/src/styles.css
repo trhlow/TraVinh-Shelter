@@ -1231,12 +1231,6 @@ img { display: block; max-width: 100%; }
   .dashboard-panels-row { grid-template-columns: 1fr; }
 }
 
-.dashboard-panels-col {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
 .dashboard-profile-grid {
   display: grid;
   grid-template-columns: 300px 1fr;
