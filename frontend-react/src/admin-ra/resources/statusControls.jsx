@@ -8,7 +8,6 @@ export const USER_STATUS = [
 
 export const PROPERTY_STATUS = [
   { id: 'AVAILABLE', name: 'Đang hiển thị' },
-  { id: 'PENDING', name: 'Chờ duyệt' },
   { id: 'SOLD', name: 'Đã bán' },
   { id: 'RENTED', name: 'Đã thuê' },
   { id: 'HIDDEN', name: 'Đã ẩn' },

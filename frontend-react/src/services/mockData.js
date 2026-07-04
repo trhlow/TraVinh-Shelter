@@ -233,7 +233,7 @@ const RAW_MOCK_PROPERTIES = [
 // broker id matching MOCK_ADMIN_BROKERS). Kept out of the raw literals above so the public
 // site data stays untouched; a HIDDEN item is included so admin listing can be seen to
 // surface listings the public search hides.
-const ADMIN_STATUS_CYCLE = ['AVAILABLE', 'AVAILABLE', 'HIDDEN', 'PENDING', 'SOLD', 'RENTED'];
+const ADMIN_STATUS_CYCLE = ['AVAILABLE', 'AVAILABLE', 'HIDDEN', 'AVAILABLE', 'SOLD', 'RENTED'];
 
 export const MOCK_PROPERTIES = RAW_MOCK_PROPERTIES.map((item, index) => ({
   ...item,
