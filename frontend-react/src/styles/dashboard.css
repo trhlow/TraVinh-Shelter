@@ -870,6 +870,51 @@
 
 .data-table-pager .btn[disabled] { opacity: 0.4; cursor: default; }
 
+/* ── Status filter tabs (pill buttons with counts) ─────── */
+.dashboard-status-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.dashboard-status-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--color-hairline);
+  background: var(--color-canvas);
+  color: var(--color-body);
+  border-radius: var(--radius-full);
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.dashboard-status-tab:hover { color: var(--color-ink); }
+
+.dashboard-status-tab.is-active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.dashboard-status-tab-count {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-soft);
+  color: var(--color-muted);
+}
+
+.dashboard-status-tab.is-active .dashboard-status-tab-count {
+  background: rgb(255 255 255 / 0.25);
+  color: var(--color-on-primary);
+}
+
 /* ── DateRangeFilter ───────────────────────────────────── */
 .date-range-filter {
   display: flex;
