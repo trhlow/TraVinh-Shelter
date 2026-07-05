@@ -4,19 +4,7 @@ import DataTable from '../../components/dashboard/DataTable.jsx';
 import Icon from '../../components/ui/Icon.jsx';
 import { CATEGORIES, WARDS, categoryLabel, wardLabel } from '../../data/locations.js';
 
-// Used for the toolbar filter select — PENDING is a mock-only display status, not a
-// value users search by beyond that, so it's kept here for filtering existing listings.
 const STATUS_FILTER_OPTIONS = [
-  { id: 'AVAILABLE', label: 'Đang hiển thị' },
-  { id: 'PENDING', label: 'Chờ duyệt' },
-  { id: 'RENTED', label: 'Đã thuê' },
-  { id: 'SOLD', label: 'Đã bán' },
-  { id: 'HIDDEN', label: 'Đã gỡ / tạm ẩn' },
-];
-
-// Backend PropertyStatus enum has no PENDING (AVAILABLE/RENTED/SOLD/HIDDEN only) — these
-// are the only valid mutation targets for the per-row status select.
-const STATUS_MUTATION_OPTIONS = [
   { id: 'AVAILABLE', label: 'Đang hiển thị' },
   { id: 'RENTED', label: 'Đã thuê' },
   { id: 'SOLD', label: 'Đã bán' },
@@ -25,7 +13,6 @@ const STATUS_MUTATION_OPTIONS = [
 
 function statusTone(status) {
   if (status === 'AVAILABLE') return 'success';
-  if (status === 'PENDING') return 'warning';
   if (status === 'SOLD' || status === 'RENTED') return 'info';
   return 'muted';
 }
@@ -62,32 +49,29 @@ export default function PropertiesSection({ data, loading, saving, actions, quer
       <StatusBadge tone={statusTone(property.rawStatus)}>{property.adminStatusLabel || property.statusLabel || property.rawStatus}</StatusBadge>
     ), csv: (property) => property.adminStatusLabel || property.statusLabel || property.rawStatus },
     { key: 'createdAt', label: 'Ngày tạo', render: (property) => formatDate(property.createdAt), csv: (property) => formatDate(property.createdAt) },
-    { key: 'actions', label: 'Thao tác', sortable: false, csv: () => '', render: (property) => (
-      <div className="dashboard-property-actions">
-        <select
-          className="input"
-          value={property.rawStatus}
-          disabled={saving}
-          onChange={(event) => actions.changePropertyStatus(property.id, event.target.value)}
-        >
-          {property.rawStatus === 'PENDING' && <option value="PENDING" disabled>Chờ duyệt</option>}
-          {STATUS_MUTATION_OPTIONS.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
-        </select>
+    { key: 'actions', label: 'Thao tác', sortable: false, csv: () => '', render: (property) => {
+      const isHidden = property.rawStatus === 'HIDDEN';
+      return (
         <button
           className="btn btn-ghost btn-sm"
           type="button"
-          aria-label="Gỡ bài đăng"
-          disabled={saving || property.rawStatus === 'HIDDEN'}
+          aria-label={isHidden ? 'Khôi phục bài đăng' : 'Gỡ bài đăng'}
+          disabled={saving}
           onClick={() => {
+            if (isHidden) {
+              actions.changePropertyStatus(property.id, 'AVAILABLE');
+              return;
+            }
             if (window.confirm('Gỡ bài đăng này khỏi trang công khai?')) {
               actions.changePropertyStatus(property.id, 'HIDDEN');
             }
           }}
         >
-          <Icon name="EyeOff" size={16} className="icon-muted" />
+          <Icon name={isHidden ? 'Eye' : 'EyeOff'} size={16} className="icon-muted" />
+          {isHidden ? 'Khôi phục' : 'Gỡ bài đăng'}
         </button>
-      </div>
-    ) },
+      );
+    } },
   ];
 
   const filterToolbar = (
