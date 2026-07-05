@@ -18,6 +18,83 @@ Run: `cd frontend-react && npm run dev` (http://localhost:5173)
 
 ---
 
+## Multi-Developer Workflow
+
+**Team**: devlong (backend) + devnguyen (frontend)
+
+### Branch Structure
+
+```
+main                           ← production, CI must pass before merge
+├── devlong/                   ← backend integration branch (owned by devlong)
+│   ├── devlong/feature-xyz    ← feature branch
+│   └── devlong/fix-bug        ← bug fix branch
+└── devnguyen/                 ← frontend integration branch (owned by devnguyen)
+    ├── devnguyen/feature-abc  ← feature branch
+    └── devnguyen/fix-style    ← style fix branch
+```
+
+### Scope & Ownership
+
+| Developer | Workspace | Allowed Changes | Branch Pattern |
+|---|---|---|---|
+| **devlong** (Long) | `backend-springboot/`, shared config, docs | Java, backend logic, DB schema, `pom.xml`, `.md` | `devlong/*` |
+| **devnguyen** (Nguyễn) | `frontend-react/`, shared config, docs | React, CSS, UI, `package.json`, `.md` | `devnguyen/*` |
+
+**Shared files** (package.json, pom.xml, CLAUDE.md, docs/): Changes OK if they don't disrupt the other person's workflow.
+
+### Workflow per Developer
+
+1. **Create feature branch** from your dev branch:
+   ```bash
+   git checkout devlong              # (or devnguyen)
+   git pull origin devlong           # sync
+   git checkout -b devlong/feat-xyz  # create feature
+   ```
+
+2. **Commit & push** (follow conventional commits):
+   ```bash
+   git add <files>
+   git commit -m "feat: add JWT revocation on password change"
+   git push -u origin devlong/feat-xyz
+   ```
+
+3. **Create PR** (devlong/feat-xyz → devlong, or devnguyen/feat-abc → devnguyen)
+   - Same review & test standards as main PRs
+   - CI must pass
+   - Self-review OK if small, else ask partner
+
+4. **Merge to dev branch** (when PR approved):
+   ```bash
+   git checkout devlong
+   git pull origin devlong
+   git merge devlong/feat-xyz
+   git push origin devlong
+   ```
+
+5. **Merge dev → main** (when ready to release):
+   - Create PR: devlong → main (or devnguyen → main)
+   - CI must pass
+   - Either dev owner or partner can approve
+   - Delete dev feature branch after merge
+
+### Conflict Resolution
+
+- **Backend ↔ Frontend conflict**: Rare. devlong handles `backend-springboot/`, devnguyen handles `frontend-react/`.
+- **Shared file conflict** (package.json, CLAUDE.md, etc.): 
+  - Coordinate with partner if critical
+  - Safe changes (deps, docs): merge normally
+  - Risky changes (config): discuss first
+
+### Git User Identification
+
+- `git config user.name` = "Trần Hoàng Long" → **devlong** workspace
+- (devnguyen will have different git config on their machine)
+
+I will automatically detect your identity and enforce scope rules when you commit.
+
+---
+
 ## Rules
 
 See **@rules/** for details:
