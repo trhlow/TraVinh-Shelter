@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { buildWardData, DonutChart, GaugeChart, HorizontalBarChart, LiveLineChart, WardBarChart } from '../components/Charts.jsx';
+import { buildDailySeries, buildWardData, DonutChart, GaugeChart, HorizontalBarChart, TrendAreaChart, WardBarChart } from '../components/Charts.jsx';
 import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../components/DashboardWidgets.jsx';
 import ViewingsPanel from '../components/dashboard/ViewingsPanel.jsx';
 import DateRangeFilter from '../components/dashboard/DateRangeFilter.jsx';
@@ -7,7 +7,7 @@ import BrandLogo from '../components/BrandLogo.jsx';
 import { WARDS } from '../data/locations.js';
 import Icon from '../components/ui/Icon.jsx';
 import LoginPage from './LoginPage.jsx';
-import { isInRange, resolveDateRange } from '../utils/dateRange.js';
+import { isInRange, percentDelta, previousRange, resolveDateRange } from '../utils/dateRange.js';
 import { downloadCsv } from '../utils/exportCsv.js';
 import {
   changePassword,
@@ -149,6 +149,37 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   const statusChart = useMemo(() => chartBy(rangedListings, (listing) => listing.statusLabel || 'Đang hiển thị'), [rangedListings]);
   const categoryChart = useMemo(() => chartBy(rangedListings, (listing) => categoryLabel(listing.category)), [rangedListings]);
   const wardChart = useMemo(() => buildWardData(rangedListings, (listing) => listing.ward), [rangedListings]);
+
+  const prevListingRange = useMemo(() => previousRange(listingRange), [listingRange]);
+  const prevRangedListings = useMemo(() => (
+    prevListingRange ? listings.filter((listing) => isInRange(listing.createdAt, prevListingRange)) : null
+  ), [listings, prevListingRange]);
+
+  const totalListingsDelta = prevRangedListings ? percentDelta(dashboardStats.totalListings, prevRangedListings.length) : null;
+  const activeListingsDelta = prevRangedListings
+    ? percentDelta(dashboardStats.activeListings, prevRangedListings.filter(isAvailableListing).length)
+    : null;
+  const leadsDelta = prevRangedListings
+    ? percentDelta(dashboardStats.leads, Math.max(0, prevRangedListings.length * 2))
+    : null;
+
+  const totalListingsSparkline = useMemo(
+    () => buildDailySeries(rangedListings, (listing) => listing.createdAt, 7).map((bucket) => bucket.count),
+    [rangedListings],
+  );
+  const activeListingsSparkline = useMemo(
+    () => buildDailySeries(rangedListings.filter(isAvailableListing), (listing) => listing.createdAt, 7).map((bucket) => bucket.count),
+    [rangedListings],
+  );
+
+  const listingActivitySeries = useMemo(
+    () => buildDailySeries(listings, (listing) => listing.createdAt, 30),
+    [listings],
+  );
+
+  function trendFor(delta) {
+    return delta == null ? undefined : { value: `${delta >= 0 ? '+' : ''}${delta}%`, direction: delta >= 0 ? 'up' : 'down' };
+  }
   const profileCompletion = useMemo(() => {
     const fields = [
       profileForm?.fullName || profile?.fullName,
@@ -237,13 +268,8 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       setError('Bạn cần cập nhật họ tên và số điện thoại môi giới trước khi đăng tin.');
       return;
     }
-    const selectedImageCount = (listingForm.coverFile || listingForm.coverUrl ? 1 : 0) + listingForm.galleryFiles.length;
-    if (!editing && (selectedImageCount < 5 || selectedImageCount > 7)) {
-      setError('Tin mới cần tổng cộng 5-7 ảnh, gồm 1 ảnh đại diện và 4-6 ảnh bổ sung.');
-      return;
-    }
-    if (listingForm.galleryFiles.length > 6) {
-      setError('Chỉ chọn tối đa 6 ảnh bổ sung để tổng ảnh không vượt quá 7.');
+    if (!editing && !(listingForm.coverFile || listingForm.coverUrl)) {
+      setError('Vui lòng chọn ảnh đại diện cho tin đăng.');
       return;
     }
     setSaving(true);
@@ -361,11 +387,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   }
 
   function handleGalleryChange(event) {
-    const selectedFiles = Array.from(event.target.files || []);
-    const files = selectedFiles.slice(0, 6);
-    if (selectedFiles.length > 6) {
-      setError('Chỉ chọn tối đa 6 ảnh bổ sung để tổng ảnh không vượt quá 7.');
-    }
+    const files = Array.from(event.target.files || []);
     setListingForm((current) => ({
       ...current,
       galleryFiles: files,
@@ -425,16 +447,16 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
               </div>
 
               <div className="grid-3 dashboard-stats-row">
-                <StatCard icon="Building" title="Tổng tin đăng" value={dashboardStats.totalListings} tone="navy" trend={{ value: '+9%', direction: 'up' }} />
-                <StatCard icon="Eye" title="Đang hiển thị" value={dashboardStats.activeListings} tone="green" trend={{ value: '+6%', direction: 'up' }} />
-                <StatCard icon="Users" title="Khách quan tâm" value={dashboardStats.leads} tone="orange" trend={{ value: '+18%', direction: 'up' }} />
+                <StatCard icon="Building" title="Tổng tin đăng" value={dashboardStats.totalListings} tone="navy" trend={trendFor(totalListingsDelta)} series={totalListingsSparkline} />
+                <StatCard icon="Eye" title="Đang hiển thị" value={dashboardStats.activeListings} tone="green" trend={trendFor(activeListingsDelta)} series={activeListingsSparkline} />
+                <StatCard icon="Users" title="Khách quan tâm" value={dashboardStats.leads} tone="orange" trend={trendFor(leadsDelta)} series={totalListingsSparkline} />
               </div>
 
               <div className="dashboard-live-row">
-                <LiveLineChart
-                  title="Hoạt động tin đăng"
-                  baseValue={dashboardStats.estimatedViews + dashboardStats.totalListings}
-                  unit="lượt quan tâm"
+                <TrendAreaChart
+                  title="Hoạt động tin đăng (30 ngày)"
+                  series={listingActivitySeries}
+                  unit="tin đăng"
                 />
                 <WardBarChart title="Tin đăng theo phường" data={wardChart} />
               </div>
@@ -602,7 +624,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                       </div>
                     )}
                   </FormField>
-                  <FormField label="Ảnh bổ sung (4-6 ảnh)" className="dashboard-listing-span3">
+                  <FormField label="Ảnh bổ sung (tùy chọn)" className="dashboard-listing-span3">
                     <input className="input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple onChange={handleGalleryChange} />
                     <p className="form-hint">Tỷ lệ 4:3 — tối thiểu 800×600px mỗi ảnh.</p>
                     {listingForm.galleryPreviews.length > 0 && (
