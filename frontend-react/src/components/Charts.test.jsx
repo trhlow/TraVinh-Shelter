@@ -1,23 +1,11 @@
 import '@testing-library/jest-dom/vitest';
-import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
-import { buildHeatmapData, buildWardData, HeatmapChart, LiveLineChart, useLiveSeries, WardBarChart } from './Charts.jsx';
+import { afterEach, expect, test, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  buildDailySeries, buildHeatmapData, buildWardData, HeatmapChart, Sparkline, TrendAreaChart, WardBarChart,
+} from './Charts.jsx';
 
-function stubMatchMedia(reducedMotion) {
-  vi.stubGlobal('matchMedia', vi.fn(() => ({
-    matches: reducedMotion,
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-  })));
-}
-
-beforeEach(() => stubMatchMedia(false));
-
-afterEach(() => {
-  cleanup();
-  vi.unstubAllGlobals();
-  vi.useRealTimers();
-});
+afterEach(() => cleanup());
 
 // ── buildWardData ─────────────────────────────────────────
 
@@ -68,58 +56,54 @@ test('WardBarChart columns are clickable when onSelectWard is provided', () => {
   expect(onSelectWard).toHaveBeenCalledWith('phuong-tra-vinh');
 });
 
-// ── useLiveSeries ─────────────────────────────────────────
+// ── buildDailySeries ──────────────────────────────────────
 
-test('useLiveSeries seeds a full window around the base value', () => {
-  const { result } = renderHook(() => useLiveSeries(100, { points: 16 }));
-
-  expect(result.current).toHaveLength(16);
-  result.current.forEach((value) => {
-    expect(value).toBeGreaterThan(0);
-    expect(value).toBeLessThan(200);
-  });
+test('buildDailySeries returns one bucket per day over the trailing window, oldest first', () => {
+  const series = buildDailySeries([], () => null, 7);
+  expect(series).toHaveLength(7);
+  series.forEach((bucket) => expect(bucket.count).toBe(0));
+  expect(new Date(series[0].date).getTime()).toBeLessThan(new Date(series[6].date).getTime());
 });
 
-test('useLiveSeries slides the window on each tick', () => {
-  vi.useFakeTimers();
-  const { result } = renderHook(() => useLiveSeries(100, { points: 8, intervalMs: 1000 }));
-  const before = [...result.current];
-
-  act(() => { vi.advanceTimersByTime(1000); });
-
-  expect(result.current).toHaveLength(8);
-  expect(result.current.slice(0, 7)).toEqual(before.slice(1));
+test('buildDailySeries counts items into the bucket matching their date', () => {
+  const today = new Date().toISOString();
+  const items = [{ createdAt: today }, { createdAt: today }];
+  const series = buildDailySeries(items, (item) => item.createdAt, 7);
+  expect(series[6].count).toBe(2);
 });
 
-test('useLiveSeries re-anchors the whole window when the base value changes', () => {
-  const { result, rerender } = renderHook(({ base }) => useLiveSeries(base, { points: 8 }), {
-    initialProps: { base: 1 },
-  });
-
-  rerender({ base: 1000 });
-
-  result.current.forEach((value) => expect(value).toBeGreaterThan(500));
+test('buildDailySeries ignores items outside the trailing window', () => {
+  const longAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+  const series = buildDailySeries([{ createdAt: longAgo }], (item) => item.createdAt, 7);
+  const total = series.reduce((sum, bucket) => sum + bucket.count, 0);
+  expect(total).toBe(0);
 });
 
-test('useLiveSeries stays static under prefers-reduced-motion', () => {
-  stubMatchMedia(true);
-  vi.useFakeTimers();
-  const { result } = renderHook(() => useLiveSeries(100, { points: 8, intervalMs: 1000 }));
-  const before = [...result.current];
+// ── TrendAreaChart ────────────────────────────────────────
 
-  act(() => { vi.advanceTimersByTime(5000); });
-
-  expect(result.current).toEqual(before);
-});
-
-// ── LiveLineChart ─────────────────────────────────────────
-
-test('LiveLineChart shows title, current value, and a percent-change badge', () => {
-  render(<LiveLineChart title="Hoạt động hệ thống" baseValue={120} unit="điểm" />);
+test('TrendAreaChart shows title and the window total', () => {
+  const series = buildDailySeries(
+    [{ createdAt: new Date().toISOString() }, { createdAt: new Date().toISOString() }],
+    (item) => item.createdAt,
+    7,
+  );
+  render(<TrendAreaChart title="Hoạt động hệ thống" series={series} unit="tin/lịch hẹn" />);
 
   expect(screen.getByRole('heading', { name: 'Hoạt động hệ thống' })).toBeInTheDocument();
-  expect(screen.getByText('điểm')).toBeInTheDocument();
-  expect(screen.getByText(/^[+-]?\d+(\.\d+)?%$/)).toBeInTheDocument();
+  expect(screen.getByText('2')).toBeInTheDocument();
+  expect(screen.getByText('tin/lịch hẹn')).toBeInTheDocument();
+});
+
+// ── Sparkline ─────────────────────────────────────────────
+
+test('Sparkline renders nothing for fewer than 2 points', () => {
+  const { container } = render(<Sparkline series={[1]} />);
+  expect(container.querySelector('svg')).not.toBeInTheDocument();
+});
+
+test('Sparkline renders a line path for 2+ points', () => {
+  const { container } = render(<Sparkline series={[1, 3, 2]} />);
+  expect(container.querySelector('.sparkline-line')).toBeInTheDocument();
 });
 
 // ── HeatmapChart ──────────────────────────────────────────
@@ -150,4 +134,12 @@ test('HeatmapChart renders labels and fires onSelectCell with ward + category', 
   expect(screen.getByText('Phường Hòa Thuận')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Phường Hòa Thuận · Nhà: 1 tin' }));
   expect(onSelectCell).toHaveBeenCalledWith({ ward: 'phuong-hoa-thuan', category: 'nha' });
+});
+
+test('HeatmapChart shows a low-to-high color scale legend', () => {
+  const data = buildHeatmapData([], () => null, () => null);
+  render(<HeatmapChart title="Mật độ tin theo phường" data={data} />);
+
+  expect(screen.getByText('Ít')).toBeInTheDocument();
+  expect(screen.getByText('Nhiều')).toBeInTheDocument();
 });

@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment } from 'react';
 import { CATEGORIES, WARDS } from '../data/locations.js';
 
 // Inline SVG resolves var(--color-*) fine, so charts stay theme-reactive.
@@ -178,90 +178,99 @@ export function buildWardData(items, getWardCode) {
   });
 }
 
-function prefersReducedMotion() {
-  return typeof window !== 'undefined'
-    && typeof window.matchMedia === 'function'
-    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Local calendar-day key (not toISOString — that converts to UTC and shifts the
+// date backward for positive-offset timezones like Asia/Ho_Chi_Minh).
+function dayKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
-// Mean-reverting random walk: drifts back toward the anchor so the simulated
-// activity stays believable instead of wandering off.
-function nextPoint(previous, anchor, volatility) {
-  const reversion = (anchor - previous) * 0.2;
-  const noise = (Math.random() * 2 - 1) * anchor * volatility;
-  return Math.max(0, previous + reversion + noise);
-}
-
-function seedSeries(anchor, points, volatility) {
-  const series = [];
-  let value = anchor;
-  for (let index = 0; index < points; index += 1) {
-    value = nextPoint(value, anchor, volatility);
-    series.push(value);
+// Buckets items into one entry per calendar day over the trailing `days` window
+// (oldest first), so the trend chart reflects real activity instead of a live simulation.
+export function buildDailySeries(items, getDate, days = 30) {
+  const end = new Date();
+  end.setHours(0, 0, 0, 0);
+  const buckets = [];
+  for (let offset = days - 1; offset >= 0; offset -= 1) {
+    const date = new Date(end);
+    date.setDate(date.getDate() - offset);
+    buckets.push({ date: dayKey(date), count: 0 });
   }
-  return series;
+  const indexByDate = new Map(buckets.map((bucket, index) => [bucket.date, index]));
+  items.forEach((item) => {
+    const raw = getDate(item);
+    if (!raw) return;
+    const day = new Date(raw);
+    if (Number.isNaN(day.getTime())) return;
+    const index = indexByDate.get(dayKey(day));
+    if (index !== undefined) buckets[index].count += 1;
+  });
+  return buckets;
 }
 
-// Sliding window of simulated live values anchored to a real metric.
-// Static under prefers-reduced-motion: the current series stays visible, it just stops ticking.
-export function useLiveSeries(baseValue, { points = 32, intervalMs = 1200, volatility = 0.04 } = {}) {
-  const anchor = Math.max(1, baseValue || 0);
-  const [series, setSeries] = useState(() => seedSeries(anchor, points, volatility));
+function formatShortDate(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit' }).format(date);
+}
 
-  useEffect(() => {
-    // Dashboards mount with zeroed stats, then fetch — reseed so the window (and the
-    // percent-change badge) reflects the real anchor instead of the initial drift.
-    setSeries(seedSeries(anchor, points, volatility));
-    if (prefersReducedMotion()) return undefined;
-    const id = setInterval(() => {
-      setSeries((current) => [
-        ...current.slice(1),
-        nextPoint(current[current.length - 1], anchor, volatility),
-      ]);
-    }, intervalMs);
-    return () => clearInterval(id);
-  }, [anchor, points, intervalMs, volatility]);
-
-  return series;
+function linePathFor(values, width, height) {
+  const max = Math.max(...values, 1);
+  const min = Math.min(...values, 0);
+  const span = max - min || 1;
+  const stepX = values.length > 1 ? width / (values.length - 1) : width;
+  return values.map((value, index) => (
+    `${(index * stepX).toFixed(2)},${(height - ((value - min) / span) * height).toFixed(2)}`
+  )).join(' L');
 }
 
 /**
- * LiveLineChart — stock-ticker style line: big current value plus the percent
- * change over the visible window, green when up / red when down.
+ * TrendAreaChart — real daily activity over a trailing window (line + filled area),
+ * with the window total up front and the date range labelled on the axis.
+ * Expects `series` from buildDailySeries: [{ date: 'YYYY-MM-DD', count }].
  */
-export function LiveLineChart({ title, baseValue, unit }) {
-  const series = useLiveSeries(baseValue);
-  const current = series[series.length - 1];
-  const first = series[0] || 1;
-  const changePct = ((current - first) / first) * 100;
-  const rising = changePct >= 0;
-
+export function TrendAreaChart({ title, series, unit }) {
   const width = 100;
   const height = 32;
-  const min = Math.min(...series);
-  const span = Math.max(...series) - min || 1;
-  const stepX = width / (series.length - 1);
-  const coords = series.map((value, index) => (
-    `${(index * stepX).toFixed(2)},${(height - ((value - min) / span) * height).toFixed(2)}`
-  ));
-  const linePath = `M${coords.join(' L')}`;
+  const counts = series.map((point) => point.count);
+  const total = counts.reduce((sum, value) => sum + value, 0);
+  const linePath = `M${linePathFor(counts, width, height)}`;
   const areaPath = `${linePath} L${width},${height} L0,${height} Z`;
 
   return (
-    <section className="chart-panel live-chart-panel">
+    <section className="chart-panel trend-chart-panel">
       <h2 className="chart-title">{title}</h2>
-      <div className="live-chart-value-row">
-        <span className="live-chart-value">{Math.round(current)}</span>
-        {unit && <span className="live-chart-unit">{unit}</span>}
-        <span className={`live-chart-change ${rising ? 'is-up' : 'is-down'}`}>
-          {`${rising ? '+' : ''}${changePct.toFixed(1)}%`}
-        </span>
+      <div className="trend-chart-value-row">
+        <span className="trend-chart-value">{total}</span>
+        {unit && <span className="trend-chart-unit">{unit}</span>}
       </div>
-      <svg className="live-chart-svg" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
-        <path className="live-chart-area" d={areaPath} />
-        <path className="live-chart-line" d={linePath} />
+      <svg className="trend-chart-svg" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
+        <path className="trend-chart-area" d={areaPath} />
+        <path className="trend-chart-line" d={linePath} />
       </svg>
+      <div className="trend-chart-axis">
+        <span>{formatShortDate(series[0]?.date)}</span>
+        <span>{formatShortDate(series[series.length - 1]?.date)}</span>
+      </div>
     </section>
+  );
+}
+
+/**
+ * Sparkline — compact inline trend line for a stat card (no axis/labels).
+ * `series` is a plain array of numbers, oldest first.
+ */
+export function Sparkline({ series = [] }) {
+  if (series.length < 2) return null;
+  const width = 64;
+  const height = 22;
+  return (
+    <svg className="sparkline-svg" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
+      <path className="sparkline-line" d={`M${linePathFor(series, width, height)}`} />
+    </svg>
   );
 }
 
@@ -392,6 +401,7 @@ export function HeatmapChart({ title, data, onSelectCell }) {
   return (
     <section className="chart-panel">
       <h2 className="chart-title">{title}</h2>
+      <p className="heatmap-hint">Màu càng đậm, số tin đăng trong ô càng nhiều</p>
       <div className="heatmap-grid">
         <span className="heatmap-corner" />
         {CATEGORIES.map((category) => (
@@ -417,6 +427,15 @@ export function HeatmapChart({ title, data, onSelectCell }) {
             ))}
           </Fragment>
         ))}
+      </div>
+      <div className="heatmap-scale">
+        <span>Ít</span>
+        <span className="heatmap-scale-track">
+          {[0.15, 0.4, 0.65, 0.85, 1].map((opacity) => (
+            <span key={opacity} className="heatmap-scale-step" style={{ opacity }} />
+          ))}
+        </span>
+        <span>Nhiều</span>
       </div>
     </section>
   );
