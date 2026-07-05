@@ -98,11 +98,11 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
   const actions = {
     reload,
     toggleUserStatus: (user) => runAction(
-      () => updateUserStatus(session.token, user.id, user.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE'),
+      () => updateUserStatus(session.token, user.id, user.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE', user.fullName || user.username),
       'Đã cập nhật trạng thái tài khoản.',
     ),
     changePropertyStatus: (propertyId, status) => runAction(
-      () => updateAdminPropertyStatus(session.token, propertyId, status),
+      () => updateAdminPropertyStatus(session.token, propertyId, status, properties.find((property) => property.id === propertyId)?.title),
       status === 'HIDDEN' ? 'Đã gỡ bài đăng khỏi trang công khai.' : 'Đã cập nhật trạng thái bài đăng.',
     ),
     createBrokerAccount: (payload) => runAction(
@@ -110,7 +110,7 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
       'Đã cấp tài khoản môi giới.',
     ),
     changeViewingStatus: (viewingId, status) => runAction(
-      () => updateViewingStatus(session.token, viewingId, status),
+      () => updateViewingStatus(session.token, viewingId, status, viewings.find((viewing) => viewing.id === viewingId)?.visitorName),
       'Đã cập nhật lịch hẹn.',
     ),
   };

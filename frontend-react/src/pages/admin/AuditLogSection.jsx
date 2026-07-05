@@ -11,6 +11,7 @@ const ACTION_LABELS = {
   UNLOCK_USER: 'Mở khóa tài khoản',
   UPDATE_PROPERTY_STATUS: 'Đổi trạng thái bài đăng',
   HIDE_PROPERTY: 'Gỡ bài đăng',
+  UPDATE_VIEWING_STATUS: 'Đổi trạng thái lịch hẹn',
 };
 
 export default function AuditLogSection({ session }) {
@@ -63,7 +64,7 @@ export default function AuditLogSection({ session }) {
         loading={loading}
         toolbar={toolbar}
         emptyTitle="Chưa có nhật ký"
-        emptyDescription="Backend chưa ghi nhật ký — dữ liệu sẽ xuất hiện khi bật ghi log."
+        emptyDescription="Khi admin cấp tài khoản, khóa/mở tài khoản, đổi trạng thái bài đăng hoặc lịch hẹn, hoạt động sẽ hiển thị tại đây."
       />
     </DashboardPanel>
   );
