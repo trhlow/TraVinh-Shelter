@@ -1713,13 +1713,6 @@ img { display: block; max-width: 100%; }
   flex-shrink: 0;
 }
 
-.dashboard-property-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-}
-
 /* Admin broker list */
 .dashboard-broker-list {
   display: flex;

@@ -27,7 +27,6 @@ test('renders KPI cards, filter bar, and quick actions', () => {
   expect(screen.getAllByText('Lịch hẹn chờ').length).toBeGreaterThan(0);
   expect(screen.getByRole('button', { name: 'Tất cả' })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: /Cấp tài khoản môi giới/ })).toHaveAttribute('href', '#/admin/brokers');
-  expect(screen.getByRole('link', { name: /Duyệt tin chờ \(1\)/ })).toHaveAttribute('href', '#/admin/properties?status=PENDING');
 });
 
 test('ward filter narrows the data set feeding the charts', () => {

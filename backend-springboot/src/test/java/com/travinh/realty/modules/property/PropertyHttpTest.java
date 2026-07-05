@@ -16,6 +16,7 @@ import com.travinh.realty.common.config.JwtProperties;
 import com.travinh.realty.common.config.SecurityConfig;
 import com.travinh.realty.common.exception.GlobalExceptionHandler;
 import com.travinh.realty.modules.admin.AdminPropertyController;
+import com.travinh.realty.modules.admin.AuditService;
 import com.travinh.realty.modules.auth.security.JpaUserDetailsService;
 import com.travinh.realty.modules.auth.security.JwtAuthenticationFilter;
 import com.travinh.realty.modules.auth.security.JwtService;
@@ -64,6 +65,7 @@ class PropertyHttpTest {
     @MockBean private PropertyRepository properties;
     @MockBean private CategoryRepository categories;
     @MockBean private UserRepository users;
+    @MockBean private AuditService audit;
     @MockBean private JpaUserDetailsService userDetailsService;
     @MockBean private JpaMetamodelMappingContext jpaMappingContext;
 

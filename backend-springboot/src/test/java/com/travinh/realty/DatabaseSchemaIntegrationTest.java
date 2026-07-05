@@ -44,16 +44,14 @@ class DatabaseSchemaIntegrationTest {
                 FROM information_schema.columns
                 WHERE table_schema = 'public' AND table_name = 'properties' AND column_name = 'attributes'
                 """, String.class);
-        Integer savedPropertiesPrimaryKeyColumns = jdbcTemplate.queryForObject("""
+        Integer savedPropertiesTableCount = jdbcTemplate.queryForObject("""
                 SELECT count(*)
-                FROM pg_constraint c
-                JOIN pg_class t ON t.oid = c.conrelid
-                JOIN pg_namespace n ON n.oid = t.relnamespace
-                WHERE n.nspname = 'public' AND t.relname = 'saved_properties' AND c.contype = 'p'
+                FROM information_schema.tables
+                WHERE table_schema = 'public' AND table_name = 'saved_properties'
                 """, Integer.class);
 
         assertThat(attributesType).isEqualTo("jsonb");
-        assertThat(savedPropertiesPrimaryKeyColumns).isEqualTo(1);
+        assertThat(savedPropertiesTableCount).isEqualTo(0);
         assertThat(categoryRepository.findAll()).extracting(category -> category.getSlug())
                 .containsExactlyInAnyOrder("tro", "nha", "dat");
     }

@@ -42,3 +42,35 @@ test('admin view calls onStatusChange when status is changed', () => {
   fireEvent.change(select, { target: { value: 'CONFIRMED' } });
   expect(onStatusChange).toHaveBeenCalledWith('v1', 'CONFIRMED');
 });
+
+test('with propertyLookup, resolves property title + broker instead of a raw UUID', () => {
+  const viewing = {
+    id: 'v2', status: 'CONFIRMED', propertyId: 'prop-1', visitorName: 'Trần Thị B',
+    visitorPhone: '0909999999', requestedAt: '2026-07-01T09:00:00.000Z', createdAt: '2026-06-30T08:00:00.000Z',
+  };
+  const propertyLookup = { 'prop-1': { title: 'Nhà mới đường Nguyễn Đáng', broker: { name: 'Trần Mỹ Linh', phone: '0912345678' } } };
+  render(<ViewingsPanel viewings={[viewing]} propertyLookup={propertyLookup} />);
+
+  expect(screen.getByText('Nhà mới đường Nguyễn Đáng')).toBeInTheDocument();
+  expect(screen.getByText('Trần Mỹ Linh')).toBeInTheDocument();
+  expect(screen.getByText('0912345678')).toBeInTheDocument();
+  expect(screen.queryByText('prop-1')).not.toBeInTheDocument();
+});
+
+test('with propertyLookup, flags a PENDING viewing older than 24h as needing broker contact', () => {
+  const overdue = {
+    id: 'v3', status: 'PENDING', propertyId: 'prop-1', visitorName: 'Lê Văn C',
+    visitorPhone: '0908888888', requestedAt: '2026-07-01T09:00:00.000Z',
+    createdAt: new Date(Date.now() - 30 * 60 * 60 * 1000).toISOString(),
+  };
+  const propertyLookup = { 'prop-1': { title: 'Nhà mới đường Nguyễn Đáng', broker: { name: 'Trần Mỹ Linh', phone: '0912345678' } } };
+  render(<ViewingsPanel viewings={[overdue]} propertyLookup={propertyLookup} />);
+
+  expect(screen.getByText('Cần liên hệ môi giới')).toBeInTheDocument();
+});
+
+test('without propertyLookup (broker view), no broker/submitted-at columns and no overdue badge', () => {
+  render(<ViewingsPanel viewings={SAMPLE} />);
+  expect(screen.queryByText('Cần liên hệ môi giới')).not.toBeInTheDocument();
+  expect(screen.queryByText('Môi giới')).not.toBeInTheDocument();
+});

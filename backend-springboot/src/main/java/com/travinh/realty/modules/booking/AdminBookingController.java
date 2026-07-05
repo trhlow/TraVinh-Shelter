@@ -1,6 +1,9 @@
 package com.travinh.realty.modules.booking;
 
 import com.travinh.realty.common.dto.PagedResponse;
+import com.travinh.realty.modules.admin.AuditService;
+import com.travinh.realty.modules.admin.model.AuditAction;
+import com.travinh.realty.modules.auth.security.UserPrincipal;
 import com.travinh.realty.modules.booking.dto.UpdateViewingStatusRequest;
 import com.travinh.realty.modules.booking.dto.ViewingResponse;
 import com.travinh.realty.modules.booking.model.AppointmentStatus;
@@ -9,6 +12,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,9 +26,11 @@ import org.springframework.web.bind.annotation.RestController;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminBookingController {
     private final BookingService bookings;
+    private final AuditService audit;
 
-    public AdminBookingController(BookingService bookings) {
+    public AdminBookingController(BookingService bookings, AuditService audit) {
         this.bookings = bookings;
+        this.audit = audit;
     }
 
     @GetMapping("/viewings")
@@ -36,7 +42,11 @@ public class AdminBookingController {
 
     @PatchMapping("/viewings/{appointmentId}/status")
     public ViewingResponse updateViewingStatus(@PathVariable UUID appointmentId,
-                                               @Valid @RequestBody UpdateViewingStatusRequest request) {
-        return bookings.updateStatus(appointmentId, request.status());
+                                               @Valid @RequestBody UpdateViewingStatusRequest request,
+                                               @AuthenticationPrincipal UserPrincipal principal) {
+        ViewingResponse updated = bookings.updateStatus(appointmentId, request.status());
+        audit.record(principal.id(), AuditAction.UPDATE_VIEWING_STATUS, "ViewingAppointment", appointmentId,
+                updated.visitorName(), "Đổi trạng thái lịch hẹn sang " + request.status());
+        return updated;
     }
 }

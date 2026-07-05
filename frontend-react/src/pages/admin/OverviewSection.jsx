@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
-  buildHeatmapData, buildWardData, DonutChart, GaugeChart, HeatmapChart, LiveLineChart, WardBarChart,
+  buildDailySeries, buildHeatmapData, buildWardData, DonutChart, GaugeChart, HeatmapChart, TrendAreaChart, WardBarChart,
 } from '../../components/Charts.jsx';
 import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../../components/DashboardWidgets.jsx';
 import DateRangeFilter from '../../components/dashboard/DateRangeFilter.jsx';
@@ -34,18 +34,34 @@ export default function OverviewSection({ data, loading }) {
     () => viewings.filter((viewing) => viewing.status === 'PENDING' && isInRange(viewing.requestedAt, range)),
     [viewings, range],
   );
-  const pendingPosts = useMemo(
-    () => properties.filter((property) => property.rawStatus === 'PENDING').length,
-    [properties],
-  );
 
   const visibleCount = filteredProperties.filter((property) => property.rawStatus === 'AVAILABLE').length;
+
+  const newPostsSparkline = useMemo(
+    () => buildDailySeries(filteredProperties, (property) => property.createdAt, 7).map((bucket) => bucket.count),
+    [filteredProperties],
+  );
+  const visibleSparkline = useMemo(
+    () => buildDailySeries(
+      filteredProperties.filter((property) => property.rawStatus === 'AVAILABLE'),
+      (property) => property.createdAt,
+      7,
+    ).map((bucket) => bucket.count),
+    [filteredProperties],
+  );
+
   const kpis = [
-    { icon: 'Building', title: 'Bài đăng mới', value: filteredProperties.length, tone: 'navy', delta: prevProperties ? percentDelta(filteredProperties.length, prevProperties.length) : null },
-    { icon: 'Eye', title: 'Đang hiển thị', value: visibleCount, tone: 'green', delta: prevProperties ? percentDelta(visibleCount, prevProperties.filter((property) => property.rawStatus === 'AVAILABLE').length) : null },
+    { icon: 'Building', title: 'Bài đăng mới', value: filteredProperties.length, tone: 'navy', delta: prevProperties ? percentDelta(filteredProperties.length, prevProperties.length) : null, series: newPostsSparkline },
+    { icon: 'Eye', title: 'Đang hiển thị', value: visibleCount, tone: 'green', delta: prevProperties ? percentDelta(visibleCount, prevProperties.filter((property) => property.rawStatus === 'AVAILABLE').length) : null, series: visibleSparkline },
     { icon: 'IdCard', title: 'Môi giới', value: brokers.length, tone: 'orange', delta: null },
     { icon: 'Calendar', title: 'Lịch hẹn chờ', value: pendingViewings.length, tone: 'navy', delta: null },
   ];
+
+  const activitySeries = useMemo(() => {
+    const propertySeries = buildDailySeries(properties, (property) => property.createdAt, 30);
+    const viewingSeries = buildDailySeries(viewings, (viewing) => viewing.createdAt, 30);
+    return propertySeries.map((bucket, index) => ({ date: bucket.date, count: bucket.count + viewingSeries[index].count }));
+  }, [properties, viewings]);
 
   const wardData = useMemo(() => buildWardData(filteredProperties, (property) => property.ward), [filteredProperties]);
   const heatmapData = useMemo(
@@ -80,9 +96,6 @@ export default function OverviewSection({ data, loading }) {
         <a className="btn btn-primary btn-sm" href="#/admin/brokers">
           ＋ Cấp tài khoản môi giới
         </a>
-        <a className="btn btn-ghost btn-sm" href="#/admin/properties?status=PENDING">
-          Duyệt tin chờ ({pendingPosts})
-        </a>
         <button className="btn btn-ghost btn-sm" type="button" onClick={exportOverview}>Xuất báo cáo</button>
       </div>
 
@@ -111,15 +124,16 @@ export default function OverviewSection({ data, loading }) {
             value={kpi.value}
             tone={kpi.tone}
             trend={kpi.delta == null ? undefined : { value: `${kpi.delta >= 0 ? '+' : ''}${kpi.delta}%`, direction: kpi.delta >= 0 ? 'up' : 'down' }}
+            series={kpi.series}
           />
         ))}
       </div>
 
       <div className="dashboard-live-row">
-        <LiveLineChart
-          title="Hoạt động hệ thống (thời gian thực)"
-          baseValue={visibleCount * 12 + filteredProperties.length}
-          unit="điểm hoạt động"
+        <TrendAreaChart
+          title="Hoạt động hệ thống (bài đăng + lịch hẹn, 30 ngày)"
+          series={activitySeries}
+          unit="lượt hoạt động"
         />
         <WardBarChart title="BĐS theo khu vực Trà Vinh" data={wardData} onSelectWard={(code) => drillTo({ ward: code })} />
       </div>
@@ -150,10 +164,11 @@ export default function OverviewSection({ data, loading }) {
             </div>
           )}
         </DashboardPanel>
-        <DashboardPanel title="Tình trạng hệ thống" count="Từ API hiện có">
+        <DashboardPanel title="Tình trạng hệ thống">
           <div className="dashboard-system-lines">
+            <div className="dashboard-system-line"><span className="dashboard-system-line-label">Tổng bài đăng</span><span className="dashboard-system-line-value">{filteredProperties.length}</span></div>
+            <div className="dashboard-system-line"><span className="dashboard-system-line-label">Bài đăng đang hiển thị</span><span className="dashboard-system-line-value">{visibleCount}</span></div>
             <div className="dashboard-system-line"><span className="dashboard-system-line-label">Môi giới được cấp</span><span className="dashboard-system-line-value">{brokers.length}</span></div>
-            <div className="dashboard-system-line"><span className="dashboard-system-line-label">Tin chờ duyệt</span><span className="dashboard-system-line-value">{pendingPosts}</span></div>
             <div className="dashboard-system-line"><span className="dashboard-system-line-label">Lịch hẹn chờ</span><span className="dashboard-system-line-value">{pendingViewings.length}</span></div>
             <div className="dashboard-system-line"><span className="dashboard-system-line-label">Tài khoản bị khóa</span><span className="dashboard-system-line-value">{users.filter((user) => user.status === 'LOCKED' || user.status === 'BLOCKED').length}</span></div>
           </div>

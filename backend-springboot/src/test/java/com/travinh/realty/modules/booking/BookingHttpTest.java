@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.travinh.realty.common.config.JwtProperties;
 import com.travinh.realty.common.config.SecurityConfig;
 import com.travinh.realty.common.exception.GlobalExceptionHandler;
+import com.travinh.realty.modules.admin.AuditService;
 import com.travinh.realty.modules.auth.security.JpaUserDetailsService;
 import com.travinh.realty.modules.auth.security.JwtAuthenticationFilter;
 import com.travinh.realty.modules.auth.security.JwtService;
@@ -55,6 +56,7 @@ class BookingHttpTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private JwtService jwtService;
     @MockBean private BookingService bookingService;
+    @MockBean private AuditService audit;
     @MockBean private JpaUserDetailsService userDetailsService;
     @MockBean private JpaMetamodelMappingContext jpaMappingContext;
 

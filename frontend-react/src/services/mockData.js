@@ -247,13 +247,12 @@ const RAW_MOCK_PROPERTIES = [
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WARD_CYCLE = ['phuong-tra-vinh', 'phuong-long-duc', 'phuong-nguyet-hoa', 'phuong-hoa-thuan'];
 const CATEGORY_CYCLE = ['tro', 'nha', 'dat'];
-const STATUS_CYCLE = ['AVAILABLE', 'AVAILABLE', 'PENDING', 'AVAILABLE', 'RENTED', 'SOLD', 'AVAILABLE', 'HIDDEN'];
+const STATUS_CYCLE = ['AVAILABLE', 'AVAILABLE', 'RENTED', 'AVAILABLE', 'RENTED', 'SOLD', 'AVAILABLE', 'HIDDEN'];
 const MOCK_NOW = Date.UTC(2026, 6, 1); // fixed so tests stay deterministic
 
 function statusLabelOf(status) {
   return {
     AVAILABLE: 'Đang hiển thị',
-    PENDING: 'Chờ duyệt',
     RENTED: 'Đã thuê',
     SOLD: 'Đã bán',
     HIDDEN: 'Đã ẩn',

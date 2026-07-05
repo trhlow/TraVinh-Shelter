@@ -200,7 +200,7 @@ export async function fetchAdminViewings(token, params) {
   return request(`/admin/viewings${qs ? `?${qs}` : ''}`, { token });
 }
 
-export async function updateViewingStatus(token, viewingId, status) {
+export async function updateViewingStatus(token, viewingId, status, targetLabel) {
   if (USE_MOCK_API) {
     try {
       const existing = JSON.parse(localStorage.getItem('travinh-mock-viewings') || '[]');
@@ -209,6 +209,11 @@ export async function updateViewingStatus(token, viewingId, status) {
     } catch {
       // localStorage unavailable — ignore
     }
+    appendMockAudit({
+      action: 'UPDATE_VIEWING_STATUS',
+      targetLabel: targetLabel || viewingId,
+      detail: `Đổi trạng thái lịch hẹn sang ${status}`,
+    });
     return delay({ id: viewingId, status }, 120);
   }
   return request(`/admin/viewings/${viewingId}/status`, { method: 'PATCH', token, body: { status } });
@@ -248,26 +253,70 @@ export async function fetchAdminProperties(token, params) {
 }
 
 export async function createBroker(token, payload) {
-  if (USE_MOCK_API) return delay({ id: 'mock-' + Date.now(), role: 'BROKER', status: 'ACTIVE', ...payload }, 120);
+  if (USE_MOCK_API) {
+    appendMockAudit({ action: 'CREATE_BROKER', targetLabel: payload.fullName, detail: 'Cấp tài khoản môi giới mới' });
+    return delay({ id: 'mock-' + Date.now(), role: 'BROKER', status: 'ACTIVE', ...payload }, 120);
+  }
   return request('/admin/brokers', { method: 'POST', token, body: payload });
 }
 
-export async function updateUserStatus(token, userId, status) {
-  if (USE_MOCK_API) return delay({ id: userId, status }, 120);
+export async function updateUserStatus(token, userId, status, targetLabel) {
+  if (USE_MOCK_API) {
+    appendMockAudit({
+      action: status === 'LOCKED' ? 'LOCK_USER' : 'UNLOCK_USER',
+      targetLabel: targetLabel || userId,
+      detail: status === 'LOCKED' ? 'Khóa tài khoản' : 'Mở khóa tài khoản',
+    });
+    return delay({ id: userId, status }, 120);
+  }
   return request(`/admin/users/${userId}/status`, { method: 'PATCH', token, body: { status } });
 }
 
-export async function fetchAdminAuditLogs(_token) {
-  if (USE_MOCK_API) {
-    return delay([...MOCK_AUDIT_LOGS].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)), 120);
+function appendMockAudit({ action, targetLabel, detail }) {
+  try {
+    const existing = JSON.parse(localStorage.getItem('travinh-mock-audit') || '[]');
+    existing.push({
+      id: 'mock-audit-' + Date.now(),
+      action,
+      actorEmail: 'admin@congtinland.vn',
+      targetLabel,
+      detail,
+      createdAt: new Date().toISOString(),
+    });
+    localStorage.setItem('travinh-mock-audit', JSON.stringify(existing));
+  } catch {
+    // localStorage unavailable — ignore
   }
-  // Backend has the AuditLog entity but no write-path or endpoint yet — the UI
-  // shows an explanatory empty state until that lands.
-  return [];
 }
 
-export async function updateAdminPropertyStatus(token, propertyId, status) {
-  if (USE_MOCK_API) return delay({ id: propertyId, status }, 120);
+function readMockAuditLogs() {
+  let extra = [];
+  try {
+    extra = JSON.parse(localStorage.getItem('travinh-mock-audit') || '[]');
+  } catch {
+    extra = [];
+  }
+  return [...MOCK_AUDIT_LOGS, ...(Array.isArray(extra) ? extra : [])]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+export async function fetchAdminAuditLogs(token) {
+  if (USE_MOCK_API) {
+    return delay(readMockAuditLogs(), 120);
+  }
+  const response = await request('/admin/audit-logs?size=200', { token });
+  return response.content || [];
+}
+
+export async function updateAdminPropertyStatus(token, propertyId, status, targetLabel) {
+  if (USE_MOCK_API) {
+    appendMockAudit({
+      action: status === 'HIDDEN' ? 'HIDE_PROPERTY' : 'UPDATE_PROPERTY_STATUS',
+      targetLabel: targetLabel || propertyId,
+      detail: status === 'HIDDEN' ? 'Gỡ bài đăng khỏi trang công khai' : `Đổi trạng thái sang ${status}`,
+    });
+    return delay({ id: propertyId, status }, 120);
+  }
   const response = await request(`/admin/properties/${propertyId}/status`, {
     method: 'PATCH',
     token,

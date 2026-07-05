@@ -24,6 +24,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -130,9 +131,12 @@ class MediaConcurrencyIntegrationTest {
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
+    private static final AtomicInteger PHONE_SEQ = new AtomicInteger(1);
+
     private Fixture fixture(String username) {
+        String phone = "09" + String.format("%08d", PHONE_SEQ.getAndIncrement());
         User broker = users.saveAndFlush(User.createBroker(username, username + "@example.com",
-                "hash", "Broker", "0900000000"));
+                "hash", "Broker", phone));
         Category category = categories.findBySlug("tro").orElseThrow();
         Property property = properties.saveAndFlush(Property.create(broker, category, "Tin", "Trà Vinh",
                 BigDecimal.valueOf(1_500_000), Map.of()));

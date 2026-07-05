@@ -29,8 +29,8 @@ test('renders audit entries with Vietnamese action labels', async () => {
   expect(within(tableElement).getByText('Khóa tài khoản')).toBeInTheDocument();
 });
 
-test('shows backend-not-logging empty state when fetch returns []', async () => {
+test('shows an empty state when fetch returns []', async () => {
   fetchAdminAuditLogs.mockResolvedValue([]);
   render(<AuditLogSection {...baseProps} />);
-  await waitFor(() => expect(screen.getByText(/Backend chưa ghi nhật ký/)).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByText('Chưa có nhật ký')).toBeInTheDocument());
 });

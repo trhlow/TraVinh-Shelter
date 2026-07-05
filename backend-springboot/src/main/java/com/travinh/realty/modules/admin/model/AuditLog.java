@@ -42,6 +42,12 @@ public class AuditLog {
     @Column(name = "entity_id")
     private UUID entityId;
 
+    @Column(name = "target_label")
+    private String targetLabel;
+
+    @Column(name = "detail")
+    private String detail;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "old_value", columnDefinition = "jsonb")
     private Map<String, Object> oldValue;
@@ -57,11 +63,25 @@ public class AuditLog {
     protected AuditLog() {
     }
 
+    public static AuditLog record(User actor, AuditAction action, String entityName, UUID entityId,
+                                   String targetLabel, String detail) {
+        AuditLog log = new AuditLog();
+        log.actor = actor;
+        log.action = action;
+        log.entityName = entityName;
+        log.entityId = entityId;
+        log.targetLabel = targetLabel;
+        log.detail = detail;
+        return log;
+    }
+
     public UUID getId() { return id; }
     public User getActor() { return actor; }
     public AuditAction getAction() { return action; }
     public String getEntityName() { return entityName; }
     public UUID getEntityId() { return entityId; }
+    public String getTargetLabel() { return targetLabel; }
+    public String getDetail() { return detail; }
     public Map<String, Object> getOldValue() { return oldValue; }
     public Map<String, Object> getNewValue() { return newValue; }
     public Instant getTimestamp() { return timestamp; }

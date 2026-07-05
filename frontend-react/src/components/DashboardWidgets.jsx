@@ -1,4 +1,5 @@
 import Icon from './ui/Icon.jsx';
+import { Sparkline } from './Charts.jsx';
 
 // tone → icon chip CSS class
 const CHIP_CLASS = {
@@ -37,8 +38,9 @@ function isTabActive(href, activePath) {
  *   tone   {'navy'|'orange'|'green'|'red'|'muted'}
  *   href   {string}   — if provided, renders as <a>
  *   trend  {{ value: string, direction: 'up'|'down' }}  — optional trend pill
+ *   series {number[]}  — optional daily counts backing the trend; renders a sparkline next to the pill
  */
-export function StatCard({ icon, title, value, meta, tone = 'navy', href, trend }) {
+export function StatCard({ icon, title, value, meta, tone = 'navy', href, trend, series }) {
   const chipClass = CHIP_CLASS[tone] || CHIP_CLASS.navy;
 
   const content = (
@@ -55,6 +57,11 @@ export function StatCard({ icon, title, value, meta, tone = 'navy', href, trend 
                 strokeWidth={2.5}
               />
               {trend.value}
+              {series && series.length > 1 && (
+                <span className="kpi-trend-sparkline">
+                  <Sparkline series={series} />
+                </span>
+              )}
             </span>
           )}
         </div>
