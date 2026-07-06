@@ -67,4 +67,19 @@ class RedisRateLimiterIntegrationTest {
 
         assertThat(nodeA.tryAcquire(key, 5, Duration.ofMinutes(1))).isFalse();
     }
+
+    @Test
+    void firstAcquireAtomicallySetsATtlSoTheKeyCannotBeLeftWithoutExpiry() {
+        // INCR and EXPIRE must happen as one atomic operation on the first hit of a window.
+        // If they were two separate calls, a crash in between would leave the key with no
+        // TTL — permanently rate-limiting that key for this group.
+        StringRedisTemplate template = newTemplate();
+        RateLimiter limiter = new RedisRateLimiter(template);
+        String key = "ttl-check:" + System.nanoTime();
+
+        limiter.tryAcquire(key, 5, Duration.ofMinutes(1));
+
+        Long ttl = template.getExpire("rate-limit:" + key);
+        assertThat(ttl).isNotNull().isGreaterThan(0);
+    }
 }

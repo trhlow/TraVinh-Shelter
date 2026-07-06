@@ -114,6 +114,26 @@ class SecurityHttpTest {
     }
 
     @Test
+    void rateLimitIsTrackedPerResolvedClientIpNotGlobally() throws Exception {
+        // Exercises the full chain (path-group matching -> ClientIpResolver -> RateLimiter)
+        // end to end: a different X-Forwarded-For value must get its own, independent bucket
+        // rather than sharing one counter with every other caller.
+        when(authService.login(any())).thenThrow(new BadCredentialsException("bad credentials"));
+        for (int attempt = 0; attempt < 11; attempt++) {
+            mockMvc.perform(post("/auth/login")
+                    .header("X-Forwarded-For", "203.0.113.10")
+                    .contentType("application/json")
+                    .content("{\"email\":\"minh@example.com\",\"password\":\"wrong-password\"}"));
+        }
+
+        mockMvc.perform(post("/auth/login")
+                        .header("X-Forwarded-For", "203.0.113.99")
+                        .contentType("application/json")
+                        .content("{\"email\":\"minh@example.com\",\"password\":\"wrong-password\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void authenticatedUserCanLogoutCurrentToken() throws Exception {
         User user = user("logout@example.com", UserStatus.ACTIVE);
         when(userDetailsService.loadUserByUsername(user.getEmail())).thenReturn(UserPrincipal.from(user));
