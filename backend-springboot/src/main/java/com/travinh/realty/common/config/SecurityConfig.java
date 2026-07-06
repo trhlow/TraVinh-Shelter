@@ -2,7 +2,12 @@ package com.travinh.realty.common.config;
 
 import com.travinh.realty.modules.auth.security.JpaUserDetailsService;
 import com.travinh.realty.modules.auth.security.AuthRateLimitFilter;
+import com.travinh.realty.modules.auth.security.InMemoryRateLimiter;
+import com.travinh.realty.modules.auth.security.InMemoryRevokedTokenStore;
 import com.travinh.realty.modules.auth.security.JwtAuthenticationFilter;
+import com.travinh.realty.modules.auth.security.RateLimiter;
+import com.travinh.realty.modules.auth.security.RedisRateLimiter;
+import com.travinh.realty.modules.auth.security.RedisRevokedTokenStore;
 import com.travinh.realty.modules.auth.security.RevokedTokenStore;
 import com.travinh.realty.common.exception.ApiError;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,9 +17,11 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -61,13 +68,25 @@ public class SecurityConfig {
     }
 
     @Bean
-    AuthRateLimitFilter authRateLimitFilter(ObjectMapper objectMapper) {
-        return new AuthRateLimitFilter(objectMapper);
+    AuthRateLimitFilter authRateLimitFilter(ObjectMapper objectMapper, RateLimiter rateLimiter) {
+        return new AuthRateLimitFilter(objectMapper, rateLimiter);
+    }
+
+    /**
+     * Redis-backed when a {@link StringRedisTemplate} is configured (docker-compose / prod),
+     * so rate limits and token revocation are shared across all backend instances behind the
+     * load balancer. Falls back to an in-process store when Redis isn't wired (slice tests).
+     */
+    @Bean
+    RateLimiter rateLimiter(ObjectProvider<StringRedisTemplate> redisTemplate) {
+        StringRedisTemplate template = redisTemplate.getIfAvailable();
+        return template != null ? new RedisRateLimiter(template) : new InMemoryRateLimiter();
     }
 
     @Bean
-    RevokedTokenStore revokedTokenStore() {
-        return new RevokedTokenStore();
+    RevokedTokenStore revokedTokenStore(ObjectProvider<StringRedisTemplate> redisTemplate) {
+        StringRedisTemplate template = redisTemplate.getIfAvailable();
+        return template != null ? new RedisRevokedTokenStore(template) : new InMemoryRevokedTokenStore();
     }
 
     @Bean

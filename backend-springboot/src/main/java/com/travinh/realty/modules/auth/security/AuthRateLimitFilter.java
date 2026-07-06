@@ -11,8 +11,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -27,10 +25,11 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     private static final Map<String, Integer> RATE_LIMITED_GROUPS = rateLimitedGroups();
 
     private final ObjectMapper objectMapper;
-    private final Map<String, AttemptWindow> attempts = new ConcurrentHashMap<>();
+    private final RateLimiter rateLimiter;
 
-    public AuthRateLimitFilter(ObjectMapper objectMapper) {
+    public AuthRateLimitFilter(ObjectMapper objectMapper, RateLimiter rateLimiter) {
         this.objectMapper = objectMapper;
+        this.rateLimiter = rateLimiter;
     }
 
     @Override
@@ -66,15 +65,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
 
     private boolean allow(HttpServletRequest request, String group, int limit) {
         String key = clientIp(request) + ":" + group;
-        Instant now = Instant.now();
-        AttemptWindow window = attempts.compute(key, (_ignored, existing) -> {
-            if (existing == null || existing.expiresAt().isBefore(now)) {
-                return new AttemptWindow(new AtomicInteger(1), now.plus(WINDOW));
-            }
-            existing.count().incrementAndGet();
-            return existing;
-        });
-        return window.count().get() <= limit;
+        return rateLimiter.tryAcquire(key, limit, WINDOW);
     }
 
     private static Map<String, Integer> rateLimitedGroups() {
@@ -99,8 +90,5 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             return uri.substring(contextPath.length());
         }
         return uri;
-    }
-
-    private record AttemptWindow(AtomicInteger count, Instant expiresAt) {
     }
 }
