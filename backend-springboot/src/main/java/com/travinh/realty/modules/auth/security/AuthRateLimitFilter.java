@@ -26,10 +26,12 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
 
     private final ObjectMapper objectMapper;
     private final RateLimiter rateLimiter;
+    private final ClientIpResolver clientIpResolver;
 
-    public AuthRateLimitFilter(ObjectMapper objectMapper, RateLimiter rateLimiter) {
+    public AuthRateLimitFilter(ObjectMapper objectMapper, RateLimiter rateLimiter, ClientIpResolver clientIpResolver) {
         this.objectMapper = objectMapper;
         this.rateLimiter = rateLimiter;
+        this.clientIpResolver = clientIpResolver;
     }
 
     @Override
@@ -64,7 +66,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     }
 
     private boolean allow(HttpServletRequest request, String group, int limit) {
-        String key = clientIp(request) + ":" + group;
+        String key = clientIpResolver.resolve(request) + ":" + group;
         return rateLimiter.tryAcquire(key, limit, WINDOW);
     }
 
@@ -73,14 +75,6 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         groups.put("/auth/login", DEFAULT_LIMIT);
         groups.put("/properties/*/viewings", DEFAULT_LIMIT);
         return groups;
-    }
-
-    private String clientIp(HttpServletRequest request) {
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-        if (forwardedFor != null && !forwardedFor.isBlank()) {
-            return forwardedFor.split(",", 2)[0].trim();
-        }
-        return request.getRemoteAddr();
     }
 
     private String requestPath(HttpServletRequest request) {

@@ -2,6 +2,7 @@ package com.travinh.realty.common.config;
 
 import com.travinh.realty.modules.auth.security.JpaUserDetailsService;
 import com.travinh.realty.modules.auth.security.AuthRateLimitFilter;
+import com.travinh.realty.modules.auth.security.ClientIpResolver;
 import com.travinh.realty.modules.auth.security.InMemoryRateLimiter;
 import com.travinh.realty.modules.auth.security.InMemoryRevokedTokenStore;
 import com.travinh.realty.modules.auth.security.JwtAuthenticationFilter;
@@ -18,6 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -68,8 +70,21 @@ public class SecurityConfig {
     }
 
     @Bean
-    AuthRateLimitFilter authRateLimitFilter(ObjectMapper objectMapper, RateLimiter rateLimiter) {
-        return new AuthRateLimitFilter(objectMapper, rateLimiter);
+    AuthRateLimitFilter authRateLimitFilter(ObjectMapper objectMapper, RateLimiter rateLimiter,
+                                            ClientIpResolver clientIpResolver) {
+        return new AuthRateLimitFilter(objectMapper, rateLimiter, clientIpResolver);
+    }
+
+    /**
+     * X-Forwarded-For is only trusted when the request's immediate TCP peer is one of these
+     * proxies; otherwise the header is attacker-controlled. Defaults cover the bundled nginx
+     * reverse proxy talking over the docker-compose network (private RFC1918 ranges).
+     */
+    @Bean
+    ClientIpResolver clientIpResolver(
+            @Value("${app.security.trusted-proxies:127.0.0.1/32,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}")
+            List<String> trustedProxies) {
+        return new ClientIpResolver(trustedProxies);
     }
 
     /**
