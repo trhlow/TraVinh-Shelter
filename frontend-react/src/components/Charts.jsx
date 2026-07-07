@@ -235,15 +235,13 @@ export function buildMonthlySeries(items, getDate, referenceDate = new Date()) {
 
 function formatShortDate(value) {
   if (!value) return '';
+  if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}/)) {
+    const [, month, day] = value.split('-');
+    return `${day}/${month}`;
+  }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
   return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit' }).format(date);
-}
-
-function formatDateForTooltip(dateStr) {
-  if (!dateStr) return '';
-  const [, month, day] = dateStr.split('-');
-  return `${day}/${month}`;
 }
 
 function linePathFor(values, width, height) {
@@ -304,7 +302,7 @@ export function TrendAreaChart({ title, series, unit }) {
             data-testid="trend-chart-tooltip"
             style={{ left: `${(activeIndex / Math.max(1, series.length - 1)) * 100}%` }}
           >
-            {formatDateForTooltip(series[activeIndex].date)}: {series[activeIndex].count} {unit || ''}
+            {formatShortDate(series[activeIndex].date)}: {series[activeIndex].count} {unit || ''}
           </div>
         )}
       </div>
