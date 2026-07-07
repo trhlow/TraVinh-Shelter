@@ -244,6 +244,13 @@ function formatShortDate(value) {
   return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit' }).format(date);
 }
 
+// Clamped to a 5%-95% band so the tooltip's translate(-50%) centering never
+// pushes it fully outside the chart at the first/last day.
+function tooltipLeftPct(activeIndex, seriesLength) {
+  const leftPct = (activeIndex / Math.max(1, seriesLength - 1)) * 100;
+  return Math.min(95, Math.max(5, leftPct));
+}
+
 function linePathFor(values, width, height) {
   const max = Math.max(...values, 1);
   const min = Math.min(...values, 0);
@@ -283,6 +290,7 @@ export function TrendAreaChart({ title, series, unit }) {
         <svg className="trend-chart-svg" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
           <path className="trend-chart-area" d={areaPath} />
           <path className="trend-chart-line" d={linePath} />
+          {/* preserveAspectRatio="none" scales x/y unevenly, rendering these as slight ellipses — accepted, not worth restructuring the coordinate system for. */}
           {series.map((point, index) => (
             <circle
               key={point.date}
@@ -300,7 +308,7 @@ export function TrendAreaChart({ title, series, unit }) {
           <div
             className="trend-chart-tooltip"
             data-testid="trend-chart-tooltip"
-            style={{ left: `${(activeIndex / Math.max(1, series.length - 1)) * 100}%` }}
+            style={{ left: `${tooltipLeftPct(activeIndex, series.length)}%` }}
           >
             {formatShortDate(series[activeIndex].date)}: {series[activeIndex].count} {unit || ''}
           </div>

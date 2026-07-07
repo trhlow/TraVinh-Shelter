@@ -33,7 +33,6 @@
   --color-error-bg:         #fee2e2;
   --color-zalo:             #0068ff;
   --color-facebook:         #1877f2;
-  --color-tiktok:           #000000;
   --color-scrim:            #000000;
 
   /* Dashboard sidebar — fixed dark navigation rail, same in both themes */
@@ -1662,6 +1661,18 @@ img { display: block; max-width: 100%; }
 
 .dashboard-profile-line-label {
   color: var(--color-body);
+}
+
+.dashboard-profile-line-link {
+  color: var(--color-primary);
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-profile-line-link:hover {
+  text-decoration: underline;
 }
 
 /* Admin system lines */

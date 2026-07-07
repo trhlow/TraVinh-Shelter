@@ -807,13 +807,13 @@ function ProfileSummary({ profile, profileForm, avatarPreview, profileReady }) {
       <div className="dashboard-profile-meta">
         <ProfileLine label="Số điện thoại" value={profile?.phone || profileForm.phone || 'Chưa cập nhật'} />
         {(profile?.facebookUrl || profileForm.facebookUrl) && (
-          <ProfileLine label="Facebook" value={profile?.facebookUrl || profileForm.facebookUrl} />
+          <ProfileSocialLine label="Facebook" url={profile?.facebookUrl || profileForm.facebookUrl} />
         )}
         {(profile?.zaloUrl || profileForm.zaloUrl) && (
-          <ProfileLine label="Zalo" value={profile?.zaloUrl || profileForm.zaloUrl} />
+          <ProfileSocialLine label="Zalo" url={profile?.zaloUrl || profileForm.zaloUrl} />
         )}
         {(profile?.tiktokUrl || profileForm.tiktokUrl) && (
-          <ProfileLine label="TikTok" value={profile?.tiktokUrl || profileForm.tiktokUrl} />
+          <ProfileSocialLine label="TikTok" url={profile?.tiktokUrl || profileForm.tiktokUrl} />
         )}
         <ProfileLine label="Trạng thái hồ sơ" value={profileReady ? 'Sẵn sàng hiển thị' : 'Cần bổ sung'} tone={profileReady ? 'success' : 'warning'} />
       </div>
@@ -829,6 +829,18 @@ function ProfileLine({ label, value, tone = 'muted' }) {
     <div className="dashboard-profile-line">
       <span className="dashboard-profile-line-label">{label}</span>
       <StatusBadge tone={tone}>{value}</StatusBadge>
+    </div>
+  );
+}
+
+// Social profile URLs are links, not status text — unlike ProfileLine's StatusBadge.
+function ProfileSocialLine({ label, url }) {
+  return (
+    <div className="dashboard-profile-line">
+      <span className="dashboard-profile-line-label">{label}</span>
+      <a className="dashboard-profile-line-link" href={url} target="_blank" rel="noopener noreferrer">
+        {url}
+      </a>
     </div>
   );
 }
