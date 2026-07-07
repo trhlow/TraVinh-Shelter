@@ -56,8 +56,11 @@ public class UserProfileService {
         if (phone != null && users.existsByNormalizedPhoneAndIdNot(normalizePhoneForLookup(phone), user.getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Phone number is already registered");
         }
+        String zaloUrl = normalizeOptional(request.zaloUrl());
+        String facebookUrl = normalizeOptional(request.facebookUrl());
+        String tiktokUrl = normalizeOptional(request.tiktokUrl());
         try {
-            user.updateProfile(request.fullName().trim(), phone);
+            user.updateProfile(request.fullName().trim(), phone, zaloUrl, facebookUrl, tiktokUrl);
             users.flush();
             return CurrentUserProfileResponse.from(user);
         } catch (DataIntegrityViolationException exception) {

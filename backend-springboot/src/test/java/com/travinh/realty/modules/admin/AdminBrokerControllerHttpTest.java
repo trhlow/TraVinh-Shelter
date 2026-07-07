@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import tools.jackson.databind.ObjectMapper;
@@ -98,7 +99,8 @@ class AdminBrokerControllerHttpTest {
         authenticate(admin);
         UUID brokerId = UUID.randomUUID();
         UserProfileResponse response = new UserProfileResponse(brokerId, "lan", "Trần Mỹ Linh", "0900000111",
-                null, "lan@example.com", UserRole.BROKER, UserStatus.ACTIVE, Instant.now());
+                null, "lan@example.com", "https://zalo.me/lan", "https://facebook.com/lan",
+                "https://tiktok.com/@lan", UserRole.BROKER, UserStatus.ACTIVE, Instant.now());
         when(profiles.createBroker(any())).thenReturn(response);
         CreateBrokerRequest request = new CreateBrokerRequest("lan", "lan@example.com", "password123",
                 "Trần Mỹ Linh", "0900000111");
@@ -107,7 +109,10 @@ class AdminBrokerControllerHttpTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                         .header("Authorization", bearer(admin)))
-                .andExpect(status().isCreated());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.zaloUrl").value("https://zalo.me/lan"))
+                .andExpect(jsonPath("$.facebookUrl").value("https://facebook.com/lan"))
+                .andExpect(jsonPath("$.tiktokUrl").value("https://tiktok.com/@lan"));
 
         verify(audit).record(eq(admin.getId()), eq(AuditAction.CREATE_BROKER), eq("User"), eq(brokerId),
                 eq("Trần Mỹ Linh"), any());
@@ -119,7 +124,7 @@ class AdminBrokerControllerHttpTest {
         authenticate(admin);
         UUID userId = UUID.randomUUID();
         UserProfileResponse response = new UserProfileResponse(userId, "huy", "Phạm Quốc Huy", "0900000222",
-                null, "huy@example.com", UserRole.USER, UserStatus.LOCKED, Instant.now());
+                null, "huy@example.com", null, null, null, UserRole.USER, UserStatus.LOCKED, Instant.now());
         when(profiles.updateUserStatus(eq(userId), eq(UserStatus.LOCKED))).thenReturn(response);
 
         mockMvc.perform(patch("/admin/users/{userId}/status", userId)

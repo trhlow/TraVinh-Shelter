@@ -124,7 +124,7 @@ class AdminPropertyControllerHttpTest {
     private PropertyResponse propertyResponse(UUID id, String title, PropertyStatus status) {
         return new PropertyResponse(id, new CategoryResponse(1L, "Nhà", "nha", null),
                 new BrokerSummaryResponse(UUID.randomUUID(), "Môi giới", "0900000000", null,
-                        "broker@example.com", null, null),
+                        "broker@example.com", null, null, null),
                 title, "Trà Vinh", BigDecimal.valueOf(1_000_000_000), status, Map.of(), Instant.now(), Instant.now());
     }
 

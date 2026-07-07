@@ -42,10 +42,45 @@ class UserProfileServiceTest {
         UserProfileService service = service();
 
         CurrentUserProfileResponse response = service.updateCurrentProfile(UserPrincipal.from(user),
-                new UpdateProfileRequest("New name", "0900000000"));
+                new UpdateProfileRequest("New name", "0900000000", null, null, null));
 
         assertThat(response.fullName()).isEqualTo("New name");
         assertThat(response.phone()).isEqualTo("0900000000");
+    }
+
+    @Test
+    void updatesOwnUserProfileIncludingSocialLinks() {
+        User user = user(UserRole.USER, UserStatus.ACTIVE, "Old name", null);
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+
+        CurrentUserProfileResponse response = service().updateCurrentProfile(UserPrincipal.from(user),
+                new UpdateProfileRequest("Old name", "0900000000", "https://zalo.me/0900000000",
+                        "https://facebook.com/user", "https://tiktok.com/@user"));
+
+        assertThat(response.zaloUrl()).isEqualTo("https://zalo.me/0900000000");
+        assertThat(response.facebookUrl()).isEqualTo("https://facebook.com/user");
+        assertThat(response.tiktokUrl()).isEqualTo("https://tiktok.com/@user");
+    }
+
+    @Test
+    void clearingSocialLinksWithBlankOrNullStoresNull() {
+        User user = user(UserRole.USER, UserStatus.ACTIVE, "User", null);
+        ReflectionTestUtils.setField(user, "zaloUrl", "https://zalo.me/existing");
+        ReflectionTestUtils.setField(user, "facebookUrl", "https://facebook.com/existing");
+        ReflectionTestUtils.setField(user, "tiktokUrl", "https://tiktok.com/@existing");
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+
+        for (String blank : new String[]{null, "", "   "}) {
+            CurrentUserProfileResponse response = service().updateCurrentProfile(UserPrincipal.from(user),
+                    new UpdateProfileRequest("User", "0900000000", blank, blank, blank));
+
+            assertThat(response.zaloUrl()).isNull();
+            assertThat(response.facebookUrl()).isNull();
+            assertThat(response.tiktokUrl()).isNull();
+            assertThat(user.getZaloUrl()).isNull();
+            assertThat(user.getFacebookUrl()).isNull();
+            assertThat(user.getTiktokUrl()).isNull();
+        }
     }
 
     @Test
@@ -54,7 +89,7 @@ class UserProfileServiceTest {
         when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
 
         assertThatThrownBy(() -> service().updateCurrentProfile(UserPrincipal.from(broker),
-                new UpdateProfileRequest("Broker", "  ")))
+                new UpdateProfileRequest("Broker", "  ", null, null, null)))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting(error -> ((ResponseStatusException) error).getStatusCode())
                 .isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
@@ -67,7 +102,7 @@ class UserProfileServiceTest {
         when(users.existsByNormalizedPhoneAndIdNot("0911111111", user.getId())).thenReturn(true);
 
         assertThatThrownBy(() -> service().updateCurrentProfile(UserPrincipal.from(user),
-                new UpdateProfileRequest("User", "0911 111 111")))
+                new UpdateProfileRequest("User", "0911 111 111", null, null, null)))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting(error -> ((ResponseStatusException) error).getStatusCode())
                 .isEqualTo(HttpStatus.CONFLICT);

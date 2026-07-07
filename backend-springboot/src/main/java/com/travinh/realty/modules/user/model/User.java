@@ -46,6 +46,9 @@ public class User {
     @Column(name = "facebook_url", length = 2048)
     private String facebookUrl;
 
+    @Column(name = "tiktok_url", length = 2048)
+    private String tiktokUrl;
+
     @Column(nullable = false, unique = true, length = 254)
     private String email;
 
@@ -86,9 +89,12 @@ public class User {
         return user;
     }
 
-    public void updateProfile(String fullName, String phone) {
+    public void updateProfile(String fullName, String phone, String zaloUrl, String facebookUrl, String tiktokUrl) {
         this.fullName = fullName;
         this.phone = phone;
+        this.zaloUrl = zaloUrl;
+        this.facebookUrl = facebookUrl;
+        this.tiktokUrl = tiktokUrl;
     }
 
     public void updatePasswordHash(String passwordHash) {
@@ -111,6 +117,7 @@ public class User {
     public String getAvatarUrl() { return avatarUrl; }
     public String getZaloUrl() { return zaloUrl; }
     public String getFacebookUrl() { return facebookUrl; }
+    public String getTiktokUrl() { return tiktokUrl; }
     public String getEmail() { return email; }
     public UserRole getRole() { return role; }
     public UserStatus getStatus() { return status; }
