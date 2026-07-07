@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
-  buildDailySeries, buildHeatmapData, buildWardData, DonutChart, GaugeChart, HeatmapChart, TrendAreaChart, WardBarChart,
+  buildDailySeries, buildHeatmapData, buildMonthlySeries, buildWardData, DonutChart, GaugeChart, HeatmapChart, TrendAreaChart, WardBarChart,
 } from '../../components/Charts.jsx';
 import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../../components/DashboardWidgets.jsx';
 import DateRangeFilter from '../../components/dashboard/DateRangeFilter.jsx';
@@ -57,9 +57,13 @@ export default function OverviewSection({ data, loading }) {
     { icon: 'Calendar', title: 'Lịch hẹn chờ', value: pendingViewings.length, tone: 'navy', delta: null },
   ];
 
+  const activityMonthLabel = useMemo(
+    () => new Intl.DateTimeFormat('vi-VN', { month: 'numeric', year: 'numeric' }).format(new Date()),
+    [],
+  );
   const activitySeries = useMemo(() => {
-    const propertySeries = buildDailySeries(properties, (property) => property.createdAt, 30);
-    const viewingSeries = buildDailySeries(viewings, (viewing) => viewing.createdAt, 30);
+    const propertySeries = buildMonthlySeries(properties, (property) => property.createdAt);
+    const viewingSeries = buildMonthlySeries(viewings, (viewing) => viewing.createdAt);
     return propertySeries.map((bucket, index) => ({ date: bucket.date, count: bucket.count + viewingSeries[index].count }));
   }, [properties, viewings]);
 
@@ -131,7 +135,7 @@ export default function OverviewSection({ data, loading }) {
 
       <div className="dashboard-live-row">
         <TrendAreaChart
-          title="Hoạt động hệ thống (bài đăng + lịch hẹn, 30 ngày)"
+          title={`Hoạt động hệ thống (bài đăng + lịch hẹn, tháng ${activityMonthLabel})`}
           series={activitySeries}
           unit="lượt hoạt động"
         />

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { buildDailySeries, buildWardData, DonutChart, GaugeChart, HorizontalBarChart, TrendAreaChart, WardBarChart } from '../components/Charts.jsx';
+import { buildDailySeries, buildMonthlySeries, buildWardData, DonutChart, GaugeChart, HorizontalBarChart, TrendAreaChart, WardBarChart } from '../components/Charts.jsx';
 import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../components/DashboardWidgets.jsx';
 import ViewingsPanel from '../components/dashboard/ViewingsPanel.jsx';
 import DateRangeFilter from '../components/dashboard/DateRangeFilter.jsx';
@@ -172,8 +172,12 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
     [rangedListings],
   );
 
+  const activityMonthLabel = useMemo(
+    () => new Intl.DateTimeFormat('vi-VN', { month: 'numeric', year: 'numeric' }).format(new Date()),
+    [],
+  );
   const listingActivitySeries = useMemo(
-    () => buildDailySeries(listings, (listing) => listing.createdAt, 30),
+    () => buildMonthlySeries(listings, (listing) => listing.createdAt),
     [listings],
   );
 
@@ -454,7 +458,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
 
               <div className="dashboard-live-row">
                 <TrendAreaChart
-                  title="Hoạt động tin đăng (30 ngày)"
+                  title={`Hoạt động tin đăng (tháng ${activityMonthLabel})`}
                   series={listingActivitySeries}
                   unit="tin đăng"
                 />
