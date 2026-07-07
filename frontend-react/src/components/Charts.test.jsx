@@ -137,6 +137,35 @@ test('TrendAreaChart shows title and the window total', () => {
   expect(screen.getByText('tin/lịch hẹn')).toBeInTheDocument();
 });
 
+test('TrendAreaChart renders a dot marker per data point', () => {
+  const series = buildMonthlySeries(
+    [{ createdAt: '2026-07-05T00:00:00' }],
+    (item) => item.createdAt,
+    new Date('2026-07-05T00:00:00'),
+  );
+  const { container } = render(<TrendAreaChart title="Test" series={series} unit="tin" />);
+  expect(container.querySelectorAll('.trend-chart-dot')).toHaveLength(series.length);
+});
+
+test('TrendAreaChart shows a tooltip with date and count on hover', () => {
+  const series = buildMonthlySeries(
+    [{ createdAt: '2026-07-05T00:00:00' }, { createdAt: '2026-07-05T12:00:00' }],
+    (item) => item.createdAt,
+    new Date('2026-07-05T00:00:00'),
+  );
+  render(<TrendAreaChart title="Test" series={series} unit="tin" />);
+  expect(screen.queryByTestId('trend-chart-tooltip')).not.toBeInTheDocument();
+
+  const dots = screen.getAllByTestId('trend-chart-dot');
+  fireEvent.mouseMove(dots[4]); // ngày 05/07 = index 4 (ngày 1..5)
+  const tooltip = screen.getByTestId('trend-chart-tooltip');
+  expect(tooltip).toHaveTextContent('05/07');
+  expect(tooltip).toHaveTextContent('2');
+
+  fireEvent.mouseLeave(dots[4]);
+  expect(screen.queryByTestId('trend-chart-tooltip')).not.toBeInTheDocument();
+});
+
 // ── Sparkline ─────────────────────────────────────────────
 
 test('Sparkline renders nothing for fewer than 2 points', () => {

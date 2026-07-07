@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import { CATEGORIES, WARDS } from '../data/locations.js';
 
 // Inline SVG resolves var(--color-*) fine, so charts stay theme-reactive.
@@ -240,6 +240,12 @@ function formatShortDate(value) {
   return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit' }).format(date);
 }
 
+function formatDateForTooltip(dateStr) {
+  if (!dateStr) return '';
+  const [, month, day] = dateStr.split('-');
+  return `${day}/${month}`;
+}
+
 function linePathFor(values, width, height) {
   const max = Math.max(...values, 1);
   const min = Math.min(...values, 0);
@@ -251,9 +257,9 @@ function linePathFor(values, width, height) {
 }
 
 /**
- * TrendAreaChart — real daily activity over a trailing window (line + filled area),
- * with the window total up front and the date range labelled on the axis.
- * Expects `series` from buildDailySeries: [{ date: 'YYYY-MM-DD', count }].
+ * TrendAreaChart — real daily activity (line + filled area), with a dot marker
+ * per day and a hover tooltip showing the exact date + count for that day.
+ * Expects `series`: [{ date: 'YYYY-MM-DD', count }], oldest first.
  */
 export function TrendAreaChart({ title, series, unit }) {
   const width = 100;
@@ -262,6 +268,11 @@ export function TrendAreaChart({ title, series, unit }) {
   const total = counts.reduce((sum, value) => sum + value, 0);
   const linePath = `M${linePathFor(counts, width, height)}`;
   const areaPath = `${linePath} L${width},${height} L0,${height} Z`;
+  const max = Math.max(...counts, 1);
+  const min = Math.min(...counts, 0);
+  const span = max - min || 1;
+  const stepX = series.length > 1 ? width / (series.length - 1) : width;
+  const [activeIndex, setActiveIndex] = useState(null);
 
   return (
     <section className="chart-panel trend-chart-panel">
@@ -270,10 +281,33 @@ export function TrendAreaChart({ title, series, unit }) {
         <span className="trend-chart-value">{total}</span>
         {unit && <span className="trend-chart-unit">{unit}</span>}
       </div>
-      <svg className="trend-chart-svg" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
-        <path className="trend-chart-area" d={areaPath} />
-        <path className="trend-chart-line" d={linePath} />
-      </svg>
+      <div className="trend-chart-svg-wrap">
+        <svg className="trend-chart-svg" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
+          <path className="trend-chart-area" d={areaPath} />
+          <path className="trend-chart-line" d={linePath} />
+          {series.map((point, index) => (
+            <circle
+              key={point.date}
+              data-testid="trend-chart-dot"
+              className="trend-chart-dot"
+              cx={index * stepX}
+              cy={height - ((point.count - min) / span) * height}
+              r={activeIndex === index ? 2.2 : 1.4}
+              onMouseMove={() => setActiveIndex(index)}
+              onMouseLeave={() => setActiveIndex(null)}
+            />
+          ))}
+        </svg>
+        {activeIndex !== null && (
+          <div
+            className="trend-chart-tooltip"
+            data-testid="trend-chart-tooltip"
+            style={{ left: `${(activeIndex / Math.max(1, series.length - 1)) * 100}%` }}
+          >
+            {formatDateForTooltip(series[activeIndex].date)}: {series[activeIndex].count} {unit || ''}
+          </div>
+        )}
+      </div>
       <div className="trend-chart-axis">
         <span>{formatShortDate(series[0]?.date)}</span>
         <span>{formatShortDate(series[series.length - 1]?.date)}</span>
