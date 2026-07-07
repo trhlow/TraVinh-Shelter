@@ -35,7 +35,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.web.server.ResponseStatusException;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -45,7 +45,7 @@ class MediaConcurrencyIntegrationTest {
     private static final Path STORAGE_ROOT = createStorageRoot();
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:18.4-alpine")
+    static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("postgres:18.4-alpine")
             .withDatabaseName("tv_realty_media_test")
             .withUsername("postgres")
             .withPassword("postgres");
@@ -77,7 +77,7 @@ class MediaConcurrencyIntegrationTest {
                                 "image/png", ("image-" + attempt).getBytes()), false);
                 return true;
             } catch (ResponseStatusException exception) {
-                assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+                assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
                 assertThat(exception.getReason()).isEqualTo("A property can have at most 7 images");
                 return false;
             }
@@ -99,7 +99,7 @@ class MediaConcurrencyIntegrationTest {
                                 new MockMultipartFile("file", "tour.mp4", "video/mp4", "video".getBytes()));
                         return true;
                     } catch (ResponseStatusException exception) {
-                        assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+                        assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
                         return false;
                     }
                 },
@@ -109,7 +109,7 @@ class MediaConcurrencyIntegrationTest {
                                 new CreateVideoLinkRequest("https://example.com/video/" + UUID.randomUUID()));
                         return true;
                     } catch (ResponseStatusException exception) {
-                        assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
+                        assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
                         return false;
                     }
                 }));

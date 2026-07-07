@@ -51,7 +51,7 @@ public class UserProfileService {
         User user = findUser(principal.id());
         String phone = normalizeOptional(request.phone());
         if (user.getRole() == UserRole.BROKER && phone == null) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Broker profile requires a phone number");
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "Broker profile requires a phone number");
         }
         if (phone != null && users.existsByNormalizedPhoneAndIdNot(normalizePhoneForLookup(phone), user.getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Phone number is already registered");

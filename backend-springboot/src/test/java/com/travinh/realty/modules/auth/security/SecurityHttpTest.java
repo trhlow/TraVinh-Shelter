@@ -21,8 +21,8 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
@@ -32,7 +32,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = {AuthController.class, PropertyController.class})
-@Import({SecurityConfig.class, JwtService.class, JwtAuthenticationFilter.class,
+@Import({SecurityConfig.class, JwtService.class,
         GlobalExceptionHandler.class, SecurityHttpTest.JwtTestConfiguration.class})
 class SecurityHttpTest {
 
@@ -40,10 +40,10 @@ class SecurityHttpTest {
 
     @Autowired private MockMvc mockMvc;
     @Autowired private JwtService jwtService;
-    @MockBean private AuthService authService;
-    @MockBean private PropertyService propertyService;
-    @MockBean private JpaUserDetailsService userDetailsService;
-    @MockBean private JpaMetamodelMappingContext jpaMappingContext;
+    @MockitoBean private AuthService authService;
+    @MockitoBean private PropertyService propertyService;
+    @MockitoBean private JpaUserDetailsService userDetailsService;
+    @MockitoBean private JpaMetamodelMappingContext jpaMappingContext;
 
     @Test
     void protectedApiWithoutTokenReturnsUnauthorized() throws Exception {
@@ -157,6 +157,11 @@ class SecurityHttpTest {
         @Bean
         JwtProperties jwtProperties() {
             return new JwtProperties(SECRET, 60_000);
+        }
+
+        @Bean
+        org.springframework.boot.webmvc.test.autoconfigure.MockMvcBuilderCustomizer securityMockMvcCustomizer() {
+            return builder -> builder.apply(org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity());
         }
     }
 }

@@ -6,12 +6,13 @@ import com.travinh.realty.modules.auth.security.ClientIpResolver;
 import com.travinh.realty.modules.auth.security.InMemoryRateLimiter;
 import com.travinh.realty.modules.auth.security.InMemoryRevokedTokenStore;
 import com.travinh.realty.modules.auth.security.JwtAuthenticationFilter;
+import com.travinh.realty.modules.auth.security.JwtService;
 import com.travinh.realty.modules.auth.security.RateLimiter;
 import com.travinh.realty.modules.auth.security.RedisRateLimiter;
 import com.travinh.realty.modules.auth.security.RedisRevokedTokenStore;
 import com.travinh.realty.modules.auth.security.RevokedTokenStore;
 import com.travinh.realty.common.exception.ApiError;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
@@ -73,6 +74,11 @@ public class SecurityConfig {
     AuthRateLimitFilter authRateLimitFilter(ObjectMapper objectMapper, RateLimiter rateLimiter,
                                             ClientIpResolver clientIpResolver) {
         return new AuthRateLimitFilter(objectMapper, rateLimiter, clientIpResolver);
+    }
+
+    @Bean
+    JwtAuthenticationFilter jwtAuthenticationFilter(JwtService jwtService, JpaUserDetailsService userDetailsService) {
+        return new JwtAuthenticationFilter(jwtService, userDetailsService);
     }
 
     /**

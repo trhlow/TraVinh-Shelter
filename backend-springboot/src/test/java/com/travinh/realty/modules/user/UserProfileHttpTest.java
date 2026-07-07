@@ -18,7 +18,6 @@ import com.travinh.realty.common.exception.GlobalExceptionHandler;
 import com.travinh.realty.modules.admin.AdminBrokerController;
 import com.travinh.realty.modules.admin.AuditService;
 import com.travinh.realty.modules.auth.security.JpaUserDetailsService;
-import com.travinh.realty.modules.auth.security.JwtAuthenticationFilter;
 import com.travinh.realty.modules.auth.security.JwtService;
 import com.travinh.realty.modules.auth.security.UserPrincipal;
 import com.travinh.realty.infrastructure.storage.LocalMediaStorage;
@@ -33,9 +32,9 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -46,7 +45,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = {UserProfileController.class, AdminBrokerController.class})
-@Import({SecurityConfig.class, JwtService.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class,
+@Import({SecurityConfig.class, JwtService.class, GlobalExceptionHandler.class,
         UserProfileService.class, UserProfileHttpTest.JwtTestConfiguration.class})
 class UserProfileHttpTest {
 
@@ -55,11 +54,11 @@ class UserProfileHttpTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private JwtService jwtService;
     @Autowired private PasswordEncoder passwordEncoder;
-    @MockBean private UserRepository users;
-    @MockBean private LocalMediaStorage storage;
-    @MockBean private AuditService audit;
-    @MockBean private JpaUserDetailsService userDetailsService;
-    @MockBean private JpaMetamodelMappingContext jpaMappingContext;
+    @MockitoBean private UserRepository users;
+    @MockitoBean private LocalMediaStorage storage;
+    @MockitoBean private AuditService audit;
+    @MockitoBean private JpaUserDetailsService userDetailsService;
+    @MockitoBean private JpaMetamodelMappingContext jpaMappingContext;
 
     @Test
     void currentProfileUsesAuthenticatedPrincipalAndHidesInternalFields() throws Exception {
@@ -120,7 +119,7 @@ class UserProfileHttpTest {
         for (String payload : new String[]{"{\"fullName\":\"Broker\",\"phone\":null}", "{\"fullName\":\"Broker\",\"phone\":\"\"}", "{\"fullName\":\"Broker\",\"phone\":\"   \"}", "{\"fullName\":\"Broker\"}"}) {
             mockMvc.perform(patch("/users/me").header("Authorization", bearer(broker))
                             .contentType(MediaType.APPLICATION_JSON).content(payload))
-                    .andExpect(status().isUnprocessableEntity())
+                    .andExpect(status().isUnprocessableContent())
                     .andExpect(jsonPath("$.status").value(422));
         }
 
@@ -286,6 +285,11 @@ class UserProfileHttpTest {
         @Bean
         JwtProperties jwtProperties() {
             return new JwtProperties(SECRET, 60_000);
+        }
+
+        @Bean
+        org.springframework.boot.webmvc.test.autoconfigure.MockMvcBuilderCustomizer securityMockMvcCustomizer() {
+            return builder -> builder.apply(org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity());
         }
     }
 }
