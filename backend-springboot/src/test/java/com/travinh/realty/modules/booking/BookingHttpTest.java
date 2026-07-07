@@ -14,7 +14,6 @@ import com.travinh.realty.common.config.SecurityConfig;
 import com.travinh.realty.common.exception.GlobalExceptionHandler;
 import com.travinh.realty.modules.admin.AuditService;
 import com.travinh.realty.modules.auth.security.JpaUserDetailsService;
-import com.travinh.realty.modules.auth.security.JwtAuthenticationFilter;
 import com.travinh.realty.modules.auth.security.JwtService;
 import com.travinh.realty.modules.auth.security.UserPrincipal;
 import com.travinh.realty.modules.booking.dto.ViewingResponse;
@@ -28,9 +27,9 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
@@ -44,7 +43,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = {BookingController.class, AdminBookingController.class})
-@Import({SecurityConfig.class, JwtService.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class,
+@Import({SecurityConfig.class, JwtService.class, GlobalExceptionHandler.class,
         BookingHttpTest.JwtTestConfiguration.class})
 class BookingHttpTest {
     private static final String SECRET = "a-development-secret-that-is-at-least-thirty-two-characters-long";
@@ -55,10 +54,10 @@ class BookingHttpTest {
 
     @Autowired private MockMvc mockMvc;
     @Autowired private JwtService jwtService;
-    @MockBean private BookingService bookingService;
-    @MockBean private AuditService audit;
-    @MockBean private JpaUserDetailsService userDetailsService;
-    @MockBean private JpaMetamodelMappingContext jpaMappingContext;
+    @MockitoBean private BookingService bookingService;
+    @MockitoBean private AuditService audit;
+    @MockitoBean private JpaUserDetailsService userDetailsService;
+    @MockitoBean private JpaMetamodelMappingContext jpaMappingContext;
 
     @Test
     void publicCanSubmitViewingWithoutToken() throws Exception {
@@ -229,6 +228,11 @@ class BookingHttpTest {
         @Bean
         JwtProperties jwtProperties() {
             return new JwtProperties(SECRET, 60_000);
+        }
+
+        @Bean
+        org.springframework.boot.webmvc.test.autoconfigure.MockMvcBuilderCustomizer securityMockMvcCustomizer() {
+            return builder -> builder.apply(org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity());
         }
     }
 }

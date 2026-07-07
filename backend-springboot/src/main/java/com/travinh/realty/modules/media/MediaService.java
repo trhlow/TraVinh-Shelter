@@ -56,7 +56,7 @@ public class MediaService {
     public MediaResponse uploadImage(UUID brokerId, UUID propertyId, MultipartFile file, boolean thumbnail) {
         Property property = requireOwnedPropertyForUpdate(brokerId, propertyId);
         if (media.countByPropertyIdAndMediaType(propertyId, MediaType.IMAGE) >= MAX_IMAGES_PER_PROPERTY) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "A property can have at most 7 images");
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "A property can have at most 7 images");
         }
         String url = storage.store(propertyId, file, MediaType.IMAGE);
         return saveWithFileCleanup(Media.create(property, MediaType.IMAGE, url, thumbnail), url);
@@ -89,7 +89,7 @@ public class MediaService {
 
     private void ensureNoVideo(UUID propertyId) {
         if (media.existsByPropertyIdAndMediaTypeIn(propertyId, VIDEO_TYPES)) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "A property can have at most one video");
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "A property can have at most one video");
         }
     }
 
@@ -111,7 +111,7 @@ public class MediaService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Broker role is required");
         }
         if (user.getPhone() == null || user.getPhone().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Broker profile requires a phone number");
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "Broker profile requires a phone number");
         }
 
         Property property = (lockForUpdate ? properties.findByIdForUpdate(propertyId) : properties.findById(propertyId))
@@ -165,7 +165,7 @@ public class MediaService {
 
     private RuntimeException translateMediaIntegrityException(DataIntegrityViolationException exception) {
         if (isSingleVideoConstraint(exception)) {
-            return new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+            return new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT,
                     "A property can have at most one video", exception);
         }
         return exception;

@@ -13,7 +13,9 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Stream;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -85,8 +87,11 @@ public class BookingService {
 
     @Transactional(readOnly = true)
     public Page<ViewingResponse> listAll(String query, AppointmentStatus status, Pageable pageable) {
-        Specification<ViewingAppointment> spec = Specification.where(ViewingSpecifications.matchesQuery(query))
-                .and(ViewingSpecifications.hasStatus(status));
+        Specification<ViewingAppointment> spec = Specification.allOf(Stream.of(
+                ViewingSpecifications.matchesQuery(query),
+                ViewingSpecifications.hasStatus(status))
+                .filter(Objects::nonNull)
+                .toList());
         Pageable effective = pageable.getSort().isSorted()
                 ? pageable
                 : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),

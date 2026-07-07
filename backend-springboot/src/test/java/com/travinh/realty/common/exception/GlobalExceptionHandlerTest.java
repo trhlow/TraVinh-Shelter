@@ -12,7 +12,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void unknownRouteReturnsNotFoundInsteadOfServerError() {
-        var exception = new NoResourceFoundException(HttpMethod.GET, "brokers");
+        var exception = new NoResourceFoundException(HttpMethod.GET, "brokers", "No static resource brokers.");
 
         var response = handler.handleNoResourceFound(exception);
 

@@ -1,6 +1,6 @@
 package com.travinh.realty.modules.auth.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.travinh.realty.common.exception.ApiError;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
