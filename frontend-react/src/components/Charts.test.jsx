@@ -2,7 +2,7 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, expect, test, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import {
-  buildDailySeries, buildHeatmapData, buildWardData, HeatmapChart, Sparkline, TrendAreaChart, WardBarChart,
+  buildDailySeries, buildHeatmapData, buildMonthlySeries, buildWardData, HeatmapChart, Sparkline, TrendAreaChart, WardBarChart,
 } from './Charts.jsx';
 
 afterEach(() => cleanup());
@@ -77,6 +77,49 @@ test('buildDailySeries ignores items outside the trailing window', () => {
   const series = buildDailySeries([{ createdAt: longAgo }], (item) => item.createdAt, 7);
   const total = series.reduce((sum, bucket) => sum + bucket.count, 0);
   expect(total).toBe(0);
+});
+
+// ── buildMonthlySeries ────────────────────────────────────
+
+test('buildMonthlySeries returns one bucket per day of the reference month', () => {
+  const series = buildMonthlySeries([], () => null, new Date('2026-07-15T00:00:00'));
+  expect(series).toHaveLength(31); // July has 31 days
+  expect(series[0].date).toBe('2026-07-01');
+  expect(series[30].date).toBe('2026-07-31');
+  series.forEach((bucket) => expect(bucket.count).toBe(0));
+});
+
+test('buildMonthlySeries handles a 28-day February', () => {
+  const series = buildMonthlySeries([], () => null, new Date('2026-02-10T00:00:00'));
+  expect(series).toHaveLength(28);
+  expect(series[27].date).toBe('2026-02-28');
+});
+
+test('buildMonthlySeries counts items into the bucket matching their exact day', () => {
+  const items = [
+    { createdAt: '2026-07-05T10:00:00' },
+    { createdAt: '2026-07-05T22:00:00' },
+    { createdAt: '2026-07-20T00:00:00' },
+  ];
+  const series = buildMonthlySeries(items, (item) => item.createdAt, new Date('2026-07-25T00:00:00'));
+  expect(series.find((bucket) => bucket.date === '2026-07-05').count).toBe(2);
+  expect(series.find((bucket) => bucket.date === '2026-07-20').count).toBe(1);
+});
+
+test('buildMonthlySeries ignores items outside the reference month', () => {
+  const items = [{ createdAt: '2026-06-30T00:00:00' }, { createdAt: '2026-08-01T00:00:00' }];
+  const series = buildMonthlySeries(items, (item) => item.createdAt, new Date('2026-07-15T00:00:00'));
+  const total = series.reduce((sum, bucket) => sum + bucket.count, 0);
+  expect(total).toBe(0);
+});
+
+test('buildMonthlySeries leaves future days in the current month at 0', () => {
+  // referenceDate = "today" = July 7 — days 8..31 have no items and must read 0
+  const items = [{ createdAt: '2026-07-07T00:00:00' }];
+  const series = buildMonthlySeries(items, (item) => item.createdAt, new Date('2026-07-07T00:00:00'));
+  const futureDays = series.filter((bucket) => bucket.date > '2026-07-07');
+  expect(futureDays.length).toBe(24);
+  futureDays.forEach((bucket) => expect(bucket.count).toBe(0));
 });
 
 // ── TrendAreaChart ────────────────────────────────────────

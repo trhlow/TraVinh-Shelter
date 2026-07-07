@@ -210,6 +210,29 @@ export function buildDailySeries(items, getDate, days = 30) {
   return buckets;
 }
 
+// Buckets items into one entry per calendar day of `referenceDate`'s month (1st → last
+// day), so the monthly activity chart reflects a real calendar month instead of a
+// trailing window. Days with no matching item — past or future — read 0 naturally.
+export function buildMonthlySeries(items, getDate, referenceDate = new Date()) {
+  const year = referenceDate.getFullYear();
+  const month = referenceDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const buckets = [];
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    buckets.push({ date: dayKey(new Date(year, month, day)), count: 0 });
+  }
+  const indexByDate = new Map(buckets.map((bucket, index) => [bucket.date, index]));
+  items.forEach((item) => {
+    const raw = getDate(item);
+    if (!raw) return;
+    const day = new Date(raw);
+    if (Number.isNaN(day.getTime())) return;
+    const index = indexByDate.get(dayKey(day));
+    if (index !== undefined) buckets[index].count += 1;
+  });
+  return buckets;
+}
+
 function formatShortDate(value) {
   if (!value) return '';
   const date = new Date(value);
