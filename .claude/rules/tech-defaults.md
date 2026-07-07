@@ -9,7 +9,7 @@ description: Tech stack, lệnh chạy/test, API conventions, kiến trúc front
 | Layer | Tech |
 |---|---|
 | Frontend | React 19, Vite 8, CSS custom properties |
-| Backend | Spring Boot 3, Java 21, PostgreSQL 16, JWT stateless |
+| Backend | Spring Boot 3.4.5, Java 21, PostgreSQL 18, JWT stateless |
 | Icons | lucide-react |
 | Testing (FE) | Vitest + Testing Library (jsdom) |
 | Testing (BE) | JUnit 5, Testcontainers |

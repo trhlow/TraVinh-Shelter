@@ -25,7 +25,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Transactional
 class UserProfileServiceFilterIntegrationTest {
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
+    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:18.4-alpine")
             .withDatabaseName("tv_realty_user_filter_test")
             .withUsername("postgres")
             .withPassword("postgres");

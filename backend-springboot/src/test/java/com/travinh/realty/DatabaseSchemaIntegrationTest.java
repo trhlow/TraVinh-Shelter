@@ -19,7 +19,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class DatabaseSchemaIntegrationTest {
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
+    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:18.4-alpine")
             .withDatabaseName("tv_realty_test")
             .withUsername("postgres")
             .withPassword("postgres");

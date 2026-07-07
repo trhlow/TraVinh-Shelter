@@ -45,7 +45,7 @@ class MediaConcurrencyIntegrationTest {
     private static final Path STORAGE_ROOT = createStorageRoot();
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
+    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:18.4-alpine")
             .withDatabaseName("tv_realty_media_test")
             .withUsername("postgres")
             .withPassword("postgres");
