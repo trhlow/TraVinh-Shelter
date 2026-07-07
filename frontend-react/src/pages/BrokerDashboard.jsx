@@ -55,7 +55,7 @@ const EMPTY_FORM = {
 
 export default function BrokerDashboard({ session, onLogin, onLogout, currentPath = '/broker/dashboard', section = 'dashboard' }) {
   const [profile, setProfile] = useState(null);
-  const [profileForm, setProfileForm] = useState({ fullName: '', phone: '' });
+  const [profileForm, setProfileForm] = useState({ fullName: '', phone: '', zaloUrl: '', facebookUrl: '', tiktokUrl: '' });
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState('');
   const [stats, setStats] = useState({ activeListings: 0, totalListings: 0, pendingLeads: 0, listings: [] });
@@ -97,7 +97,13 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       .then(([profileData, dashboardData]) => {
         if (!alive) return;
         setProfile(profileData);
-        setProfileForm({ fullName: profileData.fullName || '', phone: profileData.phone || '' });
+        setProfileForm({
+          fullName: profileData.fullName || '',
+          phone: profileData.phone || '',
+          zaloUrl: profileData.zaloUrl || '',
+          facebookUrl: profileData.facebookUrl || '',
+          tiktokUrl: profileData.tiktokUrl || '',
+        });
         setAvatarPreview(profileData.avatarUrl || '');
         setStats(dashboardData);
       })
@@ -508,6 +514,15 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                 <FormField label="Số điện thoại">
                   <input className="input" value={profileForm.phone} onChange={(event) => setProfileForm((current) => ({ ...current, phone: event.target.value }))} required />
                 </FormField>
+                <FormField label="Zalo">
+                  <input className="input" type="url" aria-label="Zalo" placeholder="https://zalo.me/..." value={profileForm.zaloUrl} onChange={(event) => setProfileForm((current) => ({ ...current, zaloUrl: event.target.value }))} />
+                </FormField>
+                <FormField label="Facebook">
+                  <input className="input" type="url" aria-label="Facebook" placeholder="https://facebook.com/..." value={profileForm.facebookUrl} onChange={(event) => setProfileForm((current) => ({ ...current, facebookUrl: event.target.value }))} />
+                </FormField>
+                <FormField label="TikTok">
+                  <input className="input" type="url" aria-label="TikTok" placeholder="https://tiktok.com/@..." value={profileForm.tiktokUrl} onChange={(event) => setProfileForm((current) => ({ ...current, tiktokUrl: event.target.value }))} />
+                </FormField>
                 <button className="auth-btn" type="submit" disabled={saving}>
                   <Icon name="Check" size={16} className="icon-inverse" />
                   Lưu hồ sơ
@@ -791,6 +806,15 @@ function ProfileSummary({ profile, profileForm, avatarPreview, profileReady }) {
       </div>
       <div className="dashboard-profile-meta">
         <ProfileLine label="Số điện thoại" value={profile?.phone || profileForm.phone || 'Chưa cập nhật'} />
+        {(profile?.facebookUrl || profileForm.facebookUrl) && (
+          <ProfileLine label="Facebook" value={profile?.facebookUrl || profileForm.facebookUrl} />
+        )}
+        {(profile?.zaloUrl || profileForm.zaloUrl) && (
+          <ProfileLine label="Zalo" value={profile?.zaloUrl || profileForm.zaloUrl} />
+        )}
+        {(profile?.tiktokUrl || profileForm.tiktokUrl) && (
+          <ProfileLine label="TikTok" value={profile?.tiktokUrl || profileForm.tiktokUrl} />
+        )}
         <ProfileLine label="Trạng thái hồ sơ" value={profileReady ? 'Sẵn sàng hiển thị' : 'Cần bổ sung'} tone={profileReady ? 'success' : 'warning'} />
       </div>
       <a className="auth-btn" href="#/broker/profile">

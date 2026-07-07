@@ -32,6 +32,9 @@ export async function fetchCurrentUser(token) {
       role: 'BROKER',
       status: 'ACTIVE',
       avatarUrl: '',
+      zaloUrl: '',
+      facebookUrl: '',
+      tiktokUrl: '',
     }, 80);
   }
   return request('/users/me', { token });

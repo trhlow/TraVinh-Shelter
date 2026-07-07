@@ -32,7 +32,7 @@ vi.mock('../services/api.js', () => ({
   deleteProperty: vi.fn(),
   uploadCurrentUserAvatar: vi.fn(),
   uploadPropertyImage: vi.fn(),
-  updateCurrentProfile: vi.fn(),
+  updateCurrentProfile: vi.fn().mockResolvedValue({ fullName: 'Nguyễn Văn Toàn', phone: '0912345678', avatarUrl: '' }),
   updateProperty: vi.fn(),
   updatePropertyStatus: vi.fn(),
   updateBrokerViewingStatus: vi.fn(),
@@ -75,4 +75,25 @@ test('KPI cards show 0 when the date filter excludes all listings, not the unfil
   // (2) whenever the bounded range produced an empty rangedListings array; this only proves the
   // fix if the mocked data can actually produce that empty-vs-fallback distinction, which it does.
   expect(kpi.querySelector('.stat-card-value')).toHaveTextContent('0');
+});
+
+test('profile form has Zalo, Facebook, and TikTok fields and submits them', async () => {
+  const { updateCurrentProfile } = await import('../services/api.js');
+  render(<BrokerDashboard session={session} section="profile" currentPath="/broker/profile" />);
+
+  const zaloInput = await screen.findByLabelText('Zalo');
+  const facebookInput = screen.getByLabelText('Facebook');
+  const tiktokInput = screen.getByLabelText('TikTok');
+  expect(zaloInput).toBeInTheDocument();
+  expect(tiktokInput).toBeInTheDocument();
+
+  fireEvent.change(facebookInput, { target: { value: 'https://facebook.com/broker.test' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Lưu hồ sơ' }));
+
+  await vi.waitFor(() => {
+    expect(updateCurrentProfile).toHaveBeenCalledWith(
+      'test-token',
+      expect.objectContaining({ facebookUrl: 'https://facebook.com/broker.test' }),
+    );
+  });
 });
