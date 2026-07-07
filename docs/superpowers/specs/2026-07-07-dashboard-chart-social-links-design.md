@@ -22,8 +22,11 @@
 
 **File**: `frontend-react/src/components/Charts.jsx`
 
-- Thay `buildDailySeries(items, getDate, days=30)` bằng
-  `buildMonthlySeries(items, getDate, referenceDate = new Date())`:
+- **Giữ nguyên** `buildDailySeries(items, getDate, days)` — vẫn dùng cho các sparkline 7 ngày
+  trong KPI stat card (`OverviewSection.jsx` dòng 41/45, `BrokerDashboard.jsx` dòng 167/171),
+  không đụng vào.
+- **Thêm hàm mới** `buildMonthlySeries(items, getDate, referenceDate = new Date())`, chỉ dùng
+  riêng cho 2 biểu đồ "hoạt động ... 30 ngày":
   - Lấy `year`/`month` từ `referenceDate`, tính số ngày trong tháng
     (`new Date(year, month + 1, 0).getDate()`).
   - Tạo đúng số bucket đó, mỗi bucket = 1 ngày dương lịch từ ngày 1 đến ngày cuối tháng.
@@ -37,12 +40,12 @@
 - Tiêu đề đổi từ hard-code "(30 ngày)" sang động theo tháng hiện tại, ví dụ
   `Hoạt động tin đăng (tháng 7/2026)` — build bằng
   `new Intl.DateTimeFormat('vi-VN', { month: 'numeric', year: 'numeric' })` hoặc tương đương.
-- Áp dụng đổi tên hàm + logic tại 2 nơi gọi:
-  - `frontend-react/src/pages/admin/OverviewSection.jsx`
-  - `frontend-react/src/pages/BrokerDashboard.jsx`
+- Áp dụng hàm mới tại 2 nơi gọi (chỉ đổi các dòng gọi cho biểu đồ "30 ngày", không đụng
+  sparkline 7 ngày):
+  - `frontend-react/src/pages/admin/OverviewSection.jsx` (`activitySeries`)
+  - `frontend-react/src/pages/BrokerDashboard.jsx` (`listingActivitySeries`)
 - Biểu đồ này **giữ nguyên độc lập** với `DateRangeFilter` đã có trên trang (không đồng bộ
   theo bộ lọc) — chỉ sửa cách tính bucket ngày.
-- Không còn tham số `days` — các call site bỏ tham số thứ 3 khi gọi hàm mới.
 
 ## 2. Broker Dashboard — thêm Zalo/Facebook/TikTok vào profile
 
