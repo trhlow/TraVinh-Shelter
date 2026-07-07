@@ -13,7 +13,9 @@ import com.travinh.realty.modules.user.model.User;
 import com.travinh.realty.modules.user.model.UserRole;
 import com.travinh.realty.modules.user.model.UserStatus;
 import com.travinh.realty.modules.user.repository.UserRepository;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Stream;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -135,16 +137,22 @@ public class UserProfileService {
 
     @Transactional(readOnly = true)
     public Page<UserProfileResponse> listUsers(String query, UserStatus status, Pageable pageable) {
-        Specification<User> spec = Specification.where(UserSpecifications.matchesQuery(query))
-                .and(UserSpecifications.hasStatus(status));
+        Specification<User> spec = Specification.allOf(Stream.of(
+                UserSpecifications.matchesQuery(query),
+                UserSpecifications.hasStatus(status))
+                .filter(Objects::nonNull)
+                .toList());
         return users.findAll(spec, pageable).map(UserProfileResponse::from);
     }
 
     @Transactional(readOnly = true)
     public Page<UserProfileResponse> listBrokers(String query, UserStatus status, Pageable pageable) {
-        Specification<User> spec = Specification.where(UserSpecifications.hasRole(UserRole.BROKER))
-                .and(UserSpecifications.matchesQuery(query))
-                .and(UserSpecifications.hasStatus(status));
+        Specification<User> spec = Specification.allOf(Stream.of(
+                UserSpecifications.hasRole(UserRole.BROKER),
+                UserSpecifications.matchesQuery(query),
+                UserSpecifications.hasStatus(status))
+                .filter(Objects::nonNull)
+                .toList());
         return users.findAll(spec, pageable).map(UserProfileResponse::from);
     }
 
