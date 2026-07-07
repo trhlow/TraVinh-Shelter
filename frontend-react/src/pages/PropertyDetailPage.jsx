@@ -325,19 +325,21 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
               </div>
 
               <div className="contact-buttons">
-                <a href={`tel:${brokerPhone.replace(/\s+/g, '')}`} className="btn btn-primary btn-md btn-full">
-                  <Icon name="Phone" size={18} />
-                  Gọi ngay: {brokerPhone}
-                </a>
-                <a
-                  href={`https://zalo.me/${brokerPhone.replace(/\D/g, '').replace(/^0/, '84')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="contact-btn-zalo"
-                >
-                  <Icon name="MessageCircle" size={18} />
-                  Chat Zalo
-                </a>
+                <div className="contact-phone-zalo">
+                  <a href={`tel:${brokerPhone.replace(/\s+/g, '')}`} className="contact-phone-zalo-call">
+                    <Icon name="Phone" size={18} />
+                    Gọi ngay: {brokerPhone}
+                  </a>
+                  <a
+                    href={`https://zalo.me/${brokerPhone.replace(/\D/g, '').replace(/^0/, '84')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="contact-phone-zalo-zalo"
+                    aria-label="Chat Zalo"
+                  >
+                    <Icon name="MessageCircle" size={18} />
+                  </a>
+                </div>
                 {brokerFacebook && (
                   <a
                     href={brokerFacebook}

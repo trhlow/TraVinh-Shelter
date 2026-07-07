@@ -2141,12 +2141,17 @@ img { display: block; max-width: 100%; }
   gap: 8px;
 }
 
-.contact-btn-zalo {
-  width: 100%;
+.contact-phone-zalo {
+  display: flex;
   min-height: 44px;
-  background: var(--color-zalo);
-  color: #fff;
   border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.contact-phone-zalo-call {
+  flex: 1;
+  background: var(--color-primary);
+  color: #fff;
   font-size: 14px;
   font-weight: 600;
   display: flex;
@@ -2156,7 +2161,23 @@ img { display: block; max-width: 100%; }
   transition: opacity 160ms ease;
 }
 
-.contact-btn-zalo:hover {
+.contact-phone-zalo-call:hover {
+  opacity: 0.9;
+}
+
+.contact-phone-zalo-zalo {
+  width: 56px;
+  flex-shrink: 0;
+  background: var(--color-zalo);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid rgb(255 255 255 / 0.25);
+  transition: opacity 160ms ease;
+}
+
+.contact-phone-zalo-zalo:hover {
   opacity: 0.9;
 }
 

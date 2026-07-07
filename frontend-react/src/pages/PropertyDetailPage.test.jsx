@@ -41,3 +41,14 @@ test('uses "Nhà vệ sinh" instead of "Phòng tắm" for the bathroom spec labe
   expect(screen.getByText('Nhà vệ sinh')).toBeInTheDocument();
   expect(screen.queryByText('Phòng tắm')).not.toBeInTheDocument();
 });
+
+test('phone and Zalo live inside one merged contact box', async () => {
+  fetchPropertyDetail.mockResolvedValue(baseProperty);
+  render(<PropertyDetailPage propertyId="p-1" />);
+  await screen.findAllByText(baseProperty.title);
+
+  const phoneLink = screen.getByRole('link', { name: /Gọi ngay/i });
+  const zaloLink = screen.getByRole('link', { name: /Chat Zalo|Zalo/i });
+  expect(phoneLink.closest('.contact-phone-zalo')).toBe(zaloLink.closest('.contact-phone-zalo'));
+  expect(phoneLink.closest('.contact-phone-zalo')).not.toBeNull();
+});
