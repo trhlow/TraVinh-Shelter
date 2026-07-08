@@ -133,6 +133,173 @@ export function BarChart({ title, data }) {
   );
 }
 
+function ChartModeToggle({ mode, onModeChange }) {
+  return (
+    <div className="chart-mode-toggle" aria-label="Chọn kiểu hiển thị biểu đồ">
+      {['2d', '3d'].map((item) => (
+        <button
+          key={item}
+          type="button"
+          className={`chart-mode-btn${mode === item ? ' is-active' : ''}`}
+          aria-pressed={mode === item}
+          onClick={() => onModeChange(item)}
+        >
+          {item.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ThreeDChartPanel({ title, subtitle, mode, onModeChange, children }) {
+  return (
+    <section className={`chart-panel chart3d-panel ${mode === '3d' ? 'is-3d' : 'is-2d'}`}>
+      <div className="chart3d-header">
+        <div>
+          <h2 className="chart-title">{title}</h2>
+          {subtitle && <p className="chart3d-subtitle">{subtitle}</p>}
+        </div>
+        <ChartModeToggle mode={mode} onModeChange={onModeChange} />
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function formatChartNumber(value, suffix = '') {
+  return `${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(value)}${suffix}`;
+}
+
+export function ThreeDGroupedBarChart({ title, subtitle, data, currentLabel = 'Hiện tại', previousLabel = 'So sánh', valueSuffix = '' }) {
+  const [mode, setMode] = useState('3d');
+  const max = Math.max(...data.flatMap((item) => [item.current || 0, item.previous || 0]), 1);
+
+  return (
+    <ThreeDChartPanel title={title} subtitle={subtitle} mode={mode} onModeChange={setMode}>
+      <div className="chart3d-bar-legend">
+        <span><i className="chart3d-legend-dot chart3d-current-dot" />{currentLabel}</span>
+        <span><i className="chart3d-legend-dot chart3d-previous-dot" />{previousLabel}</span>
+      </div>
+      <div className="chart3d-bar-stage" role="img" aria-label={title}>
+        {data.map((item) => (
+          <div className="chart3d-bar-group" key={item.label}>
+            <div className="chart3d-bar-stack">
+              <span
+                className="chart3d-bar chart3d-bar-previous"
+                style={{
+                  '--bar-h': Math.max(6, ((item.previous || 0) / max) * 100),
+                  '--bar-color': 'var(--chart-6)',
+                }}
+              >
+                <span className="chart3d-bar-value">{formatChartNumber(item.previous || 0, valueSuffix)}</span>
+              </span>
+              <span
+                className="chart3d-bar chart3d-bar-current"
+                style={{
+                  '--bar-h': Math.max(6, ((item.current || 0) / max) * 100),
+                  '--bar-color': item.color || 'var(--chart-1)',
+                }}
+              >
+                <span className="chart3d-bar-value">{formatChartNumber(item.current || 0, valueSuffix)}</span>
+              </span>
+            </div>
+            <span className="chart3d-axis-label">{item.label}</span>
+          </div>
+        ))}
+      </div>
+    </ThreeDChartPanel>
+  );
+}
+
+function conicGradientFor(data, total) {
+  let cursor = 0;
+  return `conic-gradient(${data.map((item) => {
+    const next = cursor + (total > 0 ? (item.value / total) * 100 : 0);
+    const segment = `${item.color} ${cursor}% ${next}%`;
+    cursor = next;
+    return segment;
+  }).join(', ')})`;
+}
+
+export function ThreeDDonutChart({ title, subtitle, data, centerLabel = 'tổng' }) {
+  const [mode, setMode] = useState('3d');
+  const normalized = withColors(data);
+  const total = normalized.reduce((sum, item) => sum + item.value, 0);
+
+  return (
+    <ThreeDChartPanel title={title} subtitle={subtitle} mode={mode} onModeChange={setMode}>
+      <div className="chart3d-donut-layout">
+        <div className="chart3d-donut" style={{ background: conicGradientFor(normalized, total || 1) }}>
+          <div className="chart3d-donut-hole">
+            <span className="chart3d-donut-total">{formatChartNumber(total)}</span>
+            <span className="chart3d-donut-label">{centerLabel}</span>
+          </div>
+        </div>
+        <Legend data={normalized} total={total || 1} />
+      </div>
+    </ThreeDChartPanel>
+  );
+}
+
+export function ThreeDFunnelChart({ title, subtitle, data }) {
+  const [mode, setMode] = useState('3d');
+  const max = Math.max(...data.map((item) => item.value), 1);
+
+  return (
+    <ThreeDChartPanel title={title} subtitle={subtitle} mode={mode} onModeChange={setMode}>
+      <div className="chart3d-funnel" role="img" aria-label={title}>
+        {data.map((item, index) => {
+          const width = Math.max(34, (item.value / max) * 100);
+          return (
+            <div className="chart3d-funnel-row" key={item.label}>
+              <span
+                className="chart3d-funnel-segment"
+                style={{
+                  width: `${width}%`,
+                  '--segment-color': item.color || CHART_PALETTE[index % CHART_PALETTE.length],
+                }}
+              >
+                <span className="chart3d-funnel-label">{item.label}</span>
+                <span className="chart3d-funnel-value">{formatChartNumber(item.value)}</span>
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </ThreeDChartPanel>
+  );
+}
+
+export function ThreeDAreaChart({ title, subtitle, series, unit = '' }) {
+  const [mode, setMode] = useState('3d');
+  const width = 100;
+  const height = 34;
+  const counts = series.map((point) => point.count);
+  const total = counts.reduce((sum, value) => sum + value, 0);
+  const linePath = `M${linePathFor(counts, width, height)}`;
+  const areaPath = `${linePath} L${width},${height} L0,${height} Z`;
+
+  return (
+    <ThreeDChartPanel title={title} subtitle={subtitle} mode={mode} onModeChange={setMode}>
+      <div className="chart3d-area-summary">
+        <span className="chart3d-area-total">{formatChartNumber(total)}</span>
+        {unit && <span>{unit}</span>}
+      </div>
+      <div className="chart3d-area-stage">
+        <svg className="chart3d-area-svg" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
+          <path className="chart3d-area-base" d={areaPath} />
+          <path className="chart3d-area-fill" d={areaPath} />
+          <path className="chart3d-area-line" d={linePath} />
+        </svg>
+      </div>
+      <div className="trend-chart-axis">
+        <span>{formatShortDate(series[0]?.date)}</span>
+        <span>{formatShortDate(series[series.length - 1]?.date)}</span>
+      </div>
+    </ThreeDChartPanel>
+  );
+}
+
 export function HorizontalBarChart({ title, data }) {
   const normalized = withColors(data);
   const max = Math.max(...normalized.map((item) => item.value), 1);

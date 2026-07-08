@@ -23,6 +23,22 @@ function BrokerViewingsRoute(props) {
   return <BrokerDashboard {...props} section="viewings" currentPath="/broker/viewings" />;
 }
 
+function BrokerLeadsRoute(props) {
+  return <BrokerDashboard {...props} section="leads" currentPath="/broker/leads" />;
+}
+
+function BrokerRevenueRoute(props) {
+  return <BrokerDashboard {...props} section="revenue" currentPath="/broker/revenue" />;
+}
+
+function BrokerMessagesRoute(props) {
+  return <BrokerDashboard {...props} section="messages" currentPath="/broker/messages" />;
+}
+
+function BrokerSettingsRoute(props) {
+  return <BrokerDashboard {...props} section="settings" currentPath="/broker/settings" />;
+}
+
 function ForgotPasswordRoute(props) {
   return <LoginPage {...props} initialMode="forgot" />;
 }
@@ -33,6 +49,9 @@ const ADMIN_SECTIONS = {
   '/admin/brokers': 'brokers',
   '/admin/properties': 'properties',
   '/admin/viewings': 'viewings',
+  '/admin/reports': 'reports',
+  '/admin/rbac': 'rbac',
+  '/admin/settings': 'settings',
   '/admin/audit': 'audit',
 };
 
@@ -50,6 +69,10 @@ export const routes = {
   '/broker/profile': BrokerProfileRoute,
   '/broker/properties': BrokerPropertiesRoute,
   '/broker/viewings': BrokerViewingsRoute,
+  '/broker/leads': BrokerLeadsRoute,
+  '/broker/revenue': BrokerRevenueRoute,
+  '/broker/messages': BrokerMessagesRoute,
+  '/broker/settings': BrokerSettingsRoute,
 };
 
 export function resolveRoute(path) {

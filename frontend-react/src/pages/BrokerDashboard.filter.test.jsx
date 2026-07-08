@@ -68,7 +68,7 @@ test('KPI cards show 0 when the date filter excludes all listings, not the unfil
   fireEvent.change(screen.getByLabelText('Từ ngày'), { target: { value: '2020-01-01' } });
   fireEvent.change(screen.getByLabelText('Đến ngày'), { target: { value: '2020-01-02' } });
 
-  const label = screen.getAllByText('Tổng tin đăng').find((el) => el.className === 'stat-card-label');
+  const label = screen.getAllByText('Tin đăng đang hoạt động').find((el) => el.className === 'stat-card-label');
   const kpi = label.closest('.stat-card-article, .stat-card-link');
   // Mocked stats.totalListings is 2 and both mocked listings have 2026 createdAt dates, so
   // a custom 2020 range must exclude them entirely. Pre-fix code fell back to stats.totalListings
