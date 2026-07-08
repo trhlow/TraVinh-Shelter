@@ -24,7 +24,7 @@ import {
 const ADMIN_SIDEBAR_ITEMS = [
   { href: '#/admin/overview', icon: 'BarChart3', label: 'Tổng quan' },
   { href: '#/admin/brokers', icon: 'IdCard', label: 'Quản lý môi giới' },
-  { href: '#/admin/properties', icon: 'Building', label: 'Duyệt tin đăng' },
+  { href: '#/admin/properties', icon: 'Building', label: 'Quản lý tin đăng' },
   { href: '#/admin/viewings', icon: 'Calendar', label: 'Giao dịch' },
   { href: '#/admin/reports', icon: 'BarChart3', label: 'Báo cáo & Thống kê' },
   { href: '#/admin/audit', icon: 'ScrollText', label: 'Nhật ký' },
@@ -262,7 +262,7 @@ function adminTitle(section) {
   return {
     overview: 'Tổng quan',
     brokers: 'Quản lý môi giới',
-    properties: 'Duyệt tin đăng',
+    properties: 'Quản lý tin đăng',
     viewings: 'Giao dịch',
     reports: 'Báo cáo & Thống kê',
     audit: 'Nhật ký hoạt động',
@@ -273,7 +273,7 @@ function adminSubtitle(section, monthLabel) {
   return {
     overview: `Toàn cảnh hoạt động nền tảng TraVinh Shelter trong tháng ${monthLabel}.`,
     brokers: 'Quản lý đội ngũ môi giới và cấp quyền làm việc.',
-    properties: 'Duyệt, ẩn hoặc khôi phục tin đăng trong hệ thống.',
+    properties: 'Xem, gỡ hoặc khôi phục tin đăng vi phạm trong hệ thống.',
     viewings: 'Kiểm tra giao dịch/lịch hẹn xem bất động sản từ khách hàng.',
     reports: 'Theo dõi KPI, biểu đồ 3D và hiệu suất vận hành.',
     audit: 'Theo dõi các thay đổi quan trọng trong hệ thống.',
