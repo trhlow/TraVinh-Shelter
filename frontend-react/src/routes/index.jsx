@@ -31,7 +31,6 @@ const ADMIN_SECTIONS = {
   '/admin': 'overview',
   '/admin/overview': 'overview',
   '/admin/brokers': 'brokers',
-  '/admin/accounts': 'accounts',
   '/admin/properties': 'properties',
   '/admin/viewings': 'viewings',
   '/admin/audit': 'audit',

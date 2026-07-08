@@ -20,7 +20,7 @@ afterEach(() => {
 test('renders the template home page', async () => {
   render(<App />);
 
-  expect(screen.getByRole('heading', { name: 'Tin nổi bật' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Tin đăng chọn lọc tại Trà Vinh' })).toBeInTheDocument();
   await waitFor(() => expect(screen.getAllByText('Công Tín Land').length).toBeGreaterThan(0));
 });
 
@@ -71,7 +71,6 @@ test('resolves every admin sub-path to the custom admin dashboard with a section
   const cases = [
     ['/admin', 'overview'],
     ['/admin/brokers', 'brokers'],
-    ['/admin/accounts', 'accounts'],
     ['/admin/properties', 'properties'],
     ['/admin/viewings', 'viewings'],
     ['/admin/audit', 'audit'],

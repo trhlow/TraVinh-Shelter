@@ -6,7 +6,6 @@ import { buildAdminNotifications } from '../../utils/adminNotifications.js';
 import LoginPage from '../LoginPage.jsx';
 import OverviewSection from './OverviewSection.jsx';
 import BrokersSection from './BrokersSection.jsx';
-import AccountsSection from './AccountsSection.jsx';
 import PropertiesSection from './PropertiesSection.jsx';
 import ViewingsSection from './ViewingsSection.jsx';
 import AuditLogSection from './AuditLogSection.jsx';
@@ -24,7 +23,6 @@ import {
 const ADMIN_SIDEBAR_ITEMS = [
   { href: '#/admin/overview', icon: 'BarChart3', label: 'Tổng quan' },
   { href: '#/admin/brokers', icon: 'IdCard', label: 'Môi giới' },
-  { href: '#/admin/accounts', icon: 'Users', label: 'Tài khoản' },
   { href: '#/admin/properties', icon: 'Building', label: 'Bài đăng' },
   { href: '#/admin/viewings', icon: 'Calendar', label: 'Lịch hẹn xem' },
   { href: '#/admin/audit', icon: 'ScrollText', label: 'Nhật ký' },
@@ -33,7 +31,6 @@ const ADMIN_SIDEBAR_ITEMS = [
 const SECTION_COMPONENTS = {
   overview: OverviewSection,
   brokers: BrokersSection,
-  accounts: AccountsSection,
   properties: PropertiesSection,
   viewings: ViewingsSection,
   audit: AuditLogSection,
@@ -224,7 +221,6 @@ function adminTitle(section) {
   return {
     overview: 'Tổng quan',
     brokers: 'Môi giới',
-    accounts: 'Tài khoản',
     properties: 'Bài đăng',
     viewings: 'Lịch hẹn xem',
     audit: 'Nhật ký hoạt động',

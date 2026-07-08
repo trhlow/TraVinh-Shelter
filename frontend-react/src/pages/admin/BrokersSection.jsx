@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import Icon from '../../components/ui/Icon.jsx';
-import { DashboardPanel } from '../../components/DashboardWidgets.jsx';
+import { DashboardPanel, StatusBadge } from '../../components/DashboardWidgets.jsx';
 import DataTable from '../../components/dashboard/DataTable.jsx';
-import { AccountStatusToggle } from './AccountsSection.jsx';
 
 const EMPTY_BROKER = {
   username: '',
@@ -11,6 +10,20 @@ const EMPTY_BROKER = {
   fullName: '',
   phone: '',
 };
+
+// The system has a single admin — locking it would lose access permanently.
+export function AccountStatusToggle({ user, saving, onToggle }) {
+  if (user.role === 'ADMIN') {
+    return <StatusBadge tone="muted">Quản trị viên</StatusBadge>;
+  }
+  const locked = user.status !== 'ACTIVE';
+  return (
+    <button className="btn btn-ghost btn-sm" type="button" disabled={saving} onClick={() => onToggle(user)}>
+      <Icon name={locked ? 'Eye' : 'EyeOff'} size={14} className="icon-muted" />
+      {locked ? 'Mở khóa' : 'Khóa'}
+    </button>
+  );
+}
 
 // Ported from the legacy AdminDashboard brokers section.
 // Table-ified with the shared DataTable in Task 12.
