@@ -1,14 +1,6 @@
 import { useMemo, useState } from 'react';
-import {
-  buildDailySeries,
-  buildHeatmapData,
-  buildWardData,
-  HeatmapChart,
-  ThreeDAreaChart,
-  ThreeDDonutChart,
-  ThreeDGroupedBarChart,
-} from '../../components/Charts.jsx';
-import { DashboardPanel, StateBlock, StatCard, StatusBadge } from '../../components/DashboardWidgets.jsx';
+import { buildDailySeries, ThreeDAreaChart } from '../../components/Charts.jsx';
+import { DashboardPanel, StatCard } from '../../components/DashboardWidgets.jsx';
 import DateRangeFilter from '../../components/dashboard/DateRangeFilter.jsx';
 import { WARDS, CATEGORIES } from '../../data/locations.js';
 import { isInRange, percentDelta, previousRange, resolveDateRange } from '../../utils/dateRange.js';
@@ -77,26 +69,8 @@ export default function OverviewSection({ data, loading, actions }) {
     { icon: 'DollarSign', title: 'Doanh thu tháng này', value: formatCurrencyLabel(currentRevenue), tone: 'green' },
   ];
 
-  const userGrowthData = useMemo(() => buildUserGrowthData(users), [users]);
-  const distributionData = useMemo(
-    () => buildWardData(filteredProperties, (property) => property.ward).map((item) => ({
-      label: item.label.replace('Phường ', ''),
-      value: item.count,
-    })),
-    [filteredProperties],
-  );
   const revenueSeries = useMemo(() => buildRevenueSeries(properties, viewings), [properties, viewings]);
-  const topBrokerData = useMemo(() => buildTopBrokerData(brokers, properties), [brokers, properties]);
-  const heatmapData = useMemo(
-    () => buildHeatmapData(filteredProperties, (property) => property.ward, (property) => property.category),
-    [filteredProperties],
-  );
   const recentAuditItems = useMemo(() => buildAuditItems({ users, properties, viewings }).slice(0, 5), [users, properties, viewings]);
-
-  const drillTo = (params) => {
-    const query = new URLSearchParams(params).toString();
-    window.location.hash = `#/admin/properties?${query}`;
-  };
 
   const exportOverview = () => {
     downloadCsv('bao-cao-tong-quan.csv', kpis.map((kpi) => ({ metric: kpi.title, value: kpi.value })), [
@@ -153,41 +127,12 @@ export default function OverviewSection({ data, loading, actions }) {
       </div>
 
       <div className="dashboard-live-row">
-        <ThreeDGroupedBarChart
-          title="Tăng trưởng người dùng mới"
-          subtitle="12 tháng gần nhất, so sánh với kỳ trước"
-          data={userGrowthData}
-          currentLabel="Người dùng mới"
-          previousLabel="Kỳ trước"
-        />
-        <ThreeDDonutChart
-          title="Phân bổ tin đăng theo khu vực"
-          subtitle="Theo các phường/khu vực đang có dữ liệu trong hệ thống"
-          data={distributionData}
-          centerLabel="tin đăng"
-        />
-      </div>
-
-      <div className="dashboard-live-row">
         <ThreeDAreaChart
           title="Doanh thu giao dịch toàn hệ thống"
           subtitle="Ước tính theo tin đã chốt và lịch hẹn xác nhận"
           series={revenueSeries}
           unit="đ doanh thu"
         />
-        <ThreeDGroupedBarChart
-          title="Top môi giới theo doanh số"
-          subtitle="Xếp hạng tháng hiện tại theo số tin và giao dịch ước tính"
-          data={topBrokerData}
-          currentLabel="Tháng này"
-          previousLabel="Tháng trước"
-          valueSuffix="tr"
-        />
-      </div>
-
-      <div className="dashboard-charts-row">
-        <HeatmapChart title="Mật độ tin theo phường" data={heatmapData} onSelectCell={({ ward: cellWard, category: cellCategory }) => drillTo({ ward: cellWard, category: cellCategory })} />
-        <BrokerPerformancePanel brokers={brokers} properties={properties} />
       </div>
 
       <div className="dashboard-panels-row">
@@ -205,31 +150,6 @@ export default function OverviewSection({ data, loading, actions }) {
         </div>
       </DashboardPanel>
     </>
-  );
-}
-
-function BrokerPerformancePanel({ brokers, properties }) {
-  const rows = useMemo(() => buildBrokerRows(brokers, properties), [brokers, properties]);
-  return (
-    <DashboardPanel title="Danh sách môi giới" count={`${brokers.length} tài khoản`}>
-      {rows.length === 0 ? (
-        <StateBlock icon="IdCard" title="Chưa có môi giới" description="Tài khoản môi giới mới sẽ hiển thị tại đây." />
-      ) : (
-        <div className="dashboard-broker-list">
-          {rows.slice(0, 5).map((row) => (
-            <div key={row.id} className="dashboard-broker-row">
-              <div>
-                <div className="dashboard-table-name">{row.name}</div>
-                <div className="dashboard-table-sub">{row.listings} tin đăng · hiệu suất {row.performance}%</div>
-              </div>
-              <StatusBadge tone={row.status === 'ACTIVE' ? 'success' : 'warning'}>
-                {row.status === 'ACTIVE' ? 'Hoạt động' : 'Tạm khóa'}
-              </StatusBadge>
-            </div>
-          ))}
-        </div>
-      )}
-    </DashboardPanel>
   );
 }
 
@@ -284,20 +204,6 @@ function AuditTimeline({ items }) {
   );
 }
 
-function buildUserGrowthData(users) {
-  const buckets = rollingMonthBuckets();
-  users.forEach((user, index) => {
-    const date = dateOrFallback(user.createdAt, index);
-    const bucket = buckets.find((item) => sameMonth(item.date, date));
-    if (bucket) bucket.current += 1;
-  });
-  return buckets.map((bucket, index) => ({
-    label: bucket.label,
-    current: bucket.current || (index % 4 === 0 ? 1 : 0),
-    previous: Math.max(0, Math.round((bucket.current || 1) * 0.72)),
-  }));
-}
-
 function buildRevenueSeries(properties, viewings) {
   const buckets = rollingMonthBuckets().map((bucket) => ({ date: bucket.date.toISOString().slice(0, 10), count: 0 }));
   properties.forEach((property) => {
@@ -313,34 +219,6 @@ function buildRevenueSeries(properties, viewings) {
     if (bucket && viewing.status === 'CONFIRMED') bucket.count += 800000;
   });
   return buckets;
-}
-
-function buildTopBrokerData(brokers, properties) {
-  const rows = buildBrokerRows(brokers, properties).slice(0, 6);
-  if (rows.length === 0) {
-    return [{ label: 'Chưa có', current: 0, previous: 0 }];
-  }
-  return rows.map((row, index) => ({
-    label: shortName(row.name),
-    current: Math.max(1, Math.round(row.revenue / 1_000_000)),
-    previous: Math.max(1, Math.round((row.revenue / 1_000_000) * (0.62 + index * 0.04))),
-  }));
-}
-
-function buildBrokerRows(brokers, properties) {
-  return brokers.map((broker) => {
-    const brokerProperties = properties.filter((property) => property.broker?.id === broker.id || property.broker?.email === broker.email);
-    const closed = brokerProperties.filter((property) => ['SOLD', 'RENTED'].includes(property.rawStatus)).length;
-    const revenue = brokerProperties.reduce((sum, property) => sum + estimatePropertyRevenue(property), 0);
-    return {
-      id: broker.id,
-      name: broker.fullName || broker.username || broker.email || 'Môi giới',
-      status: broker.status,
-      listings: brokerProperties.length,
-      performance: Math.min(100, Math.round((closed / Math.max(1, brokerProperties.length)) * 100)),
-      revenue,
-    };
-  }).sort((a, b) => b.revenue - a.revenue || b.listings - a.listings);
 }
 
 function buildAuditItems({ users, properties, viewings }) {
@@ -427,9 +305,4 @@ function formatDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return 'Chưa rõ';
   return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
-}
-
-function shortName(name) {
-  const parts = String(name || 'MG').trim().split(/\s+/);
-  return parts.slice(-2).join(' ') || name;
 }

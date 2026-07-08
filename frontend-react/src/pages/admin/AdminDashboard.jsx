@@ -5,6 +5,7 @@ import NotificationBell from '../../components/dashboard/NotificationBell.jsx';
 import { buildAdminNotifications } from '../../utils/adminNotifications.js';
 import LoginPage from '../LoginPage.jsx';
 import OverviewSection from './OverviewSection.jsx';
+import ReportsSection from './ReportsSection.jsx';
 import BrokersSection from './BrokersSection.jsx';
 import PropertiesSection from './PropertiesSection.jsx';
 import ViewingsSection from './ViewingsSection.jsx';
@@ -34,7 +35,7 @@ const SECTION_COMPONENTS = {
   brokers: BrokersSection,
   properties: PropertiesSection,
   viewings: ViewingsSection,
-  reports: OverviewSection,
+  reports: ReportsSection,
   audit: AuditLogSection,
 };
 

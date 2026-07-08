@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import OverviewSection from './OverviewSection.jsx';
 
 beforeEach(() => {
@@ -29,15 +29,8 @@ test('renders KPI cards, filter bar, and quick actions', () => {
   expect(screen.getByRole('link', { name: /Cấp tài khoản môi giới/ })).toHaveAttribute('href', '#/admin/brokers');
 });
 
-test('ward filter narrows the data set feeding the charts', () => {
+test('renders revenue chart and system status panel', () => {
   render(<OverviewSection data={data} loading={false} />);
-  fireEvent.change(screen.getByLabelText('Lọc theo phường'), { target: { value: 'phuong-tra-vinh' } });
-  expect(screen.getByRole('button', { name: 'Phường Trà Vinh · Trọ: 1 tin' })).toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'Phường Long Đức · Nhà: 0 tin' })).toBeInTheDocument();
-});
-
-test('heatmap cell click drills into the filtered property list', () => {
-  render(<OverviewSection data={data} loading={false} />);
-  fireEvent.click(screen.getByRole('button', { name: 'Phường Trà Vinh · Trọ: 1 tin' }));
-  expect(window.location.hash).toBe('#/admin/properties?ward=phuong-tra-vinh&category=tro');
+  expect(screen.getByText('Doanh thu giao dịch toàn hệ thống')).toBeInTheDocument();
+  expect(screen.getByText('Tình trạng hệ thống')).toBeInTheDocument();
 });
