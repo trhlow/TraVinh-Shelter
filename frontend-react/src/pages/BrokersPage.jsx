@@ -145,6 +145,11 @@ export default function BrokersPage({ session, onLogout, theme, onToggleTheme })
                       <Icon name="Facebook" size={16} />
                     </a>
                   )}
+                  {broker.tiktok && (
+                    <a className="broker-card-social-icon" href={broker.tiktok} target="_blank" rel="noopener noreferrer" aria-label="TikTok">
+                      <Icon name="TikTok" size={16} />
+                    </a>
+                  )}
                 </div>
                 <a
                   className="broker-card-viewall"
@@ -184,6 +189,7 @@ export function brokerStatsFrom(properties) {
       avatarUrl: broker.avatarUrl || '',
       zalo: broker.zalo || '',
       facebook: broker.facebook || '',
+      tiktok: broker.tiktok || '',
       listings: [],
       wards: new Set(),
       categories: new Set(),

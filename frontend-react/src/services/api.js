@@ -402,6 +402,7 @@ function normalizeProperty(item, index = 0) {
       avatarUrl: item.broker?.avatarUrl || '',
       zalo: item.broker?.zaloUrl || '',
       facebook: item.broker?.facebookUrl || '',
+      tiktok: item.broker?.tiktokUrl || '',
       rating: 'Đã xác minh',
       responseTime: '15 phút',
     },

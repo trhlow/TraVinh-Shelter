@@ -1,26 +1,6 @@
 import BrandLogo, { BRAND_NAME } from '../components/BrandLogo.jsx';
 import Icon from '../components/ui/Icon.jsx';
 
-// lucide-react has no TikTok mark — hand-drawn to match the surrounding
-// lucide icons' size/stroke weight (currentColor so it themes automatically).
-function TikTokIcon({ size = 16 }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
-    </svg>
-  );
-}
-
 // TODO: thay href="#/" bằng URL Facebook/TikTok thật của Công Tín Land khi có.
 const FOOTER_SOCIALS = [
   { label: 'Facebook', icon: 'Facebook' },
@@ -210,7 +190,7 @@ export function Footer() {
                   aria-label={label}
                   className="footer-social-icon"
                 >
-                  {icon === 'TikTok' ? <TikTokIcon size={16} /> : <Icon name={icon} size={16} />}
+                  <Icon name={icon} size={16} />
                 </a>
               ))}
             </div>

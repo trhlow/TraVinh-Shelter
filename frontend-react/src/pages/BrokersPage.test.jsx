@@ -10,6 +10,7 @@ vi.mock('../services/api.js', () => ({
       broker: {
         name: 'Nguyễn Văn Toàn', email: 'toan@congtinland.vn', avatarUrl: '',
         zalo: 'https://zalo.me/84912345678', facebook: 'https://facebook.com/toan.congtinland',
+        tiktok: 'https://tiktok.com/@toan.congtinland',
       },
     },
   ]),
@@ -25,10 +26,11 @@ test('does not render the broker\'s email/gmail account', async () => {
   expect(screen.queryByText('toan@congtinland.vn')).not.toBeInTheDocument();
 });
 
-test('renders Zalo and Facebook links next to "Xem tất cả"', async () => {
+test('renders Zalo, Facebook, and TikTok links next to "Xem tất cả"', async () => {
   render(<BrokersPage />);
   const viewAll = await screen.findByText('Xem tất cả');
   const footer = viewAll.closest('.broker-card-footer');
   expect(within(footer).getByLabelText('Zalo')).toHaveAttribute('href', 'https://zalo.me/84912345678');
   expect(within(footer).getByLabelText('Facebook')).toHaveAttribute('href', 'https://facebook.com/toan.congtinland');
+  expect(within(footer).getByLabelText('TikTok')).toHaveAttribute('href', 'https://tiktok.com/@toan.congtinland');
 });

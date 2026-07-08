@@ -133,6 +133,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
       : 'Nhà';
   const brokerPhone = property.broker?.phone || '0901 234 567';
   const brokerFacebook = property.broker?.facebook || '';
+  const brokerTiktok = property.broker?.tiktok || '';
   const brokerAvatar = property.broker?.avatarUrl || fallbackBrokerAvatar;
   const isTro = property.category === 'tro';
 
@@ -349,6 +350,17 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
                   >
                     <Icon name="Facebook" size={18} />
                     Facebook
+                  </a>
+                )}
+                {brokerTiktok && (
+                  <a
+                    href={brokerTiktok}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="contact-btn-tiktok"
+                  >
+                    <Icon name="TikTok" size={18} />
+                    TikTok
                   </a>
                 )}
               </div>

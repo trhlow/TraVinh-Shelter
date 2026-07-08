@@ -37,6 +37,23 @@ test('does not render a Facebook link when broker.facebook is missing', async ()
   expect(within(contactCard).queryByRole('link', { name: /Facebook/i })).not.toBeInTheDocument();
 });
 
+test('renders a TikTok link in the contact card when broker.tiktok is set', async () => {
+  fetchPropertyDetail.mockResolvedValue({ ...baseProperty, broker: { ...baseProperty.broker, tiktok: 'https://tiktok.com/@broker.test' } });
+  render(<PropertyDetailPage propertyId="p-1" />);
+  const brokerNameEl = await screen.findByText(baseProperty.broker.name);
+  const contactCard = brokerNameEl.closest('.contact-card');
+  const link = within(contactCard).getByRole('link', { name: /TikTok/i });
+  expect(link).toHaveAttribute('href', 'https://tiktok.com/@broker.test');
+});
+
+test('does not render a TikTok link when broker.tiktok is missing', async () => {
+  fetchPropertyDetail.mockResolvedValue(baseProperty);
+  render(<PropertyDetailPage propertyId="p-1" />);
+  const brokerNameEl = await screen.findByText(baseProperty.broker.name);
+  const contactCard = brokerNameEl.closest('.contact-card');
+  expect(within(contactCard).queryByRole('link', { name: /TikTok/i })).not.toBeInTheDocument();
+});
+
 test('uses "Nhà vệ sinh" instead of "Phòng tắm" for the bathroom spec label', async () => {
   fetchPropertyDetail.mockResolvedValue(baseProperty);
   render(<PropertyDetailPage propertyId="p-1" />);
@@ -50,8 +67,10 @@ test('phone and Zalo live inside one merged contact box', async () => {
   render(<PropertyDetailPage propertyId="p-1" />);
   await screen.findAllByText(baseProperty.title);
 
-  const phoneLink = screen.getByRole('link', { name: /Gọi ngay/i });
-  const zaloLink = screen.getByRole('link', { name: /Chat Zalo|Zalo/i });
+  const brokerNameEl = await screen.findByText(baseProperty.broker.name);
+  const contactCard = brokerNameEl.closest('.contact-card');
+  const phoneLink = within(contactCard).getByRole('link', { name: /Gọi ngay/i });
+  const zaloLink = within(contactCard).getByRole('link', { name: /Chat Zalo|Zalo/i });
   expect(phoneLink.closest('.contact-phone-zalo')).toBe(zaloLink.closest('.contact-phone-zalo'));
   expect(phoneLink.closest('.contact-phone-zalo')).not.toBeNull();
 });
