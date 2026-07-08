@@ -50,8 +50,6 @@ const ADMIN_SECTIONS = {
   '/admin/properties': 'properties',
   '/admin/viewings': 'viewings',
   '/admin/reports': 'reports',
-  '/admin/rbac': 'rbac',
-  '/admin/settings': 'settings',
   '/admin/audit': 'audit',
 };
 
