@@ -14,14 +14,14 @@ const data = {
   brokers: [{ id: 'b1', status: 'ACTIVE' }],
   properties: [
     { id: 'p1', title: 'A', ward: 'phuong-tra-vinh', category: 'tro', rawStatus: 'AVAILABLE', createdAt: '2026-06-30T00:00:00Z', priceLabel: '1 tỷ' },
-    { id: 'p2', title: 'B', ward: 'phuong-long-duc', category: 'nha', rawStatus: 'PENDING', createdAt: '2026-01-15T00:00:00Z', priceLabel: '2 tỷ' },
+    { id: 'p2', title: 'B', ward: 'phuong-long-duc', category: 'nha', rawStatus: 'AVAILABLE', createdAt: '2026-01-15T00:00:00Z', priceLabel: '2 tỷ' },
   ],
   viewings: [{ id: 'v1', status: 'PENDING', requestedAt: '2026-06-29T00:00:00Z' }],
 };
 
 test('renders KPI cards, filter bar, and quick actions', () => {
   render(<OverviewSection data={data} loading={false} />);
-  expect(screen.getByText('Bài đăng mới')).toBeInTheDocument();
+  expect(screen.getByText('Tổng số người dùng')).toBeInTheDocument();
   // "Lịch hẹn chờ" also labels a line in the system-status panel, so assert at
   // least one match rather than a single unique node.
   expect(screen.getAllByText('Lịch hẹn chờ').length).toBeGreaterThan(0);
@@ -32,11 +32,8 @@ test('renders KPI cards, filter bar, and quick actions', () => {
 test('ward filter narrows the data set feeding the charts', () => {
   render(<OverviewSection data={data} loading={false} />);
   fireEvent.change(screen.getByLabelText('Lọc theo phường'), { target: { value: 'phuong-tra-vinh' } });
-  // "Đang hiển thị" also labels the gauge chart, so scope to the KPI card's own label class.
-  const label = screen.getAllByText('Đang hiển thị').find((el) => el.className === 'stat-card-label');
-  const kpi = label.closest('.stat-card-article');
-  // Only 1 property remains AVAILABLE in Trà Vinh; the KPI value updates.
-  expect(kpi.textContent).toContain('1');
+  expect(screen.getByRole('button', { name: 'Phường Trà Vinh · Trọ: 1 tin' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Phường Long Đức · Nhà: 0 tin' })).toBeInTheDocument();
 });
 
 test('heatmap cell click drills into the filtered property list', () => {
