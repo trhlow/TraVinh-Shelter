@@ -6,19 +6,6 @@ import { WARDS, CATEGORIES } from '../../data/locations.js';
 import { isInRange, percentDelta, previousRange, resolveDateRange } from '../../utils/dateRange.js';
 import { downloadCsv } from '../../utils/exportCsv.js';
 
-const RBAC_MODULES = [
-  { id: 'users', label: 'Người dùng' },
-  { id: 'brokers', label: 'Môi giới' },
-  { id: 'properties', label: 'Tin đăng' },
-  { id: 'reports', label: 'Báo cáo' },
-];
-
-const DEFAULT_RBAC = {
-  ADMIN: { users: true, brokers: true, properties: true, reports: true },
-  BROKER: { users: false, brokers: false, properties: true, reports: true },
-  USER: { users: false, brokers: false, properties: false, reports: false },
-};
-
 export default function OverviewSection({ data, loading, actions }) {
   const users = data?.users || [];
   const brokers = data?.brokers || [];
@@ -29,7 +16,6 @@ export default function OverviewSection({ data, loading, actions }) {
   const [custom, setCustom] = useState({});
   const [ward, setWard] = useState('all');
   const [category, setCategory] = useState('all');
-  const [rbac, setRbac] = useState(DEFAULT_RBAC);
 
   const range = useMemo(() => resolveDateRange(preset, custom), [preset, custom]);
 
@@ -55,7 +41,7 @@ export default function OverviewSection({ data, loading, actions }) {
     [filteredProperties],
   );
   const kpis = [
-    { icon: 'Users', title: 'Tổng số người dùng', value: users.length, tone: 'navy', href: '#/admin/accounts' },
+    { icon: 'Users', title: 'Tổng số người dùng', value: users.length, tone: 'navy' },
     { icon: 'IdCard', title: 'Môi giới hoạt động', value: activeBrokers, tone: 'green', href: '#/admin/brokers' },
     {
       icon: 'Building',
@@ -77,13 +63,6 @@ export default function OverviewSection({ data, loading, actions }) {
       { key: 'metric', label: 'Chỉ số' },
       { key: 'value', label: 'Giá trị' },
     ]);
-  };
-
-  const toggleRbac = (role, moduleId) => {
-    setRbac((current) => ({
-      ...current,
-      [role]: { ...current[role], [moduleId]: !current[role][moduleId] },
-    }));
   };
 
   return (
@@ -136,7 +115,6 @@ export default function OverviewSection({ data, loading, actions }) {
       </div>
 
       <div className="dashboard-panels-row">
-        <RbacPanel rbac={rbac} onToggle={toggleRbac} />
         <AuditTimeline items={recentAuditItems} />
       </div>
 
@@ -149,39 +127,6 @@ export default function OverviewSection({ data, loading, actions }) {
           <div className="dashboard-system-line"><span className="dashboard-system-line-label">Tài khoản bị khóa</span><span className="dashboard-system-line-value">{users.filter((user) => user.status === 'LOCKED' || user.status === 'BLOCKED').length}</span></div>
         </div>
       </DashboardPanel>
-    </>
-  );
-}
-
-function RbacPanel({ rbac, onToggle }) {
-  return (
-    <DashboardPanel title="Phân quyền RBAC" count="ADMIN / BROKER / USER">
-      <div className="dashboard-rbac-grid">
-        <div className="dashboard-rbac-head">Vai trò</div>
-        {RBAC_MODULES.map((module) => <div key={module.id} className="dashboard-rbac-head">{module.label}</div>)}
-        {Object.keys(rbac).map((role) => (
-          <RoleRow key={role} role={role} permissions={rbac[role]} onToggle={onToggle} />
-        ))}
-      </div>
-    </DashboardPanel>
-  );
-}
-
-function RoleRow({ role, permissions, onToggle }) {
-  return (
-    <>
-      <div className="dashboard-rbac-role">{role}</div>
-      {RBAC_MODULES.map((module) => (
-        <label key={`${role}-${module.id}`} className="dashboard-rbac-toggle">
-          <input
-            type="checkbox"
-            checked={permissions[module.id]}
-            onChange={() => onToggle(role, module.id)}
-            aria-label={`${role} ${module.label}`}
-          />
-          <span />
-        </label>
-      ))}
     </>
   );
 }
