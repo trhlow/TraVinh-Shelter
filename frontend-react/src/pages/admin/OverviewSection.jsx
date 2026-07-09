@@ -114,7 +114,7 @@ export default function OverviewSection({ data, loading, actions }) {
       <div className="dashboard-live-row">
         <ThreeDGroupedBarChart
           title="Hoạt động hệ thống theo tháng"
-          subtitle="12 tháng gần nhất — tin đăng mới và lịch hẹn đã xác nhận"
+          subtitle="Tin đăng mới và lịch hẹn đã xác nhận, tính từ khi có dữ liệu thực tế"
           data={systemActivityData}
           currentLabel="Tin đăng"
           previousLabel="Lịch hẹn xác nhận"

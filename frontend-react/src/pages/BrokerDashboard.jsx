@@ -505,7 +505,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
               <div className="dashboard-live-row">
                 <ThreeDGroupedBarChart
                   title="Hoạt động môi giới theo tháng"
-                  subtitle="Số bài đăng mới và lịch hẹn đã xác nhận theo từng tháng trong năm"
+                  subtitle="Số bài đăng mới và lịch hẹn đã xác nhận theo từng tháng, tính từ khi có dữ liệu thực tế"
                   data={activityChartData}
                   currentLabel="Bài đăng"
                   previousLabel="Lịch hẹn xác nhận"

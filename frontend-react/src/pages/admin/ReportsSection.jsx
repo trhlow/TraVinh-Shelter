@@ -69,7 +69,7 @@ export default function ReportsSection({ data }) {
       <div className="dashboard-live-row">
         <ThreeDGroupedBarChart
           title="Tăng trưởng người dùng mới"
-          subtitle="12 tháng gần nhất, so sánh với kỳ trước"
+          subtitle="Tính từ khi có dữ liệu thực tế"
           data={userGrowthData}
           currentLabel="Người dùng mới"
           previousLabel="Kỳ trước"
@@ -83,8 +83,8 @@ export default function ReportsSection({ data }) {
       </div>
 
       <div className="dashboard-ward-density-row">
-        {wardDensityData.map((ward) => (
-          <CategoryBarChart key={ward.code} title={`Mật độ tin — ${ward.label}`} data={ward.data} />
+        {wardDensityData.map((wardChart) => (
+          <CategoryBarChart key={wardChart.code} title={`Mật độ tin — ${wardChart.label}`} data={wardChart.data} />
         ))}
       </div>
 
