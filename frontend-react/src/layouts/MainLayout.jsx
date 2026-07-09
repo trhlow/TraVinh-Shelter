@@ -1,10 +1,11 @@
 import BrandLogo, { BRAND_NAME } from '../components/BrandLogo.jsx';
 import Icon from '../components/ui/Icon.jsx';
 
-// TODO: thay href="#/" bằng URL Facebook/TikTok thật của Công Tín Land khi có.
+// TODO: thay href="#/" bằng URL Facebook/TikTok/YouTube thật của Công Tín Land khi có.
 const FOOTER_SOCIALS = [
   { label: 'Facebook', icon: 'Facebook' },
   { label: 'TikTok', icon: 'TikTok' },
+  { label: 'YouTube', icon: 'Youtube' },
 ];
 
 const NAV_CATEGORIES = [
