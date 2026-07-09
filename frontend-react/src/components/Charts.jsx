@@ -596,7 +596,10 @@ export function WardBarChart({ title, data, onSelectWard }) {
               className="ward-combo-bar-group"
               onClick={() => onSelectWard(point.ward.code)}
               onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') onSelectWard(point.ward.code);
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onSelectWard(point.ward.code);
+                }
               }}
             >
               <rect x={point.barLeftX} y={point.barTopY} width={barWidth} height={point.barHeight} fill={barColor} />
