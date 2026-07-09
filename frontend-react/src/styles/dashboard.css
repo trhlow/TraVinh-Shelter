@@ -1070,6 +1070,50 @@
   color: var(--color-muted);
 }
 
+.ward-combo-svg {
+  display: block;
+  width: 100%;
+  height: 220px;
+}
+
+.combo-chart-legend {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 12px;
+}
+
+.combo-chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-body);
+}
+
+.combo-chart-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.combo-chart-legend-line {
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.ward-combo-bar-group {
+  cursor: pointer;
+}
+
+.ward-combo-bar-group:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 1px;
+}
+
 /* ── Amenity checkboxes ────────────────────────────────── */
 .amenity-checkboxes {
   display: flex;

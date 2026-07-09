@@ -521,51 +521,140 @@ export function Sparkline({ series = [] }) {
   );
 }
 
+const WARD_COMBO_TICK_PERCENTS = [0, 25, 50, 75, 100];
+const WARD_COMBO_PLOT = { left: 10, right: 90, top: 6, bottom: 38 };
+
+function wardComboTickY(pct) {
+  const { top, bottom } = WARD_COMBO_PLOT;
+  return bottom - (pct / 100) * (bottom - top);
+}
+
 /**
- * WardBarChart — one real column per ward with the count on top, ward name and
- * percent share underneath (chart + number + text combined).
- * Expects `data` from buildWardData so all 4 wards always render.
+ * WardBarChart — combo bar (count, left axis) + line (percent, right axis)
+ * per ward, one shared SVG coordinate system so the line always lines up
+ * over each bar. Expects `data` from buildWardData so all 4 wards always
+ * render.
  */
 export function WardBarChart({ title, data, onSelectWard }) {
-  const max = Math.max(...data.map((ward) => ward.count), 1);
+  const { left, right, top, bottom } = WARD_COMBO_PLOT;
+  const leftMax = Math.max(...data.map((ward) => ward.count), 1);
+  const columnWidth = (right - left) / data.length;
+  const barWidth = columnWidth * 0.4;
+  const barColor = CHART_PALETTE[0];
+  const lineColor = CHART_PALETTE[4];
+
+  const points = data.map((ward, index) => {
+    const columnCenterX = left + columnWidth * (index + 0.5);
+    const barTopY = bottom - (ward.count / leftMax) * (bottom - top);
+    const lineY = bottom - (ward.pct / 100) * (bottom - top);
+    return {
+      ward,
+      columnCenterX,
+      barLeftX: columnCenterX - barWidth / 2,
+      barTopY,
+      barHeight: bottom - barTopY,
+      lineY,
+    };
+  });
+
+  const linePath = `M${points.map((point) => `${point.columnCenterX},${point.lineY}`).join(' L')}`;
+  const leftTicks = WARD_COMBO_TICK_PERCENTS.map((pct) => ({
+    y: wardComboTickY(pct),
+    value: Math.round((leftMax * pct) / 100),
+  }));
+  const rightTicks = WARD_COMBO_TICK_PERCENTS.map((pct) => ({
+    y: wardComboTickY(pct),
+    value: pct,
+  }));
 
   return (
     <section className="chart-panel">
       <h2 className="chart-title">{title}</h2>
-      <div className="ward-bar-cols">
-        {data.map((ward, index) => {
-          const bar = (
-            <>
-              <span className="ward-bar-count">{ward.count}</span>
-              <div className="ward-bar-track">
-                <span
-                  className="ward-bar-fill"
-                  style={{
-                    height: `${Math.max(4, (ward.count / max) * 100)}%`,
-                    backgroundColor: CHART_PALETTE[index % CHART_PALETTE.length],
-                  }}
-                />
-              </div>
-              <span className="ward-bar-name">{ward.label}</span>
-              <span className="ward-bar-pct">{ward.pct}%</span>
-            </>
-          );
-          return onSelectWard ? (
-            <button
-              type="button"
-              className="ward-bar-col"
-              key={ward.code}
-              aria-label={`${ward.label}: ${ward.count} tin`}
-              onClick={() => onSelectWard(ward.code)}
+      <svg className="ward-combo-svg" viewBox="0 0 100 50" preserveAspectRatio="none">
+        <line x1={left} y1={top} x2={left} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
+        <line x1={right} y1={top} x2={right} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
+        <line x1={left} y1={bottom} x2={right} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
+
+        {leftTicks.map((tick) => (
+          <text key={`left-${tick.y}`} x={left - 1.5} y={tick.y + 1} textAnchor="end" fontSize="3" fill="var(--color-muted)">
+            {tick.value}
+          </text>
+        ))}
+        {rightTicks.map((tick) => (
+          <text key={`right-${tick.y}`} x={right + 1.5} y={tick.y + 1} textAnchor="start" fontSize="3" fill="var(--color-muted)">
+            {tick.value}
+          </text>
+        ))}
+
+        {points.map((point) => (
+          onSelectWard ? (
+            <g
+              key={point.ward.code}
+              role="button"
+              tabIndex={0}
+              aria-label={`${point.ward.label}: ${point.ward.count} tin`}
+              className="ward-combo-bar-group"
+              onClick={() => onSelectWard(point.ward.code)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') onSelectWard(point.ward.code);
+              }}
             >
-              {bar}
-            </button>
+              <rect x={point.barLeftX} y={point.barTopY} width={barWidth} height={point.barHeight} fill={barColor} />
+            </g>
           ) : (
-            <div className="ward-bar-col" key={ward.code}>
-              {bar}
-            </div>
-          );
-        })}
+            <rect key={point.ward.code} x={point.barLeftX} y={point.barTopY} width={barWidth} height={point.barHeight} fill={barColor} />
+          )
+        ))}
+
+        <path d={linePath} fill="none" stroke={lineColor} strokeWidth="0.6" />
+        {points.map((point) => (
+          <circle key={`dot-${point.ward.code}`} cx={point.columnCenterX} cy={point.lineY} r="1" fill={lineColor} />
+        ))}
+
+        {points.map((point) => (
+          <text
+            key={`bar-label-${point.ward.code}`}
+            className="ward-combo-value-label"
+            x={point.columnCenterX}
+            y={point.barTopY - 1.5}
+            textAnchor="middle"
+            fontSize="3.2"
+            fontStyle="italic"
+            fill="var(--color-ink)"
+          >
+            {point.ward.count}
+          </text>
+        ))}
+        {points.map((point) => (
+          <text
+            key={`line-label-${point.ward.code}`}
+            className="ward-combo-value-label"
+            x={point.columnCenterX}
+            y={point.lineY - 2}
+            textAnchor="middle"
+            fontSize="3.2"
+            fontStyle="italic"
+            fill="var(--color-ink)"
+          >
+            {`${point.ward.pct}%`}
+          </text>
+        ))}
+
+        {points.map((point) => (
+          <text key={`x-label-${point.ward.code}`} x={point.columnCenterX} y={bottom + 4} textAnchor="middle" fontSize="3" fill="var(--color-muted)">
+            {point.ward.label.replace('Phường ', '')}
+          </text>
+        ))}
+      </svg>
+      <div className="combo-chart-legend">
+        <span className="combo-chart-legend-item">
+          <span className="combo-chart-legend-swatch" style={{ backgroundColor: barColor }} />
+          Số tin đăng
+        </span>
+        <span className="combo-chart-legend-item">
+          <span className="combo-chart-legend-line" style={{ backgroundColor: lineColor }} />
+          Tỉ lệ (%)
+        </span>
       </div>
     </section>
   );

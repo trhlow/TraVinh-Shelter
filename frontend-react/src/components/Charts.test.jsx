@@ -44,8 +44,8 @@ test('WardBarChart renders a column with count, name, and percent per ward', () 
   render(<WardBarChart title="Tin đăng theo phường" data={data} />);
 
   expect(screen.getByRole('heading', { name: 'Tin đăng theo phường' })).toBeInTheDocument();
-  expect(screen.getByText('Phường Hòa Thuận')).toBeInTheDocument();
-  expect(screen.getByText('Phường Trà Vinh')).toBeInTheDocument();
+  expect(screen.getByText('Hòa Thuận')).toBeInTheDocument();
+  expect(screen.getByText('Trà Vinh')).toBeInTheDocument();
   expect(screen.getByText('100%')).toBeInTheDocument();
 });
 
@@ -55,6 +55,19 @@ test('WardBarChart columns are clickable when onSelectWard is provided', () => {
   render(<WardBarChart title="Theo phường" data={data} onSelectWard={onSelectWard} />);
   fireEvent.click(screen.getByRole('button', { name: 'Phường Trà Vinh: 1 tin' }));
   expect(onSelectWard).toHaveBeenCalledWith('phuong-tra-vinh');
+});
+
+test('WardBarChart shows both the count value and the percent value for the same ward', () => {
+  const items = [
+    { ward: 'phuong-nguyet-hoa' },
+    { ward: 'phuong-nguyet-hoa' },
+    { ward: 'phuong-nguyet-hoa' },
+  ];
+  const data = buildWardData(items, (item) => item.ward);
+  const { container } = render(<WardBarChart title="Test" data={data} />);
+  const valueLabels = Array.from(container.querySelectorAll('.ward-combo-value-label')).map((node) => node.textContent);
+  expect(valueLabels).toContain('3');
+  expect(valueLabels).toContain('100%');
 });
 
 // ── buildDailySeries ──────────────────────────────────────
