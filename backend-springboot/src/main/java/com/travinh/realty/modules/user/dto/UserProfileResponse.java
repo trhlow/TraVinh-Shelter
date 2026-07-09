@@ -7,11 +7,11 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record UserProfileResponse(UUID id, String username, String fullName, String phone, String avatarUrl, String email,
-                                  String zaloUrl, String facebookUrl, String tiktokUrl,
+                                  String facebookUrl, String tiktokUrl,
                                   UserRole role, UserStatus status, Instant createdAt) {
     public static UserProfileResponse from(User user) {
         return new UserProfileResponse(user.getId(), user.getUsername(), user.getFullName(), user.getPhone(),
-                user.getAvatarUrl(), user.getEmail(), user.getZaloUrl(), user.getFacebookUrl(), user.getTiktokUrl(),
+                user.getAvatarUrl(), user.getEmail(), user.getFacebookUrl(), user.getTiktokUrl(),
                 user.getRole(), user.getStatus(), user.getCreatedAt());
     }
 }

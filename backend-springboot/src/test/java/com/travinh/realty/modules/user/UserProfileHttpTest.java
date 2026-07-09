@@ -143,52 +143,32 @@ class UserProfileHttpTest {
 
         mockMvc.perform(patch("/users/me").header("Authorization", bearer(user))
                         .contentType(MediaType.APPLICATION_JSON).content("""
-                        {"fullName":"User","phone":"0900000000","zaloUrl":"https://zalo.me/0900000000","facebookUrl":"https://facebook.com/user","tiktokUrl":"https://tiktok.com/@user"}
+                        {"fullName":"User","phone":"0900000000","facebookUrl":"https://facebook.com/user","tiktokUrl":"https://tiktok.com/@user"}
                         """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.zaloUrl").value("https://zalo.me/0900000000"))
                 .andExpect(jsonPath("$.facebookUrl").value("https://facebook.com/user"))
                 .andExpect(jsonPath("$.tiktokUrl").value("https://tiktok.com/@user"));
     }
 
     @Test
-    void profileUpdateRejectsInvalidSocialLinkFormat() throws Exception {
-        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
-        authenticate(user);
-        when(users.findById(user.getId())).thenReturn(Optional.of(user));
-
-        mockMvc.perform(patch("/users/me").header("Authorization", bearer(user))
-                        .contentType(MediaType.APPLICATION_JSON).content("""
-                        {"fullName":"User","phone":"0900000000","zaloUrl":"not-a-url"}
-                        """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.fieldErrors.zaloUrl").exists());
-    }
-
-    @Test
     void regularUserCanClearSocialLinksThroughEveryNullablePayloadForm() throws Exception {
         User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
-        ReflectionTestUtils.setField(user, "zaloUrl", "https://zalo.me/existing");
         ReflectionTestUtils.setField(user, "facebookUrl", "https://facebook.com/existing");
         ReflectionTestUtils.setField(user, "tiktokUrl", "https://tiktok.com/@existing");
         authenticate(user);
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
 
         for (String payload : new String[]{
-                "{\"fullName\":\"User\",\"phone\":\"0900000000\",\"zaloUrl\":null,\"facebookUrl\":null,\"tiktokUrl\":null}",
-                "{\"fullName\":\"User\",\"phone\":\"0900000000\",\"zaloUrl\":\"\",\"facebookUrl\":\"\",\"tiktokUrl\":\"\"}",
+                "{\"fullName\":\"User\",\"phone\":\"0900000000\",\"facebookUrl\":null,\"tiktokUrl\":null}",
+                "{\"fullName\":\"User\",\"phone\":\"0900000000\",\"facebookUrl\":\"\",\"tiktokUrl\":\"\"}",
                 "{\"fullName\":\"User\",\"phone\":\"0900000000\"}"}) {
             mockMvc.perform(patch("/users/me").header("Authorization", bearer(user))
                             .contentType(MediaType.APPLICATION_JSON).content(payload))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.zaloUrl").doesNotExist())
                     .andExpect(jsonPath("$.facebookUrl").doesNotExist())
                     .andExpect(jsonPath("$.tiktokUrl").doesNotExist());
-            org.assertj.core.api.Assertions.assertThat(user.getZaloUrl()).isNull();
             org.assertj.core.api.Assertions.assertThat(user.getFacebookUrl()).isNull();
             org.assertj.core.api.Assertions.assertThat(user.getTiktokUrl()).isNull();
-            ReflectionTestUtils.setField(user, "zaloUrl", "https://zalo.me/existing");
             ReflectionTestUtils.setField(user, "facebookUrl", "https://facebook.com/existing");
             ReflectionTestUtils.setField(user, "tiktokUrl", "https://tiktok.com/@existing");
         }
@@ -197,14 +177,12 @@ class UserProfileHttpTest {
     @Test
     void publicBrokerContactOnlyExposesActiveBrokers() throws Exception {
         User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
-        ReflectionTestUtils.setField(broker, "zaloUrl", "https://zalo.me/broker");
         ReflectionTestUtils.setField(broker, "facebookUrl", "https://facebook.com/broker");
         ReflectionTestUtils.setField(broker, "tiktokUrl", "https://tiktok.com/@broker");
         when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
         mockMvc.perform(get("/brokers/{id}", broker.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.phone").value("0900000000"))
-                .andExpect(jsonPath("$.zaloUrl").value("https://zalo.me/broker"))
                 .andExpect(jsonPath("$.facebookUrl").value("https://facebook.com/broker"))
                 .andExpect(jsonPath("$.tiktokUrl").value("https://tiktok.com/@broker"))
                 .andExpect(jsonPath("$.passwordHash").doesNotExist())

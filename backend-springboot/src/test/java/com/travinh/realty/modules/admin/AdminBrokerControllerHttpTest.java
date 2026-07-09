@@ -99,7 +99,7 @@ class AdminBrokerControllerHttpTest {
         authenticate(admin);
         UUID brokerId = UUID.randomUUID();
         UserProfileResponse response = new UserProfileResponse(brokerId, "lan", "Trần Mỹ Linh", "0900000111",
-                null, "lan@example.com", "https://zalo.me/lan", "https://facebook.com/lan",
+                null, "lan@example.com", "https://facebook.com/lan",
                 "https://tiktok.com/@lan", UserRole.BROKER, UserStatus.ACTIVE, Instant.now());
         when(profiles.createBroker(any())).thenReturn(response);
         CreateBrokerRequest request = new CreateBrokerRequest("lan", "lan@example.com", "password123",
@@ -110,7 +110,6 @@ class AdminBrokerControllerHttpTest {
                         .content(objectMapper.writeValueAsString(request))
                         .header("Authorization", bearer(admin)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.zaloUrl").value("https://zalo.me/lan"))
                 .andExpect(jsonPath("$.facebookUrl").value("https://facebook.com/lan"))
                 .andExpect(jsonPath("$.tiktokUrl").value("https://tiktok.com/@lan"));
 
@@ -124,7 +123,7 @@ class AdminBrokerControllerHttpTest {
         authenticate(admin);
         UUID userId = UUID.randomUUID();
         UserProfileResponse response = new UserProfileResponse(userId, "huy", "Phạm Quốc Huy", "0900000222",
-                null, "huy@example.com", null, null, null, UserRole.USER, UserStatus.LOCKED, Instant.now());
+                null, "huy@example.com", null, null, UserRole.USER, UserStatus.LOCKED, Instant.now());
         when(profiles.updateUserStatus(eq(userId), eq(UserStatus.LOCKED))).thenReturn(response);
 
         mockMvc.perform(patch("/admin/users/{userId}/status", userId)
