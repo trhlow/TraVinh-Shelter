@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import OverviewSection from './OverviewSection.jsx';
 
 beforeEach(() => {
@@ -34,4 +34,20 @@ test('renders monthly activity chart and system status panel', () => {
   expect(screen.getByText('Hoạt động hệ thống theo tháng')).toBeInTheDocument();
   expect(screen.getByText('Tình trạng hệ thống')).toBeInTheDocument();
   expect(screen.queryByText('Doanh thu tháng này')).not.toBeInTheDocument();
+});
+
+test('system activity chart trims months before the platform had any real data', () => {
+  const now = new Date();
+  const recentOnly = {
+    users: [],
+    brokers: [],
+    properties: [
+      { id: 'p1', title: 'A', ward: 'phuong-tra-vinh', category: 'tro', rawStatus: 'AVAILABLE', createdAt: now.toISOString() },
+    ],
+    viewings: [],
+  };
+  render(<OverviewSection data={recentOnly} loading={false} />);
+  const stage = screen.getByRole('img', { name: 'Hoạt động hệ thống theo tháng' });
+  const monthLabels = within(stage).getAllByText(/^T\d{1,2}$/);
+  expect(monthLabels).toHaveLength(1);
 });

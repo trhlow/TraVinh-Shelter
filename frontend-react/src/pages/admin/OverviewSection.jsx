@@ -5,6 +5,7 @@ import DateRangeFilter from '../../components/dashboard/DateRangeFilter.jsx';
 import { WARDS, CATEGORIES } from '../../data/locations.js';
 import { isInRange, percentDelta, previousRange, resolveDateRange } from '../../utils/dateRange.js';
 import { downloadCsv } from '../../utils/exportCsv.js';
+import { trimLeadingEmptyMonths } from '../../utils/chartSeries.js';
 
 export default function OverviewSection({ data, loading, actions }) {
   const users = data?.users || [];
@@ -168,11 +169,11 @@ function buildSystemActivitySeries(properties, viewings) {
     const bucket = buckets.find((item) => sameMonth(item.date, date));
     if (bucket) bucket.previous = (bucket.previous || 0) + 1;
   });
-  return buckets.map((bucket) => ({
+  return trimLeadingEmptyMonths(buckets.map((bucket) => ({
     label: bucket.label,
     current: bucket.current || 0,
     previous: bucket.previous || 0,
-  }));
+  })));
 }
 
 function buildAuditItems({ users, properties, viewings }) {
