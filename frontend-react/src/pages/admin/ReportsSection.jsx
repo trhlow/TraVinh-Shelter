@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import {
-  buildHeatmapData,
+  buildCategoryDensityData,
   buildWardData,
-  HeatmapChart,
+  CategoryBarChart,
   ThreeDDonutChart,
   ThreeDGroupedBarChart,
 } from '../../components/Charts.jsx';
@@ -38,15 +38,14 @@ export default function ReportsSection({ data }) {
     [filteredProperties],
   );
   const topBrokerData = useMemo(() => buildTopBrokerData(brokers, properties, viewings), [brokers, properties, viewings]);
-  const heatmapData = useMemo(
-    () => buildHeatmapData(filteredProperties, (property) => property.ward, (property) => property.category),
+  const wardDensityData = useMemo(
+    () => WARDS.filter((item) => item.code !== 'all').map((item) => ({
+      code: item.code,
+      label: item.label,
+      data: buildCategoryDensityData(filteredProperties, item.code),
+    })),
     [filteredProperties],
   );
-
-  const drillTo = (params) => {
-    const query = new URLSearchParams(params).toString();
-    window.location.hash = `#/admin/properties?${query}`;
-  };
 
   return (
     <>
@@ -82,8 +81,13 @@ export default function ReportsSection({ data }) {
         />
       </div>
 
+      <div className="dashboard-ward-density-row">
+        {wardDensityData.map((ward) => (
+          <CategoryBarChart key={ward.code} title={`Mật độ tin — ${ward.label}`} data={ward.data} />
+        ))}
+      </div>
+
       <div className="dashboard-charts-row">
-        <HeatmapChart title="Mật độ tin theo phường" data={heatmapData} onSelectCell={({ ward: cellWard, category: cellCategory }) => drillTo({ ward: cellWard, category: cellCategory })} />
         <ThreeDGroupedBarChart
           title="Top môi giới theo hoạt động"
           subtitle="Xếp hạng theo tổng số tin đăng và lịch hẹn đã xác nhận"

@@ -1493,6 +1493,21 @@ img { display: block; max-width: 100%; }
   .dashboard-charts-row { grid-template-columns: 1fr; }
 }
 
+.dashboard-ward-density-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1280px) {
+  .dashboard-ward-density-row { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .dashboard-ward-density-row { grid-template-columns: 1fr; }
+}
+
 .dashboard-live-row {
   display: grid;
   grid-template-columns: 3fr 2fr;

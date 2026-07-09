@@ -21,7 +21,10 @@ test('renders growth, distribution, density, and broker performance charts', () 
   render(<ReportsSection data={data} loading={false} />);
   expect(screen.getByText('Tăng trưởng người dùng mới')).toBeInTheDocument();
   expect(screen.getByText('Phân bổ tin đăng theo khu vực')).toBeInTheDocument();
-  expect(screen.getByText('Mật độ tin theo phường')).toBeInTheDocument();
+  expect(screen.getByText('Mật độ tin — Phường Trà Vinh')).toBeInTheDocument();
+  expect(screen.getByText('Mật độ tin — Phường Long Đức')).toBeInTheDocument();
+  expect(screen.getByText('Mật độ tin — Phường Nguyệt Hóa')).toBeInTheDocument();
+  expect(screen.getByText('Mật độ tin — Phường Hòa Thuận')).toBeInTheDocument();
   expect(screen.getByText('Danh sách môi giới')).toBeInTheDocument();
 });
 
