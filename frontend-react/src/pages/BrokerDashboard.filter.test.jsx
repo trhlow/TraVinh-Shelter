@@ -38,7 +38,7 @@ vi.mock('../services/api.js', () => ({
   updateBrokerViewingStatus: vi.fn(),
 }));
 
-import BrokerDashboard from './BrokerDashboard.jsx';
+import BrokerDashboard, { buildManagedTypeData } from './BrokerDashboard.jsx';
 
 beforeEach(() => {
   window.localStorage.setItem('travinh-realty-session', JSON.stringify({
@@ -95,4 +95,23 @@ test('settings tab has Facebook and TikTok fields and submits them', async () =>
       expect.objectContaining({ facebookUrl: 'https://facebook.com/broker.test' }),
     );
   });
+});
+
+test('buildManagedTypeData counts listings into exactly 3 real categories with no double-counting', () => {
+  const listings = [
+    { category: 'tro' },
+    { category: 'tro' },
+    { category: 'nha', transaction: 'sale' },
+    { category: 'nha', transaction: 'rent' },
+    { category: 'dat' },
+  ];
+  const data = buildManagedTypeData(listings);
+
+  expect(data).toEqual([
+    { label: 'Trọ', value: 2 },
+    { label: 'Nhà', value: 2 },
+    { label: 'Đất', value: 1 },
+  ]);
+  // total across all 3 buckets must equal the input length exactly — proves no double-count
+  expect(data.reduce((sum, item) => sum + item.value, 0)).toBe(listings.length);
 });

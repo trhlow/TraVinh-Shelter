@@ -1175,17 +1175,15 @@ function sameCalendarMonth(value, reference) {
   return date.getFullYear() === reference.getFullYear() && date.getMonth() === reference.getMonth();
 }
 
-function buildManagedTypeData(listings) {
-  const houseSale = listings.filter((item) => item.category === 'nha' && item.transaction !== 'rent').length;
-  const land = listings.filter((item) => item.category === 'dat' || item.category === 'land').length;
-  const apartment = listings.filter((item) => item.category === 'apartment' || (item.category === 'nha' && item.transaction === 'rent')).length;
-  const rentals = listings.filter((item) => item.category === 'tro' || item.transaction === 'rent').length;
+export function buildManagedTypeData(listings) {
+  const tro = listings.filter((item) => item.category === 'tro').length;
+  const nha = listings.filter((item) => item.category === 'nha').length;
+  const dat = listings.filter((item) => item.category === 'dat').length;
   return [
-    { label: 'Nhà phố', value: houseSale },
-    { label: 'Đất nền', value: land },
-    { label: 'Căn hộ', value: apartment },
-    { label: 'Cho thuê', value: rentals },
-  ].map((item) => ({ ...item, value: item.value || 0 }));
+    { label: 'Trọ', value: tro },
+    { label: 'Nhà', value: nha },
+    { label: 'Đất', value: dat },
+  ];
 }
 
 function buildLeadFunnelData(leads, viewingCount) {
