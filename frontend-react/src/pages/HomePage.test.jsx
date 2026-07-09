@@ -34,3 +34,15 @@ test('"Khám phá theo loại hình" shows the 3 real category labels', async ()
 
   expect(labels).toEqual(expect.arrayContaining(['Trọ', 'Nhà', 'Đất']));
 });
+
+test('every category card renders a visible icon, not a blank placeholder', async () => {
+  render(<HomePage />);
+  const heading = await screen.findByText('Khám phá theo loại hình');
+  const section = heading.closest('.section');
+  const iconWraps = section.querySelectorAll('.category-card-icon');
+
+  expect(iconWraps).toHaveLength(3);
+  iconWraps.forEach((wrap) => {
+    expect(wrap.querySelector('svg')).not.toBeNull();
+  });
+});

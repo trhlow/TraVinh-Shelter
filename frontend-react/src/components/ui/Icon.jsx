@@ -12,7 +12,7 @@ import {
   Wind, BedDouble, Calendar, Users2, Bike, Dog, CalendarCheck,
   PawPrint, Refrigerator, AirVent, WashingMachine, Utensils,
   ShowerHead, Layers, Sofa, Tv, Sparkles,
-  LayoutGrid, Wallet, Map, MessageCircle, Bell, ScrollText,
+  LayoutGrid, Wallet, Map, MessageCircle, Bell, ScrollText, Key,
 } from 'lucide-react';
 
 const ICON_MAP = {
@@ -31,7 +31,7 @@ const ICON_MAP = {
   Wind, BedDouble, Calendar, Users2, Bike, Dog, CalendarCheck,
   PawPrint, Refrigerator, AirVent, WashingMachine, Utensils,
   ShowerHead, Layers, Sofa, Tv, Sparkles,
-  LayoutGrid, Wallet, Map, MessageCircle, Bell, ScrollText,
+  LayoutGrid, Wallet, Map, MessageCircle, Bell, ScrollText, Key,
 };
 
 // lucide-react has no TikTok mark — hand-drawn to match the surrounding lucide
