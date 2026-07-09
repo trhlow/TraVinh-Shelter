@@ -170,47 +170,6 @@ function formatChartNumber(value, suffix = '') {
   return `${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(value)}${suffix}`;
 }
 
-export function ThreeDGroupedBarChart({ title, subtitle, data, currentLabel = 'Hiện tại', previousLabel = 'So sánh', valueSuffix = '' }) {
-  const [mode, setMode] = useState('3d');
-  const max = Math.max(...data.flatMap((item) => [item.current || 0, item.previous || 0]), 1);
-
-  return (
-    <ThreeDChartPanel title={title} subtitle={subtitle} mode={mode} onModeChange={setMode}>
-      <div className="chart3d-bar-legend">
-        <span><i className="chart3d-legend-dot chart3d-current-dot" />{currentLabel}</span>
-        <span><i className="chart3d-legend-dot chart3d-previous-dot" />{previousLabel}</span>
-      </div>
-      <div className="chart3d-bar-stage" role="img" aria-label={title}>
-        {data.map((item) => (
-          <div className="chart3d-bar-group" key={item.label}>
-            <div className="chart3d-bar-stack">
-              <span
-                className="chart3d-bar chart3d-bar-previous"
-                style={{
-                  '--bar-h': Math.max(6, ((item.previous || 0) / max) * 100),
-                  '--bar-color': 'var(--chart-6)',
-                }}
-              >
-                <span className="chart3d-bar-value">{formatChartNumber(item.previous || 0, valueSuffix)}</span>
-              </span>
-              <span
-                className="chart3d-bar chart3d-bar-current"
-                style={{
-                  '--bar-h': Math.max(6, ((item.current || 0) / max) * 100),
-                  '--bar-color': item.color || 'var(--chart-1)',
-                }}
-              >
-                <span className="chart3d-bar-value">{formatChartNumber(item.current || 0, valueSuffix)}</span>
-              </span>
-            </div>
-            <span className="chart3d-axis-label">{item.label}</span>
-          </div>
-        ))}
-      </div>
-    </ThreeDChartPanel>
-  );
-}
-
 function conicGradientFor(data, total) {
   let cursor = 0;
   return `conic-gradient(${data.map((item) => {
