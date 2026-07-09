@@ -345,6 +345,23 @@ export function buildWardData(items, getWardCode) {
   });
 }
 
+// One row per real category (Trọ/Nhà/Đất) scoped to a single ward, so each
+// ward gets its own bar chart with counts/percent computed from that ward's
+// listings only.
+export function buildCategoryDensityData(properties, wardCode) {
+  const wardProperties = properties.filter((property) => property.ward === wardCode);
+  const total = wardProperties.length;
+  return CATEGORIES.map((category) => {
+    const count = wardProperties.filter((property) => property.category === category.slug).length;
+    return {
+      slug: category.slug,
+      label: category.label,
+      count,
+      pct: total > 0 ? Math.round((count / total) * 100) : 0,
+    };
+  });
+}
+
 // Local calendar-day key (not toISOString — that converts to UTC and shifts the
 // date backward for positive-offset timezones like Asia/Ho_Chi_Minh).
 function dayKey(date) {
@@ -549,6 +566,40 @@ export function WardBarChart({ title, data, onSelectWard }) {
             </div>
           );
         })}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * CategoryBarChart — one real column per property category (Trọ/Nhà/Đất) for
+ * a single ward. Reuses WardBarChart's CSS classes so it renders styled
+ * without adding new CSS. Height scales to the real max count among the 3
+ * categories, so the Y axis auto-adjusts as data grows (no fixed 0-3 range).
+ */
+export function CategoryBarChart({ title, data }) {
+  const max = Math.max(...data.map((item) => item.count), 1);
+
+  return (
+    <section className="chart-panel">
+      <h2 className="chart-title">{title}</h2>
+      <div className="ward-bar-cols">
+        {data.map((item, index) => (
+          <div className="ward-bar-col" key={item.slug}>
+            <span className="ward-bar-count">{item.count}</span>
+            <div className="ward-bar-track">
+              <span
+                className="ward-bar-fill"
+                style={{
+                  height: `${Math.max(4, (item.count / max) * 100)}%`,
+                  backgroundColor: CHART_PALETTE[index % CHART_PALETTE.length],
+                }}
+              />
+            </div>
+            <span className="ward-bar-name">{item.label}</span>
+            <span className="ward-bar-pct">{item.pct}%</span>
+          </div>
+        ))}
       </div>
     </section>
   );

@@ -3,6 +3,7 @@ import { afterEach, expect, test, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import {
   buildDailySeries, buildHeatmapData, buildMonthlySeries, buildWardData, HeatmapChart, Sparkline, TrendAreaChart, WardBarChart,
+  buildCategoryDensityData, CategoryBarChart,
 } from './Charts.jsx';
 
 afterEach(() => cleanup());
@@ -214,4 +215,71 @@ test('HeatmapChart shows a low-to-high color scale legend', () => {
 
   expect(screen.getByText('Ít')).toBeInTheDocument();
   expect(screen.getByText('Nhiều')).toBeInTheDocument();
+});
+
+// ── buildCategoryDensityData / CategoryBarChart ──────────
+
+test('buildCategoryDensityData returns all 3 categories with counts scoped to one ward', () => {
+  const properties = [
+    { ward: 'phuong-tra-vinh', category: 'tro' },
+    { ward: 'phuong-tra-vinh', category: 'tro' },
+    { ward: 'phuong-tra-vinh', category: 'nha' },
+    { ward: 'phuong-long-duc', category: 'dat' }, // different ward, must not count
+  ];
+  const data = buildCategoryDensityData(properties, 'phuong-tra-vinh');
+
+  expect(data).toHaveLength(3);
+  expect(data.map((item) => item.slug)).toEqual(['tro', 'nha', 'dat']);
+  expect(data.find((item) => item.slug === 'tro').count).toBe(2);
+  expect(data.find((item) => item.slug === 'nha').count).toBe(1);
+  expect(data.find((item) => item.slug === 'dat').count).toBe(0);
+});
+
+test('buildCategoryDensityData computes percent share within the ward', () => {
+  const properties = [
+    { ward: 'phuong-hoa-thuan', category: 'tro' },
+    { ward: 'phuong-hoa-thuan', category: 'tro' },
+    { ward: 'phuong-hoa-thuan', category: 'tro' },
+    { ward: 'phuong-hoa-thuan', category: 'nha' },
+  ];
+  const data = buildCategoryDensityData(properties, 'phuong-hoa-thuan');
+  expect(data.find((item) => item.slug === 'tro').pct).toBe(75);
+  expect(data.find((item) => item.slug === 'nha').pct).toBe(25);
+});
+
+test('buildCategoryDensityData returns all-zero counts and 0% when the ward has no listings', () => {
+  const data = buildCategoryDensityData([], 'phuong-nguyet-hoa');
+  data.forEach((item) => {
+    expect(item.count).toBe(0);
+    expect(item.pct).toBe(0);
+  });
+});
+
+test('CategoryBarChart renders title and one column per category with count and percent', () => {
+  const data = buildCategoryDensityData([
+    { ward: 'phuong-tra-vinh', category: 'tro' },
+    { ward: 'phuong-tra-vinh', category: 'tro' },
+    { ward: 'phuong-tra-vinh', category: 'tro' },
+    { ward: 'phuong-tra-vinh', category: 'tro' },
+    { ward: 'phuong-tra-vinh', category: 'nha' },
+  ], 'phuong-tra-vinh');
+  render(<CategoryBarChart title="Mật độ tin — Phường Trà Vinh" data={data} />);
+
+  expect(screen.getByRole('heading', { name: 'Mật độ tin — Phường Trà Vinh' })).toBeInTheDocument();
+  expect(screen.getByText('Trọ')).toBeInTheDocument();
+  expect(screen.getByText('Nhà')).toBeInTheDocument();
+  expect(screen.getByText('Đất')).toBeInTheDocument();
+  expect(screen.getByText('4')).toBeInTheDocument(); // tro count
+  expect(screen.getByText('80%')).toBeInTheDocument(); // 4/5
+});
+
+test('CategoryBarChart scales bar height to the real max, not a fixed range', () => {
+  const highVolume = buildCategoryDensityData(
+    Array.from({ length: 7 }, () => ({ ward: 'phuong-tra-vinh', category: 'tro' })),
+    'phuong-tra-vinh',
+  );
+  const { container } = render(<CategoryBarChart title="Test" data={highVolume} />);
+  const filledBar = container.querySelector('.ward-bar-fill');
+  // max count among the 3 categories is 7 (all in "tro") -> that bar must render at 100% height
+  expect(filledBar.style.height).toBe('100%');
 });
