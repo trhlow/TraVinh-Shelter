@@ -31,7 +31,6 @@ const BROKER_SIDEBAR_ITEMS = [
   { href: '#/broker/properties', icon: 'Building', label: 'Tin đăng của tôi' },
   { href: '#/broker/leads', icon: 'Users', label: 'Khách hàng tiềm năng' },
   { href: '#/broker/viewings', icon: 'Calendar', label: 'Lịch hẹn' },
-  { href: '#/broker/revenue', icon: 'DollarSign', label: 'Hoa hồng & Doanh thu' },
   { href: '#/broker/messages', icon: 'MessageCircle', label: 'Tin nhắn' },
   { href: '#/broker/settings', icon: 'Settings', label: 'Cài đặt' },
 ];
@@ -807,17 +806,6 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
             </div>
           )}
 
-          {section === 'revenue' && (
-            <ThreeDGroupedBarChart
-              title="Hoa hồng & Doanh thu"
-              subtitle="Doanh thu hoa hồng theo từng tháng trong năm"
-              data={commissionChartData}
-              currentLabel="Năm nay"
-              previousLabel="Năm trước"
-              valueSuffix="tr"
-            />
-          )}
-
           {section === 'messages' && (
             <DashboardPanel title="Tin nhắn">
               <StateBlock icon="MessageCircle" title="Chưa có trung tâm tin nhắn" description="Khi dự án có module chat, tin nhắn từ khách hàng sẽ hiển thị tại đây." />
@@ -1271,7 +1259,6 @@ function brokerTitle(section) {
     properties: 'Tin đăng của tôi',
     leads: 'Khách hàng tiềm năng',
     viewings: 'Lịch hẹn xem',
-    revenue: 'Hoa hồng & Doanh thu',
     messages: 'Tin nhắn',
     settings: 'Cài đặt',
   }[section] || 'Bảng điều khiển';
@@ -1284,7 +1271,6 @@ function brokerSubtitle(section, monthLabel) {
     properties: 'Tạo, chỉnh sửa và theo dõi trạng thái tin bất động sản.',
     leads: 'Theo dõi phễu chuyển đổi khách hàng từ lead mới đến giao dịch.',
     viewings: 'Theo dõi yêu cầu xem nhà và cập nhật lịch hẹn.',
-    revenue: 'Ước tính hoa hồng theo tháng và so sánh với kỳ trước.',
     messages: 'Không gian tập trung trao đổi với khách quan tâm tin đăng.',
     settings: 'Cấu hình nhanh các thông tin tài khoản môi giới.',
   }[section] || 'Tổng quan hoạt động môi giới.';

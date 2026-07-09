@@ -121,3 +121,9 @@ test('routes to public projects and brokers pages', () => {
   render(<App />);
   expect(screen.getByRole('heading', { name: 'Hồ sơ môi giới Công Tín Land' })).toBeInTheDocument();
 });
+
+test('the revenue route no longer resolves to a dedicated broker page', () => {
+  window.location.hash = '#/broker/revenue';
+  render(<App />);
+  expect(screen.getByRole('heading', { name: 'Tin đăng chọn lọc tại Trà Vinh' })).toBeInTheDocument();
+});
