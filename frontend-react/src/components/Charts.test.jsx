@@ -2,7 +2,7 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, expect, test, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import {
-  buildDailySeries, buildHeatmapData, buildMonthlySeries, buildWardData, HeatmapChart, Sparkline, TrendAreaChart, WardBarChart,
+  buildDailySeries, buildMonthlySeries, buildWardData, Sparkline, TrendAreaChart, WardBarChart,
   buildCategoryDensityData, CategoryBarChart,
 } from './Charts.jsx';
 
@@ -177,44 +177,6 @@ test('Sparkline renders nothing for fewer than 2 points', () => {
 test('Sparkline renders a line path for 2+ points', () => {
   const { container } = render(<Sparkline series={[1, 3, 2]} />);
   expect(container.querySelector('.sparkline-line')).toBeInTheDocument();
-});
-
-// ── HeatmapChart ──────────────────────────────────────────
-
-test('buildHeatmapData always yields 4 wards x 3 categories with counts and max', () => {
-  const items = [
-    { ward: 'phuong-tra-vinh', category: 'tro' },
-    { ward: 'phuong-tra-vinh', category: 'tro' },
-    { ward: 'phuong-long-duc', category: 'dat' },
-  ];
-  const data = buildHeatmapData(items, (item) => item.ward, (item) => item.category);
-
-  expect(data.rows).toHaveLength(4);
-  expect(data.rows[0].cells).toHaveLength(3);
-  const traVinhTro = data.rows.find((row) => row.code === 'phuong-tra-vinh').cells
-    .find((cell) => cell.category === 'tro');
-  expect(traVinhTro.count).toBe(2);
-  expect(data.max).toBe(2);
-});
-
-test('HeatmapChart renders labels and fires onSelectCell with ward + category', () => {
-  const items = [{ ward: 'phuong-hoa-thuan', category: 'nha' }];
-  const data = buildHeatmapData(items, (item) => item.ward, (item) => item.category);
-  const onSelectCell = vi.fn();
-  render(<HeatmapChart title="Mật độ tin theo phường" data={data} onSelectCell={onSelectCell} />);
-
-  expect(screen.getByRole('heading', { name: 'Mật độ tin theo phường' })).toBeInTheDocument();
-  expect(screen.getByText('Phường Hòa Thuận')).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: 'Phường Hòa Thuận · Nhà: 1 tin' }));
-  expect(onSelectCell).toHaveBeenCalledWith({ ward: 'phuong-hoa-thuan', category: 'nha' });
-});
-
-test('HeatmapChart shows a low-to-high color scale legend', () => {
-  const data = buildHeatmapData([], () => null, () => null);
-  render(<HeatmapChart title="Mật độ tin theo phường" data={data} />);
-
-  expect(screen.getByText('Ít')).toBeInTheDocument();
-  expect(screen.getByText('Nhiều')).toBeInTheDocument();
 });
 
 // ── buildCategoryDensityData / CategoryBarChart ──────────
