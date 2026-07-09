@@ -539,7 +539,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
             </>
           )}
 
-          {section === 'profile' && (
+          {section === 'settings' && (
             <div className="dashboard-profile-grid">
               <DashboardPanel title="Hồ sơ đang hiển thị" count={profileReady ? 'Sẵn sàng đăng tin' : 'Cần cập nhật'}>
                 <ProfileSummary profile={profile} profileForm={profileForm} avatarPreview={avatarPreview} profileReady={profileReady} />
@@ -620,7 +620,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                 </div>
                 {!profileReady && (
                   <div className="alert alert-error">
-                    Vui lòng hoàn tất hồ sơ môi giới trước khi đăng tin. <a className="auth-link" href="#/broker/profile">Mở hồ sơ</a>
+                    Vui lòng hoàn tất hồ sơ môi giới trước khi đăng tin. <a className="auth-link" href="#/broker/settings">Mở hồ sơ</a>
                   </div>
                 )}
                 <div className="dashboard-listing-grid">
@@ -803,11 +803,6 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
             </div>
           )}
 
-          {section === 'settings' && (
-            <DashboardPanel title="Cài đặt tài khoản" action={<a className="btn btn-primary btn-sm" href="#/broker/profile">Mở hồ sơ</a>}>
-              <StateBlock icon="Settings" title="Cài đặt đang dùng hồ sơ môi giới" description="Thông tin liên hệ, mạng xã hội và đổi mật khẩu hiện nằm trong mục Hồ sơ môi giới." />
-            </DashboardPanel>
-          )}
         </div>
       </div>
     </div>
@@ -881,7 +876,7 @@ function ProfileSummary({ profile, profileForm, avatarPreview, profileReady }) {
         )}
         <ProfileLine label="Trạng thái hồ sơ" value={profileReady ? 'Sẵn sàng hiển thị' : 'Cần bổ sung'} tone={profileReady ? 'success' : 'warning'} />
       </div>
-      <a className="auth-btn" href="#/broker/profile">
+      <a className="auth-btn" href="#/broker/settings">
         Mở hồ sơ
       </a>
     </div>
@@ -1270,7 +1265,6 @@ function listingStatusTone(listing) {
 function brokerTitle(section) {
   return {
     dashboard: 'Bảng điều khiển',
-    profile: 'Hồ sơ môi giới',
     properties: 'Tin đăng của tôi',
     leads: 'Khách hàng tiềm năng',
     viewings: 'Lịch hẹn xem',
@@ -1281,11 +1275,10 @@ function brokerTitle(section) {
 function brokerSubtitle(section, monthLabel) {
   return {
     dashboard: `Hiệu suất tin đăng và khách hàng quan tâm trong tháng ${monthLabel}.`,
-    profile: 'Quản lý thông tin liên hệ hiển thị trên các tin đăng.',
     properties: 'Tạo, chỉnh sửa và theo dõi trạng thái tin bất động sản.',
     leads: 'Theo dõi phễu chuyển đổi khách hàng từ lead mới đến giao dịch.',
     viewings: 'Theo dõi yêu cầu xem nhà và cập nhật lịch hẹn.',
-    settings: 'Cấu hình nhanh các thông tin tài khoản môi giới.',
+    settings: 'Quản lý thông tin liên hệ hiển thị trên các tin đăng.',
   }[section] || 'Tổng quan hoạt động môi giới.';
 }
 

@@ -77,9 +77,9 @@ test('KPI cards show 0 when the date filter excludes all listings, not the unfil
   expect(kpi.querySelector('.stat-card-value')).toHaveTextContent('0');
 });
 
-test('profile form has Facebook and TikTok fields and submits them', async () => {
+test('settings tab has Facebook and TikTok fields and submits them', async () => {
   const { updateCurrentProfile } = await import('../services/api.js');
-  render(<BrokerDashboard session={session} section="profile" currentPath="/broker/profile" />);
+  render(<BrokerDashboard session={session} section="settings" currentPath="/broker/settings" />);
 
   const facebookInput = await screen.findByLabelText('Facebook');
   const tiktokInput = screen.getByLabelText('TikTok');

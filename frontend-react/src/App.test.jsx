@@ -50,9 +50,9 @@ test('routes to separate broker pages for broker sessions', () => {
     role: 'BROKER',
     userId: 'broker-id',
   }));
-  window.location.hash = '#/broker/profile';
+  window.location.hash = '#/broker/settings';
   render(<App />);
-  expect(screen.getAllByRole('heading', { name: 'Hồ sơ môi giới' }).length).toBeGreaterThan(0);
+  expect(screen.getAllByRole('heading', { name: 'Cài đặt' }).length).toBeGreaterThan(0);
 });
 
 test('routes to broker properties page for broker sessions', () => {
