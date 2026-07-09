@@ -65,7 +65,19 @@ export default function BrokersSection({ data, loading, saving, actions }) {
         <FormField label="Email"><input className="input" type="email" value={brokerForm.email} onChange={(event) => setBrokerValue('email', event.target.value)} required /></FormField>
         <FormField label="Mật khẩu"><input className="input" type="password" value={brokerForm.password} onChange={(event) => setBrokerValue('password', event.target.value)} required minLength={8} /></FormField>
         <FormField label="Họ tên"><input className="input" value={brokerForm.fullName} onChange={(event) => setBrokerValue('fullName', event.target.value)} required /></FormField>
-        <FormField label="Số điện thoại"><input className="input" value={brokerForm.phone} onChange={(event) => setBrokerValue('phone', event.target.value)} required /></FormField>
+        <FormField label="Số điện thoại" htmlFor="broker-phone">
+          <input
+            id="broker-phone"
+            className="input"
+            type="tel"
+            value={brokerForm.phone}
+            onChange={(event) => setBrokerValue('phone', event.target.value)}
+            required
+            pattern="0(3[2-9]|5[25689]|7[06-9]|8[1-9]|9[0-46-9])[0-9]{7}"
+            maxLength={10}
+            title="Số điện thoại di động Việt Nam hợp lệ, VD: 0912345678"
+          />
+        </FormField>
         <button className="auth-btn" type="submit" disabled={saving}>
           <Icon name="Plus" size={16} className="icon-inverse" />
           Tạo môi giới
@@ -88,10 +100,10 @@ export default function BrokersSection({ data, loading, saving, actions }) {
   );
 }
 
-function FormField({ label, children }) {
+function FormField({ label, htmlFor, children }) {
   return (
     <div className="auth-field">
-      <label className="auth-field-label">{label}</label>
+      <label className="auth-field-label" htmlFor={htmlFor}>{label}</label>
       {children}
     </div>
   );
