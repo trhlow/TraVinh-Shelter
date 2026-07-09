@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import ReportsSection from './ReportsSection.jsx';
 
 beforeEach(() => {
@@ -47,4 +47,26 @@ test('ranks brokers by activity, not revenue', () => {
   render(<ReportsSection data={activityData} loading={false} />);
   expect(screen.getByText('Top môi giới theo hoạt động')).toBeInTheDocument();
   expect(screen.queryByText('Top môi giới theo doanh số')).not.toBeInTheDocument();
+});
+
+test('user growth chart shows only months with real users, no fabricated bars', () => {
+  const now = new Date();
+  const growthData = {
+    users: [{ id: 'u1', role: 'USER', status: 'ACTIVE', createdAt: now.toISOString() }],
+    brokers: [],
+    properties: [],
+    viewings: [],
+  };
+  render(<ReportsSection data={growthData} loading={false} />);
+  const stage = screen.getByRole('img', { name: 'Tăng trưởng người dùng mới' });
+  const monthLabels = within(stage).getAllByText(/^T\d{1,2}$/);
+  expect(monthLabels).toHaveLength(1);
+});
+
+test('user growth chart shows 0 for the current month when there are no users at all', () => {
+  const emptyData = { users: [], brokers: [], properties: [], viewings: [] };
+  render(<ReportsSection data={emptyData} loading={false} />);
+  const stage = screen.getByRole('img', { name: 'Tăng trưởng người dùng mới' });
+  const monthLabels = within(stage).getAllByText(/^T\d{1,2}$/);
+  expect(monthLabels).toHaveLength(1);
 });

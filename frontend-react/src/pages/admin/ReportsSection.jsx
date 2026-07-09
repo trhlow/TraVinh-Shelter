@@ -10,6 +10,7 @@ import { DashboardPanel, StateBlock, StatusBadge } from '../../components/Dashbo
 import DateRangeFilter from '../../components/dashboard/DateRangeFilter.jsx';
 import { WARDS, CATEGORIES } from '../../data/locations.js';
 import { isInRange, resolveDateRange } from '../../utils/dateRange.js';
+import { trimLeadingEmptyMonths } from '../../utils/chartSeries.js';
 
 export default function ReportsSection({ data }) {
   const brokers = data?.brokers || [];
@@ -128,16 +129,16 @@ function BrokerPerformancePanel({ brokers, properties, viewings }) {
 
 function buildUserGrowthData(users) {
   const buckets = rollingMonthBuckets();
-  users.forEach((user, index) => {
-    const date = dateOrFallback(user.createdAt, index);
+  users.forEach((user) => {
+    const date = dateOrFallback(user.createdAt, 0);
     const bucket = buckets.find((item) => sameMonth(item.date, date));
     if (bucket) bucket.current += 1;
   });
-  return buckets.map((bucket, index) => ({
+  return trimLeadingEmptyMonths(buckets.map((bucket) => ({
     label: bucket.label,
-    current: bucket.current || (index % 4 === 0 ? 1 : 0),
-    previous: Math.max(0, Math.round((bucket.current || 1) * 0.72)),
-  }));
+    current: bucket.current || 0,
+    previous: 0,
+  })));
 }
 
 function buildTopBrokerData(brokers, properties, viewings) {
