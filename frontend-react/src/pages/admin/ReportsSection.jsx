@@ -4,7 +4,7 @@ import {
   buildWardData,
   CategoryBarChart,
   ThreeDDonutChart,
-  ThreeDGroupedBarChart,
+  TrendBarLineChart,
 } from '../../components/Charts.jsx';
 import { DashboardPanel, StateBlock, StatusBadge } from '../../components/DashboardWidgets.jsx';
 import DateRangeFilter from '../../components/dashboard/DateRangeFilter.jsx';
@@ -67,7 +67,7 @@ export default function ReportsSection({ data }) {
       </div>
 
       <div className="dashboard-live-row">
-        <ThreeDGroupedBarChart
+        <TrendBarLineChart
           title="Tăng trưởng người dùng mới"
           subtitle="Tính từ khi có dữ liệu thực tế"
           data={userGrowthData}
@@ -89,7 +89,7 @@ export default function ReportsSection({ data }) {
       </div>
 
       <div className="dashboard-charts-row">
-        <ThreeDGroupedBarChart
+        <TrendBarLineChart
           title="Top môi giới theo hoạt động"
           subtitle="Xếp hạng theo tổng số tin đăng và lịch hẹn đã xác nhận"
           data={topBrokerData}

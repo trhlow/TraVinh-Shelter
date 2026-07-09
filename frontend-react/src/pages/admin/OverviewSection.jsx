@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { buildDailySeries, ThreeDGroupedBarChart } from '../../components/Charts.jsx';
+import { buildDailySeries, TrendBarLineChart } from '../../components/Charts.jsx';
 import { DashboardPanel, StatCard } from '../../components/DashboardWidgets.jsx';
 import DateRangeFilter from '../../components/dashboard/DateRangeFilter.jsx';
 import { WARDS, CATEGORIES } from '../../data/locations.js';
@@ -112,7 +112,7 @@ export default function OverviewSection({ data, loading, actions }) {
       </div>
 
       <div className="dashboard-live-row">
-        <ThreeDGroupedBarChart
+        <TrendBarLineChart
           title="Hoạt động hệ thống theo tháng"
           subtitle="Tin đăng mới và lịch hẹn đã xác nhận, tính từ khi có dữ liệu thực tế"
           data={systemActivityData}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  buildDailySeries, buildWardData, ThreeDDonutChart, ThreeDFunnelChart, ThreeDGroupedBarChart, WardBarChart,
+  buildDailySeries, buildWardData, ThreeDDonutChart, ThreeDFunnelChart, TrendBarLineChart, WardBarChart,
 } from '../components/Charts.jsx';
 import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../components/DashboardWidgets.jsx';
 import ViewingsPanel from '../components/dashboard/ViewingsPanel.jsx';
@@ -503,7 +503,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
               </div>
 
               <div className="dashboard-live-row">
-                <ThreeDGroupedBarChart
+                <TrendBarLineChart
                   title="Hoạt động môi giới theo tháng"
                   subtitle="Số bài đăng mới và lịch hẹn đã xác nhận theo từng tháng, tính từ khi có dữ liệu thực tế"
                   data={activityChartData}
