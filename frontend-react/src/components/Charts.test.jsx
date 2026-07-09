@@ -346,3 +346,25 @@ test('TrendBarLineChart hides the line and second legend item when every previou
   expect(heights[0]).toBeCloseTo(19.2);
   expect(heights[1]).toBe(32);
 });
+
+test('TrendBarLineChart renders a narrow viewBox and CSS width for a single data point (no stretched empty canvas)', () => {
+  const data = [{ label: 'T7', current: 6, previous: 0 }];
+  const { container } = render(<TrendBarLineChart title="Test" data={data} />);
+
+  const svg = container.querySelector('.trend-chart-svg');
+  // TREND_LEFT_MARGIN(10) + 1 * TREND_COLUMN_UNIT_WIDTH(6) + TREND_RIGHT_MARGIN(4) = 20
+  expect(svg.getAttribute('viewBox')).toBe('0 0 20 50');
+  // idealWidthPx = 20 * TREND_PX_PER_UNIT(7) = 140px
+  expect(svg.style.getPropertyValue('--trend-chart-width')).toBe('140px');
+});
+
+test('TrendBarLineChart scales the viewBox and CSS width up as real data points grow', () => {
+  const data = Array.from({ length: 12 }, (_, index) => ({ label: `T${index + 1}`, current: 1, previous: 0 }));
+  const { container } = render(<TrendBarLineChart title="Test" data={data} />);
+
+  const svg = container.querySelector('.trend-chart-svg');
+  // 10 + 12*6 + 4 = 86
+  expect(svg.getAttribute('viewBox')).toBe('0 0 86 50');
+  // 86 * 7 = 602px
+  expect(svg.style.getPropertyValue('--trend-chart-width')).toBe('602px');
+});

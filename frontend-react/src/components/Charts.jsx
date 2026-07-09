@@ -687,8 +687,25 @@ export function CategoryBarChart({ title, data }) {
  * every `previous` value is 0 (no real comparison data), the line, its dots,
  * and its legend entry are omitted — only bars render.
  */
+// TrendBarLineChart's viewBox width and rendered CSS width both scale with data.length
+// at the same fixed px-per-unit ratio, so the chart never stretches into a mostly-empty
+// canvas when there's little real data (e.g. a system's first month) — only the total
+// width changes, not the proportions of bars/text within it. Capped at 100% of the panel
+// via CSS min(), so once there's enough real data the chart reaches full width exactly as
+// it always has. top/bottom stay COMBO_CHART_PLOT's for margin consistency with the other
+// combo charts; left/right are local since this is the only combo chart with a variable
+// (not fixed 3-4-category) column count.
+const TREND_LEFT_MARGIN = 10;
+const TREND_COLUMN_UNIT_WIDTH = 6;
+const TREND_RIGHT_MARGIN = 4;
+const TREND_PX_PER_UNIT = 7;
+
 export function TrendBarLineChart({ title, subtitle, data, currentLabel = 'Hiện tại', previousLabel = 'So sánh' }) {
-  const { left, right, top, bottom } = COMBO_CHART_PLOT;
+  const { top, bottom } = COMBO_CHART_PLOT;
+  const left = TREND_LEFT_MARGIN;
+  const viewBoxWidth = TREND_LEFT_MARGIN + data.length * TREND_COLUMN_UNIT_WIDTH + TREND_RIGHT_MARGIN;
+  const right = viewBoxWidth - TREND_RIGHT_MARGIN;
+  const idealWidthPx = viewBoxWidth * TREND_PX_PER_UNIT;
   const hasPrevious = data.some((point) => point.previous);
   const axisMax = Math.max(...data.flatMap((point) => [point.current || 0, point.previous || 0]), 1);
   const columnWidth = (right - left) / data.length;
@@ -724,7 +741,14 @@ export function TrendBarLineChart({ title, subtitle, data, currentLabel = 'Hiệ
           {subtitle && <p className="chart3d-subtitle">{subtitle}</p>}
         </div>
       </div>
-      <svg className="combo-svg" viewBox="0 0 100 50" preserveAspectRatio="none" role="img" aria-label={title}>
+      <svg
+        className="trend-chart-svg"
+        viewBox={`0 0 ${viewBoxWidth} 50`}
+        preserveAspectRatio="none"
+        role="img"
+        aria-label={title}
+        style={{ '--trend-chart-width': `${idealWidthPx}px` }}
+      >
         <line x1={left} y1={top} x2={left} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
         <line x1={left} y1={bottom} x2={right} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
 

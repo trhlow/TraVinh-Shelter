@@ -894,6 +894,12 @@
   height: 220px;
 }
 
+.trend-chart-svg {
+  display: block;
+  width: min(100%, var(--trend-chart-width));
+  height: 220px;
+}
+
 .combo-chart-legend {
   display: flex;
   justify-content: center;
