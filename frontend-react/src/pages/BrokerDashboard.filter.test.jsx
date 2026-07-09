@@ -77,14 +77,13 @@ test('KPI cards show 0 when the date filter excludes all listings, not the unfil
   expect(kpi.querySelector('.stat-card-value')).toHaveTextContent('0');
 });
 
-test('profile form has Zalo, Facebook, and TikTok fields and submits them', async () => {
+test('profile form has Facebook and TikTok fields and submits them', async () => {
   const { updateCurrentProfile } = await import('../services/api.js');
   render(<BrokerDashboard session={session} section="profile" currentPath="/broker/profile" />);
 
-  const zaloInput = await screen.findByLabelText('Zalo');
-  const facebookInput = screen.getByLabelText('Facebook');
+  const facebookInput = await screen.findByLabelText('Facebook');
   const tiktokInput = screen.getByLabelText('TikTok');
-  expect(zaloInput).toBeInTheDocument();
+  expect(screen.queryByLabelText('Zalo')).not.toBeInTheDocument();
   expect(tiktokInput).toBeInTheDocument();
 
   fireEvent.change(facebookInput, { target: { value: 'https://facebook.com/broker.test' } });

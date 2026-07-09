@@ -32,7 +32,6 @@ export async function fetchCurrentUser(token) {
       role: 'BROKER',
       status: 'ACTIVE',
       avatarUrl: '',
-      zaloUrl: '',
       facebookUrl: '',
       tiktokUrl: '',
     }, 80);
@@ -400,7 +399,6 @@ function normalizeProperty(item, index = 0) {
       phone: item.broker?.phone || '02943999888',
       email: item.broker?.email || 'support@congtinland.vn',
       avatarUrl: item.broker?.avatarUrl || '',
-      zalo: item.broker?.zaloUrl || '',
       facebook: item.broker?.facebookUrl || '',
       tiktok: item.broker?.tiktokUrl || '',
       rating: 'Đã xác minh',

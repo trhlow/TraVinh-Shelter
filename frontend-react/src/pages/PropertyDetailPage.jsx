@@ -331,15 +331,6 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
                     <Icon name="Phone" size={18} />
                     Gọi ngay: {brokerPhone}
                   </a>
-                  <a
-                    href={`https://zalo.me/${brokerPhone.replace(/\D/g, '').replace(/^0/, '84')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="contact-phone-zalo-zalo"
-                    aria-label="Chat Zalo"
-                  >
-                    <Icon name="MessageCircle" size={18} />
-                  </a>
                 </div>
                 {brokerFacebook && (
                   <a

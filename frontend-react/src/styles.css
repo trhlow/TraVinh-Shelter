@@ -33,7 +33,6 @@
   --color-warning-bg:       #fbeccb;
   --color-error:            #c13515;
   --color-error-bg:         #fee2e2;
-  --color-zalo:             #0068ff;
   --color-facebook:         #1877f2;
   --color-tiktok:           #000000;
   --color-scrim:            #000000;
@@ -2633,22 +2632,6 @@ img { display: block; max-width: 100%; }
 }
 
 .contact-phone-zalo-call:hover {
-  opacity: 0.9;
-}
-
-.contact-phone-zalo-zalo {
-  width: 56px;
-  flex-shrink: 0;
-  background: var(--color-zalo);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-left: 1px solid rgb(255 255 255 / 0.25);
-  transition: opacity 160ms ease;
-}
-
-.contact-phone-zalo-zalo:hover {
   opacity: 0.9;
 }
 

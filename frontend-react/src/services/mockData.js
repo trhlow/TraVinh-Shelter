@@ -18,7 +18,7 @@ const RAW_MOCK_PROPERTIES = [
     legal: 'Sổ hồng riêng',
     image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=80',
     description: 'Nhà mới xây, thiết kế hiện đại, nội thất cao cấp. Khu dân cư an ninh, gần trường học, chợ và bệnh viện.',
-    broker: { name: 'Nguyễn Văn Toàn', phone: '0912345678', email: 'toan@congtinland.vn', zalo: 'https://zalo.me/84912345678', facebook: 'https://facebook.com/toan.congtinland', rating: '4.9 (128 đánh giá)', responseTime: '5 phút' },
+    broker: { name: 'Nguyễn Văn Toàn', phone: '0912345678', email: 'toan@congtinland.vn', facebook: 'https://facebook.com/toan.congtinland', rating: '4.9 (128 đánh giá)', responseTime: '5 phút' },
     amenities: ['Sân để xe', 'Tủ bếp', 'Máy bơm nước', 'Cửa bảo vệ'],
     summary: {
       location: 'Tọa lạc tại trung tâm Phường Trà Vinh, thuận tiện di chuyển đến chợ, trường học và các tiện ích đô thị.',
@@ -45,7 +45,7 @@ const RAW_MOCK_PROPERTIES = [
     legal: 'Thổ cư',
     image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=80',
     description: 'Lô đất vuông vức, mặt tiền rộng, thuận tiện kinh doanh hoặc xây nhà ở lâu dài.',
-    broker: { name: 'Trần Mỹ Linh', phone: '0908899777', email: 'linh@congtinland.vn', zalo: 'https://zalo.me/84908899777', facebook: 'https://facebook.com/linh.congtinland', rating: '4.8 (76 đánh giá)', responseTime: '8 phút' },
+    broker: { name: 'Trần Mỹ Linh', phone: '0908899777', email: 'linh@congtinland.vn', facebook: 'https://facebook.com/linh.congtinland', rating: '4.8 (76 đánh giá)', responseTime: '8 phút' },
     summary: {
       location: 'Mặt tiền Quốc lộ 53, khu vực Phường Long Đức có hạ tầng đang phát triển mạnh.',
       amenities: 'Đất thổ cư 100%, pháp lý rõ ràng, không vướng quy hoạch.',
@@ -69,7 +69,7 @@ const RAW_MOCK_PROPERTIES = [
     legal: 'Hợp đồng thuê',
     image: 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=900&q=80',
     description: 'Căn hộ đủ nội thất, ban công thoáng, phù hợp gia đình trẻ hoặc chuyên gia làm việc tại trung tâm.',
-    broker: { name: 'Lê Minh Khang', phone: '0934567890', email: 'khang@congtinland.vn', zalo: 'https://zalo.me/84934567890', facebook: 'https://facebook.com/khang.congtinland', rating: '4.7 (54 đánh giá)', responseTime: '10 phút' },
+    broker: { name: 'Lê Minh Khang', phone: '0934567890', email: 'khang@congtinland.vn', facebook: 'https://facebook.com/khang.congtinland', rating: '4.7 (54 đánh giá)', responseTime: '10 phút' },
     amenities: ['Giường', 'Tủ lạnh', 'Máy lạnh', 'Wifi', 'Nước nóng', 'Tủ quần áo', 'Bếp từ'],
     summary: {
       location: 'Tọa lạc tại Phường Nguyệt Hóa, gần trung tâm thương mại và các tiện ích đô thị.',
@@ -96,7 +96,7 @@ const RAW_MOCK_PROPERTIES = [
     legal: 'Sổ hồng riêng',
     image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80',
     description: 'Nhà góc hai mặt tiền, khu dân cư hoàn thiện hạ tầng, thích hợp vừa ở vừa kinh doanh.',
-    broker: { name: 'Phạm Quốc Huy', phone: '0987654321', email: 'huy@congtinland.vn', zalo: 'https://zalo.me/84987654321', facebook: 'https://facebook.com/huy.congtinland', rating: '4.9 (91 đánh giá)', responseTime: '4 phút' },
+    broker: { name: 'Phạm Quốc Huy', phone: '0987654321', email: 'huy@congtinland.vn', facebook: 'https://facebook.com/huy.congtinland', rating: '4.9 (91 đánh giá)', responseTime: '4 phút' },
     amenities: ['Sân vườn', 'Gara xe hơi', 'Sân thượng', 'Hệ thống camera'],
     summary: {
       location: 'Khu dân cư Phú Gia tại Phường Long Đức, hạ tầng hoàn thiện, đường nội bộ trải nhựa.',
@@ -123,7 +123,7 @@ const RAW_MOCK_PROPERTIES = [
     legal: 'Đất cây lâu năm',
     image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80',
     description: 'Khu đất yên tĩnh, đường xe hơi, phù hợp làm nhà vườn hoặc đầu tư dài hạn.',
-    broker: { name: 'Trần Mỹ Linh', phone: '0908899777', email: 'linh@congtinland.vn', zalo: 'https://zalo.me/84908899777', facebook: 'https://facebook.com/linh.congtinland', rating: '4.8 (76 đánh giá)', responseTime: '8 phút' },
+    broker: { name: 'Trần Mỹ Linh', phone: '0908899777', email: 'linh@congtinland.vn', facebook: 'https://facebook.com/linh.congtinland', rating: '4.8 (76 đánh giá)', responseTime: '8 phút' },
   },
   {
     id: 'p-cau-ke',
@@ -144,7 +144,7 @@ const RAW_MOCK_PROPERTIES = [
     legal: 'Sổ hồng riêng',
     image: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=900&q=80',
     description: 'Nhà hoàn thiện, khu dân cư hiện hữu, pháp lý rõ ràng và bàn giao nhanh.',
-    broker: { name: 'Nguyễn Văn Toàn', phone: '0912345678', email: 'toan@congtinland.vn', zalo: 'https://zalo.me/84912345678', facebook: 'https://facebook.com/toan.congtinland', rating: '4.9 (128 đánh giá)', responseTime: '5 phút' },
+    broker: { name: 'Nguyễn Văn Toàn', phone: '0912345678', email: 'toan@congtinland.vn', facebook: 'https://facebook.com/toan.congtinland', rating: '4.9 (128 đánh giá)', responseTime: '5 phút' },
   },
   {
     id: 'p-tro-dbp',
@@ -163,7 +163,7 @@ const RAW_MOCK_PROPERTIES = [
     legal: 'Hợp đồng thuê',
     image: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=900&q=80',
     description: 'Phòng trọ sạch sẽ, gần Đại học Trà Vinh, toilet khép kín, an ninh tốt.',
-    broker: { name: 'Lê Minh Khang', phone: '0934567890', email: 'khang@congtinland.vn', zalo: 'https://zalo.me/84934567890', facebook: 'https://facebook.com/khang.congtinland', rating: '4.7 (54 đánh giá)', responseTime: '10 phút' },
+    broker: { name: 'Lê Minh Khang', phone: '0934567890', email: 'khang@congtinland.vn', facebook: 'https://facebook.com/khang.congtinland', rating: '4.7 (54 đánh giá)', responseTime: '10 phút' },
     rooms: [
       { label: 'Phòng P.01', price: 1500000, available: true },
       { label: 'Phòng P.02', price: 1500000, available: false },
@@ -209,7 +209,7 @@ const RAW_MOCK_PROPERTIES = [
     legal: 'Hợp đồng thuê',
     image: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=900&q=80',
     description: 'Phòng trọ mới xây, đầy đủ nội thất, khu vực yên tĩnh, gần chợ và siêu thị Hòa Thuận.',
-    broker: { name: 'Võ Hoàng Nam', phone: '0923456789', email: 'nam@congtinland.vn', zalo: 'https://zalo.me/84923456789', facebook: 'https://facebook.com/nam.congtinland', rating: '4.8 (39 đánh giá)', responseTime: '7 phút' },
+    broker: { name: 'Võ Hoàng Nam', phone: '0923456789', email: 'nam@congtinland.vn', facebook: 'https://facebook.com/nam.congtinland', rating: '4.8 (39 đánh giá)', responseTime: '7 phút' },
     rooms: [
       { label: 'Phòng A1', price: 2000000, available: true },
       { label: 'Phòng A2', price: 2000000, available: true },

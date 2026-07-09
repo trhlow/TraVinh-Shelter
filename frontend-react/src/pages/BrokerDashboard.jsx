@@ -60,7 +60,7 @@ const EMPTY_FORM = {
 
 export default function BrokerDashboard({ session, onLogin, onLogout, currentPath = '/broker/dashboard', section = 'dashboard' }) {
   const [profile, setProfile] = useState(null);
-  const [profileForm, setProfileForm] = useState({ fullName: '', phone: '', zaloUrl: '', facebookUrl: '', tiktokUrl: '' });
+  const [profileForm, setProfileForm] = useState({ fullName: '', phone: '', facebookUrl: '', tiktokUrl: '' });
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState('');
   const [stats, setStats] = useState({ activeListings: 0, totalListings: 0, pendingLeads: 0, listings: [] });
@@ -106,7 +106,6 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
         setProfileForm({
           fullName: profileData.fullName || '',
           phone: profileData.phone || '',
-          zaloUrl: profileData.zaloUrl || '',
           facebookUrl: profileData.facebookUrl || '',
           tiktokUrl: profileData.tiktokUrl || '',
         });
@@ -567,9 +566,6 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                 <FormField label="Số điện thoại">
                   <input className="input" value={profileForm.phone} onChange={(event) => setProfileForm((current) => ({ ...current, phone: event.target.value }))} required />
                 </FormField>
-                <FormField label="Zalo">
-                  <input className="input" type="url" aria-label="Zalo" placeholder="https://zalo.me/..." value={profileForm.zaloUrl} onChange={(event) => setProfileForm((current) => ({ ...current, zaloUrl: event.target.value }))} />
-                </FormField>
                 <FormField label="Facebook">
                   <input className="input" type="url" aria-label="Facebook" placeholder="https://facebook.com/..." value={profileForm.facebookUrl} onChange={(event) => setProfileForm((current) => ({ ...current, facebookUrl: event.target.value }))} />
                 </FormField>
@@ -886,9 +882,6 @@ function ProfileSummary({ profile, profileForm, avatarPreview, profileReady }) {
         <ProfileLine label="Số điện thoại" value={profile?.phone || profileForm.phone || 'Chưa cập nhật'} />
         {(profile?.facebookUrl || profileForm.facebookUrl) && (
           <ProfileSocialLine label="Facebook" url={profile?.facebookUrl || profileForm.facebookUrl} />
-        )}
-        {(profile?.zaloUrl || profileForm.zaloUrl) && (
-          <ProfileSocialLine label="Zalo" url={profile?.zaloUrl || profileForm.zaloUrl} />
         )}
         {(profile?.tiktokUrl || profileForm.tiktokUrl) && (
           <ProfileSocialLine label="TikTok" url={profile?.tiktokUrl || profileForm.tiktokUrl} />

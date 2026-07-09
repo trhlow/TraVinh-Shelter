@@ -20,7 +20,7 @@ const baseProperty = {
   broker: { name: 'Broker Test', phone: '0901234567', email: 'broker@test.vn', avatarUrl: '' },
 };
 
-test('renders a Facebook link below phone and Zalo when broker.facebook is set', async () => {
+test('renders a Facebook link below phone when broker.facebook is set', async () => {
   fetchPropertyDetail.mockResolvedValue({ ...baseProperty, broker: { ...baseProperty.broker, facebook: 'https://facebook.com/broker.test' } });
   render(<PropertyDetailPage propertyId="p-1" />);
   const brokerNameEl = await screen.findByText(baseProperty.broker.name);
@@ -62,7 +62,7 @@ test('uses "Nhà vệ sinh" instead of "Phòng tắm" for the bathroom spec labe
   expect(screen.queryByText('Phòng tắm')).not.toBeInTheDocument();
 });
 
-test('phone and Zalo live inside one merged contact box', async () => {
+test('renders the phone call button and no Zalo link', async () => {
   fetchPropertyDetail.mockResolvedValue(baseProperty);
   render(<PropertyDetailPage propertyId="p-1" />);
   await screen.findAllByText(baseProperty.title);
@@ -70,7 +70,6 @@ test('phone and Zalo live inside one merged contact box', async () => {
   const brokerNameEl = await screen.findByText(baseProperty.broker.name);
   const contactCard = brokerNameEl.closest('.contact-card');
   const phoneLink = within(contactCard).getByRole('link', { name: /Gọi ngay/i });
-  const zaloLink = within(contactCard).getByRole('link', { name: /Chat Zalo|Zalo/i });
-  expect(phoneLink.closest('.contact-phone-zalo')).toBe(zaloLink.closest('.contact-phone-zalo'));
   expect(phoneLink.closest('.contact-phone-zalo')).not.toBeNull();
+  expect(within(contactCard).queryByRole('link', { name: /Chat Zalo|Zalo/i })).not.toBeInTheDocument();
 });
