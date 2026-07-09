@@ -11,6 +11,7 @@ import Icon from '../components/ui/Icon.jsx';
 import LoginPage from './LoginPage.jsx';
 import { isInRange, percentDelta, previousRange, resolveDateRange } from '../utils/dateRange.js';
 import { downloadCsv } from '../utils/exportCsv.js';
+import { trimLeadingEmptyMonths } from '../utils/chartSeries.js';
 import {
   changePassword,
   createProperty,
@@ -1150,22 +1151,41 @@ function listingContacts(listing) {
 }
 
 function buildActivitySeries(listings, viewings) {
-  const postCounts = Array.from({ length: 12 }, () => 0);
+  const buckets = rollingMonthBuckets();
   listings.forEach((listing) => {
     const date = new Date(listing.createdAt || Date.now());
-    if (!Number.isNaN(date.getTime())) postCounts[date.getMonth()] += 1;
+    if (Number.isNaN(date.getTime())) return;
+    const bucket = buckets.find((item) => sameMonth(item.date, date));
+    if (bucket) bucket.current += 1;
   });
-  const confirmedCounts = Array.from({ length: 12 }, () => 0);
   viewings.forEach((viewing) => {
     if (viewing.status !== 'CONFIRMED') return;
     const date = new Date(viewing.requestedAt || viewing.createdAt || Date.now());
-    if (!Number.isNaN(date.getTime())) confirmedCounts[date.getMonth()] += 1;
+    if (Number.isNaN(date.getTime())) return;
+    const bucket = buckets.find((item) => sameMonth(item.date, date));
+    if (bucket) bucket.previous += 1;
   });
-  return postCounts.map((count, index) => ({
-    label: `T${index + 1}`,
-    current: count,
-    previous: confirmedCounts[index],
-  }));
+  return trimLeadingEmptyMonths(buckets.map((bucket) => ({
+    label: bucket.label,
+    current: bucket.current || 0,
+    previous: bucket.previous || 0,
+  })));
+}
+
+function rollingMonthBuckets(referenceDate = new Date(), length = 12) {
+  return Array.from({ length }, (_, index) => {
+    const date = new Date(referenceDate.getFullYear(), referenceDate.getMonth() - (length - 1 - index), 1);
+    return {
+      date,
+      label: `T${date.getMonth() + 1}`,
+      current: 0,
+      previous: 0,
+    };
+  });
+}
+
+function sameMonth(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
 }
 
 function sameCalendarMonth(value, reference) {
