@@ -185,11 +185,13 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
     () => new Intl.DateTimeFormat('vi-VN', { month: 'numeric', year: 'numeric' }).format(new Date()),
     [],
   );
-  const commissionChartData = useMemo(() => buildCommissionSeries(listings), [listings]);
-  const commissionThisMonth = useMemo(() => {
-    const currentMonth = new Date().getMonth();
-    return Math.round(commissionChartData[currentMonth]?.current || 0);
-  }, [commissionChartData]);
+  const activityChartData = useMemo(() => buildActivitySeries(listings, viewings), [listings, viewings]);
+  const confirmedViewingsThisMonth = useMemo(() => {
+    const now = new Date();
+    return viewings.filter((viewing) => (
+      viewing.status === 'CONFIRMED' && sameCalendarMonth(viewing.requestedAt || viewing.createdAt, now)
+    )).length;
+  }, [viewings]);
   const managedTypeData = useMemo(() => buildManagedTypeData(rangedListings), [rangedListings]);
   const leadFunnelData = useMemo(() => buildLeadFunnelData(dashboardStats.leads, viewings.length), [dashboardStats.leads, viewings.length]);
   const upcomingViewings = useMemo(() => viewings.slice(0, 4), [viewings]);
@@ -496,17 +498,16 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                 <StatCard icon="Building" title="Tin đăng đang hoạt động" value={dashboardStats.activeListings} tone="navy" trend={trendFor(activeListingsDelta)} series={activeListingsSparkline} />
                 <StatCard icon="Eye" title="Lượt xem trong tuần" value={dashboardStats.estimatedViews} tone="green" trend={trendFor(totalListingsDelta)} series={totalListingsSparkline} />
                 <StatCard icon="Users" title="Leads mới" value={dashboardStats.leads} tone="orange" trend={trendFor(leadsDelta)} series={totalListingsSparkline} />
-                <StatCard icon="DollarSign" title="Hoa hồng dự kiến tháng này" value={`${commissionThisMonth} tr`} tone="navy" />
+                <StatCard icon="CalendarCheck" title="Lịch hẹn xác nhận tháng này" value={confirmedViewingsThisMonth} tone="navy" />
               </div>
 
               <div className="dashboard-live-row">
                 <ThreeDGroupedBarChart
-                  title="Hoa hồng theo tháng"
-                  subtitle="So sánh năm nay với cùng kỳ năm trước · đơn vị triệu đồng"
-                  data={commissionChartData}
-                  currentLabel="Năm nay"
-                  previousLabel="Năm trước"
-                  valueSuffix="tr"
+                  title="Hoạt động môi giới theo tháng"
+                  subtitle="Số bài đăng mới và lịch hẹn đã xác nhận theo từng tháng trong năm"
+                  data={activityChartData}
+                  currentLabel="Bài đăng"
+                  previousLabel="Lịch hẹn xác nhận"
                 />
                 <ThreeDDonutChart
                   title="Loại hình BĐS đang quản lý"
@@ -1148,21 +1149,29 @@ function listingContacts(listing) {
   return Math.max(1, Math.round(listingViews(listing) / 18));
 }
 
-function buildCommissionSeries(listings) {
-  const monthCounts = Array.from({ length: 12 }, () => 0);
+function buildActivitySeries(listings, viewings) {
+  const postCounts = Array.from({ length: 12 }, () => 0);
   listings.forEach((listing) => {
     const date = new Date(listing.createdAt || Date.now());
-    if (!Number.isNaN(date.getTime())) monthCounts[date.getMonth()] += 1;
+    if (!Number.isNaN(date.getTime())) postCounts[date.getMonth()] += 1;
   });
-  const base = Math.max(2, Math.ceil(listings.length / 8));
-  return monthCounts.map((count, index) => {
-    const current = (count + base + (index % 4)) * (2.6 + (index % 3) * 0.45);
-    return {
-      label: `T${index + 1}`,
-      current: Math.round(current * 10) / 10,
-      previous: Math.round(current * (0.72 + (index % 2) * 0.08) * 10) / 10,
-    };
+  const confirmedCounts = Array.from({ length: 12 }, () => 0);
+  viewings.forEach((viewing) => {
+    if (viewing.status !== 'CONFIRMED') return;
+    const date = new Date(viewing.requestedAt || viewing.createdAt || Date.now());
+    if (!Number.isNaN(date.getTime())) confirmedCounts[date.getMonth()] += 1;
   });
+  return postCounts.map((count, index) => ({
+    label: `T${index + 1}`,
+    current: count,
+    previous: confirmedCounts[index],
+  }));
+}
+
+function sameCalendarMonth(value, reference) {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return false;
+  return date.getFullYear() === reference.getFullYear() && date.getMonth() === reference.getMonth();
 }
 
 function buildManagedTypeData(listings) {
