@@ -32,7 +32,6 @@ const BROKER_SIDEBAR_ITEMS = [
   { href: '#/broker/properties', icon: 'Building', label: 'Tin đăng của tôi' },
   { href: '#/broker/leads', icon: 'Users', label: 'Khách hàng tiềm năng' },
   { href: '#/broker/viewings', icon: 'Calendar', label: 'Lịch hẹn' },
-  { href: '#/broker/messages', icon: 'MessageCircle', label: 'Tin nhắn' },
   { href: '#/broker/settings', icon: 'Settings', label: 'Cài đặt' },
 ];
 
@@ -804,12 +803,6 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
             </div>
           )}
 
-          {section === 'messages' && (
-            <DashboardPanel title="Tin nhắn">
-              <StateBlock icon="MessageCircle" title="Chưa có trung tâm tin nhắn" description="Khi dự án có module chat, tin nhắn từ khách hàng sẽ hiển thị tại đây." />
-            </DashboardPanel>
-          )}
-
           {section === 'settings' && (
             <DashboardPanel title="Cài đặt tài khoản" action={<a className="btn btn-primary btn-sm" href="#/broker/profile">Mở hồ sơ</a>}>
               <StateBlock icon="Settings" title="Cài đặt đang dùng hồ sơ môi giới" description="Thông tin liên hệ, mạng xã hội và đổi mật khẩu hiện nằm trong mục Hồ sơ môi giới." />
@@ -1281,7 +1274,6 @@ function brokerTitle(section) {
     properties: 'Tin đăng của tôi',
     leads: 'Khách hàng tiềm năng',
     viewings: 'Lịch hẹn xem',
-    messages: 'Tin nhắn',
     settings: 'Cài đặt',
   }[section] || 'Bảng điều khiển';
 }
@@ -1293,7 +1285,6 @@ function brokerSubtitle(section, monthLabel) {
     properties: 'Tạo, chỉnh sửa và theo dõi trạng thái tin bất động sản.',
     leads: 'Theo dõi phễu chuyển đổi khách hàng từ lead mới đến giao dịch.',
     viewings: 'Theo dõi yêu cầu xem nhà và cập nhật lịch hẹn.',
-    messages: 'Không gian tập trung trao đổi với khách quan tâm tin đăng.',
     settings: 'Cấu hình nhanh các thông tin tài khoản môi giới.',
   }[section] || 'Tổng quan hoạt động môi giới.';
 }

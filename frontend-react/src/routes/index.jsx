@@ -27,10 +27,6 @@ function BrokerLeadsRoute(props) {
   return <BrokerDashboard {...props} section="leads" currentPath="/broker/leads" />;
 }
 
-function BrokerMessagesRoute(props) {
-  return <BrokerDashboard {...props} section="messages" currentPath="/broker/messages" />;
-}
-
 function BrokerSettingsRoute(props) {
   return <BrokerDashboard {...props} section="settings" currentPath="/broker/settings" />;
 }
@@ -64,7 +60,6 @@ export const routes = {
   '/broker/properties': BrokerPropertiesRoute,
   '/broker/viewings': BrokerViewingsRoute,
   '/broker/leads': BrokerLeadsRoute,
-  '/broker/messages': BrokerMessagesRoute,
   '/broker/settings': BrokerSettingsRoute,
 };
 
