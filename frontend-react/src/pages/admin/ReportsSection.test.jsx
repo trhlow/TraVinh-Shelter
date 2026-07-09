@@ -29,3 +29,19 @@ test('ward filter narrows the distribution/density data', () => {
   render(<ReportsSection data={data} loading={false} />);
   expect(screen.getByLabelText('Lọc theo phường')).toBeInTheDocument();
 });
+
+test('ranks brokers by activity, not revenue', () => {
+  const activityData = {
+    users: [],
+    brokers: [{ id: 'b1', fullName: 'Nguyễn Văn A', status: 'ACTIVE' }],
+    properties: [
+      { id: 'p1', title: 'A', ward: 'phuong-tra-vinh', category: 'tro', rawStatus: 'AVAILABLE', createdAt: '2026-06-30T00:00:00Z', broker: { id: 'b1' } },
+    ],
+    viewings: [
+      { id: 'v1', propertyId: 'p1', status: 'CONFIRMED', requestedAt: '2026-06-25T00:00:00Z' },
+    ],
+  };
+  render(<ReportsSection data={activityData} loading={false} />);
+  expect(screen.getByText('Top môi giới theo hoạt động')).toBeInTheDocument();
+  expect(screen.queryByText('Top môi giới theo doanh số')).not.toBeInTheDocument();
+});

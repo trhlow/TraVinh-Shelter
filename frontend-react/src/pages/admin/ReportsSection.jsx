@@ -14,6 +14,7 @@ import { isInRange, resolveDateRange } from '../../utils/dateRange.js';
 export default function ReportsSection({ data }) {
   const brokers = data?.brokers || [];
   const properties = data?.properties || [];
+  const viewings = data?.viewings || [];
 
   const [preset, setPreset] = useState('all');
   const [custom, setCustom] = useState({});
@@ -36,7 +37,7 @@ export default function ReportsSection({ data }) {
     })),
     [filteredProperties],
   );
-  const topBrokerData = useMemo(() => buildTopBrokerData(brokers, properties), [brokers, properties]);
+  const topBrokerData = useMemo(() => buildTopBrokerData(brokers, properties, viewings), [brokers, properties, viewings]);
   const heatmapData = useMemo(
     () => buildHeatmapData(filteredProperties, (property) => property.ward, (property) => property.category),
     [filteredProperties],
@@ -84,21 +85,20 @@ export default function ReportsSection({ data }) {
       <div className="dashboard-charts-row">
         <HeatmapChart title="Mật độ tin theo phường" data={heatmapData} onSelectCell={({ ward: cellWard, category: cellCategory }) => drillTo({ ward: cellWard, category: cellCategory })} />
         <ThreeDGroupedBarChart
-          title="Top môi giới theo doanh số"
-          subtitle="Xếp hạng tháng hiện tại theo số tin và giao dịch ước tính"
+          title="Top môi giới theo hoạt động"
+          subtitle="Xếp hạng theo tổng số tin đăng và lịch hẹn đã xác nhận"
           data={topBrokerData}
-          currentLabel="Tháng này"
-          previousLabel="Tháng trước"
-          valueSuffix="tr"
+          currentLabel="Tin đăng"
+          previousLabel="Lịch hẹn xác nhận"
         />
-        <BrokerPerformancePanel brokers={brokers} properties={properties} />
+        <BrokerPerformancePanel brokers={brokers} properties={properties} viewings={viewings} />
       </div>
     </>
   );
 }
 
-function BrokerPerformancePanel({ brokers, properties }) {
-  const rows = useMemo(() => buildBrokerRows(brokers, properties), [brokers, properties]);
+function BrokerPerformancePanel({ brokers, properties, viewings }) {
+  const rows = useMemo(() => buildBrokerRows(brokers, properties, viewings), [brokers, properties, viewings]);
   return (
     <DashboardPanel title="Danh sách môi giới" count={`${brokers.length} tài khoản`}>
       {rows.length === 0 ? (
@@ -136,32 +136,36 @@ function buildUserGrowthData(users) {
   }));
 }
 
-function buildTopBrokerData(brokers, properties) {
-  const rows = buildBrokerRows(brokers, properties).slice(0, 6);
+function buildTopBrokerData(brokers, properties, viewings) {
+  const rows = buildBrokerRows(brokers, properties, viewings).slice(0, 6);
   if (rows.length === 0) {
     return [{ label: 'Chưa có', current: 0, previous: 0 }];
   }
-  return rows.map((row, index) => ({
+  return rows.map((row) => ({
     label: shortName(row.name),
-    current: Math.max(1, Math.round(row.revenue / 1_000_000)),
-    previous: Math.max(1, Math.round((row.revenue / 1_000_000) * (0.62 + index * 0.04))),
+    current: row.listings,
+    previous: row.confirmedViewings,
   }));
 }
 
-function buildBrokerRows(brokers, properties) {
+function buildBrokerRows(brokers, properties, viewings) {
   return brokers.map((broker) => {
     const brokerProperties = properties.filter((property) => property.broker?.id === broker.id || property.broker?.email === broker.email);
+    const brokerPropertyIds = new Set(brokerProperties.map((property) => property.id));
     const closed = brokerProperties.filter((property) => ['SOLD', 'RENTED'].includes(property.rawStatus)).length;
-    const revenue = brokerProperties.reduce((sum, property) => sum + estimatePropertyRevenue(property), 0);
+    const confirmedViewings = viewings.filter((viewing) => (
+      viewing.status === 'CONFIRMED' && brokerPropertyIds.has(viewing.propertyId)
+    )).length;
     return {
       id: broker.id,
       name: broker.fullName || broker.username || broker.email || 'Môi giới',
       status: broker.status,
       listings: brokerProperties.length,
       performance: Math.min(100, Math.round((closed / Math.max(1, brokerProperties.length)) * 100)),
-      revenue,
+      confirmedViewings,
+      activityScore: brokerProperties.length + confirmedViewings,
     };
-  }).sort((a, b) => b.revenue - a.revenue || b.listings - a.listings);
+  }).sort((a, b) => b.activityScore - a.activityScore || b.listings - a.listings);
 }
 
 function rollingMonthBuckets(referenceDate = new Date(), length = 12) {
@@ -184,14 +188,6 @@ function dateOrFallback(value, index) {
 
 function sameMonth(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
-}
-
-function estimatePropertyRevenue(property) {
-  const rawPrice = Number(property.rawPrice || 0);
-  if (rawPrice > 0) return Math.max(1_200_000, Math.round(rawPrice * 0.012));
-  if (property.rawStatus === 'SOLD') return 18000000;
-  if (property.rawStatus === 'RENTED') return 3500000;
-  return 900000;
 }
 
 function shortName(name) {
