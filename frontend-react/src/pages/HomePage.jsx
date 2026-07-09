@@ -38,13 +38,11 @@ const HERO_BG_IMAGE = 'https://images.unsplash.com/photo-1600607687939-ce8a6c251
 
 const TRUST_CHIPS = ['Pháp lý đã kiểm tra', 'Môi giới xác minh', 'Hình ảnh thực tế', 'Không phí ẩn'];
 
-const CATEGORY_CARDS = [
-  { icon: 'Home', label: 'Nhà phố', slug: 'nha', count: '320 tin đăng' },
-  { icon: 'Layers', label: 'Đất nền', slug: 'dat', count: '210 tin đăng' },
-  { icon: 'Building', label: 'Căn hộ', slug: 'nha', count: '85 tin đăng' },
-  { icon: 'Castle', label: 'Biệt thự', slug: 'nha', count: '42 tin đăng' },
-  { icon: 'Key', label: 'Cho thuê', slug: 'tro', count: '160 tin đăng' },
-];
+const CATEGORY_ICONS = {
+  tro: { icon: 'Key', count: '160 tin đăng' },
+  nha: { icon: 'Home', count: '320 tin đăng' },
+  dat: { icon: 'Layers', count: '210 tin đăng' },
+};
 
 const WHY_US = [
   { icon: 'ShieldCheck', title: 'Pháp lý minh bạch', desc: 'Mọi bất động sản đều được kiểm tra sổ đỏ, quy hoạch và pháp lý trước khi đăng tin.' },
@@ -225,14 +223,14 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
             <p className="section-center-subtitle">Chọn đúng loại bất động sản phù hợp với nhu cầu của bạn</p>
           </div>
           <div className="category-grid">
-            {CATEGORY_CARDS.map(cat => (
-              <a key={cat.label} href={`#/search?category=${cat.slug}`} className="category-card">
+            {CATEGORIES.map(cat => (
+              <a key={cat.slug} href={`#/search?category=${cat.slug}`} className="category-card">
                 <span className="category-card-icon">
-                  <Icon name={cat.icon} size={24} />
+                  <Icon name={CATEGORY_ICONS[cat.slug].icon} size={24} />
                 </span>
                 <span>
                   <span className="category-card-label">{cat.label}</span>
-                  <span className="category-card-count">{cat.count}</span>
+                  <span className="category-card-count">{CATEGORY_ICONS[cat.slug].count}</span>
                 </span>
               </a>
             ))}
