@@ -529,14 +529,6 @@ function comboChartTickY(pct) {
   return bottom - (pct / 100) * (bottom - top);
 }
 
-function ComboValueLabel({ x, y, children }) {
-  return (
-    <text className="combo-value-label" x={x} y={y} textAnchor="middle" fontSize="3.2" fontStyle="italic" fill="var(--color-ink)">
-      {children}
-    </text>
-  );
-}
-
 /**
  * WardBarChart — combo bar (count, left axis) + line (percent, right axis)
  * per ward, one shared SVG coordinate system so the line always lines up
@@ -623,17 +615,6 @@ export function WardBarChart({ title, data, onSelectWard }) {
         ))}
 
         {points.map((point) => (
-          <ComboValueLabel key={`bar-label-${point.ward.code}`} x={point.columnCenterX} y={point.barTopY - 1.5}>
-            {point.ward.count}
-          </ComboValueLabel>
-        ))}
-        {points.map((point) => (
-          <ComboValueLabel key={`line-label-${point.ward.code}`} x={point.columnCenterX} y={point.lineY - 2}>
-            {`${point.ward.pct}%`}
-          </ComboValueLabel>
-        ))}
-
-        {points.map((point) => (
           <text key={`x-label-${point.ward.code}`} x={point.columnCenterX} y={bottom + 4} textAnchor="middle" fontSize="3" fill="var(--color-muted)">
             {point.ward.label.replace('Phường ', '')}
           </text>
@@ -656,9 +637,8 @@ export function WardBarChart({ title, data, onSelectWard }) {
 /**
  * CategoryBarChart — combo bar (count, left axis) + line (percent, right
  * axis) per property category (Trọ/Nhà/Đất) for a single ward. Shares its
- * coordinate system and label rendering with WardBarChart via
- * COMBO_CHART_PLOT/comboChartTickY/ComboValueLabel, so the two charts stay
- * visually and behaviorally consistent.
+ * coordinate system with WardBarChart via COMBO_CHART_PLOT/comboChartTickY,
+ * so the two charts stay visually and behaviorally consistent.
  */
 export function CategoryBarChart({ title, data }) {
   const { left, right, top, bottom } = COMBO_CHART_PLOT;
@@ -718,17 +698,6 @@ export function CategoryBarChart({ title, data }) {
         <path d={linePath} fill="none" stroke={lineColor} strokeWidth="0.6" />
         {points.map((point) => (
           <circle key={`dot-${point.item.slug}`} cx={point.columnCenterX} cy={point.lineY} r="1" fill={lineColor} />
-        ))}
-
-        {points.map((point) => (
-          <ComboValueLabel key={`bar-label-${point.item.slug}`} x={point.columnCenterX} y={point.barTopY - 1.5}>
-            {point.item.count}
-          </ComboValueLabel>
-        ))}
-        {points.map((point) => (
-          <ComboValueLabel key={`line-label-${point.item.slug}`} x={point.columnCenterX} y={point.lineY - 2}>
-            {`${point.item.pct}%`}
-          </ComboValueLabel>
         ))}
 
         {points.map((point) => (
