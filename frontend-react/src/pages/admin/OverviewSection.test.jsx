@@ -29,8 +29,9 @@ test('renders KPI cards, filter bar, and quick actions', () => {
   expect(screen.getByRole('link', { name: /Cấp tài khoản môi giới/ })).toHaveAttribute('href', '#/admin/brokers');
 });
 
-test('renders revenue chart and system status panel', () => {
+test('renders monthly activity chart and system status panel', () => {
   render(<OverviewSection data={data} loading={false} />);
-  expect(screen.getByText('Doanh thu giao dịch toàn hệ thống')).toBeInTheDocument();
+  expect(screen.getByText('Hoạt động hệ thống theo tháng')).toBeInTheDocument();
   expect(screen.getByText('Tình trạng hệ thống')).toBeInTheDocument();
+  expect(screen.queryByText('Doanh thu tháng này')).not.toBeInTheDocument();
 });

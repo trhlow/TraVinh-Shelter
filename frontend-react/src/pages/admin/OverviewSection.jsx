@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { buildDailySeries, ThreeDAreaChart } from '../../components/Charts.jsx';
+import { buildDailySeries, ThreeDGroupedBarChart } from '../../components/Charts.jsx';
 import { DashboardPanel, StatCard } from '../../components/DashboardWidgets.jsx';
 import DateRangeFilter from '../../components/dashboard/DateRangeFilter.jsx';
 import { WARDS, CATEGORIES } from '../../data/locations.js';
@@ -33,7 +33,12 @@ export default function OverviewSection({ data, loading, actions }) {
   )) : null), [properties, prevRange, ward, category]);
 
   const activeBrokers = useMemo(() => brokers.filter(isActiveAccount).length, [brokers]);
-  const currentRevenue = useMemo(() => estimateCurrentMonthRevenue(properties, viewings), [properties, viewings]);
+  const confirmedViewingsThisMonth = useMemo(() => {
+    const now = new Date();
+    return viewings.filter((viewing) => (
+      viewing.status === 'CONFIRMED' && sameMonth(dateOrFallback(viewing.createdAt || viewing.requestedAt, 0), now)
+    )).length;
+  }, [viewings]);
   const visibleCount = filteredProperties.filter((property) => property.rawStatus === 'AVAILABLE').length;
 
   const totalListingsSparkline = useMemo(
@@ -52,10 +57,10 @@ export default function OverviewSection({ data, loading, actions }) {
       series: totalListingsSparkline,
       href: '#/admin/properties',
     },
-    { icon: 'DollarSign', title: 'Doanh thu tháng này', value: formatCurrencyLabel(currentRevenue), tone: 'green' },
+    { icon: 'CalendarCheck', title: 'Lịch hẹn xác nhận tháng này', value: confirmedViewingsThisMonth, tone: 'green' },
   ];
 
-  const revenueSeries = useMemo(() => buildRevenueSeries(properties, viewings), [properties, viewings]);
+  const systemActivityData = useMemo(() => buildSystemActivitySeries(properties, viewings), [properties, viewings]);
   const recentAuditItems = useMemo(() => buildAuditItems({ users, properties, viewings }).slice(0, 5), [users, properties, viewings]);
 
   const exportOverview = () => {
@@ -106,11 +111,12 @@ export default function OverviewSection({ data, loading, actions }) {
       </div>
 
       <div className="dashboard-live-row">
-        <ThreeDAreaChart
-          title="Doanh thu giao dịch toàn hệ thống"
-          subtitle="Ước tính theo tin đã chốt và lịch hẹn xác nhận"
-          series={revenueSeries}
-          unit="đ doanh thu"
+        <ThreeDGroupedBarChart
+          title="Hoạt động hệ thống theo tháng"
+          subtitle="12 tháng gần nhất — tin đăng mới và lịch hẹn đã xác nhận"
+          data={systemActivityData}
+          currentLabel="Tin đăng"
+          previousLabel="Lịch hẹn xác nhận"
         />
       </div>
 
@@ -149,21 +155,24 @@ function AuditTimeline({ items }) {
   );
 }
 
-function buildRevenueSeries(properties, viewings) {
-  const buckets = rollingMonthBuckets().map((bucket) => ({ date: bucket.date.toISOString().slice(0, 10), count: 0 }));
+function buildSystemActivitySeries(properties, viewings) {
+  const buckets = rollingMonthBuckets();
   properties.forEach((property) => {
     const date = dateOrFallback(property.createdAt, 0);
-    const bucket = buckets.find((item) => sameMonth(new Date(item.date), date));
-    if (bucket && ['SOLD', 'RENTED'].includes(property.rawStatus)) {
-      bucket.count += estimatePropertyRevenue(property);
-    }
+    const bucket = buckets.find((item) => sameMonth(item.date, date));
+    if (bucket) bucket.current = (bucket.current || 0) + 1;
   });
   viewings.forEach((viewing) => {
-    const date = dateOrFallback(viewing.createdAt || viewing.requestedAt, 0);
-    const bucket = buckets.find((item) => sameMonth(new Date(item.date), date));
-    if (bucket && viewing.status === 'CONFIRMED') bucket.count += 800000;
+    if (viewing.status !== 'CONFIRMED') return;
+    const date = dateOrFallback(viewing.requestedAt || viewing.createdAt, 0);
+    const bucket = buckets.find((item) => sameMonth(item.date, date));
+    if (bucket) bucket.previous = (bucket.previous || 0) + 1;
   });
-  return buckets;
+  return buckets.map((bucket) => ({
+    label: bucket.label,
+    current: bucket.current || 0,
+    previous: bucket.previous || 0,
+  }));
 }
 
 function buildAuditItems({ users, properties, viewings }) {
@@ -214,35 +223,6 @@ function sameMonth(a, b) {
 
 function isActiveAccount(account) {
   return !account.status || account.status === 'ACTIVE';
-}
-
-function estimateCurrentMonthRevenue(properties, viewings) {
-  const now = new Date();
-  const propertyRevenue = properties.reduce((sum, property) => (
-    sameMonth(dateOrFallback(property.createdAt, 0), now) ? sum + estimatePropertyRevenue(property) : sum
-  ), 0);
-  const viewingRevenue = viewings.reduce((sum, viewing) => (
-    sameMonth(dateOrFallback(viewing.createdAt || viewing.requestedAt, 0), now) && viewing.status === 'CONFIRMED' ? sum + 800000 : sum
-  ), 0);
-  return propertyRevenue + viewingRevenue;
-}
-
-function estimatePropertyRevenue(property) {
-  const rawPrice = Number(property.rawPrice || 0);
-  if (rawPrice > 0) return Math.max(1_200_000, Math.round(rawPrice * 0.012));
-  if (property.rawStatus === 'SOLD') return 18000000;
-  if (property.rawStatus === 'RENTED') return 3500000;
-  return 900000;
-}
-
-function formatCurrencyLabel(value) {
-  if (value >= 1_000_000_000) {
-    return `${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(value / 1_000_000_000)} tỷ`;
-  }
-  if (value >= 1_000_000) {
-    return `${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(value / 1_000_000)} tr`;
-  }
-  return `${new Intl.NumberFormat('vi-VN').format(value)}đ`;
 }
 
 function formatDate(value) {
