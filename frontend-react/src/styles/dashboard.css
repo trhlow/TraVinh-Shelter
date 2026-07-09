@@ -1070,7 +1070,7 @@
   color: var(--color-muted);
 }
 
-.ward-combo-svg {
+.combo-svg {
   display: block;
   width: 100%;
   height: 220px;
@@ -1105,11 +1105,11 @@
   flex-shrink: 0;
 }
 
-.ward-combo-bar-group {
+.combo-bar-group {
   cursor: pointer;
 }
 
-.ward-combo-bar-group:focus-visible {
+.combo-bar-group:focus-visible {
   outline: 2px solid var(--color-ink);
   outline-offset: 1px;
 }

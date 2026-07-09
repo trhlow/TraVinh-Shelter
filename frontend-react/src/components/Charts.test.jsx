@@ -65,7 +65,7 @@ test('WardBarChart shows both the count value and the percent value for the same
   ];
   const data = buildWardData(items, (item) => item.ward);
   const { container } = render(<WardBarChart title="Test" data={data} />);
-  const valueLabels = Array.from(container.querySelectorAll('.ward-combo-value-label')).map((node) => node.textContent);
+  const valueLabels = Array.from(container.querySelectorAll('.combo-value-label')).map((node) => node.textContent);
   expect(valueLabels).toContain('3');
   expect(valueLabels).toContain('100%');
 });

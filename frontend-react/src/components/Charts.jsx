@@ -521,12 +521,20 @@ export function Sparkline({ series = [] }) {
   );
 }
 
-const WARD_COMBO_TICK_PERCENTS = [0, 25, 50, 75, 100];
-const WARD_COMBO_PLOT = { left: 10, right: 90, top: 6, bottom: 38 };
+const COMBO_CHART_TICK_PERCENTS = [0, 25, 50, 75, 100];
+const COMBO_CHART_PLOT = { left: 10, right: 90, top: 6, bottom: 38 };
 
-function wardComboTickY(pct) {
-  const { top, bottom } = WARD_COMBO_PLOT;
+function comboChartTickY(pct) {
+  const { top, bottom } = COMBO_CHART_PLOT;
   return bottom - (pct / 100) * (bottom - top);
+}
+
+function ComboValueLabel({ x, y, children }) {
+  return (
+    <text className="combo-value-label" x={x} y={y} textAnchor="middle" fontSize="3.2" fontStyle="italic" fill="var(--color-ink)">
+      {children}
+    </text>
+  );
 }
 
 /**
@@ -536,7 +544,7 @@ function wardComboTickY(pct) {
  * render.
  */
 export function WardBarChart({ title, data, onSelectWard }) {
-  const { left, right, top, bottom } = WARD_COMBO_PLOT;
+  const { left, right, top, bottom } = COMBO_CHART_PLOT;
   const leftMax = Math.max(...data.map((ward) => ward.count), 1);
   const columnWidth = (right - left) / data.length;
   const barWidth = columnWidth * 0.4;
@@ -558,19 +566,19 @@ export function WardBarChart({ title, data, onSelectWard }) {
   });
 
   const linePath = `M${points.map((point) => `${point.columnCenterX},${point.lineY}`).join(' L')}`;
-  const leftTicks = WARD_COMBO_TICK_PERCENTS.map((pct) => ({
-    y: wardComboTickY(pct),
+  const leftTicks = COMBO_CHART_TICK_PERCENTS.map((pct) => ({
+    y: comboChartTickY(pct),
     value: Math.round((leftMax * pct) / 100),
   }));
-  const rightTicks = WARD_COMBO_TICK_PERCENTS.map((pct) => ({
-    y: wardComboTickY(pct),
+  const rightTicks = COMBO_CHART_TICK_PERCENTS.map((pct) => ({
+    y: comboChartTickY(pct),
     value: pct,
   }));
 
   return (
     <section className="chart-panel">
       <h2 className="chart-title">{title}</h2>
-      <svg className="ward-combo-svg" viewBox="0 0 100 50" preserveAspectRatio="none">
+      <svg className="combo-svg" viewBox="0 0 100 50" preserveAspectRatio="none">
         <line x1={left} y1={top} x2={left} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
         <line x1={right} y1={top} x2={right} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
         <line x1={left} y1={bottom} x2={right} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
@@ -593,7 +601,7 @@ export function WardBarChart({ title, data, onSelectWard }) {
               role="button"
               tabIndex={0}
               aria-label={`${point.ward.label}: ${point.ward.count} tin`}
-              className="ward-combo-bar-group"
+              className="combo-bar-group"
               onClick={() => onSelectWard(point.ward.code)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
@@ -602,10 +610,10 @@ export function WardBarChart({ title, data, onSelectWard }) {
                 }
               }}
             >
-              <rect x={point.barLeftX} y={point.barTopY} width={barWidth} height={point.barHeight} fill={barColor} />
+              <rect className="combo-bar" x={point.barLeftX} y={point.barTopY} width={barWidth} height={point.barHeight} fill={barColor} />
             </g>
           ) : (
-            <rect key={point.ward.code} x={point.barLeftX} y={point.barTopY} width={barWidth} height={point.barHeight} fill={barColor} />
+            <rect className="combo-bar" key={point.ward.code} x={point.barLeftX} y={point.barTopY} width={barWidth} height={point.barHeight} fill={barColor} />
           )
         ))}
 
@@ -615,32 +623,14 @@ export function WardBarChart({ title, data, onSelectWard }) {
         ))}
 
         {points.map((point) => (
-          <text
-            key={`bar-label-${point.ward.code}`}
-            className="ward-combo-value-label"
-            x={point.columnCenterX}
-            y={point.barTopY - 1.5}
-            textAnchor="middle"
-            fontSize="3.2"
-            fontStyle="italic"
-            fill="var(--color-ink)"
-          >
+          <ComboValueLabel key={`bar-label-${point.ward.code}`} x={point.columnCenterX} y={point.barTopY - 1.5}>
             {point.ward.count}
-          </text>
+          </ComboValueLabel>
         ))}
         {points.map((point) => (
-          <text
-            key={`line-label-${point.ward.code}`}
-            className="ward-combo-value-label"
-            x={point.columnCenterX}
-            y={point.lineY - 2}
-            textAnchor="middle"
-            fontSize="3.2"
-            fontStyle="italic"
-            fill="var(--color-ink)"
-          >
+          <ComboValueLabel key={`line-label-${point.ward.code}`} x={point.columnCenterX} y={point.lineY - 2}>
             {`${point.ward.pct}%`}
-          </text>
+          </ComboValueLabel>
         ))}
 
         {points.map((point) => (
