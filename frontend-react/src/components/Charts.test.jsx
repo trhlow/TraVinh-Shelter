@@ -1,9 +1,9 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, expect, test, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import {
   buildDailySeries, buildMonthlySeries, buildWardData, Sparkline, TrendAreaChart, WardBarChart,
-  buildCategoryDensityData, CategoryBarChart,
+  buildCategoryDensityData, CategoryBarChart, TrendBarLineChart,
 } from './Charts.jsx';
 
 afterEach(() => cleanup());
@@ -282,4 +282,67 @@ test('CategoryBarChart scales bar height to the real max, not a fixed range', ()
   const heights = bars.map((bar) => Number(bar.getAttribute('height')));
   // max count (7, all in "tro") must render at the full plot height (bottom 38 - top 6 = 32)
   expect(Math.max(...heights)).toBe(32);
+});
+
+// ── TrendBarLineChart ─────────────────────────────────────
+
+test('TrendBarLineChart renders title, subtitle, and one bar per data point scaled to the real combined max', () => {
+  const data = [
+    { label: 'T1', current: 2, previous: 5 },
+    { label: 'T2', current: 8, previous: 1 },
+  ];
+  const { container } = render(
+    <TrendBarLineChart title="Hoạt động" subtitle="Theo tháng" data={data} currentLabel="Bài đăng" previousLabel="Lịch hẹn" />,
+  );
+
+  expect(screen.getByRole('heading', { name: 'Hoạt động' })).toBeInTheDocument();
+  expect(screen.getByText('Theo tháng')).toBeInTheDocument();
+
+  const bars = Array.from(container.querySelectorAll('.combo-bar'));
+  const heights = bars.map((bar) => Number(bar.getAttribute('height')));
+  // axisMax = max(2,5,8,1,1) = 8; plot height = 38-6 = 32
+  // T1 current=2 -> 2/8*32=8; T2 current=8 -> 8/8*32=32
+  expect(heights).toEqual([8, 32]);
+
+  const dots = Array.from(container.querySelectorAll('circle'));
+  const dotYs = dots.map((dot) => Number(dot.getAttribute('cy')));
+  // T1 previous=5 -> y=38-5/8*32=18; T2 previous=1 -> y=38-1/8*32=34
+  expect(dotYs).toEqual([18, 34]);
+
+  expect(container.querySelector('.combo-chart-legend')).toHaveTextContent('Bài đăng');
+  expect(container.querySelector('.combo-chart-legend')).toHaveTextContent('Lịch hẹn');
+});
+
+test('TrendBarLineChart exposes role=img with the title as its accessible name, and month labels are findable inside it', () => {
+  const data = [
+    { label: 'T5', current: 3, previous: 1 },
+    { label: 'T6', current: 4, previous: 2 },
+  ];
+  render(<TrendBarLineChart title="Hoạt động môi giới theo tháng" data={data} />);
+
+  const stage = screen.getByRole('img', { name: 'Hoạt động môi giới theo tháng' });
+  expect(within(stage).getAllByText(/^T\d{1,2}$/)).toHaveLength(2);
+});
+
+test('TrendBarLineChart hides the line and second legend item when every previous value is 0', () => {
+  const data = [
+    { label: 'T1', current: 3, previous: 0 },
+    { label: 'T2', current: 5, previous: 0 },
+  ];
+  const { container } = render(
+    <TrendBarLineChart title="Test" data={data} currentLabel="Người dùng mới" previousLabel="Kỳ trước" />,
+  );
+
+  expect(container.querySelectorAll('circle')).toHaveLength(0);
+  expect(container.querySelector('path[d]')).not.toBeInTheDocument();
+
+  const legendItems = Array.from(container.querySelectorAll('.combo-chart-legend-item'));
+  expect(legendItems).toHaveLength(1);
+  expect(legendItems[0]).toHaveTextContent('Người dùng mới');
+
+  const bars = Array.from(container.querySelectorAll('.combo-bar'));
+  const heights = bars.map((bar) => Number(bar.getAttribute('height')));
+  // axisMax = max(3,0,5,0,1) = 5; plot height 32; T1: 3/5*32=19.2; T2: 5/5*32=32
+  expect(heights[0]).toBeCloseTo(19.2);
+  expect(heights[1]).toBe(32);
 });

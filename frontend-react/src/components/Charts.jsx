@@ -721,6 +721,92 @@ export function CategoryBarChart({ title, data }) {
 }
 
 /**
+ * TrendBarLineChart — combo bar (current, left axis) + line (previous, same
+ * left axis) for series where both values share one unit (e.g. two kinds of
+ * counts). Unlike WardBarChart/CategoryBarChart's fixed 0-100 percent right
+ * axis, this axis auto-scales to the real max of both series combined. When
+ * every `previous` value is 0 (no real comparison data), the line, its dots,
+ * and its legend entry are omitted — only bars render.
+ */
+export function TrendBarLineChart({ title, subtitle, data, currentLabel = 'Hiện tại', previousLabel = 'So sánh' }) {
+  const { left, right, top, bottom } = COMBO_CHART_PLOT;
+  const hasPrevious = data.some((point) => point.previous);
+  const axisMax = Math.max(...data.flatMap((point) => [point.current || 0, point.previous || 0]), 1);
+  const columnWidth = (right - left) / data.length;
+  const barWidth = columnWidth * 0.4;
+  const barColor = CHART_PALETTE[0];
+  const lineColor = CHART_PALETTE[4];
+
+  const points = data.map((point, index) => {
+    const columnCenterX = left + columnWidth * (index + 0.5);
+    const barTopY = bottom - ((point.current || 0) / axisMax) * (bottom - top);
+    const lineY = bottom - ((point.previous || 0) / axisMax) * (bottom - top);
+    return {
+      point,
+      columnCenterX,
+      barLeftX: columnCenterX - barWidth / 2,
+      barTopY,
+      barHeight: bottom - barTopY,
+      lineY,
+    };
+  });
+
+  const linePath = `M${points.map((p) => `${p.columnCenterX},${p.lineY}`).join(' L')}`;
+  const ticks = COMBO_CHART_TICK_PERCENTS.map((pct) => ({
+    y: comboChartTickY(pct),
+    value: Math.round((axisMax * pct) / 100),
+  }));
+
+  return (
+    <section className="chart-panel">
+      <div className="chart3d-header">
+        <div>
+          <h2 className="chart-title">{title}</h2>
+          {subtitle && <p className="chart3d-subtitle">{subtitle}</p>}
+        </div>
+      </div>
+      <svg className="combo-svg" viewBox="0 0 100 50" preserveAspectRatio="none" role="img" aria-label={title}>
+        <line x1={left} y1={top} x2={left} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
+        <line x1={left} y1={bottom} x2={right} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
+
+        {ticks.map((tick) => (
+          <text key={`left-${tick.y}`} x={left - 1.5} y={tick.y + 1} textAnchor="end" fontSize="3" fill="var(--color-muted)">
+            {tick.value}
+          </text>
+        ))}
+
+        {points.map((p) => (
+          <rect className="combo-bar" key={p.point.label} x={p.barLeftX} y={p.barTopY} width={barWidth} height={p.barHeight} fill={barColor} />
+        ))}
+
+        {hasPrevious && <path d={linePath} fill="none" stroke={lineColor} strokeWidth="0.6" />}
+        {hasPrevious && points.map((p) => (
+          <circle key={`dot-${p.point.label}`} cx={p.columnCenterX} cy={p.lineY} r="1" fill={lineColor} />
+        ))}
+
+        {points.map((p) => (
+          <text key={`x-label-${p.point.label}`} x={p.columnCenterX} y={bottom + 4} textAnchor="middle" fontSize="3" fill="var(--color-muted)">
+            {p.point.label}
+          </text>
+        ))}
+      </svg>
+      <div className="combo-chart-legend">
+        <span className="combo-chart-legend-item">
+          <span className="combo-chart-legend-swatch" style={{ backgroundColor: barColor }} />
+          {currentLabel}
+        </span>
+        {hasPrevious && (
+          <span className="combo-chart-legend-item">
+            <span className="combo-chart-legend-line" style={{ backgroundColor: lineColor }} />
+            {previousLabel}
+          </span>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/**
  * GaugeChart — circular progress gauge showing value/max as a percentage.
  *
  * Props:
