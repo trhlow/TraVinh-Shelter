@@ -238,14 +238,15 @@ test('CategoryBarChart renders title and one column per category with count and 
     { ward: 'phuong-tra-vinh', category: 'tro' },
     { ward: 'phuong-tra-vinh', category: 'nha' },
   ], 'phuong-tra-vinh');
-  render(<CategoryBarChart title="Mật độ tin — Phường Trà Vinh" data={data} />);
+  const { container } = render(<CategoryBarChart title="Mật độ tin — Phường Trà Vinh" data={data} />);
 
   expect(screen.getByRole('heading', { name: 'Mật độ tin — Phường Trà Vinh' })).toBeInTheDocument();
   expect(screen.getByText('Trọ')).toBeInTheDocument();
   expect(screen.getByText('Nhà')).toBeInTheDocument();
   expect(screen.getByText('Đất')).toBeInTheDocument();
-  expect(screen.getByText('4')).toBeInTheDocument(); // tro count
-  expect(screen.getByText('80%')).toBeInTheDocument(); // 4/5
+  const valueLabels = Array.from(container.querySelectorAll('.combo-value-label')).map((node) => node.textContent);
+  expect(valueLabels).toContain('4'); // tro count
+  expect(valueLabels).toContain('80%'); // 4/5
 });
 
 test('CategoryBarChart scales bar height to the real max, not a fixed range', () => {
@@ -254,7 +255,8 @@ test('CategoryBarChart scales bar height to the real max, not a fixed range', ()
     'phuong-tra-vinh',
   );
   const { container } = render(<CategoryBarChart title="Test" data={highVolume} />);
-  const filledBar = container.querySelector('.ward-bar-fill');
-  // max count among the 3 categories is 7 (all in "tro") -> that bar must render at 100% height
-  expect(filledBar.style.height).toBe('100%');
+  const bars = Array.from(container.querySelectorAll('.combo-bar'));
+  const heights = bars.map((bar) => Number(bar.getAttribute('height')));
+  // max count (7, all in "tro") must render at the full plot height (bottom 38 - top 6 = 32)
+  expect(Math.max(...heights)).toBe(32);
 });

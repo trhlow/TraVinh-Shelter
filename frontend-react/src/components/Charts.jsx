@@ -654,34 +654,98 @@ export function WardBarChart({ title, data, onSelectWard }) {
 }
 
 /**
- * CategoryBarChart — one real column per property category (Trọ/Nhà/Đất) for
- * a single ward. Reuses WardBarChart's CSS classes so it renders styled
- * without adding new CSS. Height scales to the real max count among the 3
- * categories, so the Y axis auto-adjusts as data grows (no fixed 0-3 range).
+ * CategoryBarChart — combo bar (count, left axis) + line (percent, right
+ * axis) per property category (Trọ/Nhà/Đất) for a single ward. Shares its
+ * coordinate system and label rendering with WardBarChart via
+ * COMBO_CHART_PLOT/comboChartTickY/ComboValueLabel, so the two charts stay
+ * visually and behaviorally consistent.
  */
 export function CategoryBarChart({ title, data }) {
-  const max = Math.max(...data.map((item) => item.count), 1);
+  const { left, right, top, bottom } = COMBO_CHART_PLOT;
+  const leftMax = Math.max(...data.map((item) => item.count), 1);
+  const columnWidth = (right - left) / data.length;
+  const barWidth = columnWidth * 0.4;
+  const barColor = CHART_PALETTE[0];
+  const lineColor = CHART_PALETTE[4];
+
+  const points = data.map((item, index) => {
+    const columnCenterX = left + columnWidth * (index + 0.5);
+    const barTopY = bottom - (item.count / leftMax) * (bottom - top);
+    const lineY = bottom - (item.pct / 100) * (bottom - top);
+    return {
+      item,
+      columnCenterX,
+      barLeftX: columnCenterX - barWidth / 2,
+      barTopY,
+      barHeight: bottom - barTopY,
+      lineY,
+    };
+  });
+
+  const linePath = `M${points.map((point) => `${point.columnCenterX},${point.lineY}`).join(' L')}`;
+  const leftTicks = COMBO_CHART_TICK_PERCENTS.map((pct) => ({
+    y: comboChartTickY(pct),
+    value: Math.round((leftMax * pct) / 100),
+  }));
+  const rightTicks = COMBO_CHART_TICK_PERCENTS.map((pct) => ({
+    y: comboChartTickY(pct),
+    value: pct,
+  }));
 
   return (
     <section className="chart-panel">
       <h2 className="chart-title">{title}</h2>
-      <div className="ward-bar-cols">
-        {data.map((item, index) => (
-          <div className="ward-bar-col" key={item.slug}>
-            <span className="ward-bar-count">{item.count}</span>
-            <div className="ward-bar-track">
-              <span
-                className="ward-bar-fill"
-                style={{
-                  height: `${Math.max(4, (item.count / max) * 100)}%`,
-                  backgroundColor: CHART_PALETTE[index % CHART_PALETTE.length],
-                }}
-              />
-            </div>
-            <span className="ward-bar-name">{item.label}</span>
-            <span className="ward-bar-pct">{item.pct}%</span>
-          </div>
+      <svg className="combo-svg" viewBox="0 0 100 50" preserveAspectRatio="none">
+        <line x1={left} y1={top} x2={left} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
+        <line x1={right} y1={top} x2={right} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
+        <line x1={left} y1={bottom} x2={right} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
+
+        {leftTicks.map((tick) => (
+          <text key={`left-${tick.y}`} x={left - 1.5} y={tick.y + 1} textAnchor="end" fontSize="3" fill="var(--color-muted)">
+            {tick.value}
+          </text>
         ))}
+        {rightTicks.map((tick) => (
+          <text key={`right-${tick.y}`} x={right + 1.5} y={tick.y + 1} textAnchor="start" fontSize="3" fill="var(--color-muted)">
+            {tick.value}
+          </text>
+        ))}
+
+        {points.map((point) => (
+          <rect className="combo-bar" key={point.item.slug} x={point.barLeftX} y={point.barTopY} width={barWidth} height={point.barHeight} fill={barColor} />
+        ))}
+
+        <path d={linePath} fill="none" stroke={lineColor} strokeWidth="0.6" />
+        {points.map((point) => (
+          <circle key={`dot-${point.item.slug}`} cx={point.columnCenterX} cy={point.lineY} r="1" fill={lineColor} />
+        ))}
+
+        {points.map((point) => (
+          <ComboValueLabel key={`bar-label-${point.item.slug}`} x={point.columnCenterX} y={point.barTopY - 1.5}>
+            {point.item.count}
+          </ComboValueLabel>
+        ))}
+        {points.map((point) => (
+          <ComboValueLabel key={`line-label-${point.item.slug}`} x={point.columnCenterX} y={point.lineY - 2}>
+            {`${point.item.pct}%`}
+          </ComboValueLabel>
+        ))}
+
+        {points.map((point) => (
+          <text key={`x-label-${point.item.slug}`} x={point.columnCenterX} y={bottom + 4} textAnchor="middle" fontSize="3" fill="var(--color-muted)">
+            {point.item.label}
+          </text>
+        ))}
+      </svg>
+      <div className="combo-chart-legend">
+        <span className="combo-chart-legend-item">
+          <span className="combo-chart-legend-swatch" style={{ backgroundColor: barColor }} />
+          Số tin đăng
+        </span>
+        <span className="combo-chart-legend-item">
+          <span className="combo-chart-legend-line" style={{ backgroundColor: lineColor }} />
+          Tỉ lệ (%)
+        </span>
       </div>
     </section>
   );
