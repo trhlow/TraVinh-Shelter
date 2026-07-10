@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  buildDailySeries, buildWardData, ThreeDDonutChart, ThreeDFunnelChart, TrendBarLineChart, WardBarChart,
+  buildDailySeries, buildWardData, ThreeDDonutChart, TrendBarLineChart, WardBarChart,
 } from '../components/Charts.jsx';
 import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../components/DashboardWidgets.jsx';
 import ViewingsPanel from '../components/dashboard/ViewingsPanel.jsx';
@@ -30,7 +30,6 @@ import {
 const BROKER_SIDEBAR_ITEMS = [
   { href: '#/broker/dashboard', icon: 'LayoutDashboard', label: 'Tổng quan' },
   { href: '#/broker/properties', icon: 'Building', label: 'Tin đăng của tôi' },
-  { href: '#/broker/leads', icon: 'Users', label: 'Khách hàng tiềm năng' },
   { href: '#/broker/viewings', icon: 'Calendar', label: 'Lịch hẹn' },
   { href: '#/broker/settings', icon: 'Settings', label: 'Cài đặt' },
 ];
@@ -123,7 +122,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   }, [session]);
 
   useEffect(() => {
-    if (!session?.token || session.role !== 'BROKER' || !['dashboard', 'viewings', 'leads'].includes(section)) return;
+    if (!session?.token || session.role !== 'BROKER' || !['dashboard', 'viewings'].includes(section)) return;
     let alive = true;
     setViewingsLoading(true);
     fetchBrokerViewings(session.token)
@@ -192,7 +191,6 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
     )).length;
   }, [viewings]);
   const managedTypeData = useMemo(() => buildManagedTypeData(rangedListings), [rangedListings]);
-  const leadFunnelData = useMemo(() => buildLeadFunnelData(dashboardStats.leads, viewings.length), [dashboardStats.leads, viewings.length]);
   const upcomingViewings = useMemo(() => viewings.slice(0, 4), [viewings]);
 
   function trendFor(delta) {
@@ -517,11 +515,6 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
               </div>
 
               <div className="dashboard-charts-row">
-                <ThreeDFunnelChart
-                  title="Phễu chuyển đổi khách hàng"
-                  subtitle="Lead → Liên hệ → Hẹn xem nhà → Chốt giao dịch"
-                  data={leadFunnelData}
-                />
                 <WardBarChart title="Tin đăng theo phường" data={wardChart} />
                 <DashboardPanel title="Lịch hẹn sắp tới" count={viewingsLoading ? 'Đang tải' : `${upcomingViewings.length} lịch`}>
                   <UpcomingViewingsSummary viewings={upcomingViewings} loading={viewingsLoading} />
@@ -790,18 +783,6 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
             </DashboardPanel>
           )}
 
-          {section === 'leads' && (
-            <div className="dashboard-live-row">
-              <ThreeDFunnelChart
-                title="Phễu khách hàng tiềm năng"
-                subtitle="Theo dõi khách từ lead mới đến giao dịch thành công"
-                data={leadFunnelData}
-              />
-              <DashboardPanel title="Lead mới cần xử lý" count={`${dashboardStats.leads} lead`}>
-                <LeadPreview listings={rangedListings} />
-              </DashboardPanel>
-            </div>
-          )}
 
         </div>
       </div>
@@ -968,29 +949,6 @@ function UpcomingViewingsSummary({ viewings, loading }) {
             <div className="dashboard-table-sub">{viewing.propertyTitle || 'Bất động sản'} · {formatViewingDate(viewing.requestedAt || viewing.createdAt)}</div>
           </div>
           <StatusBadge tone={viewing.status === 'PENDING' ? 'warning' : 'success'}>{viewing.status || 'PENDING'}</StatusBadge>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function LeadPreview({ listings }) {
-  const rows = listings.slice(0, 5).map((listing) => ({
-    id: listing.id,
-    title: listing.title,
-    contacts: listingContacts(listing),
-    views: listingViews(listing),
-  }));
-  if (rows.length === 0) return <StateBlock icon="Users" title="Chưa có lead mới" description="Lead sẽ được ghi nhận khi khách liên hệ tin đăng." />;
-  return (
-    <div className="dashboard-broker-list">
-      {rows.map((row) => (
-        <div className="dashboard-broker-row" key={row.id}>
-          <div>
-            <div className="dashboard-table-name">{row.title}</div>
-            <div className="dashboard-table-sub">{row.views} lượt xem · {row.contacts} liên hệ</div>
-          </div>
-          <a className="btn btn-ghost btn-sm" href="#/broker/properties">Xử lý</a>
         </div>
       ))}
     </div>
@@ -1186,16 +1144,6 @@ export function buildManagedTypeData(listings) {
   ];
 }
 
-function buildLeadFunnelData(leads, viewingCount) {
-  const leadCount = Math.max(leads, 1);
-  return [
-    { label: 'Lead', value: leadCount, color: 'var(--chart-1)' },
-    { label: 'Liên hệ', value: Math.max(1, Math.round(leadCount * 0.72)), color: 'var(--chart-4)' },
-    { label: 'Hẹn xem nhà', value: Math.max(viewingCount, Math.round(leadCount * 0.42)), color: 'var(--chart-3)' },
-    { label: 'Chốt giao dịch', value: Math.max(1, Math.round(leadCount * 0.18)), color: 'var(--chart-5)' },
-  ];
-}
-
 function formatViewingDate(value) {
   if (!value) return 'Chưa có thời gian';
   const date = new Date(value);
@@ -1264,7 +1212,6 @@ function brokerTitle(section) {
   return {
     dashboard: 'Bảng điều khiển',
     properties: 'Tin đăng của tôi',
-    leads: 'Khách hàng tiềm năng',
     viewings: 'Lịch hẹn xem',
     settings: 'Cài đặt',
   }[section] || 'Bảng điều khiển';
@@ -1274,7 +1221,6 @@ function brokerSubtitle(section, monthLabel) {
   return {
     dashboard: `Hiệu suất tin đăng và khách hàng quan tâm trong tháng ${monthLabel}.`,
     properties: 'Tạo, chỉnh sửa và theo dõi trạng thái tin bất động sản.',
-    leads: 'Theo dõi phễu chuyển đổi khách hàng từ lead mới đến giao dịch.',
     viewings: 'Theo dõi yêu cầu xem nhà và cập nhật lịch hẹn.',
     settings: 'Quản lý thông tin liên hệ hiển thị trên các tin đăng.',
   }[section] || 'Tổng quan hoạt động môi giới.';

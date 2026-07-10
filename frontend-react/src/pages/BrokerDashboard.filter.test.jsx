@@ -115,3 +115,19 @@ test('buildManagedTypeData counts listings into exactly 3 real categories with n
   // total across all 3 buckets must equal the input length exactly — proves no double-count
   expect(data.reduce((sum, item) => sum + item.value, 0)).toBe(listings.length);
 });
+
+test('broker sidebar no longer has a Khách hàng tiềm năng nav item', async () => {
+  render(<BrokerDashboard session={session} section="dashboard" currentPath="/broker/dashboard" />);
+  await screen.findByRole('button', { name: '7 ngày' });
+  expect(screen.queryByRole('link', { name: 'Khách hàng tiềm năng' })).not.toBeInTheDocument();
+});
+
+test('navigating the old /broker/leads route falls back to the dashboard title, not the removed funnel page', async () => {
+  render(<BrokerDashboard session={session} section="leads" currentPath="/broker/leads" />);
+  // The page's <h1> renders brokerTitle(section) unconditionally (not gated by section),
+  // unlike the date-range filter button, which only exists when section === 'dashboard' —
+  // await the heading, not '7 ngày', or this would hang for a non-dashboard section.
+  await screen.findByRole('heading', { name: 'Bảng điều khiển' });
+  expect(screen.queryByText('Phễu khách hàng tiềm năng')).not.toBeInTheDocument();
+  expect(screen.queryByText('Lead mới cần xử lý')).not.toBeInTheDocument();
+});
