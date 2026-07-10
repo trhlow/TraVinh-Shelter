@@ -515,7 +515,9 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
               </div>
 
               <div className="dashboard-charts-row">
-                <WardBarChart title="Tin đăng theo phường" data={wardChart} />
+                <div className="dashboard-chart-span-2">
+                  <WardBarChart title="Tin đăng theo phường" data={wardChart} />
+                </div>
                 <DashboardPanel title="Lịch hẹn sắp tới" count={viewingsLoading ? 'Đang tải' : `${upcomingViewings.length} lịch`}>
                   <UpcomingViewingsSummary viewings={upcomingViewings} loading={viewingsLoading} />
                 </DashboardPanel>
