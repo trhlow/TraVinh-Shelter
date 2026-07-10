@@ -355,7 +355,10 @@ test('TrendBarLineChart renders a narrow viewBox and CSS width for a single data
   // TREND_LEFT_MARGIN(10) + 1 * TREND_COLUMN_UNIT_WIDTH(6) + TREND_RIGHT_MARGIN(4) = 20
   expect(svg.getAttribute('viewBox')).toBe('0 0 20 50');
   // idealWidthPx = 20 * TREND_PX_PER_UNIT(7) = 140px
-  expect(svg.style.getPropertyValue('--trend-chart-width')).toBe('140px');
+  // --trend-chart-width lives on the shared .chart-panel ancestor (not the svg itself) so
+  // the sibling rotated-labels row (see the rotateLabels tests below) can inherit it too.
+  const panel = container.querySelector('.chart-panel');
+  expect(panel.style.getPropertyValue('--trend-chart-width')).toBe('140px');
 });
 
 test('TrendBarLineChart scales the viewBox and CSS width up as real data points grow', () => {
@@ -366,7 +369,8 @@ test('TrendBarLineChart scales the viewBox and CSS width up as real data points 
   // 10 + 12*6 + 4 = 86
   expect(svg.getAttribute('viewBox')).toBe('0 0 86 50');
   // 86 * 7 = 602px
-  expect(svg.style.getPropertyValue('--trend-chart-width')).toBe('602px');
+  const panel = container.querySelector('.chart-panel');
+  expect(panel.style.getPropertyValue('--trend-chart-width')).toBe('602px');
 });
 
 test('TrendBarLineChart with rotateLabels renders an HTML label row instead of in-SVG text, one rotated span per data point', () => {

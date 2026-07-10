@@ -931,6 +931,7 @@
 
 .trend-chart-labels-row {
   display: flex;
+  width: min(100%, var(--trend-chart-width));
   margin-top: 6px;
 }
 

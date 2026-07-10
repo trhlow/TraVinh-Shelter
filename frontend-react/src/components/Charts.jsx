@@ -734,7 +734,7 @@ export function TrendBarLineChart({ title, subtitle, data, currentLabel = 'Hiệ
   }));
 
   return (
-    <section className="chart-panel">
+    <section className="chart-panel" style={{ '--trend-chart-width': `${idealWidthPx}px` }}>
       <div className="chart3d-header">
         <div>
           <h2 className="chart-title">{title}</h2>
@@ -747,7 +747,6 @@ export function TrendBarLineChart({ title, subtitle, data, currentLabel = 'Hiệ
         preserveAspectRatio="none"
         role="img"
         aria-label={title}
-        style={{ '--trend-chart-width': `${idealWidthPx}px` }}
       >
         <line x1={left} y1={top} x2={left} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
         <line x1={left} y1={bottom} x2={right} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
@@ -774,7 +773,7 @@ export function TrendBarLineChart({ title, subtitle, data, currentLabel = 'Hiệ
         ))}
       </svg>
       {rotateLabels && (
-        <div className="trend-chart-labels-row" style={{ width: `min(100%, var(--trend-chart-width))` }}>
+        <div className="trend-chart-labels-row">
           {points.map((p) => (
             <div key={`x-label-cell-${p.point.label}`} className="trend-chart-label-cell">
               <span className="trend-chart-label-rotated">{p.point.label}</span>
