@@ -141,3 +141,12 @@ test('broker overview stat row shows only the 2 real KPIs, no fabricated Lượt
   expect(screen.getByText('Tin đăng đang hoạt động')).toBeInTheDocument();
   expect(screen.getByText('Lịch hẹn xác nhận tháng này')).toBeInTheDocument();
 });
+
+test('recent listings table no longer shows fabricated Lượt xem/Liên hệ columns', async () => {
+  render(<BrokerDashboard session={session} section="dashboard" currentPath="/broker/dashboard" />);
+  await screen.findByText('Nhà phố Long Đức');
+
+  expect(screen.queryByText('Lượt xem')).not.toBeInTheDocument();
+  expect(screen.queryByText('Liên hệ')).not.toBeInTheDocument();
+  expect(screen.getByText('Bất động sản')).toBeInTheDocument();
+});

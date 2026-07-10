@@ -885,8 +885,6 @@ function RecentListings({ listings, loading }) {
             <th>Bất động sản</th>
             <th>Loại</th>
             <th>Trạng thái</th>
-            <th>Lượt xem</th>
-            <th>Liên hệ</th>
             <th>Thao tác</th>
           </tr>
         </thead>
@@ -904,8 +902,6 @@ function RecentListings({ listings, loading }) {
               </td>
               <td>{categoryLabel(listing.category)}</td>
               <td><StatusBadge tone={listingStatusTone(listing)}>{listing.statusLabel}</StatusBadge></td>
-              <td><span className="dashboard-table-name">{listingViews(listing)}</span></td>
-              <td><span className="dashboard-table-name">{listingContacts(listing)}</span></td>
               <td>
                 <div className="dashboard-row-actions">
                   <a className="dashboard-icon-link" href="#/broker/properties" aria-label={`Sửa ${listing.title}`}>
@@ -981,7 +977,6 @@ function ListingRow({ listing, onEdit, onDelete, onStatus, saving }) {
         <p className="dashboard-listing-price">{listing.priceLabel}</p>
         <div className="dashboard-listing-meta">
           <span>{listing.area || 0}m²</span>
-          <span>{listingViews(listing)} lượt xem</span>
         </div>
       </div>
       <div className="dashboard-listing-actions">
@@ -1068,14 +1063,6 @@ function toFormCategory(category) {
   if (category === 'land' || category === 'dat') return 'dat';
   if (category === 'house' || category === 'nha' || category === 'apartment') return 'nha';
   return 'tro';
-}
-
-function listingViews(listing) {
-  return Math.max(32, String(listing.title || '').length * 3);
-}
-
-function listingContacts(listing) {
-  return Math.max(1, Math.round(listingViews(listing) / 18));
 }
 
 function buildActivitySeries(listings, viewings) {
