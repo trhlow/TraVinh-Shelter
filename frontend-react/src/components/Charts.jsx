@@ -200,34 +200,6 @@ export function ThreeDDonutChart({ title, subtitle, data, centerLabel = 'tổng'
   );
 }
 
-export function ThreeDFunnelChart({ title, subtitle, data }) {
-  const [mode, setMode] = useState('3d');
-  const max = Math.max(...data.map((item) => item.value), 1);
-
-  return (
-    <ThreeDChartPanel title={title} subtitle={subtitle} mode={mode} onModeChange={setMode}>
-      <div className="chart3d-funnel" role="img" aria-label={title}>
-        {data.map((item, index) => {
-          const width = Math.max(34, (item.value / max) * 100);
-          return (
-            <div className="chart3d-funnel-row" key={item.label}>
-              <span
-                className="chart3d-funnel-segment"
-                style={{
-                  width: `${width}%`,
-                  '--segment-color': item.color || CHART_PALETTE[index % CHART_PALETTE.length],
-                }}
-              >
-                <span className="chart3d-funnel-label">{item.label}</span>
-                <span className="chart3d-funnel-value">{formatChartNumber(item.value)}</span>
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </ThreeDChartPanel>
-  );
-}
 
 export function ThreeDAreaChart({ title, subtitle, series, unit = '' }) {
   const [mode, setMode] = useState('3d');
