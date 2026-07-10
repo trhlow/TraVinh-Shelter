@@ -734,7 +734,7 @@ img { display: block; max-width: 100%; }
 .hero {
   position: relative;
   overflow: hidden;
-  background: #0f1c17;
+  background: var(--color-canvas);
   padding: 0;
   border-bottom: none;
 }
@@ -848,7 +848,7 @@ img { display: block; max-width: 100%; }
   align-items: center;
   gap: 8px;
   font-size: 13.5px;
-  color: #5a655e;
+  color: var(--color-muted);
   font-weight: 500;
 }
 
