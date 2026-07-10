@@ -496,9 +496,9 @@
   flex-shrink: 0;
 }
 
-.kpi-chip-navy   { background: #eef3ee; color: var(--color-primary); }
+.kpi-chip-navy   { background: color-mix(in srgb, var(--color-primary), transparent 84%); color: var(--color-primary); }
 .kpi-chip-orange { background: rgba(217, 119, 6, 0.10); color: var(--color-warning); }
-.kpi-chip-green  { background: #eef3ee; color: var(--color-primary); }
+.kpi-chip-green  { background: color-mix(in srgb, var(--color-primary), transparent 84%); color: var(--color-primary); }
 .kpi-chip-red    { background: rgba(220, 38, 38, 0.10); color: var(--color-error); }
 .kpi-chip-muted  { background: var(--color-surface-strong); color: var(--color-muted); }
 
