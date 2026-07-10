@@ -131,3 +131,13 @@ test('navigating the old /broker/leads route falls back to the dashboard title, 
   expect(screen.queryByText('Phễu khách hàng tiềm năng')).not.toBeInTheDocument();
   expect(screen.queryByText('Lead mới cần xử lý')).not.toBeInTheDocument();
 });
+
+test('broker overview stat row shows only the 2 real KPIs, no fabricated Lượt xem/Leads cards', async () => {
+  render(<BrokerDashboard session={session} section="dashboard" currentPath="/broker/dashboard" />);
+  await screen.findByText('Tin đăng đang hoạt động');
+
+  expect(screen.queryByText('Lượt xem trong tuần')).not.toBeInTheDocument();
+  expect(screen.queryByText('Leads mới')).not.toBeInTheDocument();
+  expect(screen.getByText('Tin đăng đang hoạt động')).toBeInTheDocument();
+  expect(screen.getByText('Lịch hẹn xác nhận tháng này')).toBeInTheDocument();
+});

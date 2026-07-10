@@ -145,13 +145,10 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
     const totalListings = rangedListings.length || (unbounded ? stats.totalListings : 0) || 0;
     const activeListings = rangedListings.filter(isAvailableListing).length || (unbounded ? stats.activeListings : 0) || 0;
     const pendingListings = rangedListings.filter(isPendingListing).length;
-    const estimatedViews = rangedListings.reduce((sum, listing) => sum + listingViews(listing), 0);
     return {
       totalListings,
       activeListings,
       pendingListings,
-      estimatedViews,
-      leads: stats.pendingLeads || Math.max(0, totalListings * 2),
     };
   }, [rangedListings, stats, listingRange]);
 
@@ -162,18 +159,10 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
     prevListingRange ? listings.filter((listing) => isInRange(listing.createdAt, prevListingRange)) : null
   ), [listings, prevListingRange]);
 
-  const totalListingsDelta = prevRangedListings ? percentDelta(dashboardStats.totalListings, prevRangedListings.length) : null;
   const activeListingsDelta = prevRangedListings
     ? percentDelta(dashboardStats.activeListings, prevRangedListings.filter(isAvailableListing).length)
     : null;
-  const leadsDelta = prevRangedListings
-    ? percentDelta(dashboardStats.leads, Math.max(0, prevRangedListings.length * 2))
-    : null;
 
-  const totalListingsSparkline = useMemo(
-    () => buildDailySeries(rangedListings, (listing) => listing.createdAt, 7).map((bucket) => bucket.count),
-    [rangedListings],
-  );
   const activeListingsSparkline = useMemo(
     () => buildDailySeries(rangedListings.filter(isAvailableListing), (listing) => listing.createdAt, 7).map((bucket) => bucket.count),
     [rangedListings],
@@ -491,10 +480,8 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                 />
               </div>
 
-              <div className="grid-4 dashboard-stats-row">
+              <div className="grid-2 dashboard-stats-row">
                 <StatCard icon="Building" title="Tin đăng đang hoạt động" value={dashboardStats.activeListings} tone="navy" trend={trendFor(activeListingsDelta)} series={activeListingsSparkline} />
-                <StatCard icon="Eye" title="Lượt xem trong tuần" value={dashboardStats.estimatedViews} tone="green" trend={trendFor(totalListingsDelta)} series={totalListingsSparkline} />
-                <StatCard icon="Users" title="Leads mới" value={dashboardStats.leads} tone="orange" trend={trendFor(leadsDelta)} series={totalListingsSparkline} />
                 <StatCard icon="CalendarCheck" title="Lịch hẹn xác nhận tháng này" value={confirmedViewingsThisMonth} tone="navy" />
               </div>
 
