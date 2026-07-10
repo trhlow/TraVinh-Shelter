@@ -33,6 +33,10 @@ export default function OverviewSection({ data, loading, actions }) {
     && (category === 'all' || property.category === category)
   )) : null), [properties, prevRange, ward, category]);
 
+  const filteredViewings = useMemo(() => viewings.filter((viewing) => (
+    isInRange(viewing.createdAt || viewing.requestedAt, range)
+  )), [viewings, range]);
+
   const activeBrokers = useMemo(() => brokers.filter(isActiveAccount).length, [brokers]);
   const confirmedViewingsThisMonth = useMemo(() => {
     const now = new Date();
@@ -52,7 +56,7 @@ export default function OverviewSection({ data, loading, actions }) {
     {
       icon: 'Building',
       title: 'Tổng số tin đăng',
-      value: properties.length,
+      value: filteredProperties.length,
       tone: 'navy',
       trend: prevProperties ? percentDelta(filteredProperties.length, prevProperties.length) : null,
       series: totalListingsSparkline,
@@ -62,7 +66,7 @@ export default function OverviewSection({ data, loading, actions }) {
   ];
 
   const systemActivityData = useMemo(() => buildSystemActivitySeries(properties, viewings), [properties, viewings]);
-  const recentAuditItems = useMemo(() => buildAuditItems({ users, properties, viewings }).slice(0, 5), [users, properties, viewings]);
+  const recentAuditItems = useMemo(() => buildAuditItems({ users, properties: filteredProperties, viewings: filteredViewings }).slice(0, 5), [users, filteredProperties, filteredViewings]);
 
   const exportOverview = () => {
     downloadCsv('bao-cao-tong-quan.csv', kpis.map((kpi) => ({ metric: kpi.title, value: kpi.value })), [

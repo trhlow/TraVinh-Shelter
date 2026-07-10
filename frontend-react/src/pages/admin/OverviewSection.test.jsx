@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import OverviewSection from './OverviewSection.jsx';
 
 beforeEach(() => {
@@ -50,4 +50,51 @@ test('system activity chart trims months before the platform had any real data',
   const stage = screen.getByRole('img', { name: 'Hoạt động hệ thống theo tháng' });
   const monthLabels = within(stage).getAllByText(/^T\d{1,2}$/);
   expect(monthLabels).toHaveLength(1);
+});
+
+test('Tổng số tin đăng KPI value narrows when a date preset excludes older listings', () => {
+  const now = new Date();
+  const mixedAgeData = {
+    users: [],
+    brokers: [],
+    properties: [
+      { id: 'p1', title: 'Mới', ward: 'phuong-tra-vinh', category: 'tro', rawStatus: 'AVAILABLE', createdAt: now.toISOString() },
+      { id: 'p2', title: 'Cũ', ward: 'phuong-tra-vinh', category: 'tro', rawStatus: 'AVAILABLE', createdAt: '2020-01-01T00:00:00Z' },
+    ],
+    viewings: [],
+  };
+  render(<OverviewSection data={mixedAgeData} loading={false} />);
+
+  // Scope to the KPI link itself — "Tổng bài đăng" in the system-status panel below
+  // legitimately keeps showing the unfiltered total ('2') by design, so an unscoped
+  // screen.getByText('2') would still pass even if the KPI value itself were still buggy.
+  const kpiLink = () => screen.getByRole('link', { name: /Tổng số tin đăng/ });
+
+  // 'Tất cả' (default preset) counts both listings.
+  expect(within(kpiLink()).getByText('2')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: '7 ngày' }));
+
+  // narrowed to the last 7 days: only the just-created listing counts, the 2020 one is excluded.
+  expect(within(kpiLink()).getByText('1')).toBeInTheDocument();
+  expect(within(kpiLink()).queryByText('2')).not.toBeInTheDocument();
+});
+
+test('audit widget only shows properties/viewings inside the selected date range', () => {
+  const now = new Date();
+  const mixedAgeData = {
+    users: [],
+    brokers: [],
+    properties: [
+      { id: 'p1', title: 'Tin mới trong tuần', ward: 'phuong-tra-vinh', category: 'tro', rawStatus: 'AVAILABLE', createdAt: now.toISOString(), updatedAt: now.toISOString() },
+      { id: 'p2', title: 'Tin rất cũ', ward: 'phuong-tra-vinh', category: 'tro', rawStatus: 'AVAILABLE', createdAt: '2020-01-01T00:00:00Z', updatedAt: '2020-01-01T00:00:00Z' },
+    ],
+    viewings: [],
+  };
+  render(<OverviewSection data={mixedAgeData} loading={false} />);
+
+  fireEvent.click(screen.getByRole('button', { name: '7 ngày' }));
+
+  expect(screen.getByText(/Tin mới trong tuần/)).toBeInTheDocument();
+  expect(screen.queryByText(/Tin rất cũ/)).not.toBeInTheDocument();
 });
