@@ -929,6 +929,28 @@
   flex-shrink: 0;
 }
 
+.trend-chart-labels-row {
+  display: flex;
+  margin-top: 6px;
+}
+
+.trend-chart-label-cell {
+  flex: 1 1 0;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.trend-chart-label-rotated {
+  display: inline-block;
+  transform: rotate(-35deg);
+  transform-origin: center top;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--color-muted);
+  margin-top: 4px;
+}
+
 .combo-bar-group {
   cursor: pointer;
 }

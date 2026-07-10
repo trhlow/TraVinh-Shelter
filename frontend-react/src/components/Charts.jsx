@@ -700,7 +700,7 @@ const TREND_COLUMN_UNIT_WIDTH = 6;
 const TREND_RIGHT_MARGIN = 4;
 const TREND_PX_PER_UNIT = 7;
 
-export function TrendBarLineChart({ title, subtitle, data, currentLabel = 'Hiện tại', previousLabel = 'So sánh' }) {
+export function TrendBarLineChart({ title, subtitle, data, currentLabel = 'Hiện tại', previousLabel = 'So sánh', rotateLabels = false }) {
   const { top, bottom } = COMBO_CHART_PLOT;
   const left = TREND_LEFT_MARGIN;
   const viewBoxWidth = TREND_LEFT_MARGIN + data.length * TREND_COLUMN_UNIT_WIDTH + TREND_RIGHT_MARGIN;
@@ -767,12 +767,21 @@ export function TrendBarLineChart({ title, subtitle, data, currentLabel = 'Hiệ
           <circle key={`dot-${p.point.label}`} cx={p.columnCenterX} cy={p.lineY} r="1" fill={lineColor} />
         ))}
 
-        {points.map((p) => (
+        {!rotateLabels && points.map((p) => (
           <text key={`x-label-${p.point.label}`} x={p.columnCenterX} y={bottom + 4} textAnchor="middle" fontSize="3" fill="var(--color-muted)">
             {p.point.label}
           </text>
         ))}
       </svg>
+      {rotateLabels && (
+        <div className="trend-chart-labels-row" style={{ width: `min(100%, var(--trend-chart-width))` }}>
+          {points.map((p) => (
+            <div key={`x-label-cell-${p.point.label}`} className="trend-chart-label-cell">
+              <span className="trend-chart-label-rotated">{p.point.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="combo-chart-legend">
         <span className="combo-chart-legend-item">
           <span className="combo-chart-legend-swatch" style={{ backgroundColor: barColor }} />

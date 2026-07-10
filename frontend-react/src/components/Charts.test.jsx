@@ -368,3 +368,31 @@ test('TrendBarLineChart scales the viewBox and CSS width up as real data points 
   // 86 * 7 = 602px
   expect(svg.style.getPropertyValue('--trend-chart-width')).toBe('602px');
 });
+
+test('TrendBarLineChart with rotateLabels renders an HTML label row instead of in-SVG text, one rotated span per data point', () => {
+  const data = [
+    { label: 'T.H.Long', current: 3, previous: 1 },
+    { label: 'N.V.Toàn', current: 5, previous: 2 },
+    { label: 'T.M.Linh', current: 2, previous: 0 },
+  ];
+  const { container } = render(<TrendBarLineChart title="Top môi giới" data={data} rotateLabels />);
+
+  const stage = screen.getByRole('img', { name: 'Top môi giới' });
+  // no in-SVG text labels for the data points when rotateLabels is on
+  expect(within(stage).queryByText('T.H.Long')).not.toBeInTheDocument();
+
+  const labelsRow = container.querySelector('.trend-chart-labels-row');
+  expect(labelsRow).toBeInTheDocument();
+  const rotatedSpans = within(labelsRow).getAllByText(/^(T\.H\.Long|N\.V\.Toàn|T\.M\.Linh)$/);
+  expect(rotatedSpans).toHaveLength(3);
+  rotatedSpans.forEach((span) => expect(span).toHaveClass('trend-chart-label-rotated'));
+});
+
+test('TrendBarLineChart without rotateLabels keeps rendering in-SVG text labels (default unchanged)', () => {
+  const data = [{ label: 'T1', current: 3, previous: 1 }];
+  const { container } = render(<TrendBarLineChart title="Test" data={data} />);
+
+  expect(container.querySelector('.trend-chart-labels-row')).not.toBeInTheDocument();
+  const stage = screen.getByRole('img', { name: 'Test' });
+  expect(within(stage).getByText('T1')).toBeInTheDocument();
+});
