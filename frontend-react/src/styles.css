@@ -1509,7 +1509,7 @@ img { display: block; max-width: 100%; }
 
 .dashboard-live-row {
   display: grid;
-  grid-template-columns: 3fr 2fr;
+  grid-template-columns: 1fr;
   gap: 20px;
   margin-bottom: 24px;
 }
@@ -1524,7 +1524,6 @@ img { display: block; max-width: 100%; }
 }
 
 @media (max-width: 1024px) {
-  .dashboard-live-row { grid-template-columns: 1fr; }
   .dashboard-topbar-title { display: none; }
 }
 
