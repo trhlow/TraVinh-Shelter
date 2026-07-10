@@ -1492,6 +1492,14 @@ img { display: block; max-width: 100%; }
   .dashboard-charts-row { grid-template-columns: 1fr; }
 }
 
+.dashboard-chart-span-2 {
+  grid-column: span 2;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-chart-span-2 { grid-column: span 1; }
+}
+
 .dashboard-ward-density-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

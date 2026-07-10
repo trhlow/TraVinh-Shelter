@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
-import ReportsSection from './ReportsSection.jsx';
+import ReportsSection, { shortName } from './ReportsSection.jsx';
 
 beforeEach(() => {
   window.location.hash = '#/admin/reports';
@@ -16,6 +16,31 @@ const data = {
     { id: 'p1', title: 'A', ward: 'phuong-tra-vinh', category: 'tro', rawStatus: 'AVAILABLE', createdAt: '2026-06-30T00:00:00Z', broker: { id: 'b1' } },
   ],
 };
+
+test('shortName uses initials of all but the last word, plus the full last word', () => {
+  expect(shortName('Trần Hoàng Long')).toBe('T.H.Long');
+  expect(shortName('Nguyễn Văn Toàn')).toBe('N.V.Toàn');
+  expect(shortName('Trần Mỹ Linh')).toBe('T.M.Linh');
+});
+
+test('shortName returns a single-word name as-is, with no dots added', () => {
+  expect(shortName('Toàn')).toBe('Toàn');
+});
+
+test('broker-activity chart spans 2 of the 3 grid columns and uses rotated labels', () => {
+  const activityData = {
+    users: [],
+    brokers: [{ id: 'b1', fullName: 'Nguyễn Văn A', status: 'ACTIVE' }],
+    properties: [
+      { id: 'p1', title: 'A', ward: 'phuong-tra-vinh', category: 'tro', rawStatus: 'AVAILABLE', createdAt: '2026-06-30T00:00:00Z', broker: { id: 'b1' } },
+    ],
+    viewings: [],
+  };
+  const { container } = render(<ReportsSection data={activityData} loading={false} />);
+
+  expect(container.querySelector('.dashboard-chart-span-2')).toBeInTheDocument();
+  expect(container.querySelector('.trend-chart-labels-row')).toBeInTheDocument();
+});
 
 test('renders growth, distribution, density, and broker performance charts', () => {
   render(<ReportsSection data={data} loading={false} />);

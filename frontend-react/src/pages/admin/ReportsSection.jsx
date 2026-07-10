@@ -89,13 +89,16 @@ export default function ReportsSection({ data }) {
       </div>
 
       <div className="dashboard-charts-row">
-        <TrendBarLineChart
-          title="Top môi giới theo hoạt động"
-          subtitle="Xếp hạng theo tổng số tin đăng và lịch hẹn đã xác nhận"
-          data={topBrokerData}
-          currentLabel="Tin đăng"
-          previousLabel="Lịch hẹn xác nhận"
-        />
+        <div className="dashboard-chart-span-2">
+          <TrendBarLineChart
+            title="Top môi giới theo hoạt động"
+            subtitle="Xếp hạng theo tổng số tin đăng và lịch hẹn đã xác nhận"
+            data={topBrokerData}
+            currentLabel="Tin đăng"
+            previousLabel="Lịch hẹn xác nhận"
+            rotateLabels
+          />
+        </div>
         <BrokerPerformancePanel brokers={brokers} properties={properties} viewings={viewings} />
       </div>
     </>
@@ -195,7 +198,9 @@ function sameMonth(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
 }
 
-function shortName(name) {
+export function shortName(name) {
   const parts = String(name || 'MG').trim().split(/\s+/);
-  return parts.slice(-2).join(' ') || name;
+  if (parts.length <= 1) return parts[0] || name;
+  const initials = parts.slice(0, -1).map((part) => part[0].toUpperCase()).join('.');
+  return `${initials}.${parts[parts.length - 1]}`;
 }
