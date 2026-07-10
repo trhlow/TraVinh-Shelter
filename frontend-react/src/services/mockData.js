@@ -248,7 +248,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const WARD_CYCLE = ['phuong-tra-vinh', 'phuong-long-duc', 'phuong-nguyet-hoa', 'phuong-hoa-thuan'];
 const CATEGORY_CYCLE = ['tro', 'nha', 'dat'];
 const STATUS_CYCLE = ['AVAILABLE', 'AVAILABLE', 'RENTED', 'AVAILABLE', 'RENTED', 'SOLD', 'AVAILABLE', 'HIDDEN'];
-const MOCK_NOW = Date.UTC(2026, 6, 1); // fixed so tests stay deterministic
+const MOCK_NOW = Date.now(); // real-time anchor so date-range presets stay meaningful whenever this runs
 
 function statusLabelOf(status) {
   return {
