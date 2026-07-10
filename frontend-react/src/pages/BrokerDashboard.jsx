@@ -510,7 +510,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                 />
                 <ThreeDDonutChart
                   title="Loại hình BĐS đang quản lý"
-                  subtitle="Nhà phố, đất nền, căn hộ và tin cho thuê"
+                  subtitle="Trọ, nhà và đất đang quản lý"
                   data={managedTypeData}
                   centerLabel="tin"
                 />
