@@ -113,7 +113,6 @@ export async function fetchBrokerDashboard(token) {
   return {
     activeListings: listings.filter((item) => item.rawStatus === 'AVAILABLE').length,
     totalListings: listings.length,
-    pendingLeads: Math.max(0, listings.length * 2),
     listings,
   };
 }

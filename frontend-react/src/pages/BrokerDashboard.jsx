@@ -61,7 +61,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   const [profileForm, setProfileForm] = useState({ fullName: '', phone: '', facebookUrl: '', tiktokUrl: '' });
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState('');
-  const [stats, setStats] = useState({ activeListings: 0, totalListings: 0, pendingLeads: 0, listings: [] });
+  const [stats, setStats] = useState({ activeListings: 0, totalListings: 0, listings: [] });
   const [listingForm, setListingForm] = useState(EMPTY_FORM);
   const [listingQuery, setListingQuery] = useState('');
   const [listingStatusTab, setListingStatusTab] = useState('AVAILABLE');

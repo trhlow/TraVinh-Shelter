@@ -12,7 +12,6 @@ vi.mock('../services/api.js', () => ({
   fetchBrokerDashboard: vi.fn().mockResolvedValue({
     activeListings: 2,
     totalListings: 2,
-    pendingLeads: 3,
     listings: [
       {
         id: 'l1', title: 'Nhà phố Long Đức', address: 'Phường Long Đức, TP. Trà Vinh',

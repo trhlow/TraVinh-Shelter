@@ -283,8 +283,6 @@ export const MOCK_PROPERTIES = RAW_MOCK_PROPERTIES.flatMap((item, rawIndex) => (
 
 export const BROKER_DASHBOARD = {
   activeListings: 18,
-  pendingLeads: 7,
-  conversion: '22%',
 };
 
 export const MOCK_USERS = [
