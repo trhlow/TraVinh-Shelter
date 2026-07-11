@@ -17,6 +17,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.ObjectProvider;
@@ -35,7 +36,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -127,11 +130,21 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
-    @Bean PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        String defaultEncoderId = "argon2";
+        Map<String, PasswordEncoder> encoders = new HashMap<>();
+        encoders.put(defaultEncoderId, Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8());
+        encoders.put("bcrypt", new BCryptPasswordEncoder());
+        DelegatingPasswordEncoder delegatingPasswordEncoder = new DelegatingPasswordEncoder(defaultEncoderId, encoders);
+        delegatingPasswordEncoder.setDefaultPasswordEncoderForMatches(new BCryptPasswordEncoder());
+        return delegatingPasswordEncoder;
+    }
     @Bean
     AuthenticationProvider authenticationProvider(JpaUserDetailsService users, PasswordEncoder encoder) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(users);
         provider.setPasswordEncoder(encoder);
+        provider.setUserDetailsPasswordService(users);
         return provider;
     }
     @Bean AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
