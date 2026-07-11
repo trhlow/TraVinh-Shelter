@@ -6,6 +6,8 @@ import org.springframework.security.core.userdetails.UserDetailsPasswordService;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class JpaUserDetailsService implements UserDetailsService, UserDetailsPasswordService {
@@ -17,6 +19,7 @@ public class JpaUserDetailsService implements UserDetailsService, UserDetailsPas
                 .orElseThrow(() -> new UsernameNotFoundException("Invalid email or password"));
     }
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public UserDetails updatePassword(UserDetails user, String newPassword) {
         com.travinh.realty.modules.user.model.User entity = userRepository.findByEmail(user.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("Invalid email or password"));

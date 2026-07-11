@@ -109,7 +109,9 @@ public class BookingService {
 
     /**
      * Broker-scoped status update: only the broker who owns the property may change the status.
-     * Throws 403 FORBIDDEN if the appointment's property does not belong to the given broker.
+     * Throws 404 NOT_FOUND (not 403) if the appointment's property does not belong to the given
+     * broker — intentional, matches the true-not-found case, to prevent resource enumeration via
+     * ownership probing.
      */
     @Transactional
     public ViewingResponse updateStatusForBrokerOwner(UUID appointmentId, AppointmentStatus status, UUID brokerId) {

@@ -165,7 +165,8 @@ class BookingHttpTest {
         mockMvc.perform(patch("/viewings/mine/{id}/status", appointmentId)
                         .header("Authorization", bearer(broker))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"CONFIRMED\"}"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Appointment not found"));
     }
 
     @Test
