@@ -102,13 +102,6 @@
     width: 100%;
     height: 48px;
     border-radius: var(--radius-sm);
-    gap: 8px;
-  }
-
-  .search-pill-orb::after {
-    content: 'Tìm kiếm';
-    font-size: 15px;
-    font-weight: 600;
   }
 }
 
@@ -228,20 +221,9 @@
   color: var(--color-muted);
 }
 
-/* ============================================================
-   SEARCH PILL ORB TEXT
-   ============================================================ */
-.search-pill-orb {
-  gap: 8px;
-}
-
-.search-pill-orb-text {
-  font-size: 15px;
-  font-weight: 600;
-}
-
-@media (max-width: 880px) {
-  .search-pill-orb-text { display: none; }
+.tro-showcase-card-skeleton {
+  flex: 0 0 260px;
+  aspect-ratio: 1 / 1.35;
 }
 
 /* ============================================================

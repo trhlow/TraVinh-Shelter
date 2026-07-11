@@ -128,7 +128,6 @@ function HeroSearchBar() {
       <div className="search-pill-orb-wrap">
         <button type="submit" className="search-pill-orb" aria-label="Tìm kiếm">
           <Icon name="Search" size={19} />
-          <span className="search-pill-orb-text">Tìm kiếm</span>
         </button>
       </div>
     </form>
@@ -147,9 +146,9 @@ function SectionEyebrow({ text }) {
 
 export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
   const [properties, setProperties] = useState(featuredProperties);
-  const [troProperties, setTroProperties] = useState([]);
-  const [nhaProperties, setNhaProperties] = useState([]);
-  const [datProperties, setDatProperties] = useState([]);
+  const [troProperties, setTroProperties] = useState(null);
+  const [nhaProperties, setNhaProperties] = useState(null);
+  const [datProperties, setDatProperties] = useState(null);
 
   useEffect(() => {
     let alive = true;
@@ -187,7 +186,7 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
             <div className="hero-content">
               <div className="hero-badge">
                 <span className="hero-badge-dot" />
-                Bất động sản Trà Vinh · Vĩnh Long · Bến Tre
+                Bất động sản Trà Vinh
               </div>
               <h1 className="hero-headline">
                 Tìm ngôi nhà mơ ước<br />của bạn tại Trà Vinh
@@ -258,7 +257,8 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
       {/* 4. CATEGORY SHOWCASE ROWS — Trọ / Nhà / Đất */}
       {SHOWCASE_ROWS.map(({ slug, title, subtitle }, index) => {
         const items = rowItems[slug];
-        if (items.length === 0) return null;
+        const isLoading = items === null;
+        if (!isLoading && items.length === 0) return null;
         return (
           <section key={slug} className={index % 2 === 0 ? 'section' : 'section-subtle'}>
             <div className="container">
@@ -272,9 +272,13 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
                 </a>
               </div>
               <div className="tro-showcase-row">
-                {items.map(property => (
-                  <TroShowcaseCard key={property.id || property.title} property={property} />
-                ))}
+                {isLoading
+                  ? Array.from({ length: 4 }, (_, i) => (
+                      <div key={i} className="skeleton tro-showcase-card-skeleton" aria-hidden="true" />
+                    ))
+                  : items.map(property => (
+                      <TroShowcaseCard key={property.id || property.title} property={property} />
+                    ))}
               </div>
             </div>
           </section>

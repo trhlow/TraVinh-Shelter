@@ -88,18 +88,18 @@
 
   --color-primary-disabled: #0f3a2a;
 
-  --color-canvas:           #0f1c17;
-  --color-surface-soft:     #162a21;
-  --color-surface-strong:   #1e352b;
+  --color-canvas:           #121212;
+  --color-surface-soft:     #1c1c1c;
+  --color-surface-strong:   #262626;
 
   --color-ink:              #f2f4f0;
   --color-body:             #c8d0ca;
   --color-muted:            #8a938d;
   --color-muted-soft:       #5a655e;
 
-  --color-hairline:         #263830;
-  --color-hairline-soft:    #1e2e26;
-  --color-border-strong:    #3a4f44;
+  --color-hairline:         #333333;
+  --color-hairline-soft:    #2a2a2a;
+  --color-border-strong:    #525252;
 
   --color-success:          #4ade80;
   --color-success-bg:       #14532d;
