@@ -160,7 +160,7 @@ public class PropertyService {
     private Property findOwnedProperty(UUID propertyId, User broker) {
         Property property = findProperty(propertyId);
         if (!property.getBroker().getId().equals(broker.getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Property belongs to another broker");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found");
         }
         return property;
     }

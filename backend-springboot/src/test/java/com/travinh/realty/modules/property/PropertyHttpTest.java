@@ -193,8 +193,7 @@ class PropertyHttpTest {
 
         mockMvc.perform(patch("/properties/{id}/status", property.getId()).header("Authorization", bearer(other))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"RENTED\"}"))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.status").value(403));
+                .andExpect(status().isNotFound());
     }
 
     @Test

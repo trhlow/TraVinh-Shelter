@@ -154,18 +154,18 @@ class BookingHttpTest {
     }
 
     @Test
-    void brokerWhoDoesNotOwnViewingGets403() throws Exception {
+    void brokerWhoDoesNotOwnViewingGets404() throws Exception {
         UUID appointmentId = UUID.randomUUID();
         User broker = user("broker@example.com", UserRole.BROKER);
         authenticate(broker);
         when(bookingService.updateStatusForBrokerOwner(eq(appointmentId), any(), any()))
                 .thenThrow(new org.springframework.web.server.ResponseStatusException(
-                        org.springframework.http.HttpStatus.FORBIDDEN, "Not your appointment"));
+                        org.springframework.http.HttpStatus.NOT_FOUND, "Appointment not found"));
 
         mockMvc.perform(patch("/viewings/mine/{id}/status", appointmentId)
                         .header("Authorization", bearer(broker))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"CONFIRMED\"}"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
     }
 
     @Test

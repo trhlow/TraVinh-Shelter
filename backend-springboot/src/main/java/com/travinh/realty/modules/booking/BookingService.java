@@ -117,7 +117,7 @@ public class BookingService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found"));
         List<UUID> brokerPropertyIds = properties.findIdsByBrokerId(brokerId);
         if (!brokerPropertyIds.contains(appointment.getPropertyId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your appointment");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found");
         }
         appointment.changeStatus(status);
         return ViewingResponse.of(appointment);

@@ -117,7 +117,7 @@ public class MediaService {
         Property property = (lockForUpdate ? properties.findByIdForUpdate(propertyId) : properties.findById(propertyId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
         if (!property.getBroker().getId().equals(user.getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Property belongs to another broker");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found");
         }
         return property;
     }

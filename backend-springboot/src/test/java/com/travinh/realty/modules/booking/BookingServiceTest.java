@@ -233,7 +233,7 @@ class BookingServiceTest {
     }
 
     @Test
-    void updateStatusForBrokerOwner_nonOwnerGetsForbidden() {
+    void updateStatusForBrokerOwner_nonOwnerGetsNotFound() {
         UUID propertyId = UUID.randomUUID();
         UUID otherBrokerId = UUID.randomUUID();
         ViewingAppointment appointment = appointment(propertyId, AppointmentStatus.PENDING);
@@ -244,7 +244,7 @@ class BookingServiceTest {
 
         assertThatThrownBy(() -> service.updateStatusForBrokerOwner(appointment.getId(), AppointmentStatus.CONFIRMED, otherBrokerId))
                 .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("403");
+                .hasMessageContaining("404");
     }
 
     private CreateViewingRequest request() {

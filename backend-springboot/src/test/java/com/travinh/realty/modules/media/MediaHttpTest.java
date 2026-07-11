@@ -174,7 +174,7 @@ class MediaHttpTest {
         when(properties.findByIdForUpdate(property.getId())).thenReturn(Optional.of(property));
         mockMvc.perform(multipart("/properties/{propertyId}/media/images", property.getId()).file(file)
                         .header("Authorization", bearer(otherBroker)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
 
         authenticate(owner);
         when(users.findById(owner.getId())).thenReturn(Optional.of(owner));
