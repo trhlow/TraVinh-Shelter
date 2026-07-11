@@ -64,9 +64,11 @@ GET  /properties/**
 GET  /categories/**
 GET  /brokers/**
 GET  /media/**
-POST /auth/register
 POST /auth/login
 ```
+
+Không có `POST /auth/register` — tự đăng ký USER đã bị bỏ khỏi cả frontend lẫn backend (Pass 3). Tài
+khoản môi giới chỉ được tạo bởi admin (`AdminBrokerController`'s `POST /admin/brokers`).
 
 ### Mock credentials (khi VITE_USE_MOCK_API=true)
 
