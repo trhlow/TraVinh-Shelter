@@ -69,6 +69,10 @@ services:
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173}
       MEDIA_STORAGE_PATH: ${MEDIA_STORAGE_PATH:-/app/media}
       MEDIA_PUBLIC_URL_PREFIX: ${MEDIA_PUBLIC_URL_PREFIX:-/api/v1/media}
+      API_KEY_eSMS: ${API_KEY_eSMS:-}
+      ESMS_SECRET_KEY: ${ESMS_SECRET_KEY:-}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     volumes:
