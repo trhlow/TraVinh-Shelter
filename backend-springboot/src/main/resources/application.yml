@@ -76,6 +76,13 @@ app:
   security:
     trusted-proxies: ${TRUSTED_PROXIES:127.0.0.1/32,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
 
+esms:
+  api-key: ${API_KEY_eSMS:}
+  secret-key: ${ESMS_SECRET_KEY:}
+  api-url: https://rest.esms.vn/MainService.svc/json/SendMultipleMessage_V4_post_json/
+  brandname: ${ESMS_BRANDNAME:}
+  sms-type: ${ESMS_SMS_TYPE:2}
+
 springdoc:
   api-docs:
     path: /v3/api-docs
