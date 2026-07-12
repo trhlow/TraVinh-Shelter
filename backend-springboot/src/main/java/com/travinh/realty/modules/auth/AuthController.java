@@ -1,7 +1,10 @@
 package com.travinh.realty.modules.auth;
 
+import com.travinh.realty.common.dto.MessageResponse;
 import com.travinh.realty.modules.auth.dto.AuthResponse;
+import com.travinh.realty.modules.auth.dto.ForgotPasswordRequest;
 import com.travinh.realty.modules.auth.dto.LoginRequest;
+import com.travinh.realty.modules.auth.dto.ResetPasswordRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,7 +23,12 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Authentication", description = "Login and JWT session lifecycle")
 public class AuthController {
     private final AuthService authService;
-    public AuthController(AuthService authService) { this.authService = authService; }
+    private final PasswordResetService passwordResetService;
+
+    public AuthController(AuthService authService, PasswordResetService passwordResetService) {
+        this.authService = authService;
+        this.passwordResetService = passwordResetService;
+    }
 
     @PostMapping("/login")
     @Operation(summary = "Authenticate and return a JWT")
@@ -32,5 +40,17 @@ public class AuthController {
     @Operation(summary = "Revoke the current JWT", security = @SecurityRequirement(name = "bearerAuth"))
     public void logout(@RequestHeader("Authorization") String authorizationHeader) {
         authService.logout(authorizationHeader);
+    }
+
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Request a password reset OTP by email")
+    public MessageResponse forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        return passwordResetService.forgotPassword(request);
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Reset password using an emailed OTP")
+    public MessageResponse resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        return passwordResetService.resetPassword(request);
     }
 }
