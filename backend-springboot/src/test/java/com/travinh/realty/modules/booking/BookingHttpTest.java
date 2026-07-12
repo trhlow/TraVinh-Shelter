@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.travinh.realty.common.config.JwtProperties;
 import com.travinh.realty.common.config.SecurityConfig;
+import com.travinh.realty.common.dto.MessageResponse;
 import com.travinh.realty.common.exception.GlobalExceptionHandler;
 import com.travinh.realty.modules.admin.AuditService;
 import com.travinh.realty.modules.auth.security.JpaUserDetailsService;
@@ -47,10 +48,6 @@ import org.springframework.test.web.servlet.MockMvc;
         BookingHttpTest.JwtTestConfiguration.class})
 class BookingHttpTest {
     private static final String SECRET = "a-development-secret-that-is-at-least-thirty-two-characters-long";
-    private static final String PAYLOAD = """
-            {"roomLabel":"Phòng A","visitorName":"Nguyễn Văn A","visitorPhone":"0900000000",
-             "note":"Muốn xem","occupants":2}
-            """;
 
     @Autowired private MockMvc mockMvc;
     @Autowired private JwtService jwtService;
@@ -60,27 +57,56 @@ class BookingHttpTest {
     @MockitoBean private JpaMetamodelMappingContext jpaMappingContext;
 
     @Test
-    void publicCanSubmitViewingWithoutToken() throws Exception {
+    void publicCanRequestViewingOtpWithoutToken() throws Exception {
         UUID propertyId = UUID.randomUUID();
-        when(bookingService.create(eq(propertyId), any())).thenReturn(response(propertyId));
+        when(bookingService.requestOtp(eq(propertyId), any()))
+                .thenReturn(new MessageResponse("Mã OTP đã được gửi qua SMS."));
 
-        mockMvc.perform(post("/properties/{id}/viewings", propertyId)
-                        .contentType(MediaType.APPLICATION_JSON).content(PAYLOAD))
+        mockMvc.perform(post("/properties/{id}/viewings/request-otp", propertyId)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"visitorPhone\":\"0900000000\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Mã OTP đã được gửi qua SMS."));
+    }
+
+    @Test
+    void requestOtpWithInvalidPhoneReturnsBadRequest() throws Exception {
+        UUID propertyId = UUID.randomUUID();
+        mockMvc.perform(post("/properties/{id}/viewings/request-otp", propertyId)
+                        .header("X-Forwarded-For", "198.51.100.9")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"visitorPhone\":\"0123456789\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void publicCanVerifyOtpAndSubmitViewingWithoutToken() throws Exception {
+        UUID propertyId = UUID.randomUUID();
+        when(bookingService.verifyOtpAndCreate(eq(propertyId), any())).thenReturn(response(propertyId));
+
+        mockMvc.perform(post("/properties/{id}/viewings/verify-otp", propertyId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"booking":{"roomLabel":"Phòng A","visitorName":"Nguyễn Văn A","visitorPhone":"0900000000",
+                                 "note":"Muốn xem","occupants":2},"otpCode":"123456"}
+                                """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value("PENDING"))
                 .andExpect(jsonPath("$.visitorName").value("Nguyễn Văn A"));
     }
 
     @Test
-    void submitWithInvalidPhoneReturnsBadRequest() throws Exception {
+    void verifyOtpWithInvalidOtpReturnsBadRequest() throws Exception {
         UUID propertyId = UUID.randomUUID();
-        String badPhonePayload = """
-                {"visitorName":"Nguyễn Văn A","visitorPhone":"0123456789"}
-                """;
-        mockMvc.perform(post("/properties/{id}/viewings", propertyId)
-                        .header("X-Forwarded-For", "198.51.100.9")
-                        .contentType(MediaType.APPLICATION_JSON).content(badPhonePayload))
-                .andExpect(status().isBadRequest());
+        when(bookingService.verifyOtpAndCreate(eq(propertyId), any()))
+                .thenThrow(new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.BAD_REQUEST, "Mã OTP không hợp lệ hoặc đã hết hạn"));
+
+        mockMvc.perform(post("/properties/{id}/viewings/verify-otp", propertyId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"booking":{"visitorName":"Nguyễn Văn A","visitorPhone":"0900000000"},"otpCode":"000000"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Mã OTP không hợp lệ hoặc đã hết hạn"));
     }
 
     @Test
@@ -182,19 +208,19 @@ class BookingHttpTest {
     }
 
     @Test
-    void repeatedViewingSubmissionsAreRateLimited() throws Exception {
+    void repeatedViewingOtpRequestsAreRateLimited() throws Exception {
         UUID propertyId = UUID.randomUUID();
-        when(bookingService.create(any(), any())).thenReturn(response(propertyId));
+        when(bookingService.requestOtp(any(), any())).thenReturn(new MessageResponse("Mã OTP đã được gửi qua SMS."));
         for (int attempt = 0; attempt < 10; attempt++) {
-            mockMvc.perform(post("/properties/{id}/viewings", propertyId)
+            mockMvc.perform(post("/properties/{id}/viewings/request-otp", propertyId)
                             .header("X-Forwarded-For", "203.0.113.77")
-                            .contentType(MediaType.APPLICATION_JSON).content(PAYLOAD))
-                    .andExpect(status().isCreated());
+                            .contentType(MediaType.APPLICATION_JSON).content("{\"visitorPhone\":\"0900000000\"}"))
+                    .andExpect(status().isOk());
         }
 
-        mockMvc.perform(post("/properties/{id}/viewings", propertyId)
+        mockMvc.perform(post("/properties/{id}/viewings/request-otp", propertyId)
                         .header("X-Forwarded-For", "203.0.113.77")
-                        .contentType(MediaType.APPLICATION_JSON).content(PAYLOAD))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"visitorPhone\":\"0900000000\"}"))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.status").value(429));
     }

@@ -70,7 +70,8 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/properties/**", "/categories/**", "/brokers/**", "/media/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/properties/*/viewings").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/properties/*/viewings/request-otp", "/properties/*/viewings/verify-otp").permitAll()
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)

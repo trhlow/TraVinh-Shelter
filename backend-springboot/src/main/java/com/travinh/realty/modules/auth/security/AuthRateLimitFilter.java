@@ -19,7 +19,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class AuthRateLimitFilter extends OncePerRequestFilter {
     private static final Duration WINDOW = Duration.ofMinutes(1);
     private static final int DEFAULT_LIMIT = 10;
-    private static final Pattern VIEWING_SUBMIT_PATH = Pattern.compile("^/properties/[^/]+/viewings$");
+    private static final Pattern VIEWING_REQUEST_OTP_PATH = Pattern.compile("^/properties/[^/]+/viewings/request-otp$");
+    private static final Pattern VIEWING_VERIFY_OTP_PATH = Pattern.compile("^/properties/[^/]+/viewings/verify-otp$");
 
     // path-group -> requests allowed per WINDOW per IP; tunable independently per group.
     private static final Map<String, Integer> RATE_LIMITED_GROUPS = rateLimitedGroups();
@@ -59,8 +60,11 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         if ("/auth/login".equals(path)) {
             return "/auth/login";
         }
-        if (VIEWING_SUBMIT_PATH.matcher(path).matches()) {
-            return "/properties/*/viewings";
+        if (VIEWING_REQUEST_OTP_PATH.matcher(path).matches()) {
+            return "/properties/*/viewings/request-otp";
+        }
+        if (VIEWING_VERIFY_OTP_PATH.matcher(path).matches()) {
+            return "/properties/*/viewings/verify-otp";
         }
         return null;
     }
@@ -73,7 +77,8 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     private static Map<String, Integer> rateLimitedGroups() {
         Map<String, Integer> groups = new LinkedHashMap<>();
         groups.put("/auth/login", DEFAULT_LIMIT);
-        groups.put("/properties/*/viewings", DEFAULT_LIMIT);
+        groups.put("/properties/*/viewings/request-otp", DEFAULT_LIMIT);
+        groups.put("/properties/*/viewings/verify-otp", DEFAULT_LIMIT);
         return groups;
     }
 

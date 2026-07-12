@@ -1,8 +1,10 @@
 package com.travinh.realty.modules.booking;
 
+import com.travinh.realty.common.dto.MessageResponse;
 import com.travinh.realty.modules.auth.security.UserPrincipal;
-import com.travinh.realty.modules.booking.dto.CreateViewingRequest;
+import com.travinh.realty.modules.booking.dto.RequestViewingOtpRequest;
 import com.travinh.realty.modules.booking.dto.UpdateViewingStatusRequest;
+import com.travinh.realty.modules.booking.dto.VerifyViewingOtpRequest;
 import com.travinh.realty.modules.booking.dto.ViewingResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -30,12 +32,19 @@ public class BookingController {
         this.bookings = bookings;
     }
 
-    @PostMapping("/properties/{propertyId}/viewings")
+    @PostMapping("/properties/{propertyId}/viewings/request-otp")
+    @Operation(summary = "Request an SMS OTP before submitting a viewing appointment")
+    public MessageResponse requestViewingOtp(@PathVariable UUID propertyId,
+                                             @Valid @RequestBody RequestViewingOtpRequest request) {
+        return bookings.requestOtp(propertyId, request);
+    }
+
+    @PostMapping("/properties/{propertyId}/viewings/verify-otp")
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Submit a public viewing appointment for a property")
-    public ViewingResponse submit(@PathVariable UUID propertyId,
-                                  @Valid @RequestBody CreateViewingRequest request) {
-        return bookings.create(propertyId, request);
+    @Operation(summary = "Verify the SMS OTP and submit the viewing appointment")
+    public ViewingResponse verifyViewingOtp(@PathVariable UUID propertyId,
+                                            @Valid @RequestBody VerifyViewingOtpRequest request) {
+        return bookings.verifyOtpAndCreate(propertyId, request);
     }
 
     @GetMapping("/viewings/mine")
