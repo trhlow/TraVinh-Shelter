@@ -11,6 +11,9 @@ import com.travinh.realty.modules.auth.security.RateLimiter;
 import com.travinh.realty.modules.auth.security.RedisRateLimiter;
 import com.travinh.realty.modules.auth.security.RedisRevokedTokenStore;
 import com.travinh.realty.modules.auth.security.RevokedTokenStore;
+import com.travinh.realty.modules.auth.security.InMemoryOtpStore;
+import com.travinh.realty.modules.auth.security.OtpStore;
+import com.travinh.realty.modules.auth.security.RedisOtpStore;
 import com.travinh.realty.common.exception.ApiError;
 import tools.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
@@ -111,6 +114,16 @@ public class SecurityConfig {
     RevokedTokenStore revokedTokenStore(ObjectProvider<StringRedisTemplate> redisTemplate) {
         StringRedisTemplate template = redisTemplate.getIfAvailable();
         return template != null ? new RedisRevokedTokenStore(template) : new InMemoryRevokedTokenStore();
+    }
+
+    /**
+     * OtpStore fails closed on Redis errors (see RedisOtpStore) — unlike RateLimiter/
+     * RevokedTokenStore above, which fail open. Same Redis-or-in-memory selection pattern.
+     */
+    @Bean
+    OtpStore otpStore(ObjectProvider<StringRedisTemplate> redisTemplate) {
+        StringRedisTemplate template = redisTemplate.getIfAvailable();
+        return template != null ? new RedisOtpStore(template) : new InMemoryOtpStore();
     }
 
     @Bean
