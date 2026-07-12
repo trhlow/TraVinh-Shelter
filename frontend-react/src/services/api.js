@@ -32,6 +32,8 @@ export async function fetchCurrentUser(token) {
       role: 'BROKER',
       status: 'ACTIVE',
       avatarUrl: '',
+      facebookUrl: '',
+      tiktokUrl: '',
     }, 80);
   }
   return request('/users/me', { token });
@@ -111,7 +113,6 @@ export async function fetchBrokerDashboard(token) {
   return {
     activeListings: listings.filter((item) => item.rawStatus === 'AVAILABLE').length,
     totalListings: listings.length,
-    pendingLeads: Math.max(0, listings.length * 2),
     listings,
   };
 }
@@ -397,8 +398,8 @@ function normalizeProperty(item, index = 0) {
       phone: item.broker?.phone || '02943999888',
       email: item.broker?.email || 'support@congtinland.vn',
       avatarUrl: item.broker?.avatarUrl || '',
-      zalo: item.broker?.zaloUrl || '',
       facebook: item.broker?.facebookUrl || '',
+      tiktok: item.broker?.tiktokUrl || '',
       rating: 'Đã xác minh',
       responseTime: '15 phút',
     },

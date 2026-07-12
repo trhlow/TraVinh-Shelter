@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { downloadCsv } from '../../utils/exportCsv.js';
 import { LoadingRows, StateBlock } from '../DashboardWidgets.jsx';
 import Icon from '../ui/Icon.jsx';
@@ -18,11 +18,17 @@ export default function DataTable({
   emptyTitle = 'Không có dữ liệu',
   emptyDescription = 'Thử đổi từ khóa hoặc bộ lọc.',
   toolbar = null,
+  initialQuery = '',
 }) {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialQuery);
   const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState('asc');
   const [page, setPage] = useState(0);
+
+  useEffect(() => {
+    setQuery(initialQuery);
+    setPage(0);
+  }, [initialQuery]);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();

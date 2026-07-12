@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18.4-alpine
     container_name: travinh-realty-postgres
     restart: unless-stopped
     environment:
@@ -10,7 +10,7 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-travinh_app} -d ${POSTGRES_DB:-travinh_realty}"]
       interval: 5s
@@ -32,6 +32,20 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
+  redis:
+    image: redis:7-alpine
+    container_name: travinh-realty-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   backend:
     build:
       context: ./backend-springboot
@@ -40,17 +54,25 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       SERVER_PORT: ${SERVER_PORT:-8080}
       DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-travinh_realty}
       DB_USERNAME: ${POSTGRES_USER:-travinh_app}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-travinh_dev_password}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       JWT_SECRET: ${JWT_SECRET:-travinh-dev-secret-key-change-me-32-bytes}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173}
       MEDIA_STORAGE_PATH: ${MEDIA_STORAGE_PATH:-/app/media}
       MEDIA_PUBLIC_URL_PREFIX: ${MEDIA_PUBLIC_URL_PREFIX:-/api/v1/media}
+      API_KEY_eSMS: ${API_KEY_eSMS:-}
+      ESMS_SECRET_KEY: ${ESMS_SECRET_KEY:-}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     volumes:
@@ -87,4 +109,6 @@ volumes:
     name: ${PGADMIN_VOLUME_NAME:-travinh_realty_pgadmin_data}
   backend_media:
     name: ${BACKEND_MEDIA_VOLUME_NAME:-travinh_realty_backend_media}
+  redis_data:
+    name: ${REDIS_VOLUME_NAME:-travinh_realty_redis_data}
 

@@ -46,29 +46,27 @@ export function StatCard({ icon, title, value, meta, tone = 'navy', href, trend,
   const content = (
     <>
       <div className="stat-card-top">
-        <div className="stat-card-body">
-          <p className="stat-card-label">{title}</p>
-          <p className="stat-card-value">{value}</p>
-          {trend && (
-            <span className={`kpi-trend ${trend.direction === 'up' ? 'kpi-trend-up' : 'kpi-trend-down'}`}>
-              <Icon
-                name={trend.direction === 'up' ? 'TrendingUp' : 'TrendingDown'}
-                size={12}
-                strokeWidth={2.5}
-              />
-              {trend.value}
-              {series && series.length > 1 && (
-                <span className="kpi-trend-sparkline">
-                  <Sparkline series={series} />
-                </span>
-              )}
-            </span>
-          )}
-        </div>
         <span className={`kpi-icon-chip ${chipClass}`}>
           <Icon name={icon} size={22} strokeWidth={1.75} />
         </span>
+        {trend && (
+          <span className={`kpi-trend ${trend.direction === 'up' ? 'kpi-trend-up' : 'kpi-trend-down'}`}>
+            <Icon
+              name={trend.direction === 'up' ? 'TrendingUp' : 'TrendingDown'}
+              size={12}
+              strokeWidth={2.5}
+            />
+            {trend.value}
+            {series && series.length > 1 && (
+              <span className="kpi-trend-sparkline">
+                <Sparkline series={series} />
+              </span>
+            )}
+          </span>
+        )}
       </div>
+      <p className="stat-card-number stat-card-value">{value}</p>
+      <p className="stat-card-label">{title}</p>
       {meta && <p className="stat-card-meta">{meta}</p>}
     </>
   );

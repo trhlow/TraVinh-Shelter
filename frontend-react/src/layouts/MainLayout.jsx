@@ -1,6 +1,13 @@
 import BrandLogo, { BRAND_NAME } from '../components/BrandLogo.jsx';
 import Icon from '../components/ui/Icon.jsx';
 
+// TODO: thay href="#/" bằng URL Facebook/TikTok/YouTube thật của Công Tín Land khi có.
+const FOOTER_SOCIALS = [
+  { label: 'Facebook', icon: 'Facebook' },
+  { label: 'TikTok', icon: 'TikTok' },
+  { label: 'YouTube', icon: 'Youtube' },
+];
+
 const NAV_CATEGORIES = [
   {
     title: 'Trọ', icon: 'Home', caption: 'Giá trọ, khu vực',
@@ -176,6 +183,18 @@ export function Footer() {
             <p className="footer-about-text">
               Cổng thông tin bất động sản Trà Vinh, kết nối khách hàng với môi giới chuyên nghiệp.
             </p>
+            <div className="footer-social-icons">
+              {FOOTER_SOCIALS.map(({ label, icon }) => (
+                <a
+                  key={label}
+                  href="#/"
+                  aria-label={label}
+                  className="footer-social-icon"
+                >
+                  <Icon name={icon} size={16} />
+                </a>
+              ))}
+            </div>
           </div>
         </div>
 

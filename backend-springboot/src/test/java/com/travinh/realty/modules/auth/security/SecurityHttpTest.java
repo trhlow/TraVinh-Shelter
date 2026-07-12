@@ -13,6 +13,8 @@ import com.travinh.realty.common.config.SecurityConfig;
 import com.travinh.realty.common.exception.GlobalExceptionHandler;
 import com.travinh.realty.modules.auth.AuthController;
 import com.travinh.realty.modules.auth.AuthService;
+import com.travinh.realty.modules.auth.PasswordResetService;
+import com.travinh.realty.common.dto.MessageResponse;
 import com.travinh.realty.modules.property.PropertyController;
 import com.travinh.realty.modules.property.PropertyService;
 import com.travinh.realty.modules.user.model.User;
@@ -21,8 +23,8 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
@@ -32,7 +34,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = {AuthController.class, PropertyController.class})
-@Import({SecurityConfig.class, JwtService.class, JwtAuthenticationFilter.class,
+@Import({SecurityConfig.class, JwtService.class,
         GlobalExceptionHandler.class, SecurityHttpTest.JwtTestConfiguration.class})
 class SecurityHttpTest {
 
@@ -40,10 +42,11 @@ class SecurityHttpTest {
 
     @Autowired private MockMvc mockMvc;
     @Autowired private JwtService jwtService;
-    @MockBean private AuthService authService;
-    @MockBean private PropertyService propertyService;
-    @MockBean private JpaUserDetailsService userDetailsService;
-    @MockBean private JpaMetamodelMappingContext jpaMappingContext;
+    @MockitoBean private AuthService authService;
+    @MockitoBean private PasswordResetService passwordResetService;
+    @MockitoBean private PropertyService propertyService;
+    @MockitoBean private JpaUserDetailsService userDetailsService;
+    @MockitoBean private JpaMetamodelMappingContext jpaMappingContext;
 
     @Test
     void protectedApiWithoutTokenReturnsUnauthorized() throws Exception {
@@ -114,6 +117,26 @@ class SecurityHttpTest {
     }
 
     @Test
+    void rateLimitIsTrackedPerResolvedClientIpNotGlobally() throws Exception {
+        // Exercises the full chain (path-group matching -> ClientIpResolver -> RateLimiter)
+        // end to end: a different X-Forwarded-For value must get its own, independent bucket
+        // rather than sharing one counter with every other caller.
+        when(authService.login(any())).thenThrow(new BadCredentialsException("bad credentials"));
+        for (int attempt = 0; attempt < 11; attempt++) {
+            mockMvc.perform(post("/auth/login")
+                    .header("X-Forwarded-For", "203.0.113.10")
+                    .contentType("application/json")
+                    .content("{\"email\":\"minh@example.com\",\"password\":\"wrong-password\"}"));
+        }
+
+        mockMvc.perform(post("/auth/login")
+                        .header("X-Forwarded-For", "203.0.113.99")
+                        .contentType("application/json")
+                        .content("{\"email\":\"minh@example.com\",\"password\":\"wrong-password\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void authenticatedUserCanLogoutCurrentToken() throws Exception {
         User user = user("logout@example.com", UserStatus.ACTIVE);
         when(userDetailsService.loadUserByUsername(user.getEmail())).thenReturn(UserPrincipal.from(user));
@@ -123,6 +146,40 @@ class SecurityHttpTest {
                 .andExpect(status().isNoContent());
 
         verify(authService).logout(eq(authorization));
+    }
+
+    @Test
+    void forgotPasswordAlwaysReturnsOkWithGenericMessage() throws Exception {
+        when(passwordResetService.forgotPassword(any()))
+                .thenReturn(new MessageResponse("Nếu email tồn tại, mã OTP đã được gửi."));
+
+        mockMvc.perform(post("/auth/forgot-password").contentType("application/json")
+                        .content("{\"email\":\"someone@congtinland.vn\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Nếu email tồn tại, mã OTP đã được gửi."));
+    }
+
+    @Test
+    void resetPasswordWithValidOtpReturnsOk() throws Exception {
+        when(passwordResetService.resetPassword(any()))
+                .thenReturn(new MessageResponse("Mật khẩu đã được đặt lại."));
+
+        mockMvc.perform(post("/auth/reset-password").contentType("application/json")
+                        .content("{\"email\":\"someone@congtinland.vn\",\"otpCode\":\"123456\",\"newPassword\":\"NewPassword123\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Mật khẩu đã được đặt lại."));
+    }
+
+    @Test
+    void resetPasswordWithInvalidOtpReturnsBadRequest() throws Exception {
+        when(passwordResetService.resetPassword(any()))
+                .thenThrow(new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.BAD_REQUEST, "Mã OTP không hợp lệ hoặc đã hết hạn"));
+
+        mockMvc.perform(post("/auth/reset-password").contentType("application/json")
+                        .content("{\"email\":\"someone@congtinland.vn\",\"otpCode\":\"000000\",\"newPassword\":\"NewPassword123\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Mã OTP không hợp lệ hoặc đã hết hạn"));
     }
 
     private User user(String email, UserStatus status) {
@@ -137,6 +194,11 @@ class SecurityHttpTest {
         @Bean
         JwtProperties jwtProperties() {
             return new JwtProperties(SECRET, 60_000);
+        }
+
+        @Bean
+        org.springframework.boot.webmvc.test.autoconfigure.MockMvcBuilderCustomizer securityMockMvcCustomizer() {
+            return builder -> builder.apply(org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity());
         }
     }
 }

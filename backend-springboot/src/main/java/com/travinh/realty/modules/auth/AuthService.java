@@ -4,9 +4,11 @@ import com.travinh.realty.common.config.JwtProperties;
 import com.travinh.realty.modules.auth.dto.AuthResponse;
 import com.travinh.realty.modules.auth.dto.LoginRequest;
 import com.travinh.realty.modules.auth.security.JwtService;
+import com.travinh.realty.modules.auth.security.RateLimiter;
 import com.travinh.realty.modules.auth.security.UserPrincipal;
 import com.travinh.realty.modules.user.model.User;
 import com.travinh.realty.modules.user.repository.UserRepository;
+import java.time.Duration;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,14 +20,23 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class AuthService {
+    private static final int MAX_FAILED_LOGINS_PER_ACCOUNT = 5;
+    private static final Duration ACCOUNT_LOCKOUT_WINDOW = Duration.ofMinutes(15);
+
     private final UserRepository users; private final PasswordEncoder encoder; private final AuthenticationManager auth;
-    private final JwtService jwt; private final JwtProperties properties;
-    public AuthService(UserRepository users, PasswordEncoder encoder, AuthenticationManager auth, JwtService jwt, JwtProperties properties) {
+    private final JwtService jwt; private final JwtProperties properties; private final RateLimiter rateLimiter;
+    public AuthService(UserRepository users, PasswordEncoder encoder, AuthenticationManager auth, JwtService jwt,
+                       JwtProperties properties, RateLimiter rateLimiter) {
         this.users = users; this.encoder = encoder; this.auth = auth; this.jwt = jwt; this.properties = properties;
+        this.rateLimiter = rateLimiter;
     }
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
-        Authentication authentication = auth.authenticate(new UsernamePasswordAuthenticationToken(request.email().trim().toLowerCase(), request.password()));
+        String email = request.email().trim().toLowerCase();
+        if (!rateLimiter.tryAcquire("login-account:" + email, MAX_FAILED_LOGINS_PER_ACCOUNT, ACCOUNT_LOCKOUT_WINDOW)) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many requests. Please retry later.");
+        }
+        Authentication authentication = auth.authenticate(new UsernamePasswordAuthenticationToken(email, request.password()));
         UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
         User user = users.findByEmail(principal.getUsername()).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password"));
         return AuthResponse.of(jwt.generateToken(user), properties.expiration(), user);
@@ -37,5 +48,4 @@ public class AuthService {
         }
         jwt.revoke(authorizationHeader.substring(7));
     }
-
 }

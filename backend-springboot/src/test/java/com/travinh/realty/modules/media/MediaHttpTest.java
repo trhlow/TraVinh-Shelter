@@ -21,7 +21,6 @@ import com.travinh.realty.common.exception.GlobalExceptionHandler;
 import com.travinh.realty.infrastructure.storage.LocalMediaStorage;
 import com.travinh.realty.infrastructure.storage.StorageProperties;
 import com.travinh.realty.modules.auth.security.JpaUserDetailsService;
-import com.travinh.realty.modules.auth.security.JwtAuthenticationFilter;
 import com.travinh.realty.modules.auth.security.JwtService;
 import com.travinh.realty.modules.auth.security.UserPrincipal;
 import com.travinh.realty.modules.media.model.Media;
@@ -35,7 +34,7 @@ import com.travinh.realty.modules.user.model.User;
 import com.travinh.realty.modules.user.model.UserRole;
 import com.travinh.realty.modules.user.model.UserStatus;
 import com.travinh.realty.modules.user.repository.UserRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,9 +46,9 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.mapping.JpaMetamodelMappingContext;
@@ -58,7 +57,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = MediaController.class)
-@Import({SecurityConfig.class, JwtService.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class,
+@Import({SecurityConfig.class, JwtService.class, GlobalExceptionHandler.class,
         MediaService.class, LocalMediaStorage.class, StaticMediaConfig.class,
         MediaHttpTest.JwtAndStorageTestConfiguration.class})
 class MediaHttpTest {
@@ -68,11 +67,11 @@ class MediaHttpTest {
     @Autowired private JwtService jwtService;
     @Autowired private StorageProperties storageProperties;
     @Autowired private ObjectMapper objectMapper;
-    @MockBean private MediaRepository media;
-    @MockBean private PropertyRepository properties;
-    @MockBean private UserRepository users;
-    @MockBean private JpaUserDetailsService userDetailsService;
-    @MockBean private JpaMetamodelMappingContext jpaMappingContext;
+    @MockitoBean private MediaRepository media;
+    @MockitoBean private PropertyRepository properties;
+    @MockitoBean private UserRepository users;
+    @MockitoBean private JpaUserDetailsService userDetailsService;
+    @MockitoBean private JpaMetamodelMappingContext jpaMappingContext;
 
     @Test
     void publicListReturnsMediaForVisiblePropertyAnd404ForHiddenProperty() throws Exception {
@@ -168,21 +167,22 @@ class MediaHttpTest {
         when(users.findById(brokerWithoutPhone.getId())).thenReturn(Optional.of(brokerWithoutPhone));
         mockMvc.perform(multipart("/properties/{propertyId}/media/images", property.getId()).file(file)
                         .header("Authorization", bearer(brokerWithoutPhone)))
-                .andExpect(status().isUnprocessableEntity());
+                .andExpect(status().isUnprocessableContent());
 
         authenticate(otherBroker);
         when(users.findById(otherBroker.getId())).thenReturn(Optional.of(otherBroker));
         when(properties.findByIdForUpdate(property.getId())).thenReturn(Optional.of(property));
         mockMvc.perform(multipart("/properties/{propertyId}/media/images", property.getId()).file(file)
                         .header("Authorization", bearer(otherBroker)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Property not found"));
 
         authenticate(owner);
         when(users.findById(owner.getId())).thenReturn(Optional.of(owner));
         when(media.countByPropertyIdAndMediaType(property.getId(), MediaType.IMAGE)).thenReturn(7L);
         mockMvc.perform(multipart("/properties/{propertyId}/media/images", property.getId()).file(file)
                         .header("Authorization", bearer(owner)))
-                .andExpect(status().isUnprocessableEntity())
+                .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.message").value("A property can have at most 7 images"));
 
         when(media.countByPropertyIdAndMediaType(property.getId(), MediaType.IMAGE)).thenReturn(0L);
@@ -231,7 +231,7 @@ class MediaHttpTest {
         MockMultipartFile video = new MockMultipartFile("file", "tour.mp4", "video/mp4", "video".getBytes());
         mockMvc.perform(multipart("/properties/{propertyId}/media/video-file", property.getId()).file(video)
                         .header("Authorization", bearer(broker)))
-                .andExpect(status().isUnprocessableEntity())
+                .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.message").value("A property can have at most one video"));
     }
 
@@ -260,7 +260,7 @@ class MediaHttpTest {
                         .header("Authorization", bearer(broker))
                         .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                         .content("{\"url\":\"https://example.com/video/after-file\"}"))
-                .andExpect(status().isUnprocessableEntity())
+                .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.message").value("A property can have at most one video"));
     }
 
@@ -474,6 +474,11 @@ class MediaHttpTest {
         @Bean
         StorageProperties storageProperties() throws java.io.IOException {
             return new StorageProperties(Files.createTempDirectory("travinh-media-test-").toString(), "/api/v1/media");
+        }
+
+        @Bean
+        org.springframework.boot.webmvc.test.autoconfigure.MockMvcBuilderCustomizer securityMockMvcCustomizer() {
+            return builder -> builder.apply(org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity());
         }
     }
 }

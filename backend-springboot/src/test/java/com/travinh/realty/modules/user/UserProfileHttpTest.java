@@ -18,7 +18,6 @@ import com.travinh.realty.common.exception.GlobalExceptionHandler;
 import com.travinh.realty.modules.admin.AdminBrokerController;
 import com.travinh.realty.modules.admin.AuditService;
 import com.travinh.realty.modules.auth.security.JpaUserDetailsService;
-import com.travinh.realty.modules.auth.security.JwtAuthenticationFilter;
 import com.travinh.realty.modules.auth.security.JwtService;
 import com.travinh.realty.modules.auth.security.UserPrincipal;
 import com.travinh.realty.infrastructure.storage.LocalMediaStorage;
@@ -33,9 +32,9 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -46,7 +45,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = {UserProfileController.class, AdminBrokerController.class})
-@Import({SecurityConfig.class, JwtService.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class,
+@Import({SecurityConfig.class, JwtService.class, GlobalExceptionHandler.class,
         UserProfileService.class, UserProfileHttpTest.JwtTestConfiguration.class})
 class UserProfileHttpTest {
 
@@ -55,11 +54,11 @@ class UserProfileHttpTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private JwtService jwtService;
     @Autowired private PasswordEncoder passwordEncoder;
-    @MockBean private UserRepository users;
-    @MockBean private LocalMediaStorage storage;
-    @MockBean private AuditService audit;
-    @MockBean private JpaUserDetailsService userDetailsService;
-    @MockBean private JpaMetamodelMappingContext jpaMappingContext;
+    @MockitoBean private UserRepository users;
+    @MockitoBean private LocalMediaStorage storage;
+    @MockitoBean private AuditService audit;
+    @MockitoBean private JpaUserDetailsService userDetailsService;
+    @MockitoBean private JpaMetamodelMappingContext jpaMappingContext;
 
     @Test
     void currentProfileUsesAuthenticatedPrincipalAndHidesInternalFields() throws Exception {
@@ -120,7 +119,7 @@ class UserProfileHttpTest {
         for (String payload : new String[]{"{\"fullName\":\"Broker\",\"phone\":null}", "{\"fullName\":\"Broker\",\"phone\":\"\"}", "{\"fullName\":\"Broker\",\"phone\":\"   \"}", "{\"fullName\":\"Broker\"}"}) {
             mockMvc.perform(patch("/users/me").header("Authorization", bearer(broker))
                             .contentType(MediaType.APPLICATION_JSON).content(payload))
-                    .andExpect(status().isUnprocessableEntity())
+                    .andExpect(status().isUnprocessableContent())
                     .andExpect(jsonPath("$.status").value(422));
         }
 
@@ -137,12 +136,55 @@ class UserProfileHttpTest {
     }
 
     @Test
+    void profileUpdateAcceptsAndReturnsSocialLinks() throws Exception {
+        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        authenticate(user);
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+
+        mockMvc.perform(patch("/users/me").header("Authorization", bearer(user))
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                        {"fullName":"User","phone":"0900000000","facebookUrl":"https://facebook.com/user","tiktokUrl":"https://tiktok.com/@user"}
+                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.facebookUrl").value("https://facebook.com/user"))
+                .andExpect(jsonPath("$.tiktokUrl").value("https://tiktok.com/@user"));
+    }
+
+    @Test
+    void regularUserCanClearSocialLinksThroughEveryNullablePayloadForm() throws Exception {
+        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        ReflectionTestUtils.setField(user, "facebookUrl", "https://facebook.com/existing");
+        ReflectionTestUtils.setField(user, "tiktokUrl", "https://tiktok.com/@existing");
+        authenticate(user);
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+
+        for (String payload : new String[]{
+                "{\"fullName\":\"User\",\"phone\":\"0900000000\",\"facebookUrl\":null,\"tiktokUrl\":null}",
+                "{\"fullName\":\"User\",\"phone\":\"0900000000\",\"facebookUrl\":\"\",\"tiktokUrl\":\"\"}",
+                "{\"fullName\":\"User\",\"phone\":\"0900000000\"}"}) {
+            mockMvc.perform(patch("/users/me").header("Authorization", bearer(user))
+                            .contentType(MediaType.APPLICATION_JSON).content(payload))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.facebookUrl").doesNotExist())
+                    .andExpect(jsonPath("$.tiktokUrl").doesNotExist());
+            org.assertj.core.api.Assertions.assertThat(user.getFacebookUrl()).isNull();
+            org.assertj.core.api.Assertions.assertThat(user.getTiktokUrl()).isNull();
+            ReflectionTestUtils.setField(user, "facebookUrl", "https://facebook.com/existing");
+            ReflectionTestUtils.setField(user, "tiktokUrl", "https://tiktok.com/@existing");
+        }
+    }
+
+    @Test
     void publicBrokerContactOnlyExposesActiveBrokers() throws Exception {
         User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        ReflectionTestUtils.setField(broker, "facebookUrl", "https://facebook.com/broker");
+        ReflectionTestUtils.setField(broker, "tiktokUrl", "https://tiktok.com/@broker");
         when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
         mockMvc.perform(get("/brokers/{id}", broker.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.phone").value("0900000000"))
+                .andExpect(jsonPath("$.facebookUrl").value("https://facebook.com/broker"))
+                .andExpect(jsonPath("$.tiktokUrl").value("https://tiktok.com/@broker"))
                 .andExpect(jsonPath("$.passwordHash").doesNotExist())
                 .andExpect(jsonPath("$.role").doesNotExist())
                 .andExpect(jsonPath("$.status").doesNotExist());
@@ -286,6 +328,11 @@ class UserProfileHttpTest {
         @Bean
         JwtProperties jwtProperties() {
             return new JwtProperties(SECRET, 60_000);
+        }
+
+        @Bean
+        org.springframework.boot.webmvc.test.autoconfigure.MockMvcBuilderCustomizer securityMockMvcCustomizer() {
+            return builder -> builder.apply(org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity());
         }
     }
 }

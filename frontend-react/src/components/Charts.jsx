@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { useState } from 'react';
 import { CATEGORIES, WARDS } from '../data/locations.js';
 
 // Inline SVG resolves var(--color-*) fine, so charts stay theme-reactive.
@@ -133,6 +133,104 @@ export function BarChart({ title, data }) {
   );
 }
 
+function ChartModeToggle({ mode, onModeChange }) {
+  return (
+    <div className="chart-mode-toggle" aria-label="Chọn kiểu hiển thị biểu đồ">
+      {['2d', '3d'].map((item) => (
+        <button
+          key={item}
+          type="button"
+          className={`chart-mode-btn${mode === item ? ' is-active' : ''}`}
+          aria-pressed={mode === item}
+          onClick={() => onModeChange(item)}
+        >
+          {item.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ThreeDChartPanel({ title, subtitle, mode, onModeChange, children }) {
+  return (
+    <section className={`chart-panel chart3d-panel ${mode === '3d' ? 'is-3d' : 'is-2d'}`}>
+      <div className="chart3d-header">
+        <div>
+          <h2 className="chart-title">{title}</h2>
+          {subtitle && <p className="chart3d-subtitle">{subtitle}</p>}
+        </div>
+        <ChartModeToggle mode={mode} onModeChange={onModeChange} />
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function formatChartNumber(value, suffix = '') {
+  return `${new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(value)}${suffix}`;
+}
+
+function conicGradientFor(data, total) {
+  let cursor = 0;
+  return `conic-gradient(${data.map((item) => {
+    const next = cursor + (total > 0 ? (item.value / total) * 100 : 0);
+    const segment = `${item.color} ${cursor}% ${next}%`;
+    cursor = next;
+    return segment;
+  }).join(', ')})`;
+}
+
+export function ThreeDDonutChart({ title, subtitle, data, centerLabel = 'tổng' }) {
+  const [mode, setMode] = useState('3d');
+  const normalized = withColors(data);
+  const total = normalized.reduce((sum, item) => sum + item.value, 0);
+
+  return (
+    <ThreeDChartPanel title={title} subtitle={subtitle} mode={mode} onModeChange={setMode}>
+      <div className="chart3d-donut-layout">
+        <div className="chart3d-donut" style={{ background: conicGradientFor(normalized, total || 1) }}>
+          <div className="chart3d-donut-hole">
+            <span className="chart3d-donut-total">{formatChartNumber(total)}</span>
+            <span className="chart3d-donut-label">{centerLabel}</span>
+          </div>
+        </div>
+        <Legend data={normalized} total={total || 1} />
+      </div>
+    </ThreeDChartPanel>
+  );
+}
+
+
+export function ThreeDAreaChart({ title, subtitle, series, unit = '' }) {
+  const [mode, setMode] = useState('3d');
+  const width = 100;
+  const height = 34;
+  const counts = series.map((point) => point.count);
+  const total = counts.reduce((sum, value) => sum + value, 0);
+  const linePath = `M${linePathFor(counts, width, height)}`;
+  const areaPath = `${linePath} L${width},${height} L0,${height} Z`;
+
+  return (
+    <ThreeDChartPanel title={title} subtitle={subtitle} mode={mode} onModeChange={setMode}>
+      <div className="chart3d-area-summary">
+        <span className="chart3d-area-total">{formatChartNumber(total)}</span>
+        {unit && <span>{unit}</span>}
+      </div>
+      <div className="chart3d-area-stage">
+        <svg className="chart3d-area-svg" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
+          <path className="chart3d-area-base" d={areaPath} />
+          <path className="chart3d-area-fill" d={areaPath} />
+          <path className="chart3d-area-line" d={linePath} />
+        </svg>
+      </div>
+      <div className="trend-chart-axis">
+        <span>{formatShortDate(series[0]?.date)}</span>
+        <span>{formatShortDate(series[series.length - 1]?.date)}</span>
+      </div>
+    </ThreeDChartPanel>
+  );
+}
+
 export function HorizontalBarChart({ title, data }) {
   const normalized = withColors(data);
   const max = Math.max(...normalized.map((item) => item.value), 1);
@@ -178,6 +276,23 @@ export function buildWardData(items, getWardCode) {
   });
 }
 
+// One row per real category (Trọ/Nhà/Đất) scoped to a single ward, so each
+// ward gets its own bar chart with counts/percent computed from that ward's
+// listings only.
+export function buildCategoryDensityData(properties, wardCode) {
+  const wardProperties = properties.filter((property) => property.ward === wardCode);
+  const total = wardProperties.length;
+  return CATEGORIES.map((category) => {
+    const count = wardProperties.filter((property) => property.category === category.slug).length;
+    return {
+      slug: category.slug,
+      label: category.label,
+      count,
+      pct: total > 0 ? Math.round((count / total) * 100) : 0,
+    };
+  });
+}
+
 // Local calendar-day key (not toISOString — that converts to UTC and shifts the
 // date backward for positive-offset timezones like Asia/Ho_Chi_Minh).
 function dayKey(date) {
@@ -210,11 +325,45 @@ export function buildDailySeries(items, getDate, days = 30) {
   return buckets;
 }
 
+// Buckets items into one entry per calendar day of `referenceDate`'s month (1st → last
+// day), so the monthly activity chart reflects a real calendar month instead of a
+// trailing window. Days with no matching item — past or future — read 0 naturally.
+export function buildMonthlySeries(items, getDate, referenceDate = new Date()) {
+  const year = referenceDate.getFullYear();
+  const month = referenceDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const buckets = [];
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    buckets.push({ date: dayKey(new Date(year, month, day)), count: 0 });
+  }
+  const indexByDate = new Map(buckets.map((bucket, index) => [bucket.date, index]));
+  items.forEach((item) => {
+    const raw = getDate(item);
+    if (!raw) return;
+    const day = new Date(raw);
+    if (Number.isNaN(day.getTime())) return;
+    const index = indexByDate.get(dayKey(day));
+    if (index !== undefined) buckets[index].count += 1;
+  });
+  return buckets;
+}
+
 function formatShortDate(value) {
   if (!value) return '';
+  if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}/)) {
+    const [, month, day] = value.split('-');
+    return `${day}/${month}`;
+  }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
   return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit' }).format(date);
+}
+
+// Clamped to a 5%-95% band so the tooltip's translate(-50%) centering never
+// pushes it fully outside the chart at the first/last day.
+function tooltipLeftPct(activeIndex, seriesLength) {
+  const leftPct = (activeIndex / Math.max(1, seriesLength - 1)) * 100;
+  return Math.min(95, Math.max(5, leftPct));
 }
 
 function linePathFor(values, width, height) {
@@ -228,9 +377,9 @@ function linePathFor(values, width, height) {
 }
 
 /**
- * TrendAreaChart — real daily activity over a trailing window (line + filled area),
- * with the window total up front and the date range labelled on the axis.
- * Expects `series` from buildDailySeries: [{ date: 'YYYY-MM-DD', count }].
+ * TrendAreaChart — real daily activity (line + filled area), with a dot marker
+ * per day and a hover tooltip showing the exact date + count for that day.
+ * Expects `series`: [{ date: 'YYYY-MM-DD', count }], oldest first.
  */
 export function TrendAreaChart({ title, series, unit }) {
   const width = 100;
@@ -239,6 +388,11 @@ export function TrendAreaChart({ title, series, unit }) {
   const total = counts.reduce((sum, value) => sum + value, 0);
   const linePath = `M${linePathFor(counts, width, height)}`;
   const areaPath = `${linePath} L${width},${height} L0,${height} Z`;
+  const max = Math.max(...counts, 1);
+  const min = Math.min(...counts, 0);
+  const span = max - min || 1;
+  const stepX = series.length > 1 ? width / (series.length - 1) : width;
+  const [activeIndex, setActiveIndex] = useState(null);
 
   return (
     <section className="chart-panel trend-chart-panel">
@@ -247,10 +401,34 @@ export function TrendAreaChart({ title, series, unit }) {
         <span className="trend-chart-value">{total}</span>
         {unit && <span className="trend-chart-unit">{unit}</span>}
       </div>
-      <svg className="trend-chart-svg" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
-        <path className="trend-chart-area" d={areaPath} />
-        <path className="trend-chart-line" d={linePath} />
-      </svg>
+      <div className="trend-chart-svg-wrap">
+        <svg className="trend-chart-svg" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
+          <path className="trend-chart-area" d={areaPath} />
+          <path className="trend-chart-line" d={linePath} />
+          {/* preserveAspectRatio="none" scales x/y unevenly, rendering these as slight ellipses — accepted, not worth restructuring the coordinate system for. */}
+          {series.map((point, index) => (
+            <circle
+              key={point.date}
+              data-testid="trend-chart-dot"
+              className="trend-chart-dot"
+              cx={index * stepX}
+              cy={height - ((point.count - min) / span) * height}
+              r={activeIndex === index ? 2.2 : 1.4}
+              onMouseMove={() => setActiveIndex(index)}
+              onMouseLeave={() => setActiveIndex(null)}
+            />
+          ))}
+        </svg>
+        {activeIndex !== null && (
+          <div
+            className="trend-chart-tooltip"
+            data-testid="trend-chart-tooltip"
+            style={{ left: `${tooltipLeftPct(activeIndex, series.length)}%` }}
+          >
+            {formatShortDate(series[activeIndex].date)}: {series[activeIndex].count} {unit || ''}
+          </div>
+        )}
+      </div>
       <div className="trend-chart-axis">
         <span>{formatShortDate(series[0]?.date)}</span>
         <span>{formatShortDate(series[series.length - 1]?.date)}</span>
@@ -274,51 +452,318 @@ export function Sparkline({ series = [] }) {
   );
 }
 
+const COMBO_CHART_TICK_PERCENTS = [0, 25, 50, 75, 100];
+const COMBO_CHART_PLOT = { left: 10, right: 90, top: 6, bottom: 38 };
+
+function comboChartTickY(pct) {
+  const { top, bottom } = COMBO_CHART_PLOT;
+  return bottom - (pct / 100) * (bottom - top);
+}
+
 /**
- * WardBarChart — one real column per ward with the count on top, ward name and
- * percent share underneath (chart + number + text combined).
- * Expects `data` from buildWardData so all 4 wards always render.
+ * WardBarChart — combo bar (count, left axis) + line (percent, right axis)
+ * per ward, one shared SVG coordinate system so the line always lines up
+ * over each bar. Expects `data` from buildWardData so all 4 wards always
+ * render.
  */
 export function WardBarChart({ title, data, onSelectWard }) {
-  const max = Math.max(...data.map((ward) => ward.count), 1);
+  const { left, right, top, bottom } = COMBO_CHART_PLOT;
+  const leftMax = Math.max(...data.map((ward) => ward.count), 1);
+  const columnWidth = (right - left) / data.length;
+  const barWidth = columnWidth * 0.4;
+  const barColor = CHART_PALETTE[0];
+  const lineColor = CHART_PALETTE[4];
+
+  const points = data.map((ward, index) => {
+    const columnCenterX = left + columnWidth * (index + 0.5);
+    const barTopY = bottom - (ward.count / leftMax) * (bottom - top);
+    const lineY = bottom - (ward.pct / 100) * (bottom - top);
+    return {
+      ward,
+      columnCenterX,
+      barLeftX: columnCenterX - barWidth / 2,
+      barTopY,
+      barHeight: bottom - barTopY,
+      lineY,
+    };
+  });
+
+  const linePath = `M${points.map((point) => `${point.columnCenterX},${point.lineY}`).join(' L')}`;
+  const leftTicks = COMBO_CHART_TICK_PERCENTS.map((pct) => ({
+    y: comboChartTickY(pct),
+    value: Math.round((leftMax * pct) / 100),
+  }));
+  const rightTicks = COMBO_CHART_TICK_PERCENTS.map((pct) => ({
+    y: comboChartTickY(pct),
+    value: pct,
+  }));
 
   return (
     <section className="chart-panel">
       <h2 className="chart-title">{title}</h2>
-      <div className="ward-bar-cols">
-        {data.map((ward, index) => {
-          const bar = (
-            <>
-              <span className="ward-bar-count">{ward.count}</span>
-              <div className="ward-bar-track">
-                <span
-                  className="ward-bar-fill"
-                  style={{
-                    height: `${Math.max(4, (ward.count / max) * 100)}%`,
-                    backgroundColor: CHART_PALETTE[index % CHART_PALETTE.length],
-                  }}
-                />
-              </div>
-              <span className="ward-bar-name">{ward.label}</span>
-              <span className="ward-bar-pct">{ward.pct}%</span>
-            </>
-          );
-          return onSelectWard ? (
-            <button
-              type="button"
-              className="ward-bar-col"
-              key={ward.code}
-              aria-label={`${ward.label}: ${ward.count} tin`}
-              onClick={() => onSelectWard(ward.code)}
+      <svg className="combo-svg" viewBox="0 0 100 50" preserveAspectRatio="none">
+        <line x1={left} y1={top} x2={left} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
+        <line x1={right} y1={top} x2={right} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
+        <line x1={left} y1={bottom} x2={right} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
+
+        {leftTicks.map((tick) => (
+          <text key={`left-${tick.y}`} x={left - 1.5} y={tick.y + 1} textAnchor="end" fontSize="3" fill="var(--color-muted)">
+            {tick.value}
+          </text>
+        ))}
+        {rightTicks.map((tick) => (
+          <text key={`right-${tick.y}`} x={right + 1.5} y={tick.y + 1} textAnchor="start" fontSize="3" fill="var(--color-muted)">
+            {tick.value}
+          </text>
+        ))}
+
+        {points.map((point) => (
+          onSelectWard ? (
+            <g
+              key={point.ward.code}
+              role="button"
+              tabIndex={0}
+              aria-label={`${point.ward.label}: ${point.ward.count} tin`}
+              className="combo-bar-group"
+              onClick={() => onSelectWard(point.ward.code)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onSelectWard(point.ward.code);
+                }
+              }}
             >
-              {bar}
-            </button>
+              <rect className="combo-bar" x={point.barLeftX} y={point.barTopY} width={barWidth} height={point.barHeight} fill={barColor} />
+            </g>
           ) : (
-            <div className="ward-bar-col" key={ward.code}>
-              {bar}
+            <rect className="combo-bar" key={point.ward.code} x={point.barLeftX} y={point.barTopY} width={barWidth} height={point.barHeight} fill={barColor} />
+          )
+        ))}
+
+        <path d={linePath} fill="none" stroke={lineColor} strokeWidth="0.6" />
+        {points.map((point) => (
+          <circle key={`dot-${point.ward.code}`} cx={point.columnCenterX} cy={point.lineY} r="1" fill={lineColor} />
+        ))}
+
+        {points.map((point) => (
+          <text key={`x-label-${point.ward.code}`} x={point.columnCenterX} y={bottom + 4} textAnchor="middle" fontSize="3" fill="var(--color-muted)">
+            {point.ward.label.replace('Phường ', '')}
+          </text>
+        ))}
+      </svg>
+      <div className="combo-chart-legend">
+        <span className="combo-chart-legend-item">
+          <span className="combo-chart-legend-swatch" style={{ backgroundColor: barColor }} />
+          Số tin đăng
+        </span>
+        <span className="combo-chart-legend-item">
+          <span className="combo-chart-legend-line" style={{ backgroundColor: lineColor }} />
+          Tỉ lệ (%)
+        </span>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * CategoryBarChart — combo bar (count, left axis) + line (percent, right
+ * axis) per property category (Trọ/Nhà/Đất) for a single ward. Shares its
+ * coordinate system with WardBarChart via COMBO_CHART_PLOT/comboChartTickY,
+ * so the two charts stay visually and behaviorally consistent.
+ */
+export function CategoryBarChart({ title, data }) {
+  const { left, right, top, bottom } = COMBO_CHART_PLOT;
+  const leftMax = Math.max(...data.map((item) => item.count), 1);
+  const columnWidth = (right - left) / data.length;
+  const barWidth = columnWidth * 0.4;
+  const barColor = CHART_PALETTE[0];
+  const lineColor = CHART_PALETTE[4];
+
+  const points = data.map((item, index) => {
+    const columnCenterX = left + columnWidth * (index + 0.5);
+    const barTopY = bottom - (item.count / leftMax) * (bottom - top);
+    const lineY = bottom - (item.pct / 100) * (bottom - top);
+    return {
+      item,
+      columnCenterX,
+      barLeftX: columnCenterX - barWidth / 2,
+      barTopY,
+      barHeight: bottom - barTopY,
+      lineY,
+    };
+  });
+
+  const linePath = `M${points.map((point) => `${point.columnCenterX},${point.lineY}`).join(' L')}`;
+  const leftTicks = COMBO_CHART_TICK_PERCENTS.map((pct) => ({
+    y: comboChartTickY(pct),
+    value: Math.round((leftMax * pct) / 100),
+  }));
+  const rightTicks = COMBO_CHART_TICK_PERCENTS.map((pct) => ({
+    y: comboChartTickY(pct),
+    value: pct,
+  }));
+
+  return (
+    <section className="chart-panel">
+      <h2 className="chart-title">{title}</h2>
+      <svg className="combo-svg" viewBox="0 0 100 50" preserveAspectRatio="none">
+        <line x1={left} y1={top} x2={left} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
+        <line x1={right} y1={top} x2={right} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
+        <line x1={left} y1={bottom} x2={right} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
+
+        {leftTicks.map((tick) => (
+          <text key={`left-${tick.y}`} x={left - 1.5} y={tick.y + 1} textAnchor="end" fontSize="3" fill="var(--color-muted)">
+            {tick.value}
+          </text>
+        ))}
+        {rightTicks.map((tick) => (
+          <text key={`right-${tick.y}`} x={right + 1.5} y={tick.y + 1} textAnchor="start" fontSize="3" fill="var(--color-muted)">
+            {tick.value}
+          </text>
+        ))}
+
+        {points.map((point) => (
+          <rect className="combo-bar" key={point.item.slug} x={point.barLeftX} y={point.barTopY} width={barWidth} height={point.barHeight} fill={barColor} />
+        ))}
+
+        <path d={linePath} fill="none" stroke={lineColor} strokeWidth="0.6" />
+        {points.map((point) => (
+          <circle key={`dot-${point.item.slug}`} cx={point.columnCenterX} cy={point.lineY} r="1" fill={lineColor} />
+        ))}
+
+        {points.map((point) => (
+          <text key={`x-label-${point.item.slug}`} x={point.columnCenterX} y={bottom + 4} textAnchor="middle" fontSize="3" fill="var(--color-muted)">
+            {point.item.label}
+          </text>
+        ))}
+      </svg>
+      <div className="combo-chart-legend">
+        <span className="combo-chart-legend-item">
+          <span className="combo-chart-legend-swatch" style={{ backgroundColor: barColor }} />
+          Số tin đăng
+        </span>
+        <span className="combo-chart-legend-item">
+          <span className="combo-chart-legend-line" style={{ backgroundColor: lineColor }} />
+          Tỉ lệ (%)
+        </span>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * TrendBarLineChart — combo bar (current, left axis) + line (previous, same
+ * left axis) for series where both values share one unit (e.g. two kinds of
+ * counts). Unlike WardBarChart/CategoryBarChart's fixed 0-100 percent right
+ * axis, this axis auto-scales to the real max of both series combined. When
+ * every `previous` value is 0 (no real comparison data), the line, its dots,
+ * and its legend entry are omitted — only bars render.
+ */
+// TrendBarLineChart's viewBox width and rendered CSS width both scale with data.length
+// at the same fixed px-per-unit ratio, so the chart never stretches into a mostly-empty
+// canvas when there's little real data (e.g. a system's first month) — only the total
+// width changes, not the proportions of bars/text within it. Capped at 100% of the panel
+// via CSS min(), so once there's enough real data the chart reaches full width exactly as
+// it always has. top/bottom stay COMBO_CHART_PLOT's for margin consistency with the other
+// combo charts; left/right are local since this is the only combo chart with a variable
+// (not fixed 3-4-category) column count.
+const TREND_LEFT_MARGIN = 10;
+const TREND_COLUMN_UNIT_WIDTH = 6;
+const TREND_RIGHT_MARGIN = 4;
+const TREND_PX_PER_UNIT = 7;
+
+export function TrendBarLineChart({ title, subtitle, data, currentLabel = 'Hiện tại', previousLabel = 'So sánh', rotateLabels = false }) {
+  const { top, bottom } = COMBO_CHART_PLOT;
+  const left = TREND_LEFT_MARGIN;
+  const viewBoxWidth = TREND_LEFT_MARGIN + data.length * TREND_COLUMN_UNIT_WIDTH + TREND_RIGHT_MARGIN;
+  const right = viewBoxWidth - TREND_RIGHT_MARGIN;
+  const idealWidthPx = viewBoxWidth * TREND_PX_PER_UNIT;
+  const hasPrevious = data.some((point) => point.previous);
+  const axisMax = Math.max(...data.flatMap((point) => [point.current || 0, point.previous || 0]), 1);
+  const columnWidth = (right - left) / data.length;
+  const barWidth = columnWidth * 0.4;
+  const barColor = CHART_PALETTE[0];
+  const lineColor = CHART_PALETTE[4];
+
+  const points = data.map((point, index) => {
+    const columnCenterX = left + columnWidth * (index + 0.5);
+    const barTopY = bottom - ((point.current || 0) / axisMax) * (bottom - top);
+    const lineY = bottom - ((point.previous || 0) / axisMax) * (bottom - top);
+    return {
+      point,
+      columnCenterX,
+      barLeftX: columnCenterX - barWidth / 2,
+      barTopY,
+      barHeight: bottom - barTopY,
+      lineY,
+    };
+  });
+
+  const linePath = `M${points.map((p) => `${p.columnCenterX},${p.lineY}`).join(' L')}`;
+  const ticks = COMBO_CHART_TICK_PERCENTS.map((pct) => ({
+    y: comboChartTickY(pct),
+    value: Math.round((axisMax * pct) / 100),
+  }));
+
+  return (
+    <section className="chart-panel" style={{ '--trend-chart-width': `${idealWidthPx}px` }}>
+      <div className="chart3d-header">
+        <div>
+          <h2 className="chart-title">{title}</h2>
+          {subtitle && <p className="chart3d-subtitle">{subtitle}</p>}
+        </div>
+      </div>
+      <svg
+        className="trend-chart-svg"
+        viewBox={`0 0 ${viewBoxWidth} 50`}
+        preserveAspectRatio="none"
+        role="img"
+        aria-label={title}
+      >
+        <line x1={left} y1={top} x2={left} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
+        <line x1={left} y1={bottom} x2={right} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
+
+        {ticks.map((tick) => (
+          <text key={`left-${tick.y}`} x={left - 1.5} y={tick.y + 1} textAnchor="end" fontSize="3" fill="var(--color-muted)">
+            {tick.value}
+          </text>
+        ))}
+
+        {points.map((p) => (
+          <rect className="combo-bar" key={p.point.label} x={p.barLeftX} y={p.barTopY} width={barWidth} height={p.barHeight} fill={barColor} />
+        ))}
+
+        {hasPrevious && <path d={linePath} fill="none" stroke={lineColor} strokeWidth="0.6" />}
+        {hasPrevious && points.map((p) => (
+          <circle key={`dot-${p.point.label}`} cx={p.columnCenterX} cy={p.lineY} r="1" fill={lineColor} />
+        ))}
+
+        {!rotateLabels && points.map((p) => (
+          <text key={`x-label-${p.point.label}`} x={p.columnCenterX} y={bottom + 4} textAnchor="middle" fontSize="3" fill="var(--color-muted)">
+            {p.point.label}
+          </text>
+        ))}
+      </svg>
+      {rotateLabels && (
+        <div className="trend-chart-labels-row">
+          {points.map((p) => (
+            <div key={`x-label-cell-${p.point.label}`} className="trend-chart-label-cell">
+              <span className="trend-chart-label-rotated">{p.point.label}</span>
             </div>
-          );
-        })}
+          ))}
+        </div>
+      )}
+      <div className="combo-chart-legend">
+        <span className="combo-chart-legend-item">
+          <span className="combo-chart-legend-swatch" style={{ backgroundColor: barColor }} />
+          {currentLabel}
+        </span>
+        {hasPrevious && (
+          <span className="combo-chart-legend-item">
+            <span className="combo-chart-legend-line" style={{ backgroundColor: lineColor }} />
+            {previousLabel}
+          </span>
+        )}
       </div>
     </section>
   );
@@ -376,67 +821,3 @@ export function GaugeChart({ title, value, max = 100, label }) {
   );
 }
 
-// Ward × category matrix; full grid always renders so density is comparable between loads.
-export function buildHeatmapData(items, getWardCode, getCategorySlug) {
-  let max = 1;
-  const rows = WARDS.filter((ward) => ward.code !== 'all').map((ward) => ({
-    code: ward.code,
-    label: ward.label,
-    cells: CATEGORIES.map((category) => {
-      const count = items.filter((item) => (
-        getWardCode(item) === ward.code && getCategorySlug(item) === category.slug
-      )).length;
-      if (count > max) max = count;
-      return { category: category.slug, categoryLabel: category.label, count };
-    }),
-  }));
-  return { rows, max };
-}
-
-/**
- * HeatmapChart — ward rows × category columns; cell opacity scales with count.
- * Cells are buttons so the admin can drill down into the matching property list.
- */
-export function HeatmapChart({ title, data, onSelectCell }) {
-  return (
-    <section className="chart-panel">
-      <h2 className="chart-title">{title}</h2>
-      <p className="heatmap-hint">Màu càng đậm, số tin đăng trong ô càng nhiều</p>
-      <div className="heatmap-grid">
-        <span className="heatmap-corner" />
-        {CATEGORIES.map((category) => (
-          <span className="heatmap-col-label" key={category.slug}>{category.label}</span>
-        ))}
-        {data.rows.map((row) => (
-          <Fragment key={row.code}>
-            <span className="heatmap-row-label">{row.label}</span>
-            {row.cells.map((cell) => (
-              <button
-                type="button"
-                className="heatmap-cell"
-                key={cell.category}
-                aria-label={`${row.label} · ${cell.categoryLabel}: ${cell.count} tin`}
-                onClick={() => onSelectCell?.({ ward: row.code, category: cell.category })}
-              >
-                <span
-                  className="heatmap-cell-fill"
-                  style={{ opacity: cell.count === 0 ? 0.06 : 0.15 + 0.85 * (cell.count / data.max) }}
-                />
-                <span className="heatmap-cell-count">{cell.count}</span>
-              </button>
-            ))}
-          </Fragment>
-        ))}
-      </div>
-      <div className="heatmap-scale">
-        <span>Ít</span>
-        <span className="heatmap-scale-track">
-          {[0.15, 0.4, 0.65, 0.85, 1].map((opacity) => (
-            <span key={opacity} className="heatmap-scale-step" style={{ opacity }} />
-          ))}
-        </span>
-        <span>Nhiều</span>
-      </div>
-    </section>
-  );
-}

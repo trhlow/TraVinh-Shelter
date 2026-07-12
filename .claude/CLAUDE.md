@@ -10,7 +10,7 @@
 | Layer | Tech |
 |---|---|
 | Frontend | React 19, Vite 8, CSS custom properties (no UI libraries) |
-| Backend | Spring Boot 3, Java 21, PostgreSQL 16 |
+| Backend | Spring Boot 3.4.5, Java 21, PostgreSQL 18 |
 | Testing | Vitest + Testing Library (FE), JUnit 5 + Testcontainers (BE) |
 | Icons | lucide-react only |
 

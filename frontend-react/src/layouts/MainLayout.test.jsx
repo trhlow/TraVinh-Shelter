@@ -5,9 +5,9 @@ import { Footer } from './MainLayout.jsx';
 
 afterEach(() => cleanup());
 
-test('footer does not render Facebook, TikTok, or Youtube links', () => {
+test('footer renders Facebook, TikTok, and YouTube links', () => {
   render(<Footer />);
-  expect(screen.queryByLabelText('Facebook')).not.toBeInTheDocument();
-  expect(screen.queryByLabelText('TikTok')).not.toBeInTheDocument();
-  expect(screen.queryByLabelText('Youtube')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Facebook')).toBeInTheDocument();
+  expect(screen.getByLabelText('TikTok')).toBeInTheDocument();
+  expect(screen.getByLabelText('YouTube')).toBeInTheDocument();
 });

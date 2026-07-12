@@ -20,7 +20,7 @@ public class JwtService {
     private final RevokedTokenStore revokedTokens;
 
     public JwtService(JwtProperties properties) {
-        this(properties, new RevokedTokenStore());
+        this(properties, new InMemoryRevokedTokenStore());
     }
 
     @Autowired

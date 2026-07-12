@@ -1,0 +1,206 @@
+import { useMemo, useState } from 'react';
+import {
+  buildCategoryDensityData,
+  buildWardData,
+  CategoryBarChart,
+  ThreeDDonutChart,
+  TrendBarLineChart,
+} from '../../components/Charts.jsx';
+import { DashboardPanel, StateBlock, StatusBadge } from '../../components/DashboardWidgets.jsx';
+import DateRangeFilter from '../../components/dashboard/DateRangeFilter.jsx';
+import { WARDS, CATEGORIES } from '../../data/locations.js';
+import { isInRange, resolveDateRange } from '../../utils/dateRange.js';
+import { trimLeadingEmptyMonths } from '../../utils/chartSeries.js';
+
+export default function ReportsSection({ data }) {
+  const brokers = data?.brokers || [];
+  const properties = data?.properties || [];
+  const viewings = data?.viewings || [];
+
+  const [preset, setPreset] = useState('all');
+  const [custom, setCustom] = useState({});
+  const [ward, setWard] = useState('all');
+  const [category, setCategory] = useState('all');
+
+  const range = useMemo(() => resolveDateRange(preset, custom), [preset, custom]);
+
+  const filteredProperties = useMemo(() => properties.filter((property) => (
+    isInRange(property.createdAt, range)
+    && (ward === 'all' || property.ward === ward)
+    && (category === 'all' || property.category === category)
+  )), [properties, range, ward, category]);
+
+  const userGrowthData = useMemo(() => buildUserGrowthData(data?.users || []), [data]);
+  const distributionData = useMemo(
+    () => buildWardData(filteredProperties, (property) => property.ward).map((item) => ({
+      label: item.label.replace('Phường ', ''),
+      value: item.count,
+    })),
+    [filteredProperties],
+  );
+  const topBrokerData = useMemo(() => buildTopBrokerData(brokers, properties, viewings), [brokers, properties, viewings]);
+  const wardDensityData = useMemo(
+    () => WARDS.filter((item) => item.code !== 'all').map((item) => ({
+      code: item.code,
+      label: item.label,
+      data: buildCategoryDensityData(filteredProperties, item.code),
+    })),
+    [filteredProperties],
+  );
+
+  return (
+    <>
+      <div className="admin-filter-bar">
+        <DateRangeFilter
+          preset={preset}
+          custom={custom}
+          onChange={(nextPreset, nextCustom) => { setPreset(nextPreset); setCustom(nextCustom); }}
+        />
+        <label className="dashboard-table-sub" htmlFor="reports-ward-filter">Lọc theo phường</label>
+        <select id="reports-ward-filter" className="input" aria-label="Lọc theo phường" value={ward} onChange={(event) => setWard(event.target.value)}>
+          {WARDS.map((item) => <option key={item.code} value={item.code}>{item.label}</option>)}
+        </select>
+        <select className="input" aria-label="Lọc theo danh mục" value={category} onChange={(event) => setCategory(event.target.value)}>
+          <option value="all">Tất cả danh mục</option>
+          {CATEGORIES.map((item) => <option key={item.slug} value={item.slug}>{item.label}</option>)}
+        </select>
+      </div>
+
+      <div className="dashboard-live-row">
+        <TrendBarLineChart
+          title="Tăng trưởng người dùng mới"
+          subtitle="Tính từ khi có dữ liệu thực tế"
+          data={userGrowthData}
+          currentLabel="Người dùng mới"
+          previousLabel="Kỳ trước"
+        />
+        <ThreeDDonutChart
+          title="Phân bổ tin đăng theo khu vực"
+          subtitle="Theo các phường/khu vực đang có dữ liệu trong hệ thống"
+          data={distributionData}
+          centerLabel="tin đăng"
+        />
+      </div>
+
+      <div className="dashboard-ward-density-row">
+        {wardDensityData.map((wardChart) => (
+          <CategoryBarChart key={wardChart.code} title={`Mật độ tin — ${wardChart.label}`} data={wardChart.data} />
+        ))}
+      </div>
+
+      <div className="dashboard-charts-row">
+        <div className="dashboard-chart-span-2">
+          <TrendBarLineChart
+            title="Top môi giới theo hoạt động"
+            subtitle="Xếp hạng theo tổng số tin đăng và lịch hẹn đã xác nhận"
+            data={topBrokerData}
+            currentLabel="Tin đăng"
+            previousLabel="Lịch hẹn xác nhận"
+            rotateLabels
+          />
+        </div>
+        <BrokerPerformancePanel brokers={brokers} properties={properties} viewings={viewings} />
+      </div>
+    </>
+  );
+}
+
+function BrokerPerformancePanel({ brokers, properties, viewings }) {
+  const rows = useMemo(() => buildBrokerRows(brokers, properties, viewings), [brokers, properties, viewings]);
+  return (
+    <DashboardPanel title="Danh sách môi giới" count={`${brokers.length} tài khoản`}>
+      {rows.length === 0 ? (
+        <StateBlock icon="IdCard" title="Chưa có môi giới" description="Tài khoản môi giới mới sẽ hiển thị tại đây." />
+      ) : (
+        <div className="dashboard-broker-list">
+          {rows.slice(0, 5).map((row) => (
+            <div key={row.id} className="dashboard-broker-row">
+              <div>
+                <div className="dashboard-table-name">{row.name}</div>
+                <div className="dashboard-table-sub">{row.listings} tin đăng · hiệu suất {row.performance}%</div>
+              </div>
+              <StatusBadge tone={row.status === 'ACTIVE' ? 'success' : 'warning'}>
+                {row.status === 'ACTIVE' ? 'Hoạt động' : 'Tạm khóa'}
+              </StatusBadge>
+            </div>
+          ))}
+        </div>
+      )}
+    </DashboardPanel>
+  );
+}
+
+function buildUserGrowthData(users) {
+  const buckets = rollingMonthBuckets();
+  users.forEach((user) => {
+    const date = dateOrFallback(user.createdAt, 0);
+    const bucket = buckets.find((item) => sameMonth(item.date, date));
+    if (bucket) bucket.current += 1;
+  });
+  return trimLeadingEmptyMonths(buckets.map((bucket) => ({
+    label: bucket.label,
+    current: bucket.current || 0,
+    previous: 0,
+  })));
+}
+
+function buildTopBrokerData(brokers, properties, viewings) {
+  const rows = buildBrokerRows(brokers, properties, viewings).slice(0, 6);
+  if (rows.length === 0) {
+    return [{ label: 'Chưa có', current: 0, previous: 0 }];
+  }
+  return rows.map((row) => ({
+    label: shortName(row.name),
+    current: row.listings,
+    previous: row.confirmedViewings,
+  }));
+}
+
+function buildBrokerRows(brokers, properties, viewings) {
+  return brokers.map((broker) => {
+    const brokerProperties = properties.filter((property) => property.broker?.id === broker.id || property.broker?.email === broker.email);
+    const brokerPropertyIds = new Set(brokerProperties.map((property) => property.id));
+    const closed = brokerProperties.filter((property) => ['SOLD', 'RENTED'].includes(property.rawStatus)).length;
+    const confirmedViewings = viewings.filter((viewing) => (
+      viewing.status === 'CONFIRMED' && brokerPropertyIds.has(viewing.propertyId)
+    )).length;
+    return {
+      id: broker.id,
+      name: broker.fullName || broker.username || broker.email || 'Môi giới',
+      status: broker.status,
+      listings: brokerProperties.length,
+      performance: Math.min(100, Math.round((closed / Math.max(1, brokerProperties.length)) * 100)),
+      confirmedViewings,
+      activityScore: brokerProperties.length + confirmedViewings,
+    };
+  }).sort((a, b) => b.activityScore - a.activityScore || b.listings - a.listings);
+}
+
+function rollingMonthBuckets(referenceDate = new Date(), length = 12) {
+  return Array.from({ length }, (_, index) => {
+    const date = new Date(referenceDate.getFullYear(), referenceDate.getMonth() - (length - 1 - index), 1);
+    return {
+      date,
+      label: `T${date.getMonth() + 1}`,
+      current: 0,
+    };
+  });
+}
+
+function dateOrFallback(value, index) {
+  const parsed = value ? new Date(value) : null;
+  if (parsed && !Number.isNaN(parsed.getTime())) return parsed;
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() - (index % 12), 12);
+}
+
+function sameMonth(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+}
+
+export function shortName(name) {
+  const parts = String(name || 'MG').trim().split(/\s+/);
+  if (parts.length <= 1) return parts[0] || name;
+  const initials = parts.slice(0, -1).map((part) => part[0].toUpperCase()).join('.');
+  return `${initials}.${parts[parts.length - 1]}`;
+}

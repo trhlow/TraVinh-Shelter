@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import FeaturedCarousel from '../components/FeaturedCarousel.jsx';
 import TroShowcaseCard from '../components/TroShowcaseCard.jsx';
 import Icon from '../components/ui/Icon.jsx';
-import Button from '../components/ui/Button.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
 import { featuredProperties } from '../data/templateData.js';
 import { WARDS, CATEGORIES } from '../data/locations.js';
@@ -19,6 +18,14 @@ const HERO_PRICE_RANGES = [
   { label: 'Trên 3 tỷ', min: '3000000000', max: '' },
 ];
 
+const AREA_RANGES = [
+  { label: 'Mọi diện tích' },
+  { label: 'Dưới 60 m²' },
+  { label: '60 - 100 m²' },
+  { label: '100 - 200 m²' },
+  { label: 'Trên 200 m²' },
+];
+
 // Category showcase rows — each fetched separately and rendered as its own row.
 const SHOWCASE_ROWS = [
   { slug: 'tro', title: 'Phòng trọ cho thuê', subtitle: 'Phòng trọ mới, đã xác thực tại Trà Vinh' },
@@ -26,13 +33,27 @@ const SHOWCASE_ROWS = [
   { slug: 'dat', title: 'Đất nền', subtitle: 'Đất thổ cư, đất nền pháp lý rõ ràng' },
 ];
 
-// Decorative hero backdrop — reuses the same Unsplash real estate photography
-// already used across mockData.js/ProjectsPage.jsx, dimmed by .hero-bg-scrim
-// so the headline stays legible on top.
-const HERO_BG_IMAGES = [
-  'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=1200&q=80',
+const HERO_BG_IMAGE = 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1600&q=80';
+
+const TRUST_CHIPS = ['Pháp lý đã kiểm tra', 'Môi giới xác minh', 'Hình ảnh thực tế', 'Không phí ẩn'];
+
+const CATEGORY_ICONS = {
+  tro: { icon: 'Key', count: '160 tin đăng' },
+  nha: { icon: 'Home', count: '320 tin đăng' },
+  dat: { icon: 'Layers', count: '210 tin đăng' },
+};
+
+const WHY_US = [
+  { icon: 'ShieldCheck', title: 'Pháp lý minh bạch', desc: 'Mọi bất động sản đều được kiểm tra sổ đỏ, quy hoạch và pháp lý trước khi đăng tin.' },
+  { icon: 'Headphones', title: 'Tư vấn tận tâm', desc: 'Đội ngũ môi giới am hiểu Trà Vinh, đồng hành từ lúc xem nhà đến khi công chứng.' },
+  { icon: 'Tag', title: 'Giá tốt, rõ ràng', desc: 'Giá niêm yết minh bạch, không phí ẩn, thương lượng trực tiếp với chủ nhà.' },
+];
+
+const STATS = [
+  { value: '1.200', suffix: '+', label: 'Giao dịch thành công' },
+  { value: '3.500', suffix: '+', label: 'Khách hàng hài lòng' },
+  { value: '12', suffix: '', label: 'Năm kinh nghiệm' },
+  { value: '98', suffix: '%', label: 'Khách quay lại & giới thiệu' },
 ];
 
 function HeroSearchBar() {
@@ -55,19 +76,6 @@ function HeroSearchBar() {
   return (
     <form className="search-pill" onSubmit={handleSearch}>
       <div className="search-pill-segment">
-        <span className="search-pill-label">Khu vực</span>
-        <select
-          className="search-pill-select"
-          value={ward}
-          onChange={e => setWard(e.target.value)}
-        >
-          {WARDS.map(item => (
-            <option key={item.code} value={item.code}>{item.label}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className="search-pill-segment">
         <span className="search-pill-label">Loại hình</span>
         <select
           className="search-pill-select"
@@ -77,6 +85,19 @@ function HeroSearchBar() {
           <option value="all">Tất cả</option>
           {CATEGORIES.map(item => (
             <option key={item.slug} value={item.slug}>{item.label}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="search-pill-segment">
+        <span className="search-pill-label">Khu vực</span>
+        <select
+          className="search-pill-select"
+          value={ward}
+          onChange={e => setWard(e.target.value)}
+        >
+          {WARDS.map(item => (
+            <option key={item.code} value={item.code}>{item.label}</option>
           ))}
         </select>
       </div>
@@ -94,12 +115,32 @@ function HeroSearchBar() {
         </select>
       </div>
 
+      <div className="search-pill-segment">
+        <span className="search-pill-label">Diện tích</span>
+        <select className="search-pill-select" defaultValue="0">
+          {AREA_RANGES.map((r, i) => (
+            <option key={r.label} value={String(i)}>{r.label}</option>
+          ))}
+        </select>
+      </div>
+
       <div className="search-pill-orb-wrap">
         <button type="submit" className="search-pill-orb" aria-label="Tìm kiếm">
-          <Icon name="Search" size={20} />
+          <Icon name="Search" size={19} />
+          <span className="search-pill-orb-text">Tìm kiếm</span>
         </button>
       </div>
     </form>
+  );
+}
+
+function SectionEyebrow({ text }) {
+  return (
+    <div className="section-eyebrow">
+      <span className="section-eyebrow-line" />
+      {text}
+      <span className="section-eyebrow-line" />
+    </div>
   );
 }
 
@@ -112,14 +153,12 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
   useEffect(() => {
     let alive = true;
     fetchProperties({ category: 'all', transaction: 'all' })
-      .then(items => { if (alive && items.length > 0) setProperties(items.slice(0, 3)); })
+      .then(items => { if (alive && items.length > 0) setProperties(items.slice(0, 6)); })
       .catch(() => { if (alive) setProperties(featuredProperties); });
     return () => { alive = false; };
   }, []);
 
-  // Fetch each category separately. A single `category:'all'` fetch is paged
-  // (backend default size=20) and can starve a category, hiding its row even
-  // when listings of that type exist on later pages.
+  // Fetch each category separately.
   useEffect(() => {
     let alive = true;
     const setters = { tro: setTroProperties, nha: setNhaProperties, dat: setDatProperties };
@@ -137,47 +176,85 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
     <MainLayout session={session} onLogout={onLogout} theme={theme} onToggleTheme={onToggleTheme}>
       {/* 1. HERO */}
       <section className="hero">
-        <div className="hero-bg" aria-hidden="true">
-          {HERO_BG_IMAGES.map(url => (
-            <img key={url} className="hero-bg-img" src={url} alt="" loading="lazy" />
-          ))}
-          <div className="hero-bg-scrim" />
-        </div>
         <div className="container">
-          <div className="hero-content">
-            <h1 className="text-display-xl hero-headline">
-              Tìm bất động sản tại Trà Vinh
-            </h1>
-            <div className="hero-ctas">
-              <Button as="a" href="#/search" variant="primary" size="lg">
-                <Icon name="Search" size={18} /> Tìm kiếm ngay
-              </Button>
-              <Button as="a" href="#/brokers" variant="secondary" size="lg">
-                Xem môi giới
-              </Button>
+          <div className="hero-inner">
+            <div className="hero-bg" aria-hidden="true">
+              <img className="hero-bg-img" src={HERO_BG_IMAGE} alt="" loading="eager" />
+              <div className="hero-bg-scrim" />
             </div>
-            <HeroSearchBar />
+
+            <div className="hero-content">
+              <div className="hero-badge">
+                <span className="hero-badge-dot" />
+                Bất động sản Trà Vinh · Vĩnh Long · Bến Tre
+              </div>
+              <h1 className="hero-headline">
+                Tìm ngôi nhà mơ ước<br />của bạn tại Trà Vinh
+              </h1>
+              <p className="hero-subtitle">
+                Nhà phố, đất nền, căn hộ và biệt thự đã xác minh pháp lý. Kết nối trực tiếp với môi giới địa phương uy tín.
+              </p>
+            </div>
+
+            <div className="hero-search-wrap">
+              <HeroSearchBar />
+            </div>
+          </div>
+
+          {/* Trust chips under hero */}
+          <div className="hero-trust-chips">
+            {TRUST_CHIPS.map(chip => (
+              <span key={chip} className="hero-trust-chip">
+                <Icon name="Check" size={16} />
+                {chip}
+              </span>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* 2. FEATURED PROPERTIES — newest across all categories, leads the page */}
-      <section className="section-subtle">
+      {/* 2. CATEGORIES */}
+      <section className="section" style={{ paddingTop: '80px' }}>
+        <div className="container">
+          <div className="section-center">
+            <SectionEyebrow text="Danh mục" />
+            <h2 className="text-display-md section-center-title">Khám phá theo loại hình</h2>
+            <p className="section-center-subtitle">Chọn đúng loại bất động sản phù hợp với nhu cầu của bạn</p>
+          </div>
+          <div className="category-grid">
+            {CATEGORIES.map(cat => (
+              <a key={cat.slug} href={`#/search?category=${cat.slug}`} className="category-card">
+                <span className="category-card-icon">
+                  <Icon name={CATEGORY_ICONS[cat.slug].icon} size={24} />
+                </span>
+                <span>
+                  <span className="category-card-label">{cat.label}</span>
+                  <span className="category-card-count">{CATEGORY_ICONS[cat.slug].count}</span>
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 3. FEATURED PROPERTIES */}
+      <section className="section-subtle" style={{ paddingTop: '80px' }}>
         <div className="container">
           <div className="section-header">
             <div className="section-header-text">
-              <h2 className="text-display-md">Tin nổi bật</h2>
-              <p>Khám phá các bất động sản tốt nhất tại Trà Vinh</p>
+              <SectionEyebrow text="Bất động sản nổi bật" />
+              <h2 className="text-display-md">Tin đăng chọn lọc tại Trà Vinh</h2>
+              <p>Đã kiểm tra pháp lý, hình ảnh thực tế, cập nhật mỗi ngày.</p>
             </div>
             <a href="#/search" className="section-header-link">
-              Xem tất cả <Icon name="ArrowRight" size={15} />
+              Xem tất cả <Icon name="ArrowRight" size={17} />
             </a>
           </div>
           <FeaturedCarousel properties={properties} />
         </div>
       </section>
 
-      {/* 3. CATEGORY SHOWCASE ROWS — Trọ / Nhà / Đất */}
+      {/* 4. CATEGORY SHOWCASE ROWS — Trọ / Nhà / Đất */}
       {SHOWCASE_ROWS.map(({ slug, title, subtitle }, index) => {
         const items = rowItems[slug];
         if (items.length === 0) return null;
@@ -202,6 +279,44 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
           </section>
         );
       })}
+
+      {/* 5. WHY CHOOSE US */}
+      <section className="section-subtle" style={{ paddingTop: '80px', paddingBottom: '80px', background: 'var(--color-surface-soft)' }}>
+        <div className="container">
+          <div className="section-center">
+            <SectionEyebrow text="Vì sao chọn chúng tôi" />
+            <h2 className="text-display-md section-center-title">Uy tín · Tận tâm · Hiệu quả</h2>
+            <p className="section-center-subtitle">Đồng hành cùng bạn từ lúc tìm kiếm đến khi cầm sổ trên tay</p>
+          </div>
+          <div className="why-us-grid">
+            {WHY_US.map(item => (
+              <div key={item.title} className="why-us-card">
+                <span className="why-us-icon">
+                  <Icon name={item.icon} size={24} />
+                </span>
+                <h3 className="why-us-title">{item.title}</h3>
+                <p className="why-us-desc">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 6. STATS */}
+      <section className="section" style={{ paddingTop: '80px', paddingBottom: '80px' }}>
+        <div className="container">
+          <div className="stats-grid">
+            {STATS.map(s => (
+              <div key={s.label} className="stats-item">
+                <div className="stats-value">
+                  {s.value}<span className="stats-suffix">{s.suffix}</span>
+                </div>
+                <div className="stats-label">{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </MainLayout>
   );
 }

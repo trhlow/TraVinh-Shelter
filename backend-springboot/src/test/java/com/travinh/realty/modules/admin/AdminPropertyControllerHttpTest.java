@@ -14,7 +14,6 @@ import com.travinh.realty.common.config.SecurityConfig;
 import com.travinh.realty.common.exception.GlobalExceptionHandler;
 import com.travinh.realty.modules.admin.model.AuditAction;
 import com.travinh.realty.modules.auth.security.JpaUserDetailsService;
-import com.travinh.realty.modules.auth.security.JwtAuthenticationFilter;
 import com.travinh.realty.modules.auth.security.JwtService;
 import com.travinh.realty.modules.auth.security.UserPrincipal;
 import com.travinh.realty.modules.property.PropertyService;
@@ -33,9 +32,9 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
@@ -46,17 +45,17 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.MultiValueMap;
 
 @WebMvcTest(controllers = AdminPropertyController.class)
-@Import({SecurityConfig.class, JwtService.class, JwtAuthenticationFilter.class, GlobalExceptionHandler.class,
+@Import({SecurityConfig.class, JwtService.class, GlobalExceptionHandler.class,
         AdminPropertyControllerHttpTest.JwtTestConfiguration.class})
 class AdminPropertyControllerHttpTest {
     private static final String SECRET = "a-development-secret-that-is-at-least-thirty-two-characters-long";
 
     @Autowired private MockMvc mockMvc;
     @Autowired private JwtService jwtService;
-    @MockBean private PropertyService properties;
-    @MockBean private com.travinh.realty.modules.admin.AuditService audit;
-    @MockBean private JpaUserDetailsService userDetailsService;
-    @MockBean private JpaMetamodelMappingContext jpaMappingContext;
+    @MockitoBean private PropertyService properties;
+    @MockitoBean private com.travinh.realty.modules.admin.AuditService audit;
+    @MockitoBean private JpaUserDetailsService userDetailsService;
+    @MockitoBean private JpaMetamodelMappingContext jpaMappingContext;
 
     @Test
     void nonAdminIsForbidden() throws Exception {
@@ -151,6 +150,11 @@ class AdminPropertyControllerHttpTest {
         @Bean
         JwtProperties jwtProperties() {
             return new JwtProperties(SECRET, 60_000);
+        }
+
+        @Bean
+        org.springframework.boot.webmvc.test.autoconfigure.MockMvcBuilderCustomizer securityMockMvcCustomizer() {
+            return builder -> builder.apply(org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity());
         }
     }
 }

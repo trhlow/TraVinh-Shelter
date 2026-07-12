@@ -21,6 +21,7 @@ export default function PropertiesSection({ data, loading, saving, actions, quer
   const [ward, setWard] = useState(queryParams.ward || 'all');
   const [category, setCategory] = useState(queryParams.category || 'all');
   const [status, setStatus] = useState(queryParams.status || 'all');
+  const [search, setSearch] = useState(queryParams.search || '');
 
   // The admin shell reuses this mounted component across hashchanges (no key remount),
   // so the useState seeds above only run once — re-sync when a new drill-down/quick-action
@@ -29,7 +30,8 @@ export default function PropertiesSection({ data, loading, saving, actions, quer
     setWard(queryParams.ward || 'all');
     setCategory(queryParams.category || 'all');
     setStatus(queryParams.status || 'all');
-  }, [queryParams.ward, queryParams.category, queryParams.status]);
+    setSearch(queryParams.search || '');
+  }, [queryParams.ward, queryParams.category, queryParams.status, queryParams.search]);
 
   const filtered = useMemo(() => data.properties.filter((property) => (
     (ward === 'all' || property.ward === ward)
@@ -97,6 +99,7 @@ export default function PropertiesSection({ data, loading, saving, actions, quer
         rows={filtered}
         searchKeys={['title', 'address', 'priceLabel']}
         searchPlaceholder="Tìm tin, địa chỉ..."
+        initialQuery={search}
         exportFilename="bai-dang.csv"
         loading={loading}
         toolbar={filterToolbar}

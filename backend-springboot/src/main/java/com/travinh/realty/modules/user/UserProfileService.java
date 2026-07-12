@@ -13,7 +13,9 @@ import com.travinh.realty.modules.user.model.User;
 import com.travinh.realty.modules.user.model.UserRole;
 import com.travinh.realty.modules.user.model.UserStatus;
 import com.travinh.realty.modules.user.repository.UserRepository;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Stream;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -49,13 +51,15 @@ public class UserProfileService {
         User user = findUser(principal.id());
         String phone = normalizeOptional(request.phone());
         if (user.getRole() == UserRole.BROKER && phone == null) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Broker profile requires a phone number");
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "Broker profile requires a phone number");
         }
         if (phone != null && users.existsByNormalizedPhoneAndIdNot(normalizePhoneForLookup(phone), user.getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Phone number is already registered");
         }
+        String facebookUrl = normalizeOptional(request.facebookUrl());
+        String tiktokUrl = normalizeOptional(request.tiktokUrl());
         try {
-            user.updateProfile(request.fullName().trim(), phone);
+            user.updateProfile(request.fullName().trim(), phone, facebookUrl, tiktokUrl);
             users.flush();
             return CurrentUserProfileResponse.from(user);
         } catch (DataIntegrityViolationException exception) {
@@ -135,16 +139,22 @@ public class UserProfileService {
 
     @Transactional(readOnly = true)
     public Page<UserProfileResponse> listUsers(String query, UserStatus status, Pageable pageable) {
-        Specification<User> spec = Specification.where(UserSpecifications.matchesQuery(query))
-                .and(UserSpecifications.hasStatus(status));
+        Specification<User> spec = Specification.allOf(Stream.of(
+                UserSpecifications.matchesQuery(query),
+                UserSpecifications.hasStatus(status))
+                .filter(Objects::nonNull)
+                .toList());
         return users.findAll(spec, pageable).map(UserProfileResponse::from);
     }
 
     @Transactional(readOnly = true)
     public Page<UserProfileResponse> listBrokers(String query, UserStatus status, Pageable pageable) {
-        Specification<User> spec = Specification.where(UserSpecifications.hasRole(UserRole.BROKER))
-                .and(UserSpecifications.matchesQuery(query))
-                .and(UserSpecifications.hasStatus(status));
+        Specification<User> spec = Specification.allOf(Stream.of(
+                UserSpecifications.hasRole(UserRole.BROKER),
+                UserSpecifications.matchesQuery(query),
+                UserSpecifications.hasStatus(status))
+                .filter(Objects::nonNull)
+                .toList());
         return users.findAll(spec, pageable).map(UserProfileResponse::from);
     }
 

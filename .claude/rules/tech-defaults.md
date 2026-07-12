@@ -9,7 +9,7 @@ description: Tech stack, lệnh chạy/test, API conventions, kiến trúc front
 | Layer | Tech |
 |---|---|
 | Frontend | React 19, Vite 8, CSS custom properties |
-| Backend | Spring Boot 3, Java 21, PostgreSQL 16, JWT stateless |
+| Backend | Spring Boot 3.4.5, Java 21, PostgreSQL 18, JWT stateless |
 | Icons | lucide-react |
 | Testing (FE) | Vitest + Testing Library (jsdom) |
 | Testing (BE) | JUnit 5, Testcontainers |
@@ -64,9 +64,11 @@ GET  /properties/**
 GET  /categories/**
 GET  /brokers/**
 GET  /media/**
-POST /auth/register
 POST /auth/login
 ```
+
+Không có `POST /auth/register` — tự đăng ký USER đã bị bỏ khỏi cả frontend lẫn backend (Pass 3). Tài
+khoản môi giới chỉ được tạo bởi admin (`AdminBrokerController`'s `POST /admin/brokers`).
 
 ### Mock credentials (khi VITE_USE_MOCK_API=true)
 

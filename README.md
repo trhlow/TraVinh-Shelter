@@ -45,7 +45,7 @@ Công Tín Land là cổng thông tin bất động sản cho khu vực Trà Vin
 **Trọ** (`tro`), **Nhà** (`nha`) và **Đất** (`dat`). Nền tảng kết nối khách hàng với đội ngũ
 môi giới đã được xác minh, cho phép tìm kiếm, xem chi tiết và đặt lịch xem bất động sản.
 
-Dự án là một **monorepo** gồm backend Spring Boot 3, frontend React + Vite và PostgreSQL 16,
+Dự án là một **monorepo** gồm backend Spring Boot 3, frontend React + Vite và PostgreSQL 18,
 đóng gói chạy được toàn bộ bằng Docker Compose.
 
 ## Tính năng chính
@@ -71,8 +71,8 @@ Dự án là một **monorepo** gồm backend Spring Boot 3, frontend React + Vi
 | Lớp | Công nghệ |
 | --- | --- |
 | Frontend | React 19, Vite 8, CSS custom properties, `lucide-react`, font Be Vietnam Pro |
-| Backend | Spring Boot 3.3, Java 21, Spring Security (JWT stateless), Spring Data JPA |
-| Database | PostgreSQL 16, Flyway migration |
+| Backend | Spring Boot 3.4, Java 21, Spring Security (JWT stateless), Spring Data JPA |
+| Database | PostgreSQL 18, Flyway migration |
 | API docs | springdoc-openapi (Swagger UI) |
 | Testing (FE) | Vitest + Testing Library (jsdom) |
 | Testing (BE) | JUnit 5, Testcontainers |

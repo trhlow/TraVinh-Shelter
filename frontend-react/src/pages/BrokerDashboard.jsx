@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { buildDailySeries, buildWardData, DonutChart, GaugeChart, HorizontalBarChart, TrendAreaChart, WardBarChart } from '../components/Charts.jsx';
+import {
+  buildDailySeries, buildWardData, ThreeDDonutChart, TrendBarLineChart, WardBarChart,
+} from '../components/Charts.jsx';
 import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../components/DashboardWidgets.jsx';
 import ViewingsPanel from '../components/dashboard/ViewingsPanel.jsx';
 import DateRangeFilter from '../components/dashboard/DateRangeFilter.jsx';
@@ -9,6 +11,7 @@ import Icon from '../components/ui/Icon.jsx';
 import LoginPage from './LoginPage.jsx';
 import { isInRange, percentDelta, previousRange, resolveDateRange } from '../utils/dateRange.js';
 import { downloadCsv } from '../utils/exportCsv.js';
+import { trimLeadingEmptyMonths } from '../utils/chartSeries.js';
 import {
   changePassword,
   createProperty,
@@ -25,10 +28,10 @@ import {
 } from '../services/api.js';
 
 const BROKER_SIDEBAR_ITEMS = [
-  { href: '#/broker/dashboard', icon: 'LayoutDashboard', label: 'Bảng điều khiển' },
-  { href: '#/broker/profile', icon: 'User', label: 'Hồ sơ môi giới' },
+  { href: '#/broker/dashboard', icon: 'LayoutDashboard', label: 'Tổng quan' },
   { href: '#/broker/properties', icon: 'Building', label: 'Tin đăng của tôi' },
-  { href: '#/broker/viewings', icon: 'Calendar', label: 'Lịch hẹn xem' },
+  { href: '#/broker/viewings', icon: 'Calendar', label: 'Lịch hẹn' },
+  { href: '#/broker/settings', icon: 'Settings', label: 'Cài đặt' },
 ];
 
 const EMPTY_FORM = {
@@ -55,10 +58,10 @@ const EMPTY_FORM = {
 
 export default function BrokerDashboard({ session, onLogin, onLogout, currentPath = '/broker/dashboard', section = 'dashboard' }) {
   const [profile, setProfile] = useState(null);
-  const [profileForm, setProfileForm] = useState({ fullName: '', phone: '' });
+  const [profileForm, setProfileForm] = useState({ fullName: '', phone: '', facebookUrl: '', tiktokUrl: '' });
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState('');
-  const [stats, setStats] = useState({ activeListings: 0, totalListings: 0, pendingLeads: 0, listings: [] });
+  const [stats, setStats] = useState({ activeListings: 0, totalListings: 0, listings: [] });
   const [listingForm, setListingForm] = useState(EMPTY_FORM);
   const [listingQuery, setListingQuery] = useState('');
   const [listingStatusTab, setListingStatusTab] = useState('AVAILABLE');
@@ -75,6 +78,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   const [savingViewing, setSavingViewing] = useState(false);
   const [rangePreset, setRangePreset] = useState('all');
   const [rangeCustom, setRangeCustom] = useState({});
+  const [quickSearch, setQuickSearch] = useState('');
 
   const listings = stats.listings || [];
   const listingRange = useMemo(() => resolveDateRange(rangePreset, rangeCustom), [rangePreset, rangeCustom]);
@@ -97,7 +101,12 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       .then(([profileData, dashboardData]) => {
         if (!alive) return;
         setProfile(profileData);
-        setProfileForm({ fullName: profileData.fullName || '', phone: profileData.phone || '' });
+        setProfileForm({
+          fullName: profileData.fullName || '',
+          phone: profileData.phone || '',
+          facebookUrl: profileData.facebookUrl || '',
+          tiktokUrl: profileData.tiktokUrl || '',
+        });
         setAvatarPreview(profileData.avatarUrl || '');
         setStats(dashboardData);
       })
@@ -113,7 +122,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   }, [session]);
 
   useEffect(() => {
-    if (!session?.token || session.role !== 'BROKER' || section !== 'viewings') return;
+    if (!session?.token || session.role !== 'BROKER' || !['dashboard', 'viewings'].includes(section)) return;
     let alive = true;
     setViewingsLoading(true);
     fetchBrokerViewings(session.token)
@@ -136,18 +145,13 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
     const totalListings = rangedListings.length || (unbounded ? stats.totalListings : 0) || 0;
     const activeListings = rangedListings.filter(isAvailableListing).length || (unbounded ? stats.activeListings : 0) || 0;
     const pendingListings = rangedListings.filter(isPendingListing).length;
-    const estimatedViews = rangedListings.reduce((sum, listing) => sum + listingViews(listing), 0);
     return {
       totalListings,
       activeListings,
       pendingListings,
-      estimatedViews,
-      leads: stats.pendingLeads || Math.max(0, totalListings * 2),
     };
   }, [rangedListings, stats, listingRange]);
 
-  const statusChart = useMemo(() => chartBy(rangedListings, (listing) => listing.statusLabel || 'Đang hiển thị'), [rangedListings]);
-  const categoryChart = useMemo(() => chartBy(rangedListings, (listing) => categoryLabel(listing.category)), [rangedListings]);
   const wardChart = useMemo(() => buildWardData(rangedListings, (listing) => listing.ward), [rangedListings]);
 
   const prevListingRange = useMemo(() => previousRange(listingRange), [listingRange]);
@@ -155,41 +159,40 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
     prevListingRange ? listings.filter((listing) => isInRange(listing.createdAt, prevListingRange)) : null
   ), [listings, prevListingRange]);
 
-  const totalListingsDelta = prevRangedListings ? percentDelta(dashboardStats.totalListings, prevRangedListings.length) : null;
   const activeListingsDelta = prevRangedListings
     ? percentDelta(dashboardStats.activeListings, prevRangedListings.filter(isAvailableListing).length)
     : null;
-  const leadsDelta = prevRangedListings
-    ? percentDelta(dashboardStats.leads, Math.max(0, prevRangedListings.length * 2))
-    : null;
 
-  const totalListingsSparkline = useMemo(
-    () => buildDailySeries(rangedListings, (listing) => listing.createdAt, 7).map((bucket) => bucket.count),
-    [rangedListings],
-  );
   const activeListingsSparkline = useMemo(
     () => buildDailySeries(rangedListings.filter(isAvailableListing), (listing) => listing.createdAt, 7).map((bucket) => bucket.count),
     [rangedListings],
   );
 
-  const listingActivitySeries = useMemo(
-    () => buildDailySeries(listings, (listing) => listing.createdAt, 30),
-    [listings],
+  const activityMonthLabel = useMemo(
+    () => new Intl.DateTimeFormat('vi-VN', { month: 'numeric', year: 'numeric' }).format(new Date()),
+    [],
   );
+  const activityChartData = useMemo(() => buildActivitySeries(listings, viewings), [listings, viewings]);
+  const confirmedViewingsThisMonth = useMemo(() => {
+    const now = new Date();
+    return viewings.filter((viewing) => (
+      viewing.status === 'CONFIRMED' && sameCalendarMonth(viewing.requestedAt || viewing.createdAt, now)
+    )).length;
+  }, [viewings]);
+  const managedTypeData = useMemo(() => buildManagedTypeData(rangedListings), [rangedListings]);
+  const upcomingViewings = useMemo(() => viewings.slice(0, 4), [viewings]);
 
   function trendFor(delta) {
     return delta == null ? undefined : { value: `${delta >= 0 ? '+' : ''}${delta}%`, direction: delta >= 0 ? 'up' : 'down' };
   }
-  const profileCompletion = useMemo(() => {
-    const fields = [
-      profileForm?.fullName || profile?.fullName,
-      profileForm?.phone || profile?.phone,
-      profileForm?.email || profile?.email,
-      avatarPreview || profile?.avatarUrl,
-    ];
-    const filled = fields.filter((field) => Boolean(field && String(field).trim())).length;
-    return Math.round((filled / 4) * 100);
-  }, [profileForm, profile, avatarPreview]);
+
+  function handleQuickSearch(event) {
+    event.preventDefault();
+    const term = quickSearch.trim();
+    if (!term) return;
+    setListingQuery(term);
+    window.location.hash = '#/broker/properties';
+  }
 
   if (!session) return <LoginPage onLogin={onLogin} />;
   if (session.role !== 'BROKER') {
@@ -401,7 +404,26 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       <div className="dashboard-content">
         <div className="dashboard-topbar">
           <span className="dashboard-topbar-title">{brokerTitle(section)}</span>
+          <form className="dashboard-topbar-search" onSubmit={handleQuickSearch}>
+            <Icon name="Search" size={16} className="icon-muted" />
+            <input
+              className="dashboard-topbar-search-input"
+              type="search"
+              value={quickSearch}
+              onChange={(event) => setQuickSearch(event.target.value)}
+              placeholder="Tìm tin đăng, khách hàng, lịch hẹn..."
+              aria-label="Tìm nhanh dashboard môi giới"
+            />
+          </form>
           <div className="dashboard-topbar-actions">
+            <button className="dashboard-icon-btn" type="button" aria-label="Thông báo">
+              <Icon name="Bell" size={18} />
+              {(dashboardStats.pendingListings || viewings.length) > 0 && <span className="dashboard-icon-dot" />}
+            </button>
+            <div className="dashboard-user-chip">
+              <span className="dashboard-user-avatar">{initialsFor(profile?.fullName || session.fullName || session.email)}</span>
+              <span className="dashboard-user-name">{profile?.fullName || session.fullName || 'Môi giới'}</span>
+            </div>
             {section === 'properties' && (
               <>
                 <button
@@ -431,7 +453,19 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
         </div>
 
         <div className="dashboard-main">
-          <h1 className="dashboard-page-title">{brokerTitle(section)}</h1>
+          <div className="dashboard-title-row">
+            <div>
+              <h1 className="dashboard-page-title">{brokerTitle(section)}</h1>
+              <p className="dashboard-page-subtitle">{brokerSubtitle(section, activityMonthLabel)}</p>
+            </div>
+            {section === 'dashboard' && (
+              <div className="dashboard-period-chip">
+                <Icon name="Calendar" size={16} />
+                Tháng {activityMonthLabel}
+                <Icon name="ChevronDown" size={15} className="icon-muted" />
+              </div>
+            )}
+          </div>
 
           {notice && <div className="alert dashboard-notice">{notice}</div>}
           {error && <div className="alert alert-error">{error}</div>}
@@ -446,25 +480,34 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                 />
               </div>
 
-              <div className="grid-3 dashboard-stats-row">
-                <StatCard icon="Building" title="Tổng tin đăng" value={dashboardStats.totalListings} tone="navy" trend={trendFor(totalListingsDelta)} series={totalListingsSparkline} />
-                <StatCard icon="Eye" title="Đang hiển thị" value={dashboardStats.activeListings} tone="green" trend={trendFor(activeListingsDelta)} series={activeListingsSparkline} />
-                <StatCard icon="Users" title="Khách quan tâm" value={dashboardStats.leads} tone="orange" trend={trendFor(leadsDelta)} series={totalListingsSparkline} />
+              <div className="grid-2 dashboard-stats-row">
+                <StatCard icon="Building" title="Tin đăng đang hoạt động" value={dashboardStats.activeListings} tone="navy" trend={trendFor(activeListingsDelta)} series={activeListingsSparkline} />
+                <StatCard icon="CalendarCheck" title="Lịch hẹn xác nhận tháng này" value={confirmedViewingsThisMonth} tone="navy" />
               </div>
 
               <div className="dashboard-live-row">
-                <TrendAreaChart
-                  title="Hoạt động tin đăng (30 ngày)"
-                  series={listingActivitySeries}
-                  unit="tin đăng"
+                <TrendBarLineChart
+                  title="Hoạt động môi giới theo tháng"
+                  subtitle="Số bài đăng mới và lịch hẹn đã xác nhận theo từng tháng, tính từ khi có dữ liệu thực tế"
+                  data={activityChartData}
+                  currentLabel="Bài đăng"
+                  previousLabel="Lịch hẹn xác nhận"
                 />
-                <WardBarChart title="Tin đăng theo phường" data={wardChart} />
+                <ThreeDDonutChart
+                  title="Loại hình BĐS đang quản lý"
+                  subtitle="Trọ, nhà và đất đang quản lý"
+                  data={managedTypeData}
+                  centerLabel="tin"
+                />
               </div>
 
               <div className="dashboard-charts-row">
-                <GaugeChart title="Mức độ hoàn thiện hồ sơ" value={profileCompletion} max={100} label="hồ sơ" />
-                <DonutChart title="Tin đăng theo danh mục" data={categoryChart} centerLabel="tin" />
-                <HorizontalBarChart title="Trạng thái tin đăng" data={statusChart} />
+                <div className="dashboard-chart-span-2">
+                  <WardBarChart title="Tin đăng theo phường" data={wardChart} />
+                </div>
+                <DashboardPanel title="Lịch hẹn sắp tới" count={viewingsLoading ? 'Đang tải' : `${upcomingViewings.length} lịch`}>
+                  <UpcomingViewingsSummary viewings={upcomingViewings} loading={viewingsLoading} />
+                </DashboardPanel>
               </div>
 
               <div className="dashboard-panels-row">
@@ -478,7 +521,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
             </>
           )}
 
-          {section === 'profile' && (
+          {section === 'settings' && (
             <div className="dashboard-profile-grid">
               <DashboardPanel title="Hồ sơ đang hiển thị" count={profileReady ? 'Sẵn sàng đăng tin' : 'Cần cập nhật'}>
                 <ProfileSummary profile={profile} profileForm={profileForm} avatarPreview={avatarPreview} profileReady={profileReady} />
@@ -503,6 +546,12 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                 </FormField>
                 <FormField label="Số điện thoại">
                   <input className="input" value={profileForm.phone} onChange={(event) => setProfileForm((current) => ({ ...current, phone: event.target.value }))} required />
+                </FormField>
+                <FormField label="Facebook">
+                  <input className="input" type="url" aria-label="Facebook" placeholder="https://facebook.com/..." value={profileForm.facebookUrl} onChange={(event) => setProfileForm((current) => ({ ...current, facebookUrl: event.target.value }))} />
+                </FormField>
+                <FormField label="TikTok">
+                  <input className="input" type="url" aria-label="TikTok" placeholder="https://tiktok.com/@..." value={profileForm.tiktokUrl} onChange={(event) => setProfileForm((current) => ({ ...current, tiktokUrl: event.target.value }))} />
                 </FormField>
                 <button className="auth-btn" type="submit" disabled={saving}>
                   <Icon name="Check" size={16} className="icon-inverse" />
@@ -553,7 +602,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                 </div>
                 {!profileReady && (
                   <div className="alert alert-error">
-                    Vui lòng hoàn tất hồ sơ môi giới trước khi đăng tin. <a className="auth-link" href="#/broker/profile">Mở hồ sơ</a>
+                    Vui lòng hoàn tất hồ sơ môi giới trước khi đăng tin. <a className="auth-link" href="#/broker/settings">Mở hồ sơ</a>
                   </div>
                 )}
                 <div className="dashboard-listing-grid">
@@ -722,6 +771,8 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
               />
             </DashboardPanel>
           )}
+
+
         </div>
       </div>
     </div>
@@ -787,9 +838,15 @@ function ProfileSummary({ profile, profileForm, avatarPreview, profileReady }) {
       </div>
       <div className="dashboard-profile-meta">
         <ProfileLine label="Số điện thoại" value={profile?.phone || profileForm.phone || 'Chưa cập nhật'} />
+        {(profile?.facebookUrl || profileForm.facebookUrl) && (
+          <ProfileSocialLine label="Facebook" url={profile?.facebookUrl || profileForm.facebookUrl} />
+        )}
+        {(profile?.tiktokUrl || profileForm.tiktokUrl) && (
+          <ProfileSocialLine label="TikTok" url={profile?.tiktokUrl || profileForm.tiktokUrl} />
+        )}
         <ProfileLine label="Trạng thái hồ sơ" value={profileReady ? 'Sẵn sàng hiển thị' : 'Cần bổ sung'} tone={profileReady ? 'success' : 'warning'} />
       </div>
-      <a className="auth-btn" href="#/broker/profile">
+      <a className="auth-btn" href="#/broker/settings">
         Mở hồ sơ
       </a>
     </div>
@@ -805,20 +862,79 @@ function ProfileLine({ label, value, tone = 'muted' }) {
   );
 }
 
+// Social profile URLs are links, not status text — unlike ProfileLine's StatusBadge.
+function ProfileSocialLine({ label, url }) {
+  return (
+    <div className="dashboard-profile-line">
+      <span className="dashboard-profile-line-label">{label}</span>
+      <a className="dashboard-profile-line-link" href={url} target="_blank" rel="noopener noreferrer">
+        {url}
+      </a>
+    </div>
+  );
+}
+
 function RecentListings({ listings, loading }) {
   if (loading) return <LoadingRows rows={3} />;
   if (listings.length === 0) return <StateBlock title="Bạn chưa có tin đăng nào" description="Tạo tin đầu tiên trong mục Tin đăng của tôi." />;
   return (
-    <div className="dashboard-recent-list">
-      {listings.slice(0, 4).map((listing) => (
-        <a key={listing.id} className="dashboard-recent-item" href="#/broker/properties">
-          <img className="dashboard-recent-thumb" src={listing.image} alt={listing.title} />
-          <div className="dashboard-recent-info">
-            <div className="dashboard-recent-title">{listing.title}</div>
-            <div className="dashboard-recent-price">{listing.priceLabel}</div>
+    <div className="dashboard-table-wrap">
+      <table className="dashboard-table">
+        <thead>
+          <tr>
+            <th>Bất động sản</th>
+            <th>Loại</th>
+            <th>Trạng thái</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {listings.slice(0, 4).map((listing) => (
+            <tr key={listing.id}>
+              <td>
+                <div className="dashboard-property-cell">
+                  <img className="dashboard-property-thumb" src={listing.image} alt={listing.title} />
+                  <div>
+                    <div className="dashboard-table-name" style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{listing.title}</div>
+                    <div className="dashboard-table-sub">{listing.address}</div>
+                  </div>
+                </div>
+              </td>
+              <td>{categoryLabel(listing.category)}</td>
+              <td><StatusBadge tone={listingStatusTone(listing)}>{listing.statusLabel}</StatusBadge></td>
+              <td>
+                <div className="dashboard-row-actions">
+                  <a className="dashboard-icon-link" href="#/broker/properties" aria-label={`Sửa ${listing.title}`}>
+                    <Icon name="Pencil" size={15} />
+                  </a>
+                  <a className="dashboard-icon-link" href={`#/property/${listing.id}`} aria-label={`Xem ${listing.title}`}>
+                    <Icon name="Eye" size={15} />
+                  </a>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function UpcomingViewingsSummary({ viewings, loading }) {
+  if (loading) return <LoadingRows rows={3} />;
+  if (viewings.length === 0) {
+    return <StateBlock icon="Calendar" title="Chưa có lịch hẹn" description="Các lịch hẹn xem nhà sắp tới sẽ hiển thị tại đây." />;
+  }
+  return (
+    <div className="dashboard-appointment-list">
+      {viewings.map((viewing) => (
+        <div className="dashboard-appointment-item" key={viewing.id}>
+          <div>
+            <div className="dashboard-table-name">{viewing.visitorName || 'Khách hàng'}</div>
+            <div className="dashboard-table-sub">{viewing.propertyTitle || 'Bất động sản'} · {formatViewingDate(viewing.requestedAt || viewing.createdAt)}</div>
           </div>
-          <StatusBadge tone={listingStatusTone(listing)}>{listing.statusLabel}</StatusBadge>
-        </a>
+          <StatusBadge tone={viewing.status === 'PENDING' ? 'warning' : 'success'}>{viewing.status || 'PENDING'}</StatusBadge>
+        </div>
       ))}
     </div>
   );
@@ -861,7 +977,6 @@ function ListingRow({ listing, onEdit, onDelete, onStatus, saving }) {
         <p className="dashboard-listing-price">{listing.priceLabel}</p>
         <div className="dashboard-listing-meta">
           <span>{listing.area || 0}m²</span>
-          <span>{listingViews(listing)} lượt xem</span>
         </div>
       </div>
       <div className="dashboard-listing-actions">
@@ -936,16 +1051,6 @@ function setListingValue(name, value, setListingForm) {
   setListingForm((current) => ({ ...current, [name]: value }));
 }
 
-function chartBy(items, getLabel) {
-  const counts = new Map();
-  items.forEach((item) => {
-    const label = getLabel(item);
-    counts.set(label, (counts.get(label) || 0) + 1);
-  });
-  const result = [...counts.entries()].map(([label, value]) => ({ label, value }));
-  return result.length > 0 ? result : [{ label: 'Chưa có dữ liệu', value: 0 }];
-}
-
 function categoryLabel(category) {
   if (category === 'tro') return 'Trọ';
   if (category === 'dat' || category === 'land') return 'Đất';
@@ -960,8 +1065,72 @@ function toFormCategory(category) {
   return 'tro';
 }
 
-function listingViews(listing) {
-  return Math.max(32, String(listing.title || '').length * 3);
+function buildActivitySeries(listings, viewings) {
+  const buckets = rollingMonthBuckets();
+  listings.forEach((listing) => {
+    const date = new Date(listing.createdAt || Date.now());
+    if (Number.isNaN(date.getTime())) return;
+    const bucket = buckets.find((item) => sameMonth(item.date, date));
+    if (bucket) bucket.current += 1;
+  });
+  viewings.forEach((viewing) => {
+    if (viewing.status !== 'CONFIRMED') return;
+    const date = new Date(viewing.requestedAt || viewing.createdAt || Date.now());
+    if (Number.isNaN(date.getTime())) return;
+    const bucket = buckets.find((item) => sameMonth(item.date, date));
+    if (bucket) bucket.previous += 1;
+  });
+  return trimLeadingEmptyMonths(buckets.map((bucket) => ({
+    label: bucket.label,
+    current: bucket.current || 0,
+    previous: bucket.previous || 0,
+  })));
+}
+
+function rollingMonthBuckets(referenceDate = new Date(), length = 12) {
+  return Array.from({ length }, (_, index) => {
+    const date = new Date(referenceDate.getFullYear(), referenceDate.getMonth() - (length - 1 - index), 1);
+    return {
+      date,
+      label: `T${date.getMonth() + 1}`,
+      current: 0,
+      previous: 0,
+    };
+  });
+}
+
+function sameMonth(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+}
+
+function sameCalendarMonth(value, reference) {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return false;
+  return date.getFullYear() === reference.getFullYear() && date.getMonth() === reference.getMonth();
+}
+
+export function buildManagedTypeData(listings) {
+  const tro = listings.filter((item) => item.category === 'tro').length;
+  const nha = listings.filter((item) => item.category === 'nha').length;
+  const dat = listings.filter((item) => item.category === 'dat').length;
+  return [
+    { label: 'Trọ', value: tro },
+    { label: 'Nhà', value: nha },
+    { label: 'Đất', value: dat },
+  ];
+}
+
+function formatViewingDate(value) {
+  if (!value) return 'Chưa có thời gian';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Chưa có thời gian';
+  return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(date);
+}
+
+function initialsFor(value) {
+  const source = String(value || 'MG').trim();
+  const words = source.includes('@') ? source.split('@')[0].split(/[._-]/) : source.split(/\s+/);
+  return words.slice(0, 2).map((word) => word[0]?.toUpperCase()).join('') || 'MG';
 }
 
 function listingMatchesQuery(listing, query) {
@@ -1018,10 +1187,19 @@ function listingStatusTone(listing) {
 function brokerTitle(section) {
   return {
     dashboard: 'Bảng điều khiển',
-    profile: 'Hồ sơ môi giới',
     properties: 'Tin đăng của tôi',
     viewings: 'Lịch hẹn xem',
+    settings: 'Cài đặt',
   }[section] || 'Bảng điều khiển';
+}
+
+function brokerSubtitle(section, monthLabel) {
+  return {
+    dashboard: `Hiệu suất tin đăng và khách hàng quan tâm trong tháng ${monthLabel}.`,
+    properties: 'Tạo, chỉnh sửa và theo dõi trạng thái tin bất động sản.',
+    viewings: 'Theo dõi yêu cầu xem nhà và cập nhật lịch hẹn.',
+    settings: 'Quản lý thông tin liên hệ hiển thị trên các tin đăng.',
+  }[section] || 'Tổng quan hoạt động môi giới.';
 }
 
 function objectUrlFor(file) {

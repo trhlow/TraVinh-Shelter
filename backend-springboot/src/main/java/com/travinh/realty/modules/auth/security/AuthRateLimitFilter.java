@@ -1,6 +1,6 @@
 package com.travinh.realty.modules.auth.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.travinh.realty.common.exception.ApiError;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -11,8 +11,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -21,16 +19,20 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class AuthRateLimitFilter extends OncePerRequestFilter {
     private static final Duration WINDOW = Duration.ofMinutes(1);
     private static final int DEFAULT_LIMIT = 10;
-    private static final Pattern VIEWING_SUBMIT_PATH = Pattern.compile("^/properties/[^/]+/viewings$");
+    private static final Pattern VIEWING_REQUEST_OTP_PATH = Pattern.compile("^/properties/[^/]+/viewings/request-otp$");
+    private static final Pattern VIEWING_VERIFY_OTP_PATH = Pattern.compile("^/properties/[^/]+/viewings/verify-otp$");
 
     // path-group -> requests allowed per WINDOW per IP; tunable independently per group.
     private static final Map<String, Integer> RATE_LIMITED_GROUPS = rateLimitedGroups();
 
     private final ObjectMapper objectMapper;
-    private final Map<String, AttemptWindow> attempts = new ConcurrentHashMap<>();
+    private final RateLimiter rateLimiter;
+    private final ClientIpResolver clientIpResolver;
 
-    public AuthRateLimitFilter(ObjectMapper objectMapper) {
+    public AuthRateLimitFilter(ObjectMapper objectMapper, RateLimiter rateLimiter, ClientIpResolver clientIpResolver) {
         this.objectMapper = objectMapper;
+        this.rateLimiter = rateLimiter;
+        this.clientIpResolver = clientIpResolver;
     }
 
     @Override
@@ -58,38 +60,26 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         if ("/auth/login".equals(path)) {
             return "/auth/login";
         }
-        if (VIEWING_SUBMIT_PATH.matcher(path).matches()) {
-            return "/properties/*/viewings";
+        if (VIEWING_REQUEST_OTP_PATH.matcher(path).matches()) {
+            return "/properties/*/viewings/request-otp";
+        }
+        if (VIEWING_VERIFY_OTP_PATH.matcher(path).matches()) {
+            return "/properties/*/viewings/verify-otp";
         }
         return null;
     }
 
     private boolean allow(HttpServletRequest request, String group, int limit) {
-        String key = clientIp(request) + ":" + group;
-        Instant now = Instant.now();
-        AttemptWindow window = attempts.compute(key, (_ignored, existing) -> {
-            if (existing == null || existing.expiresAt().isBefore(now)) {
-                return new AttemptWindow(new AtomicInteger(1), now.plus(WINDOW));
-            }
-            existing.count().incrementAndGet();
-            return existing;
-        });
-        return window.count().get() <= limit;
+        String key = clientIpResolver.resolve(request) + ":" + group;
+        return rateLimiter.tryAcquire(key, limit, WINDOW);
     }
 
     private static Map<String, Integer> rateLimitedGroups() {
         Map<String, Integer> groups = new LinkedHashMap<>();
         groups.put("/auth/login", DEFAULT_LIMIT);
-        groups.put("/properties/*/viewings", DEFAULT_LIMIT);
+        groups.put("/properties/*/viewings/request-otp", DEFAULT_LIMIT);
+        groups.put("/properties/*/viewings/verify-otp", DEFAULT_LIMIT);
         return groups;
-    }
-
-    private String clientIp(HttpServletRequest request) {
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-        if (forwardedFor != null && !forwardedFor.isBlank()) {
-            return forwardedFor.split(",", 2)[0].trim();
-        }
-        return request.getRemoteAddr();
     }
 
     private String requestPath(HttpServletRequest request) {
@@ -99,8 +89,5 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             return uri.substring(contextPath.length());
         }
         return uri;
-    }
-
-    private record AttemptWindow(AtomicInteger count, Instant expiresAt) {
     }
 }

@@ -23,7 +23,7 @@ export default function BrandLogo({ compact = false, className = '' }) {
         <path
           d="M18 34 L27 43 L46 24"
           fill="none"
-          stroke="var(--color-on-primary)"
+          stroke="var(--color-gold, #c69a4c)"
           strokeWidth="5.5"
           strokeLinecap="round"
           strokeLinejoin="round"

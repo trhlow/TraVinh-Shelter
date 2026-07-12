@@ -20,7 +20,7 @@ afterEach(() => {
 test('renders the template home page', async () => {
   render(<App />);
 
-  expect(screen.getByRole('heading', { name: 'Tin nổi bật' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Tin đăng chọn lọc tại Trà Vinh' })).toBeInTheDocument();
   await waitFor(() => expect(screen.getAllByText('Công Tín Land').length).toBeGreaterThan(0));
 });
 
@@ -50,9 +50,9 @@ test('routes to separate broker pages for broker sessions', () => {
     role: 'BROKER',
     userId: 'broker-id',
   }));
-  window.location.hash = '#/broker/profile';
+  window.location.hash = '#/broker/settings';
   render(<App />);
-  expect(screen.getAllByRole('heading', { name: 'Hồ sơ môi giới' }).length).toBeGreaterThan(0);
+  expect(screen.getAllByRole('heading', { name: 'Cài đặt' }).length).toBeGreaterThan(0);
 });
 
 test('routes to broker properties page for broker sessions', () => {
@@ -71,7 +71,6 @@ test('resolves every admin sub-path to the custom admin dashboard with a section
   const cases = [
     ['/admin', 'overview'],
     ['/admin/brokers', 'brokers'],
-    ['/admin/accounts', 'accounts'],
     ['/admin/properties', 'properties'],
     ['/admin/viewings', 'viewings'],
     ['/admin/audit', 'audit'],
@@ -121,4 +120,10 @@ test('routes to public projects and brokers pages', () => {
   window.location.hash = '#/brokers';
   render(<App />);
   expect(screen.getByRole('heading', { name: 'Hồ sơ môi giới Công Tín Land' })).toBeInTheDocument();
+});
+
+test('the revenue route no longer resolves to a dedicated broker page', () => {
+  window.location.hash = '#/broker/revenue';
+  render(<App />);
+  expect(screen.getByRole('heading', { name: 'Tin đăng chọn lọc tại Trà Vinh' })).toBeInTheDocument();
 });

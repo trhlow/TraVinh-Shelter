@@ -133,6 +133,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
       : 'Nhà';
   const brokerPhone = property.broker?.phone || '0901 234 567';
   const brokerFacebook = property.broker?.facebook || '';
+  const brokerTiktok = property.broker?.tiktok || '';
   const brokerAvatar = property.broker?.avatarUrl || fallbackBrokerAvatar;
   const isTro = property.category === 'tro';
 
@@ -325,19 +326,12 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
               </div>
 
               <div className="contact-buttons">
-                <a href={`tel:${brokerPhone.replace(/\s+/g, '')}`} className="btn btn-primary btn-md btn-full">
-                  <Icon name="Phone" size={18} />
-                  Gọi ngay: {brokerPhone}
-                </a>
-                <a
-                  href={`https://zalo.me/${brokerPhone.replace(/\D/g, '').replace(/^0/, '84')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="contact-btn-zalo"
-                >
-                  <Icon name="MessageCircle" size={18} />
-                  Chat Zalo
-                </a>
+                <div className="contact-phone-zalo">
+                  <a href={`tel:${brokerPhone.replace(/\s+/g, '')}`} className="contact-phone-zalo-call">
+                    <Icon name="Phone" size={18} />
+                    Gọi ngay: {brokerPhone}
+                  </a>
+                </div>
                 {brokerFacebook && (
                   <a
                     href={brokerFacebook}
@@ -347,6 +341,17 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
                   >
                     <Icon name="Facebook" size={18} />
                     Facebook
+                  </a>
+                )}
+                {brokerTiktok && (
+                  <a
+                    href={brokerTiktok}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="contact-btn-tiktok"
+                  >
+                    <Icon name="TikTok" size={18} />
+                    TikTok
                   </a>
                 )}
               </div>

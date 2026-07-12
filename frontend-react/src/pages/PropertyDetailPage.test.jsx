@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, expect, test, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 
 vi.mock('../services/api.js', () => ({
   fetchPropertyDetail: vi.fn(),
@@ -20,18 +20,38 @@ const baseProperty = {
   broker: { name: 'Broker Test', phone: '0901234567', email: 'broker@test.vn', avatarUrl: '' },
 };
 
-test('renders a Facebook link below phone and Zalo when broker.facebook is set', async () => {
+test('renders a Facebook link below phone when broker.facebook is set', async () => {
   fetchPropertyDetail.mockResolvedValue({ ...baseProperty, broker: { ...baseProperty.broker, facebook: 'https://facebook.com/broker.test' } });
   render(<PropertyDetailPage propertyId="p-1" />);
-  const link = await screen.findByRole('link', { name: /Facebook/i });
+  const brokerNameEl = await screen.findByText(baseProperty.broker.name);
+  const contactCard = brokerNameEl.closest('.contact-card');
+  const link = within(contactCard).getByRole('link', { name: /Facebook/i });
   expect(link).toHaveAttribute('href', 'https://facebook.com/broker.test');
 });
 
 test('does not render a Facebook link when broker.facebook is missing', async () => {
   fetchPropertyDetail.mockResolvedValue(baseProperty);
   render(<PropertyDetailPage propertyId="p-1" />);
-  await screen.findAllByText(baseProperty.title);
-  expect(screen.queryByRole('link', { name: /Facebook/i })).not.toBeInTheDocument();
+  const brokerNameEl = await screen.findByText(baseProperty.broker.name);
+  const contactCard = brokerNameEl.closest('.contact-card');
+  expect(within(contactCard).queryByRole('link', { name: /Facebook/i })).not.toBeInTheDocument();
+});
+
+test('renders a TikTok link in the contact card when broker.tiktok is set', async () => {
+  fetchPropertyDetail.mockResolvedValue({ ...baseProperty, broker: { ...baseProperty.broker, tiktok: 'https://tiktok.com/@broker.test' } });
+  render(<PropertyDetailPage propertyId="p-1" />);
+  const brokerNameEl = await screen.findByText(baseProperty.broker.name);
+  const contactCard = brokerNameEl.closest('.contact-card');
+  const link = within(contactCard).getByRole('link', { name: /TikTok/i });
+  expect(link).toHaveAttribute('href', 'https://tiktok.com/@broker.test');
+});
+
+test('does not render a TikTok link when broker.tiktok is missing', async () => {
+  fetchPropertyDetail.mockResolvedValue(baseProperty);
+  render(<PropertyDetailPage propertyId="p-1" />);
+  const brokerNameEl = await screen.findByText(baseProperty.broker.name);
+  const contactCard = brokerNameEl.closest('.contact-card');
+  expect(within(contactCard).queryByRole('link', { name: /TikTok/i })).not.toBeInTheDocument();
 });
 
 test('uses "Nhà vệ sinh" instead of "Phòng tắm" for the bathroom spec label', async () => {
@@ -40,4 +60,16 @@ test('uses "Nhà vệ sinh" instead of "Phòng tắm" for the bathroom spec labe
   await screen.findAllByText(baseProperty.title);
   expect(screen.getByText('Nhà vệ sinh')).toBeInTheDocument();
   expect(screen.queryByText('Phòng tắm')).not.toBeInTheDocument();
+});
+
+test('renders the phone call button and no Zalo link', async () => {
+  fetchPropertyDetail.mockResolvedValue(baseProperty);
+  render(<PropertyDetailPage propertyId="p-1" />);
+  await screen.findAllByText(baseProperty.title);
+
+  const brokerNameEl = await screen.findByText(baseProperty.broker.name);
+  const contactCard = brokerNameEl.closest('.contact-card');
+  const phoneLink = within(contactCard).getByRole('link', { name: /Gọi ngay/i });
+  expect(phoneLink.closest('.contact-phone-zalo')).not.toBeNull();
+  expect(within(contactCard).queryByRole('link', { name: /Chat Zalo|Zalo/i })).not.toBeInTheDocument();
 });

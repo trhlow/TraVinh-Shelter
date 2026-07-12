@@ -5,7 +5,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.travinh.realty.common.config.JwtProperties;
+import com.travinh.realty.modules.auth.security.InMemoryRateLimiter;
 import com.travinh.realty.modules.auth.security.JwtService;
+import com.travinh.realty.modules.auth.security.RateLimiter;
 import com.travinh.realty.modules.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +17,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -29,10 +32,27 @@ class AuthServiceTest {
     @Test
     void loginPropagatesInvalidCredentialsForTheHttpErrorHandler() {
         when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("bad credentials"));
-        AuthService service = new AuthService(users, encoder, authenticationManager, jwt, properties);
+        AuthService service = new AuthService(users, encoder, authenticationManager, jwt, properties, new InMemoryRateLimiter());
 
         assertThatThrownBy(() -> service.login(new com.travinh.realty.modules.auth.dto.LoginRequest(
                 "minh@example.com", "wrong-password")))
                 .isInstanceOf(BadCredentialsException.class);
+    }
+
+    @Test
+    void loginIsRateLimitedPerAccountAfterFiveFailuresRegardlessOfCaller() {
+        when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("bad credentials"));
+        RateLimiter rateLimiter = new InMemoryRateLimiter();
+        AuthService service = new AuthService(users, encoder, authenticationManager, jwt, properties, rateLimiter);
+        com.travinh.realty.modules.auth.dto.LoginRequest request =
+                new com.travinh.realty.modules.auth.dto.LoginRequest("locked-out@example.com", "wrong-password");
+
+        for (int attempt = 0; attempt < 5; attempt++) {
+            assertThatThrownBy(() -> service.login(request)).isInstanceOf(BadCredentialsException.class);
+        }
+
+        assertThatThrownBy(() -> service.login(request))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("429");
     }
 }

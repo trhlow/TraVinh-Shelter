@@ -1,7 +1,7 @@
 package com.travinh.realty.modules.property.repository;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.travinh.realty.modules.property.dto.PropertySearchCriteria;
 import com.travinh.realty.modules.property.model.Property;
 import jakarta.persistence.EntityManager;
@@ -140,7 +140,7 @@ public class PropertySearchRepositoryImpl implements PropertySearchRepository {
     private String jsonObject(String key, Object value) {
         try {
             return objectMapper.writeValueAsString(Map.of(key, value));
-        } catch (JsonProcessingException exception) {
+        } catch (JacksonException exception) {
             throw new IllegalArgumentException("Invalid JSON attribute filter", exception);
         }
     }
