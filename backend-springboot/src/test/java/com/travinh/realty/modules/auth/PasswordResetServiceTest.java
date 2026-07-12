@@ -26,6 +26,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
@@ -79,6 +80,21 @@ class PasswordResetServiceTest {
         MessageResponse response = service.forgotPassword(new ForgotPasswordRequest("broker@congtinland.vn"));
 
         assertThat(response.message()).isEqualTo("Nếu email tồn tại, mã OTP đã được gửi.");
+    }
+
+    @Test
+    void forgotPasswordWhenOtpGenerationFailsStillReturnsSuccessMessage() {
+        User user = User.register("broker", "broker@congtinland.vn", "hash", "Broker", "0900000000");
+        OtpStore failingOtpStore = Mockito.mock(OtpStore.class);
+        when(failingOtpStore.generate(anyString(), any(Duration.class)))
+                .thenThrow(new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Redis unavailable"));
+        service = new PasswordResetService(users, failingOtpStore, rateLimiter, emailSender, passwordEncoder);
+        when(users.findByEmail("broker@congtinland.vn")).thenReturn(Optional.of(user));
+
+        MessageResponse response = service.forgotPassword(new ForgotPasswordRequest("broker@congtinland.vn"));
+
+        assertThat(response.message()).isEqualTo("Nếu email tồn tại, mã OTP đã được gửi.");
+        verifyNoInteractions(emailSender);
     }
 
     @Test

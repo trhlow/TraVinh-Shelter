@@ -52,13 +52,13 @@ public class PasswordResetService {
         }
         Optional<User> user = users.findByEmail(email);
         if (user.isPresent()) {
-            String code = otpStore.generate("password-reset:" + email, OTP_TTL);
             try {
+                String code = otpStore.generate("password-reset:" + email, OTP_TTL);
                 emailSender.send(email, "Mã OTP khôi phục mật khẩu - Công Tín Land",
                         "Mã OTP khôi phục mật khẩu của bạn là: " + code
                                 + ". Mã có hiệu lực trong 10 phút. Nếu bạn không yêu cầu, vui lòng bỏ qua email này.");
             } catch (RuntimeException exception) {
-                log.error("Failed to send password reset email to {}", email, exception);
+                log.error("Failed to generate/send password reset OTP for {}", email, exception);
             }
         }
         return new MessageResponse(GENERIC_SUCCESS_MESSAGE);
