@@ -1,0 +1,83 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: travinh-realty-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: ${BACKEND_IMAGE:-ghcr.io/trhlow/travinh-shelter-backend:latest}
+    container_name: travinh-realty-backend
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8080
+      DB_URL: ${DB_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      MEDIA_STORAGE_PATH: /app/media
+      MEDIA_PUBLIC_URL_PREFIX: /api/v1/media
+      SENTRY_DSN: ${SENTRY_DSN_BACKEND:-}
+    volumes:
+      - backend_media:/app/media
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/v1/actuator/health/readiness | grep -q '\"status\":\"UP\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-ghcr.io/trhlow/travinh-shelter-frontend:latest}
+    container_name: travinh-realty-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: travinh-realty-caddy
+    restart: unless-stopped
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  backend_media:
+    name: ${BACKEND_MEDIA_VOLUME_NAME:-travinh_realty_backend_media}
+  redis_data:
+    name: ${REDIS_VOLUME_NAME:-travinh_realty_redis_data}
+  caddy_data:
+    name: ${CADDY_DATA_VOLUME_NAME:-travinh_realty_caddy_data}
+  caddy_config:
+    name: ${CADDY_CONFIG_VOLUME_NAME:-travinh_realty_caddy_config}

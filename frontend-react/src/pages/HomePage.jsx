@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import FeaturedCarousel from '../components/FeaturedCarousel.jsx';
 import TroShowcaseCard from '../components/TroShowcaseCard.jsx';
 import Icon from '../components/ui/Icon.jsx';
-import Button from '../components/ui/Button.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
 import { featuredProperties } from '../data/templateData.js';
 import { WARDS, CATEGORIES } from '../data/locations.js';

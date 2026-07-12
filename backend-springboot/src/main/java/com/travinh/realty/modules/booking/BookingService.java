@@ -26,16 +26,37 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.travinh.realty.common.dto.MessageResponse;
+import com.travinh.realty.modules.auth.security.OtpStore;
+import com.travinh.realty.modules.auth.security.RateLimiter;
+import com.travinh.realty.modules.booking.dto.RequestViewingOtpRequest;
+import com.travinh.realty.modules.booking.dto.VerifyViewingOtpRequest;
+import com.travinh.realty.modules.notification.SmsSender;
+import java.time.Duration;
+
 @Service
 public class BookingService {
     private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final Duration OTP_TTL = Duration.ofMinutes(10);
+    private static final int REQUEST_LIMIT = 3;
+    private static final Duration REQUEST_WINDOW = Duration.ofMinutes(15);
+    private static final int VERIFY_LIMIT = 5;
+    private static final Duration VERIFY_WINDOW = Duration.ofMinutes(5);
+    private static final String INVALID_OTP_MESSAGE = "Mã OTP không hợp lệ hoặc đã hết hạn";
 
     private final ViewingAppointmentRepository appointments;
     private final PropertyRepository properties;
+    private final OtpStore otpStore;
+    private final RateLimiter rateLimiter;
+    private final SmsSender smsSender;
 
-    public BookingService(ViewingAppointmentRepository appointments, PropertyRepository properties) {
+    public BookingService(ViewingAppointmentRepository appointments, PropertyRepository properties,
+                          OtpStore otpStore, RateLimiter rateLimiter, SmsSender smsSender) {
         this.appointments = appointments;
         this.properties = properties;
+        this.otpStore = otpStore;
+        this.rateLimiter = rateLimiter;
+        this.smsSender = smsSender;
     }
 
     @Transactional
@@ -48,6 +69,34 @@ public class BookingService {
         validateSchedule(request);
         ViewingAppointment appointment = ViewingAppointment.create(propertyId, request);
         return ViewingResponse.of(appointments.save(appointment));
+    }
+
+    @Transactional(readOnly = true)
+    public MessageResponse requestOtp(UUID propertyId, RequestViewingOtpRequest request) {
+        Property property = properties.findById(propertyId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+        if (property.getStatus() != PropertyStatus.AVAILABLE) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found");
+        }
+        String phone = request.visitorPhone().trim();
+        if (!rateLimiter.tryAcquire("viewing-otp-request:" + phone, REQUEST_LIMIT, REQUEST_WINDOW)) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many requests. Please retry later.");
+        }
+        String code = otpStore.generate("viewing-otp:" + phone, OTP_TTL);
+        smsSender.send(phone, "Ma OTP xac minh dat lich xem nha cua ban la: " + code + ". Ma co hieu luc 10 phut.");
+        return new MessageResponse("Mã OTP đã được gửi qua SMS.");
+    }
+
+    @Transactional
+    public ViewingResponse verifyOtpAndCreate(UUID propertyId, VerifyViewingOtpRequest request) {
+        String phone = request.booking().visitorPhone().trim();
+        if (!rateLimiter.tryAcquire("viewing-otp-verify:" + phone, VERIFY_LIMIT, VERIFY_WINDOW)) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many requests. Please retry later.");
+        }
+        if (!otpStore.verify("viewing-otp:" + phone, request.otpCode())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, INVALID_OTP_MESSAGE);
+        }
+        return create(propertyId, request.booking());
     }
 
     private void validateSchedule(CreateViewingRequest request) {

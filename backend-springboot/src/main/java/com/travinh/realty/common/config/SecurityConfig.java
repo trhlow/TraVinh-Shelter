@@ -11,6 +11,9 @@ import com.travinh.realty.modules.auth.security.RateLimiter;
 import com.travinh.realty.modules.auth.security.RedisRateLimiter;
 import com.travinh.realty.modules.auth.security.RedisRevokedTokenStore;
 import com.travinh.realty.modules.auth.security.RevokedTokenStore;
+import com.travinh.realty.modules.auth.security.InMemoryOtpStore;
+import com.travinh.realty.modules.auth.security.OtpStore;
+import com.travinh.realty.modules.auth.security.RedisOtpStore;
 import com.travinh.realty.common.exception.ApiError;
 import tools.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
@@ -62,11 +65,13 @@ public class SecurityConfig {
                                 writeApiError(response, objectMapper, HttpStatus.UNAUTHORIZED, "Authentication is required"))
                         .accessDeniedHandler((request, response, accessDeniedException) ->
                                 writeApiError(response, objectMapper, HttpStatus.FORBIDDEN, "Access is denied")))
-                .authorizeHttpRequests(authorize -> authorize.requestMatchers("/auth/login", "/error").permitAll()
+                .authorizeHttpRequests(authorize -> authorize.requestMatchers(
+                                "/auth/login", "/auth/forgot-password", "/auth/reset-password", "/error").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/properties/**", "/categories/**", "/brokers/**", "/media/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/properties/*/viewings").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/properties/*/viewings/request-otp", "/properties/*/viewings/verify-otp").permitAll()
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
@@ -111,6 +116,16 @@ public class SecurityConfig {
     RevokedTokenStore revokedTokenStore(ObjectProvider<StringRedisTemplate> redisTemplate) {
         StringRedisTemplate template = redisTemplate.getIfAvailable();
         return template != null ? new RedisRevokedTokenStore(template) : new InMemoryRevokedTokenStore();
+    }
+
+    /**
+     * OtpStore fails closed on Redis errors (see RedisOtpStore) — unlike RateLimiter/
+     * RevokedTokenStore above, which fail open. Same Redis-or-in-memory selection pattern.
+     */
+    @Bean
+    OtpStore otpStore(ObjectProvider<StringRedisTemplate> redisTemplate) {
+        StringRedisTemplate template = redisTemplate.getIfAvailable();
+        return template != null ? new RedisOtpStore(template) : new InMemoryOtpStore();
     }
 
     @Bean

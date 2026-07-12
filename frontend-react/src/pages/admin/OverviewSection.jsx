@@ -7,7 +7,7 @@ import { isInRange, percentDelta, previousRange, resolveDateRange } from '../../
 import { downloadCsv } from '../../utils/exportCsv.js';
 import { trimLeadingEmptyMonths } from '../../utils/chartSeries.js';
 
-export default function OverviewSection({ data, loading, actions }) {
+export default function OverviewSection({ data }) {
   const users = data?.users || [];
   const brokers = data?.brokers || [];
   const properties = data?.properties || [];

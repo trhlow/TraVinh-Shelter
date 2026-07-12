@@ -13,6 +13,8 @@ import com.travinh.realty.common.config.SecurityConfig;
 import com.travinh.realty.common.exception.GlobalExceptionHandler;
 import com.travinh.realty.modules.auth.AuthController;
 import com.travinh.realty.modules.auth.AuthService;
+import com.travinh.realty.modules.auth.PasswordResetService;
+import com.travinh.realty.common.dto.MessageResponse;
 import com.travinh.realty.modules.property.PropertyController;
 import com.travinh.realty.modules.property.PropertyService;
 import com.travinh.realty.modules.user.model.User;
@@ -41,6 +43,7 @@ class SecurityHttpTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private JwtService jwtService;
     @MockitoBean private AuthService authService;
+    @MockitoBean private PasswordResetService passwordResetService;
     @MockitoBean private PropertyService propertyService;
     @MockitoBean private JpaUserDetailsService userDetailsService;
     @MockitoBean private JpaMetamodelMappingContext jpaMappingContext;
@@ -143,6 +146,40 @@ class SecurityHttpTest {
                 .andExpect(status().isNoContent());
 
         verify(authService).logout(eq(authorization));
+    }
+
+    @Test
+    void forgotPasswordAlwaysReturnsOkWithGenericMessage() throws Exception {
+        when(passwordResetService.forgotPassword(any()))
+                .thenReturn(new MessageResponse("Nếu email tồn tại, mã OTP đã được gửi."));
+
+        mockMvc.perform(post("/auth/forgot-password").contentType("application/json")
+                        .content("{\"email\":\"someone@congtinland.vn\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Nếu email tồn tại, mã OTP đã được gửi."));
+    }
+
+    @Test
+    void resetPasswordWithValidOtpReturnsOk() throws Exception {
+        when(passwordResetService.resetPassword(any()))
+                .thenReturn(new MessageResponse("Mật khẩu đã được đặt lại."));
+
+        mockMvc.perform(post("/auth/reset-password").contentType("application/json")
+                        .content("{\"email\":\"someone@congtinland.vn\",\"otpCode\":\"123456\",\"newPassword\":\"NewPassword123\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Mật khẩu đã được đặt lại."));
+    }
+
+    @Test
+    void resetPasswordWithInvalidOtpReturnsBadRequest() throws Exception {
+        when(passwordResetService.resetPassword(any()))
+                .thenThrow(new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.BAD_REQUEST, "Mã OTP không hợp lệ hoặc đã hết hạn"));
+
+        mockMvc.perform(post("/auth/reset-password").contentType("application/json")
+                        .content("{\"email\":\"someone@congtinland.vn\",\"otpCode\":\"000000\",\"newPassword\":\"NewPassword123\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Mã OTP không hợp lệ hoặc đã hết hạn"));
     }
 
     private User user(String email, UserStatus status) {

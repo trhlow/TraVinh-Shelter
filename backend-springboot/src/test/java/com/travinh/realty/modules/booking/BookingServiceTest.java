@@ -38,18 +38,34 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.travinh.realty.common.dto.MessageResponse;
+import com.travinh.realty.modules.auth.security.InMemoryOtpStore;
+import com.travinh.realty.modules.auth.security.InMemoryRateLimiter;
+import com.travinh.realty.modules.auth.security.OtpStore;
+import com.travinh.realty.modules.auth.security.RateLimiter;
+import com.travinh.realty.modules.booking.dto.RequestViewingOtpRequest;
+import com.travinh.realty.modules.booking.dto.VerifyViewingOtpRequest;
+import com.travinh.realty.modules.notification.SmsSender;
+import java.time.Duration;
+
 class BookingServiceTest {
     private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     private ViewingAppointmentRepository appointments;
     private PropertyRepository properties;
     private BookingService service;
+    private OtpStore otpStore;
+    private RateLimiter rateLimiter;
+    private SmsSender smsSender;
 
     @BeforeEach
     void setUp() {
         appointments = Mockito.mock(ViewingAppointmentRepository.class);
         properties = Mockito.mock(PropertyRepository.class);
-        service = new BookingService(appointments, properties);
+        otpStore = new InMemoryOtpStore();
+        rateLimiter = new InMemoryRateLimiter();
+        smsSender = Mockito.mock(SmsSender.class);
+        service = new BookingService(appointments, properties, otpStore, rateLimiter, smsSender);
     }
 
     @Test
@@ -245,6 +261,92 @@ class BookingServiceTest {
         assertThatThrownBy(() -> service.updateStatusForBrokerOwner(appointment.getId(), AppointmentStatus.CONFIRMED, otherBrokerId))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("404");
+    }
+
+    @Test
+    void requestOtpSendsSmsToVisitorPhoneAndReturnsMessage() {
+        Property property = property(broker(), PropertyStatus.AVAILABLE);
+        when(properties.findById(property.getId())).thenReturn(Optional.of(property));
+
+        MessageResponse response = service.requestOtp(property.getId(), new RequestViewingOtpRequest("0900000000"));
+
+        assertThat(response.message()).isEqualTo("Mã OTP đã được gửi qua SMS.");
+        Mockito.verify(smsSender).send(Mockito.eq("0900000000"), Mockito.anyString());
+    }
+
+    @Test
+    void requestOtpOnMissingPropertyReturnsNotFoundAndDoesNotSendSms() {
+        UUID missing = UUID.randomUUID();
+        when(properties.findById(missing)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.requestOtp(missing, new RequestViewingOtpRequest("0900000000")))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("404");
+        Mockito.verifyNoInteractions(smsSender);
+    }
+
+    @Test
+    void requestOtpOnUnavailablePropertyReturnsNotFoundAndDoesNotSendSms() {
+        Property hidden = property(broker(), PropertyStatus.HIDDEN);
+        when(properties.findById(hidden.getId())).thenReturn(Optional.of(hidden));
+
+        assertThatThrownBy(() -> service.requestOtp(hidden.getId(), new RequestViewingOtpRequest("0900000000")))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("404");
+        Mockito.verifyNoInteractions(smsSender);
+    }
+
+    @Test
+    void requestOtpIsRateLimitedAfterThreeRequests() {
+        Property property = property(broker(), PropertyStatus.AVAILABLE);
+        when(properties.findById(property.getId())).thenReturn(Optional.of(property));
+        RequestViewingOtpRequest request = new RequestViewingOtpRequest("0911111111");
+        for (int attempt = 0; attempt < 3; attempt++) {
+            service.requestOtp(property.getId(), request);
+        }
+
+        assertThatThrownBy(() -> service.requestOtp(property.getId(), request))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("429");
+    }
+
+    @Test
+    void verifyOtpAndCreateWithCorrectOtpCreatesAppointment() {
+        Property property = property(broker(), PropertyStatus.AVAILABLE);
+        when(properties.findById(property.getId())).thenReturn(Optional.of(property));
+        when(appointments.save(any(ViewingAppointment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        String code = otpStore.generate("viewing-otp:0900000000", Duration.ofMinutes(10));
+
+        VerifyViewingOtpRequest request = new VerifyViewingOtpRequest(request(), code);
+        ViewingResponse response = service.verifyOtpAndCreate(property.getId(), request);
+
+        assertThat(response.status()).isEqualTo(AppointmentStatus.PENDING);
+        Mockito.verify(appointments).save(any(ViewingAppointment.class));
+    }
+
+    @Test
+    void verifyOtpAndCreateWithWrongOtpDoesNotCreateAppointment() {
+        otpStore.generate("viewing-otp:0900000000", Duration.ofMinutes(10));
+        VerifyViewingOtpRequest request = new VerifyViewingOtpRequest(request(), "000000");
+
+        assertThatThrownBy(() -> service.verifyOtpAndCreate(UUID.randomUUID(), request))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("400");
+        Mockito.verify(appointments, Mockito.never()).save(any());
+    }
+
+    @Test
+    void verifyOtpAndCreateIsRateLimitedAfterFiveAttempts() {
+        VerifyViewingOtpRequest request = new VerifyViewingOtpRequest(request(), "000000");
+        for (int attempt = 0; attempt < 5; attempt++) {
+            assertThatThrownBy(() -> service.verifyOtpAndCreate(UUID.randomUUID(), request))
+                    .isInstanceOf(ResponseStatusException.class);
+        }
+
+        assertThatThrownBy(() -> service.verifyOtpAndCreate(UUID.randomUUID(), request))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("429");
+        Mockito.verify(appointments, Mockito.never()).save(any());
     }
 
     private CreateViewingRequest request() {
