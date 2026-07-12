@@ -8,6 +8,7 @@ describe('propertyPayload — area from length × width', () => {
   const base = {
     categorySlug: 'dat', transaction: 'sale', ward: 'phuong-tra-vinh',
     length: '5', width: '20', bedrooms: '', bathrooms: '', description: '', amenities: [],
+    lat: '', lng: '',
     coverUrl: '', title: 'Lô đất test', address: 'Test', price: '1000000000',
   };
 
@@ -33,6 +34,18 @@ describe('propertyPayload — area from length × width', () => {
     const payload = propertyPayload({ ...base, categorySlug: 'nha', bedrooms: '3', bathrooms: '2' });
     expect(payload.attributes.bedrooms).toBe(3);
     expect(payload.attributes.bathrooms).toBe(2);
+  });
+
+  test('stores valid map coordinates as numbers', () => {
+    const payload = propertyPayload({ ...base, lat: '9.9345', lng: '106.3456' });
+    expect(payload.attributes.lat).toBe(9.9345);
+    expect(payload.attributes.lng).toBe(106.3456);
+  });
+
+  test('drops out-of-range map coordinates', () => {
+    const payload = propertyPayload({ ...base, lat: '91', lng: '106.3456' });
+    expect(payload.attributes.lat).toBeNull();
+    expect(payload.attributes.lng).toBe(106.3456);
   });
 });
 
@@ -82,6 +95,13 @@ describe('Listing form — field visibility', () => {
     render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
     expect(await screen.findByText('Phòng ngủ')).toBeInTheDocument();
     expect(screen.getByText('Nhà vệ sinh')).toBeInTheDocument();
+  });
+
+  test('shows latitude and longitude inputs with the Maps coordinate hint', async () => {
+    render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
+    expect(await screen.findByLabelText('Vĩ độ (lat)')).toBeInTheDocument();
+    expect(screen.getByLabelText('Kinh độ (lng)')).toBeInTheDocument();
+    expect(screen.getByText('Nhấn giữ trên ứng dụng Google Maps để lấy tọa độ.')).toBeInTheDocument();
   });
 
   test('hides Phòng ngủ / Nhà vệ sinh when category is Đất', async () => {

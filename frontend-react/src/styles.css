@@ -1642,10 +1642,17 @@ img { display: block; max-width: 100%; }
 
 @media (max-width: 640px) {
   .dashboard-listing-grid { grid-template-columns: 1fr; }
+  .dashboard-coordinate-inputs { grid-template-columns: 1fr; }
 }
 
 .dashboard-listing-span2 { grid-column: span 2; }
 .dashboard-listing-span3 { grid-column: span 3; }
+
+.dashboard-coordinate-inputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
 
 @media (max-width: 1024px) {
   .dashboard-listing-span2 { grid-column: span 2; }
@@ -2586,6 +2593,15 @@ img { display: block; max-width: 100%; }
   line-height: 1.7;
   color: var(--color-body);
   margin: 0;
+}
+
+.property-map {
+  display: block;
+  width: 100%;
+  min-height: 280px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-soft);
 }
 
 .contact-card {

@@ -44,6 +44,8 @@ const EMPTY_FORM = {
   price: '',
   length: '',
   width: '',
+  lat: '',
+  lng: '',
   bedrooms: '',
   bathrooms: '',
   houseType: 'tret',
@@ -365,6 +367,8 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       price: String(Math.round(property.rawPrice || 0)),
       length: property.length ? String(property.length) : '',
       width: property.width ? String(property.width) : '',
+      lat: coordinateFormValue(property.lat),
+      lng: coordinateFormValue(property.lng),
       bedrooms: property.bedrooms ? String(property.bedrooms) : '',
       bathrooms: property.bathrooms ? String(property.bathrooms) : '',
       houseType: property.houseType || 'tret',
@@ -645,6 +649,13 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                   </FormField>
                   <FormField label="Chiều rộng (m)">
                     <input className="input" type="number" min="0" step="0.01" value={listingForm.width} onChange={(event) => setListingValue('width', event.target.value, setListingForm)} />
+                  </FormField>
+                  <FormField label="Vị trí trên Google Maps" className="dashboard-listing-span2">
+                    <div className="dashboard-coordinate-inputs">
+                      <input className="input" type="number" min="-90" max="90" step="any" value={listingForm.lat} onChange={(event) => setListingValue('lat', event.target.value, setListingForm)} placeholder="Vĩ độ (lat)" aria-label="Vĩ độ (lat)" />
+                      <input className="input" type="number" min="-180" max="180" step="any" value={listingForm.lng} onChange={(event) => setListingValue('lng', event.target.value, setListingForm)} placeholder="Kinh độ (lng)" aria-label="Kinh độ (lng)" />
+                    </div>
+                    <p className="form-hint">Nhấn giữ trên ứng dụng Google Maps để lấy tọa độ.</p>
                   </FormField>
                   {listingForm.categorySlug === 'nha' && listingForm.transaction === 'rent' && (
                     <FormField label="Loại nhà">
@@ -1019,6 +1030,8 @@ export function propertyPayload(form) {
     ward: form.ward,
     length,
     width,
+    lat: coordinateOrNull(form.lat, -90, 90),
+    lng: coordinateOrNull(form.lng, -180, 180),
     area: length != null && width != null ? Number((length * width).toFixed(2)) : null,
     description: form.description,
     amenities: form.amenities,
@@ -1045,6 +1058,16 @@ function numericOrNull(value) {
   if (value === '' || value == null) return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function coordinateOrNull(value, min, max) {
+  const parsed = numericOrNull(value);
+  return parsed != null && parsed >= min && parsed <= max ? parsed : null;
+}
+
+function coordinateFormValue(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? String(parsed) : '';
 }
 
 function setListingValue(name, value, setListingForm) {
