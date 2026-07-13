@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import BrokerDashboard, { propertyPayload } from './BrokerDashboard.jsx';
+import { fetchBrokerDashboard } from '../services/api.js';
 
 describe('propertyPayload — area from length × width', () => {
   const base = {
@@ -72,6 +73,7 @@ beforeEach(() => {
     token: 'test-token', email: 'broker@congtinland.vn', role: 'BROKER', userId: 'broker-id',
   }));
   vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+  window.HTMLElement.prototype.scrollIntoView = vi.fn();
 });
 afterEach(() => { cleanup(); window.localStorage.clear(); vi.unstubAllGlobals(); });
 
@@ -104,10 +106,28 @@ describe('Listing form — field visibility', () => {
     expect(screen.getByText('Nhấn giữ trên ứng dụng Google Maps để lấy tọa độ.')).toBeInTheDocument();
   });
 
-  test('hides Phòng ngủ / Nhà vệ sinh when category is Đất', async () => {
+  test('category select is locked to Trọ and disabled for new listings', async () => {
     render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
     const categoryField = (await screen.findByText('Danh mục')).closest('.auth-field');
-    await userEvent.selectOptions(within(categoryField).getByRole('combobox'), 'Đất');
+    const select = within(categoryField).getByRole('combobox');
+    expect(select).toBeDisabled();
+    expect(select).toHaveValue('tro');
+    expect(within(categoryField).getAllByRole('option')).toHaveLength(1);
+  });
+
+  test('editing a legacy Đất listing preserves its category and hides Phòng ngủ / Nhà vệ sinh', async () => {
+    fetchBrokerDashboard.mockResolvedValueOnce({
+      activeListings: 1,
+      totalListings: 1,
+      listings: [{
+        id: 'p-dat-1', title: 'Lô đất cũ', address: 'Test', image: '', statusLabel: 'Đang hiển thị',
+        rawStatus: 'AVAILABLE', priceLabel: '1 tỷ', area: 100, category: 'dat', rooms: [],
+      }],
+    });
+    render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Chỉnh sửa tin' }));
+    const categoryField = (await screen.findByText('Danh mục')).closest('.auth-field');
+    expect(within(categoryField).getByRole('combobox')).toHaveValue('dat');
     expect(screen.queryByText('Phòng ngủ')).not.toBeInTheDocument();
     expect(screen.queryByText('Nhà vệ sinh')).not.toBeInTheDocument();
   });
