@@ -19,6 +19,8 @@ function arrowMarkerIcon() {
   });
 }
 
+const ARROW_ICON = arrowMarkerIcon();
+
 export default function PropertyMapSection({ properties = [] }) {
   const pins = properties.filter((property) => Number.isFinite(property.lat) && Number.isFinite(property.lng));
   if (pins.length === 0) return null;
@@ -39,7 +41,7 @@ export default function PropertyMapSection({ properties = [] }) {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             {pins.map((property) => (
-              <Marker key={property.id} position={[property.lat, property.lng]} icon={arrowMarkerIcon()}>
+              <Marker key={property.id || property.title} position={[property.lat, property.lng]} icon={ARROW_ICON}>
                 <Popup>
                   <a className="home-map-popup" href={`#/property/${property.id}`}>
                     <img src={property.image} alt={property.title} />

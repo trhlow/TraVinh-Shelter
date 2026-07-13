@@ -460,3 +460,9 @@
   color: var(--color-primary);
   font-weight: 600;
 }
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
