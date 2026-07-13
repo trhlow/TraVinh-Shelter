@@ -165,6 +165,68 @@ class PropertyHttpTest {
     }
 
     @Test
+    void creatingPropertyWithTooManyAttributeEntriesIsRejected() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+
+        StringBuilder attributes = new StringBuilder();
+        for (int i = 0; i < 21; i++) {
+            if (i > 0) attributes.append(",");
+            attributes.append("\"key").append(i).append("\":\"value\"");
+        }
+        String payload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,"attributes":{%s}}
+                """.formatted(attributes);
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Too many attribute entries (max 20)"));
+    }
+
+    @Test
+    void creatingPropertyWithOversizedAttributeValueIsRejected() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+
+        String hugeValue = "a".repeat(10_001);
+        String payload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
+                 "attributes":{"description":"%s"}}
+                """.formatted(hugeValue);
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Attribute value too long for key: description"));
+    }
+
+    @Test
+    void creatingPropertyWithMalformedAttributeKeyIsRejected() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+
+        String payload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
+                 "attributes":{"bad key":"value"}}
+                """;
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid attribute filter key"));
+    }
+
+    @Test
     void invalidAttributeFilterKeyIsRejectedBeforeRepositorySearch() throws Exception {
         mockMvc.perform(get("/properties").param("attr.area);drop table properties;--", "30"))
                 .andExpect(status().isBadRequest())

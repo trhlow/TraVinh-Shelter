@@ -34,6 +34,8 @@ public class PropertyService {
     private static final String ATTRIBUTE_MIN_SUFFIX = ".min";
     private static final String ATTRIBUTE_MAX_SUFFIX = ".max";
     private static final String ATTRIBUTE_KEY_PATTERN = "^[A-Za-z0-9_.-]+$";
+    private static final int MAX_ATTRIBUTE_ENTRIES = 20;
+    private static final int MAX_ATTRIBUTE_VALUE_LENGTH = 10_000;
 
     private final PropertyRepository properties;
     private final CategoryRepository categories;
@@ -186,7 +188,21 @@ public class PropertyService {
         if (attributes == null) {
             return new LinkedHashMap<>();
         }
-        return new LinkedHashMap<>(attributes);
+        if (attributes.size() > MAX_ATTRIBUTE_ENTRIES) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Too many attribute entries (max " + MAX_ATTRIBUTE_ENTRIES + ")");
+        }
+        Map<String, Object> normalized = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            String key = validAttributeKey(entry.getKey());
+            Object value = entry.getValue();
+            if (value instanceof String stringValue && stringValue.length() > MAX_ATTRIBUTE_VALUE_LENGTH) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Attribute value too long for key: " + key);
+            }
+            normalized.put(key, value);
+        }
+        return normalized;
     }
 
     private String validAttributeKey(String key) {
