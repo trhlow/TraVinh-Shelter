@@ -249,7 +249,8 @@ class MediaHttpTest {
             return saved;
         });
 
-        MockMultipartFile video = new MockMultipartFile("file", "tour.mp4", "video/mp4", "video".getBytes());
+        byte[] mp4Header = {0, 0, 0, 0x18, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d, 0, 0, 2, 0};
+        MockMultipartFile video = new MockMultipartFile("file", "tour.mp4", "video/mp4", mp4Header);
         mockMvc.perform(multipart("/properties/{propertyId}/media/video-file", property.getId()).file(video)
                         .header("Authorization", bearer(broker)))
                 .andExpect(status().isCreated())
@@ -262,6 +263,61 @@ class MediaHttpTest {
                         .content("{\"url\":\"https://example.com/video/after-file\"}"))
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.message").value("A property can have at most one video"));
+    }
+
+    @Test
+    void videoFileWithUnrecognizedContentIsRejected() throws Exception {
+        User broker = user("broker-bad-video@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Property property = property(broker, PropertyStatus.AVAILABLE);
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(properties.findByIdForUpdate(property.getId())).thenReturn(Optional.of(property));
+        when(media.existsByPropertyIdAndMediaTypeIn(any(), any())).thenReturn(false);
+
+        MockMultipartFile fake = new MockMultipartFile("file", "tour.mp4", "video/mp4", "not-a-video".getBytes());
+        mockMvc.perform(multipart("/properties/{propertyId}/media/video-file", property.getId()).file(fake)
+                        .header("Authorization", bearer(broker)))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.message").value("Media content does not match the declared content type"));
+    }
+
+    @Test
+    void videoFileDeclaredAsMp4ButActuallyPngIsRejected() throws Exception {
+        User broker = user("broker-mismatched-video@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Property property = property(broker, PropertyStatus.AVAILABLE);
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(properties.findByIdForUpdate(property.getId())).thenReturn(Optional.of(property));
+        when(media.existsByPropertyIdAndMediaTypeIn(any(), any())).thenReturn(false);
+
+        byte[] pngHeader = {(byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0, 0, 0, 0, 0};
+        MockMultipartFile disguised = new MockMultipartFile("file", "tour.mp4", "video/mp4", pngHeader);
+        mockMvc.perform(multipart("/properties/{propertyId}/media/video-file", property.getId()).file(disguised)
+                        .header("Authorization", bearer(broker)))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.message").value("Media content does not match the declared content type"));
+    }
+
+    @Test
+    void brokerUploadsWebmVideoWithRealSignature() throws Exception {
+        User broker = user("broker-webm@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Property property = property(broker, PropertyStatus.AVAILABLE);
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(properties.findByIdForUpdate(property.getId())).thenReturn(Optional.of(property));
+        when(media.existsByPropertyIdAndMediaTypeIn(any(), any())).thenReturn(false);
+        when(media.saveAndFlush(any(Media.class))).thenAnswer(invocation -> {
+            Media saved = invocation.getArgument(0);
+            ReflectionTestUtils.setField(saved, "id", UUID.randomUUID());
+            return saved;
+        });
+
+        byte[] webmHeader = {0x1a, 0x45, (byte) 0xdf, (byte) 0xa3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        MockMultipartFile video = new MockMultipartFile("file", "tour.webm", "video/webm", webmHeader);
+        mockMvc.perform(multipart("/properties/{propertyId}/media/video-file", property.getId()).file(video)
+                        .header("Authorization", bearer(broker)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.mediaType").value("VIDEO_FILE"));
     }
 
     @Test

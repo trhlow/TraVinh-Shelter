@@ -121,6 +121,13 @@ public class LocalMediaStorage {
         }
 
         String detected = detectKnownContentType(header, read);
+        if (VIDEO_CONTENT_TYPES.contains(contentType)) {
+            if (detected == null || !isVideoContainerMatch(detected, contentType)) {
+                throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                        "Media content does not match the declared content type");
+            }
+            return;
+        }
         if (detected != null && !detected.equals(contentType)) {
             throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
                     "Media content does not match the declared content type");
@@ -129,6 +136,16 @@ public class LocalMediaStorage {
             throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
                     "Media content does not match allowed upload types");
         }
+    }
+
+    private boolean isVideoContainerMatch(String detected, String declaredContentType) {
+        if ("video/webm".equals(detected)) {
+            return "video/webm".equals(declaredContentType);
+        }
+        if ("video/mp4".equals(detected)) {
+            return "video/mp4".equals(declaredContentType) || "video/quicktime".equals(declaredContentType);
+        }
+        return false;
     }
 
     private String detectKnownContentType(byte[] header, int read) {
@@ -147,6 +164,13 @@ public class LocalMediaStorage {
         if (read >= 12 && header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46
                 && header[8] == 0x57 && header[9] == 0x45 && header[10] == 0x42 && header[11] == 0x50) {
             return "image/webp";
+        }
+        if (read >= 8 && header[4] == 0x66 && header[5] == 0x74 && header[6] == 0x79 && header[7] == 0x70) {
+            return "video/mp4";
+        }
+        if (read >= 4 && header[0] == 0x1a && header[1] == 0x45
+                && header[2] == (byte) 0xdf && header[3] == (byte) 0xa3) {
+            return "video/webm";
         }
         return null;
     }
