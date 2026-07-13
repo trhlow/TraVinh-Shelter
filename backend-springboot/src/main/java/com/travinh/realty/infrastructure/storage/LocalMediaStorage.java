@@ -112,7 +112,7 @@ public class LocalMediaStorage {
         byte[] header = new byte[16];
         int read;
         try (InputStream input = file.getInputStream()) {
-            read = input.read(header);
+            read = input.readNBytes(header, 0, header.length);
         } catch (IOException exception) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not read media file", exception);
         }

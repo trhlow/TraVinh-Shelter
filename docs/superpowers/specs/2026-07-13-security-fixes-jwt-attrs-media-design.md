@@ -54,9 +54,11 @@ không có trong tay để revoke riêng lẻ.
 ALTER TABLE users ADD COLUMN password_changed_at TIMESTAMPTZ NOT NULL DEFAULT now();
 ```
 
-`DEFAULT now()` backfill toàn bộ user hiện có với 1 mốc hợp lệ (mọi token hiện hành có `iat` trước thời điểm
-chạy migration này — an toàn, không có token nào bị vô hiệu hoá oan vì migration chạy 1 lần lúc deploy, thời
-điểm đó không có ai đang có token với `iat` tương lai).
+`DEFAULT now()` backfill toàn bộ user hiện có với 1 mốc = thời điểm chạy migration — nghĩa là **mọi JWT đang
+tồn tại lúc deploy sẽ bị vô hiệu hoá ngay lập tức** (vì `iat` của chúng luôn nhỏ hơn mốc backfill vừa ghi).
+Đây là đánh đổi có chủ đích, không phải tác dụng phụ ngoài ý muốn: buộc toàn bộ session đăng nhập lại 1 lần,
+đóng luôn mọi token đã phát hành trước bản vá bảo mật này (kể cả token có thể đã bị lộ). Đã xác nhận với user
+và giữ nguyên `DEFAULT now()` (xem quyết định trong `docs/superpowers/plans/2026-07-13-security-fixes-jwt-attrs-media.md`).
 
 **2. `User.java`** (`User.java:56-64` khu vực field, `:96-98` khu vực method):
 
