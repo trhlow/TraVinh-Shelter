@@ -51,6 +51,7 @@ const EMPTY_FORM = {
   houseType: 'tret',
   description: '',
   amenities: [],
+  rooms: [],
   coverUrl: '',
   coverFile: null,
   coverPreview: '',
@@ -1040,6 +1041,16 @@ export function propertyPayload(form) {
   }
   if (form.categorySlug === 'nha' && form.transaction === 'rent') {
     attributes.houseType = form.houseType;
+  }
+  if (form.categorySlug === 'tro') {
+    const validRooms = (form.rooms || [])
+      .filter((room) => room.label?.trim())
+      .map((room) => ({
+        label: room.label.trim(),
+        price: numericOrNull(room.price) ?? 0,
+        available: room.available !== false,
+      }));
+    if (validRooms.length > 0) attributes.rooms = validRooms;
   }
   if (form.coverUrl?.trim()) attributes.image = form.coverUrl.trim();
 

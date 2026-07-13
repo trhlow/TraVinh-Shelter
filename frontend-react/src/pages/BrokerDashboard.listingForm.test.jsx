@@ -50,6 +50,42 @@ describe('propertyPayload — area from length × width', () => {
   });
 });
 
+describe('propertyPayload — rooms (dãy trọ)', () => {
+  const base = {
+    categorySlug: 'tro', transaction: 'rent', ward: 'phuong-tra-vinh',
+    length: '', width: '', bedrooms: '', bathrooms: '', description: '', amenities: [],
+    lat: '', lng: '', coverUrl: '', title: 'Dãy trọ test', address: 'Test', price: '1500000',
+  };
+
+  test('attaches attributes.rooms when category is tro and at least one valid room', () => {
+    const payload = propertyPayload({ ...base, rooms: [{ label: 'P.01', price: '1500000', available: true }] });
+    expect(payload.attributes.rooms).toEqual([{ label: 'P.01', price: 1500000, available: true }]);
+  });
+
+  test('filters out rooms with empty label', () => {
+    const payload = propertyPayload({
+      ...base,
+      rooms: [{ label: '  ', price: '1000000', available: true }, { label: 'P.02', price: '1000000', available: true }],
+    });
+    expect(payload.attributes.rooms).toEqual([{ label: 'P.02', price: 1000000, available: true }]);
+  });
+
+  test('coerces empty/invalid price to 0', () => {
+    const payload = propertyPayload({ ...base, rooms: [{ label: 'P.01', price: '', available: true }] });
+    expect(payload.attributes.rooms[0].price).toBe(0);
+  });
+
+  test('omits attributes.rooms when list is empty after filtering', () => {
+    const payload = propertyPayload({ ...base, rooms: [{ label: '   ', price: '1000000', available: true }] });
+    expect('rooms' in payload.attributes).toBe(false);
+  });
+
+  test('omits attributes.rooms when category is not tro, even if rooms has data', () => {
+    const payload = propertyPayload({ ...base, categorySlug: 'nha', rooms: [{ label: 'P.01', price: '1000000', available: true }] });
+    expect('rooms' in payload.attributes).toBe(false);
+  });
+});
+
 // ── Rendered form ────────────────────────────────────────────────────────────
 vi.mock('../services/api.js', () => ({
   fetchCurrentUser: vi.fn().mockResolvedValue({
