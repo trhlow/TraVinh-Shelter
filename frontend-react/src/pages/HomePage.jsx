@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import FeaturedCarousel from '../components/FeaturedCarousel.jsx';
 import TroShowcaseCard from '../components/TroShowcaseCard.jsx';
+import PropertyMapSection from '../components/home/PropertyMapSection.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
 import { featuredProperties } from '../data/templateData.js';
@@ -169,6 +170,16 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
     return () => { alive = false; };
   }, []);
 
+  const [mapProperties, setMapProperties] = useState([]);
+
+  useEffect(() => {
+    let alive = true;
+    fetchProperties({ category: 'all', transaction: 'all', size: 200 })
+      .then(items => { if (alive) setMapProperties(items); })
+      .catch(() => { if (alive) setMapProperties([]); });
+    return () => { alive = false; };
+  }, []);
+
   const rowItems = { tro: troProperties, nha: nhaProperties, dat: datProperties };
 
   return (
@@ -284,7 +295,10 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
         );
       })}
 
-      {/* 5. WHY CHOOSE US */}
+      {/* 5. PROPERTY MAP */}
+      <PropertyMapSection properties={mapProperties} />
+
+      {/* 6. WHY CHOOSE US */}
       <section className="section-subtle" style={{ paddingTop: '80px', paddingBottom: '80px', background: 'var(--color-surface-soft)' }}>
         <div className="container">
           <div className="section-center">
@@ -306,7 +320,7 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
         </div>
       </section>
 
-      {/* 6. STATS */}
+      {/* 7. STATS */}
       <section className="section" style={{ paddingTop: '80px', paddingBottom: '80px' }}>
         <div className="container">
           <div className="stats-grid">
