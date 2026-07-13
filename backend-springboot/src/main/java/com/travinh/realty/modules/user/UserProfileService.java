@@ -133,6 +133,9 @@ public class UserProfileService {
     @Transactional
     public UserProfileResponse updateUserStatus(UUID userId, UserStatus status) {
         User user = findUser(userId);
+        if (user.getRole() == UserRole.ADMIN && status == UserStatus.LOCKED) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "Cannot lock an admin account");
+        }
         user.updateStatus(status);
         return UserProfileResponse.from(user);
     }
