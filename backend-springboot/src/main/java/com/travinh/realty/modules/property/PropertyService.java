@@ -200,6 +200,10 @@ public class PropertyService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "Attribute value too long for key: " + key);
             }
+            if (value != null && !(value instanceof String) && !(value instanceof Number) && !(value instanceof Boolean)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Attribute value must be a string, number, or boolean for key: " + key);
+            }
             normalized.put(key, value);
         }
         return normalized;

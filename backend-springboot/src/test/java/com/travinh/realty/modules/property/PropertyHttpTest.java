@@ -208,6 +208,25 @@ class PropertyHttpTest {
     }
 
     @Test
+    void creatingPropertyWithNonScalarAttributeValueIsRejected() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+
+        String payload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
+                 "attributes":{"tags":["a","b","c"]}}
+                """;
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Attribute value must be a string, number, or boolean for key: tags"));
+    }
+
+    @Test
     void creatingPropertyWithMalformedAttributeKeyIsRejected() throws Exception {
         User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
         Category category = category(1L, "Trọ", "tro");
