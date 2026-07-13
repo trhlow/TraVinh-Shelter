@@ -151,6 +151,20 @@ class UserProfileHttpTest {
     }
 
     @Test
+    void profileUpdateRejectsInvalidPhoneFormat() throws Exception {
+        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        authenticate(user);
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+
+        mockMvc.perform(patch("/users/me").header("Authorization", bearer(user))
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                        {"fullName":"User","phone":"12345"}
+                        """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.phone").value("phone must be a valid Vietnamese mobile number"));
+    }
+
+    @Test
     void regularUserCanClearSocialLinksThroughEveryNullablePayloadForm() throws Exception {
         User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
         ReflectionTestUtils.setField(user, "facebookUrl", "https://facebook.com/existing");
