@@ -66,6 +66,9 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   const [avatarPreview, setAvatarPreview] = useState('');
   const [stats, setStats] = useState({ activeListings: 0, totalListings: 0, listings: [] });
   const [listingForm, setListingForm] = useState(EMPTY_FORM);
+  const [quickAddCount, setQuickAddCount] = useState('1');
+  const [quickAddPrefix, setQuickAddPrefix] = useState('P.');
+  const [quickAddPrice, setQuickAddPrice] = useState('');
   const [listingQuery, setListingQuery] = useState('');
   const [listingStatusTab, setListingStatusTab] = useState('AVAILABLE');
   const [loading, setLoading] = useState(false);
@@ -375,6 +378,9 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       houseType: property.houseType || 'tret',
       description: property.description || '',
       amenities: Array.isArray(property.amenities) ? property.amenities : [],
+      rooms: Array.isArray(property.rooms)
+        ? property.rooms.map((room) => ({ label: room.label, price: String(room.price ?? ''), available: room.available !== false }))
+        : [],
       coverUrl: property.image || '',
       coverFile: null,
       coverPreview: '',
@@ -382,6 +388,32 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       galleryPreviews: [],
     });
     window.setTimeout(() => document.getElementById('listing-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+  }
+
+  function addRoom() {
+    setListingForm((current) => ({ ...current, rooms: [...current.rooms, { label: '', price: '', available: true }] }));
+  }
+
+  function removeRoom(index) {
+    setListingForm((current) => ({ ...current, rooms: current.rooms.filter((_, i) => i !== index) }));
+  }
+
+  function updateRoom(index, field, value) {
+    setListingForm((current) => ({
+      ...current,
+      rooms: current.rooms.map((room, i) => (i === index ? { ...room, [field]: value } : room)),
+    }));
+  }
+
+  function quickAddRooms() {
+    const count = Math.max(1, Number(quickAddCount) || 1);
+    const startIndex = listingForm.rooms.length + 1;
+    const newRooms = Array.from({ length: count }, (_, i) => ({
+      label: `${quickAddPrefix}${String(startIndex + i).padStart(2, '0')}`,
+      price: quickAddPrice,
+      available: true,
+    }));
+    setListingForm((current) => ({ ...current, rooms: [...current.rooms, ...newRooms] }));
   }
 
   function handleCoverChange(event) {
@@ -673,6 +705,41 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                         <input className="input" type="number" min="0" value={listingForm.bathrooms} onChange={(event) => setListingValue('bathrooms', event.target.value, setListingForm)} />
                       </FormField>
                     </>
+                  )}
+                  {listingForm.categorySlug === 'tro' && (
+                    <div className="form-group dashboard-listing-span3">
+                      <label className="auth-field-label">Danh sách phòng trong dãy trọ</label>
+                      <div className="dashboard-room-quickadd">
+                        <input className="input" type="number" min="1" value={quickAddCount} onChange={(event) => setQuickAddCount(event.target.value)} aria-label="Số lượng phòng thêm nhanh" />
+                        <input className="input" type="text" value={quickAddPrefix} onChange={(event) => setQuickAddPrefix(event.target.value)} aria-label="Tiền tố tên phòng" />
+                        <input className="input" type="number" min="0" value={quickAddPrice} onChange={(event) => setQuickAddPrice(event.target.value)} placeholder="Giá mặc định" aria-label="Giá mặc định phòng thêm nhanh" />
+                        <button type="button" className="btn btn-secondary btn-sm" onClick={quickAddRooms}>Thêm nhanh</button>
+                      </div>
+
+                      {listingForm.rooms.length === 0 ? (
+                        <p className="form-hint">Chưa có phòng nào — dùng &quot;Thêm nhanh&quot; để thêm cả dãy, hoặc thêm từng phòng.</p>
+                      ) : (
+                        <div className="dashboard-room-list">
+                          {listingForm.rooms.map((room, index) => (
+                            <div className="dashboard-room-row" key={index}>
+                              <input className="input" type="text" value={room.label} onChange={(event) => updateRoom(index, 'label', event.target.value)} placeholder="Tên phòng" aria-label={`Tên phòng ${index + 1}`} />
+                              <input className="input" type="number" min="0" value={room.price} onChange={(event) => updateRoom(index, 'price', event.target.value)} placeholder="Giá" aria-label={`Giá phòng ${index + 1}`} />
+                              <label className="dashboard-room-available">
+                                <input type="checkbox" checked={room.available} onChange={(event) => updateRoom(index, 'available', event.target.checked)} />
+                                Còn trống
+                              </label>
+                              <button type="button" className="btn btn-ghost btn-sm" onClick={() => removeRoom(index)} aria-label={`Xóa phòng ${index + 1}`}>
+                                <Icon name="X" size={16} className="icon-muted" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <button type="button" className="btn btn-ghost btn-sm dashboard-room-add-btn" onClick={addRoom}>
+                        <Icon name="Plus" size={16} /> Thêm 1 phòng
+                      </button>
+                    </div>
                   )}
                   <FormField label="Ảnh đại diện" className="dashboard-listing-span3">
                     <input className="input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleCoverChange} />

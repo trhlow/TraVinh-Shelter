@@ -168,3 +168,46 @@ describe('Listing form — field visibility', () => {
     expect(screen.queryByText('Nhà vệ sinh')).not.toBeInTheDocument();
   });
 });
+
+describe('Listing form — room list (dãy trọ)', () => {
+  test('shows empty-state hint when no rooms yet', async () => {
+    render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
+    expect(await screen.findByText(/Chưa có phòng nào/)).toBeInTheDocument();
+  });
+
+  test('Thêm nhanh generates N rooms with zero-padded, continuing labels', async () => {
+    render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
+    await screen.findByText(/Chưa có phòng nào/);
+    await userEvent.clear(screen.getByLabelText('Số lượng phòng thêm nhanh'));
+    await userEvent.type(screen.getByLabelText('Số lượng phòng thêm nhanh'), '3');
+    await userEvent.click(screen.getByRole('button', { name: 'Thêm nhanh' }));
+    expect(screen.getByLabelText('Tên phòng 1')).toHaveValue('P.01');
+    expect(screen.getByLabelText('Tên phòng 2')).toHaveValue('P.02');
+    expect(screen.getByLabelText('Tên phòng 3')).toHaveValue('P.03');
+  });
+
+  test('+ Thêm 1 phòng adds one empty row; delete removes it', async () => {
+    render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
+    await screen.findByText(/Chưa có phòng nào/);
+    await userEvent.click(screen.getByRole('button', { name: 'Thêm 1 phòng' }));
+    expect(screen.getByLabelText('Tên phòng 1')).toBeInTheDocument();
+    await userEvent.click(screen.getByLabelText('Xóa phòng 1'));
+    expect(screen.queryByLabelText('Tên phòng 1')).not.toBeInTheDocument();
+  });
+
+  test('editing an existing tro listing prefills room rows', async () => {
+    fetchBrokerDashboard.mockResolvedValueOnce({
+      activeListings: 1,
+      totalListings: 1,
+      listings: [{
+        id: 'p-tro-1', title: 'Dãy trọ ABC', address: 'Test', image: '', statusLabel: 'Đang hiển thị',
+        rawStatus: 'AVAILABLE', priceLabel: '1,5 triệu/tháng', area: 20, category: 'tro',
+        rooms: [{ label: 'P.01', price: 1500000, available: true }],
+      }],
+    });
+    render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Chỉnh sửa tin' }));
+    expect(await screen.findByLabelText('Tên phòng 1')).toHaveValue('P.01');
+    expect(screen.getByLabelText('Giá phòng 1')).toHaveValue(1500000);
+  });
+});
