@@ -292,6 +292,23 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
               </div>
             )}
 
+            {/* Block 5: Location map */}
+            {property.lat != null && property.lng != null && (
+              <div className="card p-24 mt-16">
+                <h2 className="detail-block-title">
+                  <Icon name="MapPin" size={18} className="icon-muted" />
+                  Vị trí trên bản đồ
+                </h2>
+                <iframe
+                  title="Vị trí bất động sản"
+                  className="property-map-embed"
+                  src={`https://www.google.com/maps?q=${property.lat},${property.lng}&output=embed`}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+            )}
+
             {/* Block 6: Room list — trọ only */}
             {hasRooms && (
               <div className="card p-24 mt-16">

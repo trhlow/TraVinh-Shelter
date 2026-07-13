@@ -44,6 +44,8 @@ const EMPTY_FORM = {
   price: '',
   length: '',
   width: '',
+  lat: '',
+  lng: '',
   bedrooms: '',
   bathrooms: '',
   houseType: 'tret',
@@ -365,6 +367,8 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       price: String(Math.round(property.rawPrice || 0)),
       length: property.length ? String(property.length) : '',
       width: property.width ? String(property.width) : '',
+      lat: property.lat != null ? String(property.lat) : '',
+      lng: property.lng != null ? String(property.lng) : '',
       bedrooms: property.bedrooms ? String(property.bedrooms) : '',
       bathrooms: property.bathrooms ? String(property.bathrooms) : '',
       houseType: property.houseType || 'tret',
@@ -646,6 +650,13 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                   <FormField label="Chiều rộng (m)">
                     <input className="input" type="number" min="0" step="0.01" value={listingForm.width} onChange={(event) => setListingValue('width', event.target.value, setListingForm)} />
                   </FormField>
+                  <FormField label="Vĩ độ (lat)">
+                    <input className="input" type="number" step="any" placeholder="Không bắt buộc" value={listingForm.lat} onChange={(event) => setListingValue('lat', event.target.value, setListingForm)} />
+                  </FormField>
+                  <FormField label="Kinh độ (lng)">
+                    <input className="input" type="number" step="any" placeholder="Không bắt buộc" value={listingForm.lng} onChange={(event) => setListingValue('lng', event.target.value, setListingForm)} />
+                  </FormField>
+                  <p className="form-hint dashboard-listing-span2">Không bắt buộc — long-press trên Google Maps app để lấy tọa độ, dán vào 2 ô trên.</p>
                   {listingForm.categorySlug === 'nha' && listingForm.transaction === 'rent' && (
                     <FormField label="Loại nhà">
                       <select className="input" value={listingForm.houseType} onChange={(event) => setListingValue('houseType', event.target.value, setListingForm)}>
@@ -1030,6 +1041,10 @@ export function propertyPayload(form) {
   if (form.categorySlug === 'nha' && form.transaction === 'rent') {
     attributes.houseType = form.houseType;
   }
+  const lat = numericOrNull(form.lat);
+  const lng = numericOrNull(form.lng);
+  if (lat != null) attributes.lat = lat;
+  if (lng != null) attributes.lng = lng;
   if (form.coverUrl?.trim()) attributes.image = form.coverUrl.trim();
 
   return {
