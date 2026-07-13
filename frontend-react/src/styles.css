@@ -1687,6 +1687,45 @@ img { display: block; max-width: 100%; }
   object-position: center;
 }
 
+.dashboard-room-quickadd {
+  display: grid;
+  grid-template-columns: 80px 1fr 120px auto;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.dashboard-room-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.dashboard-room-row {
+  display: grid;
+  grid-template-columns: 1fr 120px auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.dashboard-room-available {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--color-body);
+  white-space: nowrap;
+}
+
+.dashboard-room-add-btn {
+  align-self: flex-start;
+}
+
+@media (max-width: 640px) {
+  .dashboard-room-quickadd { grid-template-columns: 1fr; }
+  .dashboard-room-row { grid-template-columns: 1fr; }
+}
+
 .dashboard-gallery-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);

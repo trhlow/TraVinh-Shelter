@@ -402,3 +402,67 @@
   color: var(--color-muted);
   margin-top: 8px;
 }
+
+/* ============================================================
+   HOME — PROPERTY MAP
+   ============================================================ */
+.home-map-container {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-hairline);
+}
+
+.home-map {
+  width: 100%;
+  height: 420px;
+}
+
+.home-map-marker-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full) var(--radius-full) var(--radius-full) 2px;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  transform: rotate(45deg);
+  box-shadow: var(--shadow-card);
+}
+
+.home-map-marker-pin svg {
+  transform: rotate(-45deg);
+}
+
+.home-map-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-decoration: none;
+  color: var(--color-ink);
+  min-width: 160px;
+}
+
+.home-map-popup img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+
+.home-map-popup-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.home-map-popup-price {
+  font-size: 13px;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
