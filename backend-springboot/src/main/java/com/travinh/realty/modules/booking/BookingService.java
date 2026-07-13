@@ -49,14 +49,17 @@ public class BookingService {
     private final OtpStore otpStore;
     private final RateLimiter rateLimiter;
     private final SmsSender smsSender;
+    private final ViewingOtpProperties viewingOtpProperties;
 
     public BookingService(ViewingAppointmentRepository appointments, PropertyRepository properties,
-                          OtpStore otpStore, RateLimiter rateLimiter, SmsSender smsSender) {
+                          OtpStore otpStore, RateLimiter rateLimiter, SmsSender smsSender,
+                          ViewingOtpProperties viewingOtpProperties) {
         this.appointments = appointments;
         this.properties = properties;
         this.otpStore = otpStore;
         this.rateLimiter = rateLimiter;
         this.smsSender = smsSender;
+        this.viewingOtpProperties = viewingOtpProperties;
     }
 
     @Transactional
@@ -78,6 +81,9 @@ public class BookingService {
         if (property.getStatus() != PropertyStatus.AVAILABLE) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found");
         }
+        if (!viewingOtpProperties.otpRequired()) {
+            return new MessageResponse("Xác minh OTP tạm thời không bắt buộc.");
+        }
         String phone = request.visitorPhone().trim();
         if (!rateLimiter.tryAcquire("viewing-otp-request:" + phone, REQUEST_LIMIT, REQUEST_WINDOW)) {
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many requests. Please retry later.");
@@ -89,6 +95,9 @@ public class BookingService {
 
     @Transactional
     public ViewingResponse verifyOtpAndCreate(UUID propertyId, VerifyViewingOtpRequest request) {
+        if (!viewingOtpProperties.otpRequired()) {
+            return create(propertyId, request.booking());
+        }
         String phone = request.booking().visitorPhone().trim();
         if (!rateLimiter.tryAcquire("viewing-otp-verify:" + phone, VERIFY_LIMIT, VERIFY_WINDOW)) {
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many requests. Please retry later.");

@@ -161,6 +161,41 @@ class UserProfileServiceTest {
                 .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
+    @Test
+    void cannotLockAnAdminAccount() {
+        User admin = user(UserRole.USER, UserStatus.ACTIVE, "Admin", "0900000000");
+        ReflectionTestUtils.setField(admin, "role", UserRole.ADMIN);
+        when(users.findById(admin.getId())).thenReturn(Optional.of(admin));
+
+        assertThatThrownBy(() -> service().updateUserStatus(admin.getId(), UserStatus.LOCKED))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(error -> ((ResponseStatusException) error).getStatusCode())
+                .isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+        assertThat(admin.getStatus()).isEqualTo(UserStatus.ACTIVE);
+    }
+
+    @Test
+    void canUnlockAnAdminAccount() {
+        User admin = user(UserRole.USER, UserStatus.ACTIVE, "Admin", "0900000000");
+        ReflectionTestUtils.setField(admin, "role", UserRole.ADMIN);
+        ReflectionTestUtils.setField(admin, "status", UserStatus.LOCKED);
+        when(users.findById(admin.getId())).thenReturn(Optional.of(admin));
+
+        UserProfileResponse response = service().updateUserStatus(admin.getId(), UserStatus.ACTIVE);
+
+        assertThat(response.status()).isEqualTo(UserStatus.ACTIVE);
+    }
+
+    @Test
+    void canLockANonAdminAccount() {
+        User broker = user(UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+
+        UserProfileResponse response = service().updateUserStatus(broker.getId(), UserStatus.LOCKED);
+
+        assertThat(response.status()).isEqualTo(UserStatus.LOCKED);
+    }
+
     private UserProfileService service() {
         return new UserProfileService(users, new BCryptPasswordEncoder(4), storage, jwt);
     }

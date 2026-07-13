@@ -34,6 +34,8 @@ public class PropertyService {
     private static final String ATTRIBUTE_MIN_SUFFIX = ".min";
     private static final String ATTRIBUTE_MAX_SUFFIX = ".max";
     private static final String ATTRIBUTE_KEY_PATTERN = "^[A-Za-z0-9_.-]+$";
+    private static final int MAX_ATTRIBUTE_ENTRIES = 20;
+    private static final int MAX_ATTRIBUTE_VALUE_LENGTH = 10_000;
 
     private final PropertyRepository properties;
     private final CategoryRepository categories;
@@ -74,9 +76,18 @@ public class PropertyService {
     public PropertyResponse create(UUID brokerId, CreatePropertyRequest request) {
         User broker = requireActiveBroker(brokerId);
         Category category = findCategory(request.categoryId(), request.categorySlug());
+        Map<String, Object> attributes = normalizeAttributes(request.attributes());
+        requireWard(attributes);
         Property property = Property.create(broker, category, request.title().trim(), request.address().trim(),
-                request.price(), normalizeAttributes(request.attributes()));
+                request.price(), attributes);
         return PropertyResponse.from(properties.save(property));
+    }
+
+    private void requireWard(Map<String, Object> attributes) {
+        Object ward = attributes.get("ward");
+        if (!(ward instanceof String wardValue) || wardValue.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribute 'ward' is required");
+        }
     }
 
     @Transactional
@@ -186,7 +197,33 @@ public class PropertyService {
         if (attributes == null) {
             return new LinkedHashMap<>();
         }
-        return new LinkedHashMap<>(attributes);
+        if (attributes.size() > MAX_ATTRIBUTE_ENTRIES) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Too many attribute entries (max " + MAX_ATTRIBUTE_ENTRIES + ")");
+        }
+        Map<String, Object> normalized = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            String key = validAttributeKey(entry.getKey());
+            Object value = entry.getValue();
+            if (value instanceof String stringValue && stringValue.length() > MAX_ATTRIBUTE_VALUE_LENGTH) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Attribute value too long for key: " + key);
+            }
+            if (value != null && !(value instanceof String) && !(value instanceof Number) && !(value instanceof Boolean)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Attribute value must be a string, number, or boolean for key: " + key);
+            }
+            if ("lat".equals(key) && value instanceof Number number
+                    && (number.doubleValue() < -90 || number.doubleValue() > 90)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "lat must be between -90 and 90");
+            }
+            if ("lng".equals(key) && value instanceof Number number
+                    && (number.doubleValue() < -180 || number.doubleValue() > 180)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "lng must be between -180 and 180");
+            }
+            normalized.put(key, value);
+        }
+        return normalized;
     }
 
     private String validAttributeKey(String key) {

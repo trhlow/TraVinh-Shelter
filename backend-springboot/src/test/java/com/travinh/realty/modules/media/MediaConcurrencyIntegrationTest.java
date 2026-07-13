@@ -96,7 +96,8 @@ class MediaConcurrencyIntegrationTest {
                 () -> {
                     try {
                         service.uploadVideoFile(fixture.principal().id(), fixture.property().getId(),
-                                new MockMultipartFile("file", "tour.mp4", "video/mp4", "video".getBytes()));
+                                new MockMultipartFile("file", "tour.mp4", "video/mp4",
+                                        new byte[]{0, 0, 0, 0x18, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d, 0, 0, 2, 0}));
                         return true;
                     } catch (ResponseStatusException exception) {
                         assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);

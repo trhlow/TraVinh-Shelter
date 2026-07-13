@@ -34,6 +34,18 @@ describe('propertyPayload — area from length × width', () => {
     expect(payload.attributes.bedrooms).toBe(3);
     expect(payload.attributes.bathrooms).toBe(2);
   });
+
+  test('includes lat/lng attributes when provided', () => {
+    const payload = propertyPayload({ ...base, lat: '10.5', lng: '105.9' });
+    expect(payload.attributes.lat).toBe(10.5);
+    expect(payload.attributes.lng).toBe(105.9);
+  });
+
+  test('omits lat/lng attributes when not provided', () => {
+    const payload = propertyPayload({ ...base, lat: '', lng: '' });
+    expect('lat' in payload.attributes).toBe(false);
+    expect('lng' in payload.attributes).toBe(false);
+  });
 });
 
 // ── Rendered form ────────────────────────────────────────────────────────────

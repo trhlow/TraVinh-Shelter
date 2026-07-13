@@ -19,11 +19,15 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class AuthRateLimitFilter extends OncePerRequestFilter {
     private static final Duration WINDOW = Duration.ofMinutes(1);
     private static final int DEFAULT_LIMIT = 10;
+    private static final int SEARCH_LIMIT = 60;
     private static final Pattern VIEWING_REQUEST_OTP_PATH = Pattern.compile("^/properties/[^/]+/viewings/request-otp$");
     private static final Pattern VIEWING_VERIFY_OTP_PATH = Pattern.compile("^/properties/[^/]+/viewings/verify-otp$");
 
-    // path-group -> requests allowed per WINDOW per IP; tunable independently per group.
-    private static final Map<String, Integer> RATE_LIMITED_GROUPS = rateLimitedGroups();
+    // path-group -> HTTP method + requests allowed per WINDOW per IP; tunable independently per group.
+    private static final Map<String, RateLimitRule> RATE_LIMITED_GROUPS = rateLimitedGroups();
+
+    private record RateLimitRule(HttpMethod method, int limit) {
+    }
 
     private final ObjectMapper objectMapper;
     private final RateLimiter rateLimiter;
@@ -39,10 +43,8 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String group = rateLimitGroup(requestPath(request));
-        Integer limit = group == null || !HttpMethod.POST.matches(request.getMethod())
-                ? null
-                : RATE_LIMITED_GROUPS.get(group);
-        if (limit == null || allow(request, group, limit)) {
+        RateLimitRule rule = group == null ? null : RATE_LIMITED_GROUPS.get(group);
+        if (rule == null || !rule.method().matches(request.getMethod()) || allow(request, group, rule)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -66,19 +68,23 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         if (VIEWING_VERIFY_OTP_PATH.matcher(path).matches()) {
             return "/properties/*/viewings/verify-otp";
         }
+        if ("/properties".equals(path)) {
+            return "/properties";
+        }
         return null;
     }
 
-    private boolean allow(HttpServletRequest request, String group, int limit) {
+    private boolean allow(HttpServletRequest request, String group, RateLimitRule rule) {
         String key = clientIpResolver.resolve(request) + ":" + group;
-        return rateLimiter.tryAcquire(key, limit, WINDOW);
+        return rateLimiter.tryAcquire(key, rule.limit(), WINDOW);
     }
 
-    private static Map<String, Integer> rateLimitedGroups() {
-        Map<String, Integer> groups = new LinkedHashMap<>();
-        groups.put("/auth/login", DEFAULT_LIMIT);
-        groups.put("/properties/*/viewings/request-otp", DEFAULT_LIMIT);
-        groups.put("/properties/*/viewings/verify-otp", DEFAULT_LIMIT);
+    private static Map<String, RateLimitRule> rateLimitedGroups() {
+        Map<String, RateLimitRule> groups = new LinkedHashMap<>();
+        groups.put("/auth/login", new RateLimitRule(HttpMethod.POST, DEFAULT_LIMIT));
+        groups.put("/properties/*/viewings/request-otp", new RateLimitRule(HttpMethod.POST, DEFAULT_LIMIT));
+        groups.put("/properties/*/viewings/verify-otp", new RateLimitRule(HttpMethod.POST, DEFAULT_LIMIT));
+        groups.put("/properties", new RateLimitRule(HttpMethod.GET, SEARCH_LIMIT));
         return groups;
     }
 

@@ -119,7 +119,7 @@ class PropertyHttpTest {
         Category category = category(1L, "Trọ", "tro");
         String payload = """
                 {"categorySlug":"tro","title":"Phòng trọ sạch","address":"Trà Vinh",
-                 "price":1500000,"attributes":{"area":30,"rooms":1,"has_ac":true}}
+                 "price":1500000,"attributes":{"ward":"phuong-1","area":30,"rooms":1,"has_ac":true}}
                 """;
 
         mockMvc.perform(post("/properties").contentType(MediaType.APPLICATION_JSON).content(payload))
@@ -162,6 +162,155 @@ class PropertyHttpTest {
         assertThat(saved.getValue().getBroker().getId()).isEqualTo(broker.getId());
         assertThat(saved.getValue().getStatus()).isEqualTo(PropertyStatus.AVAILABLE);
         assertThat(saved.getValue().getAttributes()).containsEntry("rooms", 1);
+    }
+
+    @Test
+    void creatingPropertyWithoutWardAttributeIsRejected() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+
+        String payload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,"attributes":{}}
+                """;
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Attribute 'ward' is required"));
+    }
+
+    @Test
+    void creatingPropertyWithOutOfRangeLatOrLngIsRejected() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+
+        String badLatPayload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
+                 "attributes":{"ward":"phuong-1","lat":999,"lng":105.9}}
+                """;
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(badLatPayload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("lat must be between -90 and 90"));
+
+        String badLngPayload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
+                 "attributes":{"ward":"phuong-1","lat":10.5,"lng":-200}}
+                """;
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(badLngPayload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("lng must be between -180 and 180"));
+    }
+
+    @Test
+    void creatingPropertyWithValidLatLngPersistsThem() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+        when(properties.save(any(Property.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        String payload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
+                 "attributes":{"ward":"phuong-1","lat":10.5,"lng":105.9}}
+                """;
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.attributes.lat").value(10.5))
+                .andExpect(jsonPath("$.attributes.lng").value(105.9));
+    }
+
+    @Test
+    void creatingPropertyWithTooManyAttributeEntriesIsRejected() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+
+        StringBuilder attributes = new StringBuilder();
+        for (int i = 0; i < 21; i++) {
+            if (i > 0) attributes.append(",");
+            attributes.append("\"key").append(i).append("\":\"value\"");
+        }
+        String payload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,"attributes":{%s}}
+                """.formatted(attributes);
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Too many attribute entries (max 20)"));
+    }
+
+    @Test
+    void creatingPropertyWithOversizedAttributeValueIsRejected() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+
+        String hugeValue = "a".repeat(10_001);
+        String payload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
+                 "attributes":{"description":"%s"}}
+                """.formatted(hugeValue);
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Attribute value too long for key: description"));
+    }
+
+    @Test
+    void creatingPropertyWithNonScalarAttributeValueIsRejected() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+
+        String payload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
+                 "attributes":{"tags":["a","b","c"]}}
+                """;
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Attribute value must be a string, number, or boolean for key: tags"));
+    }
+
+    @Test
+    void creatingPropertyWithMalformedAttributeKeyIsRejected() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+
+        String payload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
+                 "attributes":{"bad key":"value"}}
+                """;
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid attribute filter key"));
     }
 
     @Test
