@@ -13,6 +13,18 @@ export function validateLoginForm(values, mode = 'login') {
   if (mode === 'forgot') {
     return errors;
   }
+  if (mode === 'reset') {
+    if (!/^\d{6}$/.test(values.otpCode || '')) {
+      errors.otpCode = 'Mã OTP phải gồm 6 chữ số.';
+    }
+    if (!values.newPassword || values.newPassword.length < 8) {
+      errors.newPassword = 'Mật khẩu cần ít nhất 8 ký tự.';
+    }
+    if (values.confirmNewPassword !== values.newPassword) {
+      errors.confirmNewPassword = 'Mật khẩu xác nhận không khớp.';
+    }
+    return errors;
+  }
   if (!values.password || values.password.length < 8) {
     errors.password = 'Mật khẩu cần ít nhất 8 ký tự.';
   }

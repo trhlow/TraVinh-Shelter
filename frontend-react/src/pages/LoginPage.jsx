@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import BrandLogo, { BRAND_NAME } from '../components/BrandLogo.jsx';
-import { fetchCurrentUser, login } from '../services/api.js';
+import { confirmPasswordReset, fetchCurrentUser, login, requestPasswordReset } from '../services/api.js';
 import { createSession } from '../services/session.js';
 import { validateLoginForm } from '../utils/validation.js';
 
@@ -17,11 +17,17 @@ const MODE_COPY = {
     button: 'Gửi liên kết đặt lại',
     loading: 'Đang gửi',
   },
+  reset: {
+    title: 'Đặt mật khẩu mới',
+    subtitle: 'Nhập mã OTP đã nhận qua email và mật khẩu mới của bạn.',
+    button: 'Đặt lại mật khẩu',
+    loading: 'Đang xử lý',
+  },
 };
 
 export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
   const [mode, setMode] = useState(initialMode);
-  const [values, setValues] = useState({ email: '', password: '' });
+  const [values, setValues] = useState({ email: '', password: '', otpCode: '', newPassword: '', confirmNewPassword: '' });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -43,7 +49,30 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
     if (Object.keys(nextErrors).length > 0) return;
 
     if (mode === 'forgot') {
-      setSuccessMessage('Nếu email này tồn tại trong hệ thống, hướng dẫn đặt lại mật khẩu sẽ được gửi đến hộp thư của bạn.');
+      setSubmitting(true);
+      try {
+        const response = await requestPasswordReset(values.email);
+        setSuccessMessage(response?.message || 'Nếu email này tồn tại trong hệ thống, hướng dẫn đặt lại mật khẩu sẽ được gửi đến hộp thư của bạn.');
+        setMode('reset');
+      } catch (exception) {
+        setServerError(exception.message || 'Không thể gửi yêu cầu đặt lại mật khẩu.');
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    if (mode === 'reset') {
+      setSubmitting(true);
+      try {
+        const response = await confirmPasswordReset(values.email, values.otpCode, values.newPassword);
+        setSuccessMessage(response?.message || 'Đặt lại mật khẩu thành công.');
+        window.setTimeout(() => switchMode('login'), 1500);
+      } catch (exception) {
+        setServerError(exception.message || 'Đặt lại mật khẩu thất bại.');
+      } finally {
+        setSubmitting(false);
+      }
       return;
     }
 
@@ -94,6 +123,7 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
   }
 
   const isForgot = mode === 'forgot';
+  const isReset = mode === 'reset';
   const copy = MODE_COPY[mode] || MODE_COPY.login;
 
   return (
@@ -114,14 +144,14 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
               className="input"
               id="email"
               name="email"
-              placeholder={isForgot ? 'Nhập email cá nhân hoặc email tài khoản' : 'email@domain.com'}
+              placeholder={isForgot || isReset ? 'Nhập email cá nhân hoặc email tài khoản' : 'email@domain.com'}
               type="email"
               value={values.email}
               onChange={(event) => updateValue('email', event.target.value)}
             />
           </Field>
 
-          {!isForgot && (
+          {!isForgot && !isReset && (
             <Field error={errors.password} id="password" label="Mật khẩu">
               <input
                 className="input"
@@ -135,7 +165,48 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
             </Field>
           )}
 
-          {!isForgot && (
+          {isReset && (
+            <>
+              <Field error={errors.otpCode} id="otpCode" label="Mã OTP">
+                <input
+                  className="input"
+                  id="otpCode"
+                  inputMode="numeric"
+                  maxLength={6}
+                  name="otpCode"
+                  placeholder="Nhập mã 6 số"
+                  value={values.otpCode}
+                  onChange={(event) => updateValue('otpCode', event.target.value)}
+                />
+              </Field>
+
+              <Field error={errors.newPassword} id="newPassword" label="Mật khẩu mới">
+                <input
+                  className="input"
+                  id="newPassword"
+                  name="newPassword"
+                  placeholder="Tối thiểu 8 ký tự"
+                  type="password"
+                  value={values.newPassword}
+                  onChange={(event) => updateValue('newPassword', event.target.value)}
+                />
+              </Field>
+
+              <Field error={errors.confirmNewPassword} id="confirmNewPassword" label="Xác nhận mật khẩu mới">
+                <input
+                  className="input"
+                  id="confirmNewPassword"
+                  name="confirmNewPassword"
+                  placeholder="Nhập lại mật khẩu mới"
+                  type="password"
+                  value={values.confirmNewPassword}
+                  onChange={(event) => updateValue('confirmNewPassword', event.target.value)}
+                />
+              </Field>
+            </>
+          )}
+
+          {!isForgot && !isReset && (
             <div className="auth-row">
               <label className="auth-remember">
                 <input type="checkbox" />
@@ -162,7 +233,7 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
         <div className="auth-divider" />
 
         <div className="auth-footer-links">
-          {isForgot ? (
+          {isForgot || isReset ? (
             <button className="auth-link" type="button" onClick={() => switchMode('login')}>
               Quay lại đăng nhập
             </button>
