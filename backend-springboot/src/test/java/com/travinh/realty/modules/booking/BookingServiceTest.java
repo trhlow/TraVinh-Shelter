@@ -65,7 +65,12 @@ class BookingServiceTest {
         otpStore = new InMemoryOtpStore();
         rateLimiter = new InMemoryRateLimiter();
         smsSender = Mockito.mock(SmsSender.class);
-        service = new BookingService(appointments, properties, otpStore, rateLimiter, smsSender);
+        service = serviceWithOtpRequired(true);
+    }
+
+    private BookingService serviceWithOtpRequired(boolean otpRequired) {
+        return new BookingService(appointments, properties, otpStore, rateLimiter, smsSender,
+                new ViewingOtpProperties(otpRequired));
     }
 
     @Test
@@ -347,6 +352,32 @@ class BookingServiceTest {
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("429");
         Mockito.verify(appointments, Mockito.never()).save(any());
+    }
+
+    @Test
+    void requestOtpWithOtpNotRequiredSkipsSmsAndReturnsMessage() {
+        service = serviceWithOtpRequired(false);
+        Property property = property(broker(), PropertyStatus.AVAILABLE);
+        when(properties.findById(property.getId())).thenReturn(Optional.of(property));
+
+        MessageResponse response = service.requestOtp(property.getId(), new RequestViewingOtpRequest("0900000000"));
+
+        assertThat(response.message()).isEqualTo("Xác minh OTP tạm thời không bắt buộc.");
+        Mockito.verifyNoInteractions(smsSender);
+    }
+
+    @Test
+    void verifyOtpAndCreateWithOtpNotRequiredCreatesAppointmentWithoutOtpVerification() {
+        service = serviceWithOtpRequired(false);
+        Property property = property(broker(), PropertyStatus.AVAILABLE);
+        when(properties.findById(property.getId())).thenReturn(Optional.of(property));
+        when(appointments.save(any(ViewingAppointment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        VerifyViewingOtpRequest request = new VerifyViewingOtpRequest(request(), "wrong-or-empty");
+        ViewingResponse response = service.verifyOtpAndCreate(property.getId(), request);
+
+        assertThat(response.status()).isEqualTo(AppointmentStatus.PENDING);
+        Mockito.verify(appointments).save(any(ViewingAppointment.class));
     }
 
     private CreateViewingRequest request() {
