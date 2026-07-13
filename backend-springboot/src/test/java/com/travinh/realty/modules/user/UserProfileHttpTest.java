@@ -151,6 +151,18 @@ class UserProfileHttpTest {
     }
 
     @Test
+    void malformedJsonBodyReturnsBadRequestNotServerError() throws Exception {
+        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        authenticate(user);
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+
+        mockMvc.perform(patch("/users/me").header("Authorization", bearer(user))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"fullName\":"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
     void profileUpdateRejectsInvalidPhoneFormat() throws Exception {
         User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
         authenticate(user);
