@@ -42,3 +42,10 @@ test('with a valid position, centers on it and renders a marker there', () => {
   expect(marker.dataset.lat).toBe('9.927833');
   expect(marker.dataset.lng).toBe('106.339167');
 });
+
+test('clicking the map calls onChange with the clicked coordinates', () => {
+  const onChange = vi.fn();
+  render(<LocationPicker lat={null} lng={null} onChange={onChange} />);
+  capturedHandlersRef.current.click({ latlng: { lat: 9.93, lng: 106.34 } });
+  expect(onChange).toHaveBeenCalledWith(9.93, 106.34);
+});
