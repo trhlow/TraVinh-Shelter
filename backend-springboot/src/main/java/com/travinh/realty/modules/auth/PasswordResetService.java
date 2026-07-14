@@ -48,7 +48,7 @@ public class PasswordResetService {
     public MessageResponse forgotPassword(ForgotPasswordRequest request) {
         String email = request.email().trim().toLowerCase();
         if (!rateLimiter.tryAcquire("password-reset-request:" + email, REQUEST_LIMIT, REQUEST_WINDOW)) {
-            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many requests. Please retry later.");
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Quá nhiều yêu cầu. Vui lòng thử lại sau.");
         }
         Optional<User> user = users.findByEmail(email);
         if (user.isPresent()) {
@@ -68,7 +68,7 @@ public class PasswordResetService {
     public MessageResponse resetPassword(ResetPasswordRequest request) {
         String email = request.email().trim().toLowerCase();
         if (!rateLimiter.tryAcquire("password-reset-verify:" + email, VERIFY_LIMIT, VERIFY_WINDOW)) {
-            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many requests. Please retry later.");
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Quá nhiều yêu cầu. Vui lòng thử lại sau.");
         }
         if (!otpStore.verify("password-reset:" + email, request.otpCode())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, INVALID_OTP_MESSAGE);

@@ -39,18 +39,18 @@ public class AuthService {
             authentication = auth.authenticate(new UsernamePasswordAuthenticationToken(email, request.password()));
         } catch (AuthenticationException exception) {
             if (!rateLimiter.tryAcquire("login-account:" + email, MAX_FAILED_LOGINS_PER_ACCOUNT, ACCOUNT_LOCKOUT_WINDOW)) {
-                throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many requests. Please retry later.");
+                throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Quá nhiều yêu cầu. Vui lòng thử lại sau.");
             }
             throw exception;
         }
         UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
-        User user = users.findByEmail(principal.getUsername()).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password"));
+        User user = users.findByEmail(principal.getUsername()).orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email hoặc mật khẩu không đúng"));
         return AuthResponse.of(jwt.generateToken(user), properties.expiration(), user);
     }
 
     public void logout(String authorizationHeader) {
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication is required");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Yêu cầu đăng nhập");
         }
         jwt.revoke(authorizationHeader.substring(7));
     }
