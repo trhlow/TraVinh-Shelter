@@ -18,3 +18,6 @@ skills-lock.json
 .claude/settings.local.json
 .claude/memory.md
 
+# superpowers subagent-driven-development scratch (progress ledger, task briefs/reports)
+.superpowers/
+

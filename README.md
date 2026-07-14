@@ -185,6 +185,7 @@ Copy-Item .env.example .env
 | `API_KEY_eSMS` / `ESMS_SECRET_KEY` | Cho tính năng OTP đặt lịch | Credentials REST API eSMS.vn. |
 | `VITE_API_BASE_URL` | Frontend production | Base URL API, ví dụ `http://localhost:8080/api/v1`. |
 | `VITE_USE_MOCK_API` | Không | `true` để dùng mock data frontend, `false` để gọi backend thật. |
+| `VITE_GOOGLE_MAPS_EMBED_API_KEY` | Không | Khóa Maps Embed API, giới hạn theo HTTP referrer; để trống sẽ dùng iframe Google Maps tương thích. |
 
 **Production (`docker-compose.prod.yml`, xem [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)):**
 

@@ -51,6 +51,7 @@ const EMPTY_FORM = {
   houseType: 'tret',
   description: '',
   amenities: [],
+  rooms: [],
   coverUrl: '',
   coverFile: null,
   coverPreview: '',
@@ -65,6 +66,9 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   const [avatarPreview, setAvatarPreview] = useState('');
   const [stats, setStats] = useState({ activeListings: 0, totalListings: 0, listings: [] });
   const [listingForm, setListingForm] = useState(EMPTY_FORM);
+  const [quickAddCount, setQuickAddCount] = useState('1');
+  const [quickAddPrefix, setQuickAddPrefix] = useState('P.');
+  const [quickAddPrice, setQuickAddPrice] = useState('');
   const [listingQuery, setListingQuery] = useState('');
   const [listingStatusTab, setListingStatusTab] = useState('AVAILABLE');
   const [loading, setLoading] = useState(false);
@@ -367,13 +371,16 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       price: String(Math.round(property.rawPrice || 0)),
       length: property.length ? String(property.length) : '',
       width: property.width ? String(property.width) : '',
-      lat: property.lat != null ? String(property.lat) : '',
-      lng: property.lng != null ? String(property.lng) : '',
+      lat: coordinateFormValue(property.lat),
+      lng: coordinateFormValue(property.lng),
       bedrooms: property.bedrooms ? String(property.bedrooms) : '',
       bathrooms: property.bathrooms ? String(property.bathrooms) : '',
       houseType: property.houseType || 'tret',
       description: property.description || '',
       amenities: Array.isArray(property.amenities) ? property.amenities : [],
+      rooms: Array.isArray(property.rooms)
+        ? property.rooms.map((room) => ({ label: room.label, price: String(room.price ?? ''), available: room.available !== false }))
+        : [],
       coverUrl: property.image || '',
       coverFile: null,
       coverPreview: '',
@@ -381,6 +388,32 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       galleryPreviews: [],
     });
     window.setTimeout(() => document.getElementById('listing-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+  }
+
+  function addRoom() {
+    setListingForm((current) => ({ ...current, rooms: [...current.rooms, { label: '', price: '', available: true }] }));
+  }
+
+  function removeRoom(index) {
+    setListingForm((current) => ({ ...current, rooms: current.rooms.filter((_, i) => i !== index) }));
+  }
+
+  function updateRoom(index, field, value) {
+    setListingForm((current) => ({
+      ...current,
+      rooms: current.rooms.map((room, i) => (i === index ? { ...room, [field]: value } : room)),
+    }));
+  }
+
+  function quickAddRooms() {
+    const count = Math.max(1, Number(quickAddCount) || 1);
+    const startIndex = listingForm.rooms.length + 1;
+    const newRooms = Array.from({ length: count }, (_, i) => ({
+      label: `${quickAddPrefix}${String(startIndex + i).padStart(2, '0')}`,
+      price: quickAddPrice,
+      available: true,
+    }));
+    setListingForm((current) => ({ ...current, rooms: [...current.rooms, ...newRooms] }));
   }
 
   function handleCoverChange(event) {
@@ -614,14 +647,12 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                     <input className="input" value={listingForm.title} onChange={(event) => setListingValue('title', event.target.value, setListingForm)} required />
                   </FormField>
                   <FormField label="Danh mục">
-                    <select className="input" value={listingForm.categorySlug} onChange={(event) => {
-                      const categorySlug = event.target.value;
-                      setListingForm((current) => ({ ...current, categorySlug, transaction: categorySlug === 'tro' ? 'rent' : current.transaction }));
-                    }}>
-                      <option value="tro">Trọ</option>
-                      <option value="nha">Nhà</option>
-                      <option value="dat">Đất</option>
+                    <select className="input" value={listingForm.categorySlug} disabled>
+                      <option value={listingForm.categorySlug}>{categoryLabel(listingForm.categorySlug)}</option>
                     </select>
+                    <p className="form-hint">
+                      Môi giới chỉ đăng tin Phòng trọ. Tin danh mục khác (đã tạo trước đây) giữ nguyên danh mục gốc khi chỉnh sửa.
+                    </p>
                   </FormField>
                   {listingForm.categorySlug !== 'tro' && (
                     <FormField label="Nhu cầu">
@@ -650,13 +681,13 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                   <FormField label="Chiều rộng (m)">
                     <input className="input" type="number" min="0" step="0.01" value={listingForm.width} onChange={(event) => setListingValue('width', event.target.value, setListingForm)} />
                   </FormField>
-                  <FormField label="Vĩ độ (lat)">
-                    <input className="input" type="number" step="any" placeholder="Không bắt buộc" value={listingForm.lat} onChange={(event) => setListingValue('lat', event.target.value, setListingForm)} />
+                  <FormField label="Vị trí trên Google Maps" className="dashboard-listing-span2">
+                    <div className="dashboard-coordinate-inputs">
+                      <input className="input" type="number" min="-90" max="90" step="any" value={listingForm.lat} onChange={(event) => setListingValue('lat', event.target.value, setListingForm)} placeholder="Vĩ độ (lat)" aria-label="Vĩ độ (lat)" />
+                      <input className="input" type="number" min="-180" max="180" step="any" value={listingForm.lng} onChange={(event) => setListingValue('lng', event.target.value, setListingForm)} placeholder="Kinh độ (lng)" aria-label="Kinh độ (lng)" />
+                    </div>
+                    <p className="form-hint">Nhấn giữ trên ứng dụng Google Maps để lấy tọa độ.</p>
                   </FormField>
-                  <FormField label="Kinh độ (lng)">
-                    <input className="input" type="number" step="any" placeholder="Không bắt buộc" value={listingForm.lng} onChange={(event) => setListingValue('lng', event.target.value, setListingForm)} />
-                  </FormField>
-                  <p className="form-hint dashboard-listing-span2">Không bắt buộc — long-press trên Google Maps app để lấy tọa độ, dán vào 2 ô trên.</p>
                   {listingForm.categorySlug === 'nha' && listingForm.transaction === 'rent' && (
                     <FormField label="Loại nhà">
                       <select className="input" value={listingForm.houseType} onChange={(event) => setListingValue('houseType', event.target.value, setListingForm)}>
@@ -674,6 +705,41 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                         <input className="input" type="number" min="0" value={listingForm.bathrooms} onChange={(event) => setListingValue('bathrooms', event.target.value, setListingForm)} />
                       </FormField>
                     </>
+                  )}
+                  {listingForm.categorySlug === 'tro' && (
+                    <div className="form-group dashboard-listing-span3">
+                      <label className="auth-field-label">Danh sách phòng trong dãy trọ</label>
+                      <div className="dashboard-room-quickadd">
+                        <input className="input" type="number" min="1" value={quickAddCount} onChange={(event) => setQuickAddCount(event.target.value)} aria-label="Số lượng phòng thêm nhanh" />
+                        <input className="input" type="text" value={quickAddPrefix} onChange={(event) => setQuickAddPrefix(event.target.value)} aria-label="Tiền tố tên phòng" />
+                        <input className="input" type="number" min="0" value={quickAddPrice} onChange={(event) => setQuickAddPrice(event.target.value)} placeholder="Giá mặc định" aria-label="Giá mặc định phòng thêm nhanh" />
+                        <button type="button" className="btn btn-secondary btn-sm" onClick={quickAddRooms}>Thêm nhanh</button>
+                      </div>
+
+                      {listingForm.rooms.length === 0 ? (
+                        <p className="form-hint">Chưa có phòng nào — dùng &quot;Thêm nhanh&quot; để thêm cả dãy, hoặc thêm từng phòng.</p>
+                      ) : (
+                        <div className="dashboard-room-list">
+                          {listingForm.rooms.map((room, index) => (
+                            <div className="dashboard-room-row" key={index}>
+                              <input className="input" type="text" value={room.label} onChange={(event) => updateRoom(index, 'label', event.target.value)} placeholder="Tên phòng" aria-label={`Tên phòng ${index + 1}`} />
+                              <input className="input" type="number" min="0" value={room.price} onChange={(event) => updateRoom(index, 'price', event.target.value)} placeholder="Giá" aria-label={`Giá phòng ${index + 1}`} />
+                              <label className="dashboard-room-available">
+                                <input type="checkbox" checked={room.available} onChange={(event) => updateRoom(index, 'available', event.target.checked)} />
+                                Còn trống
+                              </label>
+                              <button type="button" className="btn btn-ghost btn-sm" onClick={() => removeRoom(index)} aria-label={`Xóa phòng ${index + 1}`}>
+                                <Icon name="X" size={16} className="icon-muted" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <button type="button" className="btn btn-ghost btn-sm dashboard-room-add-btn" onClick={addRoom}>
+                        <Icon name="Plus" size={16} /> Thêm 1 phòng
+                      </button>
+                    </div>
                   )}
                   <FormField label="Ảnh đại diện" className="dashboard-listing-span3">
                     <input className="input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleCoverChange} />
@@ -1030,6 +1096,8 @@ export function propertyPayload(form) {
     ward: form.ward,
     length,
     width,
+    lat: coordinateOrNull(form.lat, -90, 90),
+    lng: coordinateOrNull(form.lng, -180, 180),
     area: length != null && width != null ? Number((length * width).toFixed(2)) : null,
     description: form.description,
     amenities: form.amenities,
@@ -1041,10 +1109,16 @@ export function propertyPayload(form) {
   if (form.categorySlug === 'nha' && form.transaction === 'rent') {
     attributes.houseType = form.houseType;
   }
-  const lat = numericOrNull(form.lat);
-  const lng = numericOrNull(form.lng);
-  if (lat != null) attributes.lat = lat;
-  if (lng != null) attributes.lng = lng;
+  if (form.categorySlug === 'tro') {
+    const validRooms = (form.rooms || [])
+      .filter((room) => room.label?.trim())
+      .map((room) => ({
+        label: room.label.trim(),
+        price: numericOrNull(room.price) ?? 0,
+        available: room.available !== false,
+      }));
+    if (validRooms.length > 0) attributes.rooms = validRooms;
+  }
   if (form.coverUrl?.trim()) attributes.image = form.coverUrl.trim();
 
   return {
@@ -1060,6 +1134,16 @@ function numericOrNull(value) {
   if (value === '' || value == null) return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function coordinateOrNull(value, min, max) {
+  const parsed = numericOrNull(value);
+  return parsed != null && parsed >= min && parsed <= max ? parsed : null;
+}
+
+function coordinateFormValue(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? String(parsed) : '';
 }
 
 function setListingValue(name, value, setListingForm) {

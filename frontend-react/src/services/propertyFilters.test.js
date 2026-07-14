@@ -33,6 +33,10 @@ describe('property filters', () => {
     })).toBe('q=Ph%C6%B0%E1%BB%9Dng+7&categorySlug=nha&minPrice=1');
   });
 
+  test('buildPropertyQuery includes size when provided', () => {
+    expect(buildPropertyQuery({ size: 200 })).toBe('size=200');
+  });
+
   test('filters by broker email', () => {
     const result = filterProperties(MOCK_PROPERTIES, { broker: 'toan@congtinland.vn' });
 

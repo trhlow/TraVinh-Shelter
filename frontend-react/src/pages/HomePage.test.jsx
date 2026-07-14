@@ -6,6 +6,17 @@ vi.mock('../services/api.js', () => ({
   fetchProperties: vi.fn().mockResolvedValue([]),
 }));
 
+vi.mock('react-leaflet', () => ({
+  MapContainer: ({ children }) => <div data-testid="map-container">{children}</div>,
+  TileLayer: () => null,
+  Marker: ({ children }) => <div data-testid="map-marker">{children}</div>,
+  Popup: ({ children }) => <div data-testid="map-popup">{children}</div>,
+}));
+
+vi.mock('leaflet', () => ({
+  default: { divIcon: vi.fn(() => ({})) },
+}));
+
 import HomePage from './HomePage.jsx';
 
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
@@ -45,4 +56,13 @@ test('every category card renders a visible icon, not a blank placeholder', asyn
   iconWraps.forEach((wrap) => {
     expect(wrap.querySelector('svg')).not.toBeNull();
   });
+});
+
+test('renders the property map when a listing has valid coordinates', async () => {
+  const { fetchProperties } = await import('../services/api.js');
+  fetchProperties.mockResolvedValue([
+    { id: 'p1', title: 'Nhà phố A', lat: 9.93, lng: 106.34, image: 'a.jpg', priceLabel: '2 tỷ' },
+  ]);
+  render(<HomePage />);
+  expect(await screen.findByText('Bất động sản trên bản đồ')).toBeInTheDocument();
 });

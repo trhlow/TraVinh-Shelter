@@ -37,6 +37,7 @@ export function buildPropertyQuery(filters) {
   if (safeFilters.minArea) params.set('attr.area.min', safeFilters.minArea);
   if (safeFilters.maxArea) params.set('attr.area.max', safeFilters.maxArea);
   if (safeFilters.broker) params.set('brokerEmail', safeFilters.broker.trim());
+  if (safeFilters.size) params.set('size', String(safeFilters.size));
   return params.toString();
 }
 
