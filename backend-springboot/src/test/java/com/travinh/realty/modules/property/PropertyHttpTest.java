@@ -179,7 +179,7 @@ class PropertyHttpTest {
         mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
                         .contentType(MediaType.APPLICATION_JSON).content(payload))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Attribute 'ward' is required"));
+                .andExpect(jsonPath("$.message").value("Vui lòng chọn phường/xã"));
     }
 
     @Test
@@ -198,7 +198,7 @@ class PropertyHttpTest {
         mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
                         .contentType(MediaType.APPLICATION_JSON).content(badLatPayload))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("lat must be between -90 and 90"));
+                .andExpect(jsonPath("$.message").value("lat phải nằm trong khoảng -90 đến 90"));
 
         String badLngPayload = """
                 {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
@@ -208,7 +208,7 @@ class PropertyHttpTest {
         mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
                         .contentType(MediaType.APPLICATION_JSON).content(badLngPayload))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("lng must be between -180 and 180"));
+                .andExpect(jsonPath("$.message").value("lng phải nằm trong khoảng -180 đến 180"));
     }
 
     @Test
@@ -252,7 +252,7 @@ class PropertyHttpTest {
         mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
                         .contentType(MediaType.APPLICATION_JSON).content(payload))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Too many attribute entries (max 20)"));
+                .andExpect(jsonPath("$.message").value("Quá nhiều thuộc tính (tối đa 20)"));
     }
 
     @Test
@@ -272,7 +272,7 @@ class PropertyHttpTest {
         mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
                         .contentType(MediaType.APPLICATION_JSON).content(payload))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Attribute value too long for key: description"));
+                .andExpect(jsonPath("$.message").value("Giá trị thuộc tính quá dài cho khoá: description"));
     }
 
     @Test
@@ -291,7 +291,7 @@ class PropertyHttpTest {
         mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
                         .contentType(MediaType.APPLICATION_JSON).content(payload))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Attribute value must be a string, number, or boolean for key: tags"));
+                .andExpect(jsonPath("$.message").value("Giá trị thuộc tính phải là chuỗi, số hoặc boolean cho khoá: tags"));
     }
 
     @Test
@@ -310,7 +310,7 @@ class PropertyHttpTest {
         mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
                         .contentType(MediaType.APPLICATION_JSON).content(payload))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Invalid attribute filter key"));
+                .andExpect(jsonPath("$.message").value("Khoá lọc thuộc tính không hợp lệ"));
     }
 
     @Test
@@ -343,7 +343,7 @@ class PropertyHttpTest {
         mockMvc.perform(patch("/properties/{id}/status", property.getId()).header("Authorization", bearer(other))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"RENTED\"}"))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Property not found"));
+                .andExpect(jsonPath("$.message").value("Không tìm thấy bất động sản"));
     }
 
     @Test
