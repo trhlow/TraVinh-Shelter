@@ -3,5 +3,5 @@ package com.travinh.realty.modules.property.dto;
 import com.travinh.realty.modules.property.model.PropertyStatus;
 import jakarta.validation.constraints.NotNull;
 
-public record UpdatePropertyStatusRequest(@NotNull PropertyStatus status) {
+public record UpdatePropertyStatusRequest(@NotNull(message = "Vui lòng chọn trạng thái bất động sản") PropertyStatus status) {
 }

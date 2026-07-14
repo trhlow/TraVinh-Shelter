@@ -175,7 +175,7 @@ class UserProfileHttpTest {
                         {"fullName":"User","phone":"12345"}
                         """))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.fieldErrors.phone").value("phone must be a valid Vietnamese mobile number"));
+                .andExpect(jsonPath("$.fieldErrors.phone").value("Số điện thoại không hợp lệ"));
     }
 
     @Test
