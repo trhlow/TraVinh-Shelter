@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, expect, test, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 const { capturedHandlersRef, mockSetView } = vi.hoisted(() => ({
   capturedHandlersRef: { current: null },
@@ -48,4 +48,39 @@ test('clicking the map calls onChange with the clicked coordinates', () => {
   render(<LocationPicker lat={null} lng={null} onChange={onChange} />);
   capturedHandlersRef.current.click({ latlng: { lat: 9.93, lng: 106.34 } });
   expect(onChange).toHaveBeenCalledWith(9.93, 106.34);
+});
+
+test('typing an address, after the debounce, recenters the map on the geocoding result', async () => {
+  vi.useFakeTimers();
+  global.fetch = vi.fn().mockResolvedValue({
+    json: () => Promise.resolve([{ lat: '9.93', lon: '106.34' }]),
+  });
+  render(<LocationPicker lat={null} lng={null} onChange={vi.fn()} />);
+  fireEvent.change(screen.getByLabelText('Tìm địa chỉ trên bản đồ'), { target: { value: 'Chợ Trà Vinh' } });
+  await act(async () => { await vi.advanceTimersByTimeAsync(500); });
+  expect(mockSetView).toHaveBeenCalledWith([9.93, 106.34], 15);
+  vi.useRealTimers();
+});
+
+test('address search never calls onChange — the broker must still click to confirm', async () => {
+  vi.useFakeTimers();
+  const onChange = vi.fn();
+  global.fetch = vi.fn().mockResolvedValue({
+    json: () => Promise.resolve([{ lat: '9.93', lon: '106.34' }]),
+  });
+  render(<LocationPicker lat={null} lng={null} onChange={onChange} />);
+  fireEvent.change(screen.getByLabelText('Tìm địa chỉ trên bản đồ'), { target: { value: 'Chợ Trà Vinh' } });
+  await act(async () => { await vi.advanceTimersByTimeAsync(500); });
+  expect(onChange).not.toHaveBeenCalled();
+  vi.useRealTimers();
+});
+
+test('no geocoding results shows a not-found message', async () => {
+  vi.useFakeTimers();
+  global.fetch = vi.fn().mockResolvedValue({ json: () => Promise.resolve([]) });
+  render(<LocationPicker lat={null} lng={null} onChange={vi.fn()} />);
+  fireEvent.change(screen.getByLabelText('Tìm địa chỉ trên bản đồ'), { target: { value: 'xyz khong ton tai' } });
+  await act(async () => { await vi.advanceTimersByTimeAsync(500); });
+  expect(screen.getByText('Không tìm thấy địa chỉ này')).toBeInTheDocument();
+  vi.useRealTimers();
 });
