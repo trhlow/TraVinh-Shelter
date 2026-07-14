@@ -56,7 +56,7 @@ public class MediaService {
     public MediaResponse uploadImage(UUID brokerId, UUID propertyId, MultipartFile file, boolean thumbnail) {
         Property property = requireOwnedPropertyForUpdate(brokerId, propertyId);
         if (media.countByPropertyIdAndMediaType(propertyId, MediaType.IMAGE) >= MAX_IMAGES_PER_PROPERTY) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "A property can have at most 7 images");
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "Mỗi bất động sản chỉ được tối đa 7 ảnh");
         }
         String url = storage.store(propertyId, file, MediaType.IMAGE);
         return saveWithFileCleanup(Media.create(property, MediaType.IMAGE, url, thumbnail), url);
@@ -82,14 +82,14 @@ public class MediaService {
     public void delete(UUID brokerId, UUID propertyId, UUID mediaId) {
         requireOwnedPropertyForUpdate(brokerId, propertyId);
         Media existing = media.findByIdAndPropertyId(mediaId, propertyId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Media not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy tệp media"));
         media.delete(existing);
         storage.deleteIfLocal(existing.getUrl());
     }
 
     private void ensureNoVideo(UUID propertyId) {
         if (media.existsByPropertyIdAndMediaTypeIn(propertyId, VIDEO_TYPES)) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "A property can have at most one video");
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "Mỗi bất động sản chỉ được tối đa 1 video");
         }
     }
 
@@ -103,30 +103,30 @@ public class MediaService {
 
     private Property requireOwnedProperty(UUID brokerId, UUID propertyId, boolean lockForUpdate) {
         User user = users.findById(brokerId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication is required"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Yêu cầu đăng nhập"));
         if (user.getStatus() != UserStatus.ACTIVE) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication is required");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Yêu cầu đăng nhập");
         }
         if (user.getRole() != UserRole.BROKER) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Broker role is required");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Yêu cầu vai trò môi giới");
         }
         if (user.getPhone() == null || user.getPhone().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "Broker profile requires a phone number");
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "Hồ sơ môi giới yêu cầu số điện thoại");
         }
 
         Property property = (lockForUpdate ? properties.findByIdForUpdate(propertyId) : properties.findById(propertyId))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bất động sản"));
         if (!property.getBroker().getId().equals(user.getId())) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bất động sản");
         }
         return property;
     }
 
     private Property findPublicProperty(UUID propertyId) {
         Property property = properties.findById(propertyId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bất động sản"));
         if (property.getStatus() == PropertyStatus.HIDDEN) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bất động sản");
         }
         return property;
     }
@@ -138,11 +138,11 @@ public class MediaService {
             String scheme = uri.getScheme();
             if (scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))
                     || uri.getHost() == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Video link must be an absolute HTTP(S) URL");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Liên kết video phải là URL HTTP(S) đầy đủ");
             }
             return uri.toString();
         } catch (URISyntaxException exception) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Video link must be a valid URL", exception);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Liên kết video không hợp lệ", exception);
         }
     }
 
@@ -166,7 +166,7 @@ public class MediaService {
     private RuntimeException translateMediaIntegrityException(DataIntegrityViolationException exception) {
         if (isSingleVideoConstraint(exception)) {
             return new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT,
-                    "A property can have at most one video", exception);
+                    "Mỗi bất động sản chỉ được tối đa 1 video", exception);
         }
         return exception;
     }

@@ -78,7 +78,7 @@ class MediaConcurrencyIntegrationTest {
                 return true;
             } catch (ResponseStatusException exception) {
                 assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
-                assertThat(exception.getReason()).isEqualTo("A property can have at most 7 images");
+                assertThat(exception.getReason()).isEqualTo("Mỗi bất động sản chỉ được tối đa 7 ảnh");
                 return false;
             }
         });
@@ -101,6 +101,7 @@ class MediaConcurrencyIntegrationTest {
                         return true;
                     } catch (ResponseStatusException exception) {
                         assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+                        assertThat(exception.getReason()).isEqualTo("Mỗi bất động sản chỉ được tối đa 1 video");
                         return false;
                     }
                 },
@@ -111,6 +112,7 @@ class MediaConcurrencyIntegrationTest {
                         return true;
                     } catch (ResponseStatusException exception) {
                         assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
+                        assertThat(exception.getReason()).isEqualTo("Mỗi bất động sản chỉ được tối đa 1 video");
                         return false;
                     }
                 }));
