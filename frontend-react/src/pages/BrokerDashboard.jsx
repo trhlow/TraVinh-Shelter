@@ -647,12 +647,14 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                     <input className="input" value={listingForm.title} onChange={(event) => setListingValue('title', event.target.value, setListingForm)} required />
                   </FormField>
                   <FormField label="Danh mục">
-                    <select className="input" value={listingForm.categorySlug} disabled>
-                      <option value={listingForm.categorySlug}>{categoryLabel(listingForm.categorySlug)}</option>
+                    <select className="input" value={listingForm.categorySlug} onChange={(event) => {
+                      const categorySlug = event.target.value;
+                      setListingForm((current) => ({ ...current, categorySlug, transaction: categorySlug === 'tro' ? 'rent' : current.transaction }));
+                    }}>
+                      <option value="tro">Trọ</option>
+                      <option value="nha">Nhà</option>
+                      <option value="dat">Đất</option>
                     </select>
-                    <p className="form-hint">
-                      Môi giới chỉ đăng tin Phòng trọ. Tin danh mục khác (đã tạo trước đây) giữ nguyên danh mục gốc khi chỉnh sửa.
-                    </p>
                   </FormField>
                   {listingForm.categorySlug !== 'tro' && (
                     <FormField label="Nhu cầu">
