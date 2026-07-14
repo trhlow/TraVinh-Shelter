@@ -349,7 +349,7 @@ async function request(path, options = {}) {
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    const error = new Error(body.message || `Request failed with ${response.status}`);
+    const error = new Error(body.message || `Yêu cầu thất bại với mã lỗi ${response.status}`);
     error.status = response.status;
     throw error;
   }
@@ -373,8 +373,6 @@ function normalizeProperty(item, index = 0) {
     title: item.title,
     address: item.address,
     ward: attributes.ward || 'all',
-    lat: attributes.lat ?? null,
-    lng: attributes.lng ?? null,
     category: categorySlug,
     categoryId: item.category?.id,
     transaction,

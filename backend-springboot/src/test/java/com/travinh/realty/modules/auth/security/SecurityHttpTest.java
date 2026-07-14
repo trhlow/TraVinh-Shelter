@@ -51,7 +51,19 @@ class SecurityHttpTest {
     @Test
     void protectedApiWithoutTokenReturnsUnauthorized() throws Exception {
         mockMvc.perform(post("/api/properties"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Yêu cầu đăng nhập"));
+    }
+
+    @Test
+    void nonBrokerUserIsDeniedAccessToBrokerOnlyEndpoint() throws Exception {
+        User user = user("user@example.com", UserStatus.ACTIVE);
+        when(userDetailsService.loadUserByUsername(user.getEmail())).thenReturn(UserPrincipal.from(user));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/properties/mine")
+                        .header("Authorization", "Bearer " + jwtService.generateToken(user)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("Truy cập bị từ chối"));
     }
 
     @Test
@@ -113,7 +125,8 @@ class SecurityHttpTest {
                         .contentType("application/json")
                         .content("{\"email\":\"minh@example.com\",\"password\":\"wrong-password\"}"))
                 .andExpect(status().isTooManyRequests())
-                .andExpect(jsonPath("$.status").value(429));
+                .andExpect(jsonPath("$.status").value(429))
+                .andExpect(jsonPath("$.message").value("Quá nhiều yêu cầu. Vui lòng thử lại sau."));
     }
 
     @Test

@@ -175,7 +175,7 @@ class MediaHttpTest {
         mockMvc.perform(multipart("/properties/{propertyId}/media/images", property.getId()).file(file)
                         .header("Authorization", bearer(otherBroker)))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Property not found"));
+                .andExpect(jsonPath("$.message").value("Không tìm thấy bất động sản"));
 
         authenticate(owner);
         when(users.findById(owner.getId())).thenReturn(Optional.of(owner));
@@ -183,20 +183,21 @@ class MediaHttpTest {
         mockMvc.perform(multipart("/properties/{propertyId}/media/images", property.getId()).file(file)
                         .header("Authorization", bearer(owner)))
                 .andExpect(status().isUnprocessableContent())
-                .andExpect(jsonPath("$.message").value("A property can have at most 7 images"));
+                .andExpect(jsonPath("$.message").value("Mỗi bất động sản chỉ được tối đa 7 ảnh"));
 
         when(media.countByPropertyIdAndMediaType(property.getId(), MediaType.IMAGE)).thenReturn(0L);
         MockMultipartFile text = new MockMultipartFile("file", "note.txt", "text/plain", "nope".getBytes());
         mockMvc.perform(multipart("/properties/{propertyId}/media/images", property.getId()).file(text)
                         .header("Authorization", bearer(owner)))
-                .andExpect(status().isUnsupportedMediaType());
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.message").value("Chỉ chấp nhận tải ảnh lên"));
 
         MockMultipartFile activeContent = new MockMultipartFile("file", "room.png", "image/png",
                 "<script>alert(1)</script>".getBytes());
         mockMvc.perform(multipart("/properties/{propertyId}/media/images", property.getId()).file(activeContent)
                         .header("Authorization", bearer(owner)))
                 .andExpect(status().isUnsupportedMediaType())
-                .andExpect(jsonPath("$.message").value("Media content does not match allowed upload types"));
+                .andExpect(jsonPath("$.message").value("Nội dung tệp không thuộc loại được phép tải lên"));
     }
 
     @Test
@@ -232,7 +233,23 @@ class MediaHttpTest {
         mockMvc.perform(multipart("/properties/{propertyId}/media/video-file", property.getId()).file(video)
                         .header("Authorization", bearer(broker)))
                 .andExpect(status().isUnprocessableContent())
-                .andExpect(jsonPath("$.message").value("A property can have at most one video"));
+                .andExpect(jsonPath("$.message").value("Mỗi bất động sản chỉ được tối đa 1 video"));
+    }
+
+    @Test
+    void videoFileWithWrongContentTypeIsRejected() throws Exception {
+        User broker = user("broker-wrong-video-type@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Property property = property(broker, PropertyStatus.AVAILABLE);
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(properties.findByIdForUpdate(property.getId())).thenReturn(Optional.of(property));
+        when(media.existsByPropertyIdAndMediaTypeIn(any(), any())).thenReturn(false);
+
+        MockMultipartFile text = new MockMultipartFile("file", "note.txt", "text/plain", "nope".getBytes());
+        mockMvc.perform(multipart("/properties/{propertyId}/media/video-file", property.getId()).file(text)
+                        .header("Authorization", bearer(broker)))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.message").value("Chỉ chấp nhận tải video lên"));
     }
 
     @Test
@@ -262,7 +279,7 @@ class MediaHttpTest {
                         .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                         .content("{\"url\":\"https://example.com/video/after-file\"}"))
                 .andExpect(status().isUnprocessableContent())
-                .andExpect(jsonPath("$.message").value("A property can have at most one video"));
+                .andExpect(jsonPath("$.message").value("Mỗi bất động sản chỉ được tối đa 1 video"));
     }
 
     @Test
@@ -278,7 +295,7 @@ class MediaHttpTest {
         mockMvc.perform(multipart("/properties/{propertyId}/media/video-file", property.getId()).file(fake)
                         .header("Authorization", bearer(broker)))
                 .andExpect(status().isUnsupportedMediaType())
-                .andExpect(jsonPath("$.message").value("Media content does not match the declared content type"));
+                .andExpect(jsonPath("$.message").value("Nội dung tệp không khớp với loại đã khai báo"));
     }
 
     @Test
@@ -295,7 +312,7 @@ class MediaHttpTest {
         mockMvc.perform(multipart("/properties/{propertyId}/media/video-file", property.getId()).file(disguised)
                         .header("Authorization", bearer(broker)))
                 .andExpect(status().isUnsupportedMediaType())
-                .andExpect(jsonPath("$.message").value("Media content does not match the declared content type"));
+                .andExpect(jsonPath("$.message").value("Nội dung tệp không khớp với loại đã khai báo"));
     }
 
     @Test
@@ -367,7 +384,7 @@ class MediaHttpTest {
         mockMvc.perform(multipart("/properties/{propertyId}/media/images", property.getId()).file(empty)
                         .header("Authorization", bearer(broker)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Media file is required"));
+                .andExpect(jsonPath("$.message").value("Yêu cầu tệp media"));
     }
 
     @Test

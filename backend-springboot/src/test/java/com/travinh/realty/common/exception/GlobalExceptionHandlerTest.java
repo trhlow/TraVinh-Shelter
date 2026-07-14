@@ -27,6 +27,7 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody().status()).isEqualTo(400);
+        assertThat(response.getBody().message()).isEqualTo("Nội dung yêu cầu không hợp lệ");
     }
 
     @Test
@@ -45,5 +46,19 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody().status()).isEqualTo(500);
+    }
+
+    @Test
+    void unauthenticatedRequestReturnsVietnameseMessage() {
+        var response = handler.handleAuthentication(new org.springframework.security.authentication.BadCredentialsException("bad"));
+
+        assertThat(response.getBody().message()).isEqualTo("Email hoặc mật khẩu không đúng");
+    }
+
+    @Test
+    void accessDeniedReturnsVietnameseMessage() {
+        var response = handler.handleAccessDenied(new org.springframework.security.access.AccessDeniedException("denied"));
+
+        assertThat(response.getBody().message()).isEqualTo("Truy cập bị từ chối");
     }
 }

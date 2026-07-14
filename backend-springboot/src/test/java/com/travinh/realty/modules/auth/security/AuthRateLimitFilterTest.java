@@ -31,6 +31,7 @@ class AuthRateLimitFilterTest {
         filter.doFilterInternal(request, response, chain);
 
         assertThat(response.getStatus()).isEqualTo(429);
+        assertThat(response.getContentAsString()).contains("Quá nhiều yêu cầu. Vui lòng thử lại sau.");
     }
 
     @Test

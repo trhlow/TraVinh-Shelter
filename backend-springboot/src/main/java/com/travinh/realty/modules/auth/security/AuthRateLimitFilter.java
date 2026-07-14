@@ -54,7 +54,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         objectMapper.writeValue(response.getOutputStream(), new ApiError(Instant.now(),
                 HttpStatus.TOO_MANY_REQUESTS.value(),
                 HttpStatus.TOO_MANY_REQUESTS.getReasonPhrase(),
-                "Too many requests. Please retry later.",
+                "Quá nhiều yêu cầu. Vui lòng thử lại sau.",
                 Map.of()));
     }
 

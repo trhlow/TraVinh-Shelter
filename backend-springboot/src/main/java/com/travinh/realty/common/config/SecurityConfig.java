@@ -62,9 +62,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) ->
-                                writeApiError(response, objectMapper, HttpStatus.UNAUTHORIZED, "Authentication is required"))
+                                writeApiError(response, objectMapper, HttpStatus.UNAUTHORIZED, "Yêu cầu đăng nhập"))
                         .accessDeniedHandler((request, response, accessDeniedException) ->
-                                writeApiError(response, objectMapper, HttpStatus.FORBIDDEN, "Access is denied")))
+                                writeApiError(response, objectMapper, HttpStatus.FORBIDDEN, "Truy cập bị từ chối")))
                 .authorizeHttpRequests(authorize -> authorize.requestMatchers(
                                 "/auth/login", "/auth/forgot-password", "/auth/reset-password", "/error").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()

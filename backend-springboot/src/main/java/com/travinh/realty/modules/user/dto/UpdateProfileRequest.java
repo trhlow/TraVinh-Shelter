@@ -5,10 +5,10 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record UpdateProfileRequest(
-        @NotBlank @Size(max = 150) String fullName,
+        @NotBlank(message = "Vui lòng nhập họ tên") @Size(max = 150, message = "Họ tên không được vượt quá 150 ký tự") String fullName,
         @Pattern(regexp = "^\\s*$|^0(3[2-9]|5[25689]|7[06-9]|8[1-9]|9[0-46-9])[0-9]{7}$",
-                message = "phone must be a valid Vietnamese mobile number") @Size(max = 30) String phone,
-        @Pattern(regexp = "^$|^https?://.*", message = "facebookUrl must be a valid http(s) URL") @Size(max = 2048) String facebookUrl,
-        @Pattern(regexp = "^$|^https?://.*", message = "tiktokUrl must be a valid http(s) URL") @Size(max = 2048) String tiktokUrl
+                message = "Số điện thoại không hợp lệ") @Size(max = 30, message = "Số điện thoại không được vượt quá 30 ký tự") String phone,
+        @Pattern(regexp = "^$|^https?://.*", message = "Đường dẫn Facebook không hợp lệ") @Size(max = 2048, message = "Đường dẫn Facebook không được vượt quá 2048 ký tự") String facebookUrl,
+        @Pattern(regexp = "^$|^https?://.*", message = "Đường dẫn TikTok không hợp lệ") @Size(max = 2048, message = "Đường dẫn TikTok không được vượt quá 2048 ký tự") String tiktokUrl
 ) {
 }
