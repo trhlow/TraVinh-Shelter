@@ -142,16 +142,32 @@ describe('Listing form — field visibility', () => {
     expect(screen.getByText('Nhấn giữ trên ứng dụng Google Maps để lấy tọa độ.')).toBeInTheDocument();
   });
 
-  test('category select is locked to Trọ and disabled for new listings', async () => {
+  test('category select offers Trọ, Nhà, Đất and defaults to Trọ, enabled', async () => {
     render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
     const categoryField = (await screen.findByText('Danh mục')).closest('.auth-field');
     const select = within(categoryField).getByRole('combobox');
-    expect(select).toBeDisabled();
+    expect(select).not.toBeDisabled();
     expect(select).toHaveValue('tro');
-    expect(within(categoryField).getAllByRole('option')).toHaveLength(1);
+    expect(within(categoryField).getAllByRole('option').map((option) => option.textContent)).toEqual(['Trọ', 'Nhà', 'Đất']);
   });
 
-  test('editing a legacy Đất listing preserves its category and hides Phòng ngủ / Nhà vệ sinh', async () => {
+  test('hides Phòng ngủ / Nhà vệ sinh when category is changed to Đất', async () => {
+    render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
+    const categoryField = (await screen.findByText('Danh mục')).closest('.auth-field');
+    await userEvent.selectOptions(within(categoryField).getByRole('combobox'), 'Đất');
+    expect(screen.queryByText('Phòng ngủ')).not.toBeInTheDocument();
+    expect(screen.queryByText('Nhà vệ sinh')).not.toBeInTheDocument();
+  });
+
+  test('hides the room list (dãy trọ) when category is changed to Nhà', async () => {
+    render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
+    expect(await screen.findByText('Danh sách phòng trong dãy trọ')).toBeInTheDocument();
+    const categoryField = (await screen.findByText('Danh mục')).closest('.auth-field');
+    await userEvent.selectOptions(within(categoryField).getByRole('combobox'), 'Nhà');
+    expect(screen.queryByText('Danh sách phòng trong dãy trọ')).not.toBeInTheDocument();
+  });
+
+  test('editing an existing Đất listing loads its category and hides Phòng ngủ / Nhà vệ sinh', async () => {
     fetchBrokerDashboard.mockResolvedValueOnce({
       activeListings: 1,
       totalListings: 1,
