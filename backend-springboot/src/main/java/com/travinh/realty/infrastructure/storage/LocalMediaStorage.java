@@ -47,7 +47,7 @@ public class LocalMediaStorage {
 
     private String storeIn(String namespace, UUID ownerId, MultipartFile file, MediaType mediaType) {
         if (file == null || file.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Media file is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Yêu cầu tệp media");
         }
         String contentType = file.getContentType() == null ? "" : file.getContentType().toLowerCase(Locale.ROOT);
         validateContentType(mediaType, contentType);
@@ -55,13 +55,13 @@ public class LocalMediaStorage {
 
         Path ownerDirectory = storageRoot.resolve(namespace).resolve(ownerId.toString()).normalize();
         if (!ownerDirectory.startsWith(storageRoot)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid storage path");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Đường dẫn lưu trữ không hợp lệ");
         }
 
         String filename = UUID.randomUUID() + EXTENSIONS_BY_CONTENT_TYPE.get(contentType);
         Path target = ownerDirectory.resolve(filename).normalize();
         if (!target.startsWith(ownerDirectory)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid media filename");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên tệp media không hợp lệ");
         }
 
         try {
@@ -71,7 +71,7 @@ public class LocalMediaStorage {
             }
             return publicUrlPrefix + "/" + namespace + "/" + ownerId + "/" + filename;
         } catch (IOException exception) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not store media file", exception);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Không thể lưu tệp media", exception);
         }
     }
 
@@ -87,7 +87,7 @@ public class LocalMediaStorage {
         try {
             Files.deleteIfExists(target);
         } catch (IOException exception) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not delete media file", exception);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Không thể xoá tệp media", exception);
         }
     }
 
@@ -101,10 +101,10 @@ public class LocalMediaStorage {
 
     private void validateContentType(MediaType mediaType, String contentType) {
         if (mediaType == MediaType.IMAGE && !IMAGE_CONTENT_TYPES.contains(contentType)) {
-            throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Only image uploads are allowed");
+            throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Chỉ chấp nhận tải ảnh lên");
         }
         if (mediaType == MediaType.VIDEO_FILE && !VIDEO_CONTENT_TYPES.contains(contentType)) {
-            throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Only video uploads are allowed");
+            throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Chỉ chấp nhận tải video lên");
         }
     }
 
@@ -114,27 +114,27 @@ public class LocalMediaStorage {
         try (InputStream input = file.getInputStream()) {
             read = input.readNBytes(header, 0, header.length);
         } catch (IOException exception) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not read media file", exception);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không thể đọc tệp media", exception);
         }
         if (read <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Media file is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Yêu cầu tệp media");
         }
 
         String detected = detectKnownContentType(header, read);
         if (VIDEO_CONTENT_TYPES.contains(contentType)) {
             if (detected == null || !isVideoContainerMatch(detected, contentType)) {
                 throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
-                        "Media content does not match the declared content type");
+                        "Nội dung tệp không khớp với loại đã khai báo");
             }
             return;
         }
         if (detected != null && !detected.equals(contentType)) {
             throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
-                    "Media content does not match the declared content type");
+                    "Nội dung tệp không khớp với loại đã khai báo");
         }
         if (looksLikeActiveContent(header, read)) {
             throw new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
-                    "Media content does not match allowed upload types");
+                    "Nội dung tệp không thuộc loại được phép tải lên");
         }
     }
 
