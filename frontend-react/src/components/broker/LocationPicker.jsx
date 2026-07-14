@@ -80,6 +80,9 @@ export default function LocationPicker({ lat, lng, onChange }) {
         {searchCenter && <RecenterOnSearch center={searchCenter} />}
         {hasPosition && <Marker position={[lat, lng]} icon={ARROW_ICON} />}
       </MapContainer>
+      {hasPosition && (
+        <p className="form-hint">{`Đã chọn: ${lat.toFixed(6)}, ${lng.toFixed(6)}`}</p>
+      )}
     </div>
   );
 }

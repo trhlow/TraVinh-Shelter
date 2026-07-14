@@ -84,3 +84,13 @@ test('no geocoding results shows a not-found message', async () => {
   expect(screen.getByText('Không tìm thấy địa chỉ này')).toBeInTheDocument();
   vi.useRealTimers();
 });
+
+test('shows the selected coordinates (6 decimal places) when a position is set', () => {
+  render(<LocationPicker lat={9.927833} lng={106.339167} onChange={vi.fn()} />);
+  expect(screen.getByText('Đã chọn: 9.927833, 106.339167')).toBeInTheDocument();
+});
+
+test('shows no coordinate line when there is no position yet', () => {
+  render(<LocationPicker lat={null} lng={null} onChange={vi.fn()} />);
+  expect(screen.queryByText(/^Đã chọn:/)).not.toBeInTheDocument();
+});
