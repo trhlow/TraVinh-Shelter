@@ -51,10 +51,10 @@ public class UserProfileService {
         User user = findUser(principal.id());
         String phone = normalizeOptional(request.phone());
         if (user.getRole() == UserRole.BROKER && phone == null) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "Broker profile requires a phone number");
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "Hồ sơ môi giới yêu cầu số điện thoại");
         }
         if (phone != null && users.existsByNormalizedPhoneAndIdNot(normalizePhoneForLookup(phone), user.getId())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Phone number is already registered");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Số điện thoại đã được đăng ký");
         }
         String facebookUrl = normalizeOptional(request.facebookUrl());
         String tiktokUrl = normalizeOptional(request.tiktokUrl());
@@ -64,7 +64,7 @@ public class UserProfileService {
             return CurrentUserProfileResponse.from(user);
         } catch (DataIntegrityViolationException exception) {
             if (UserIdentityConstraints.isDuplicatePhone(exception)) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Phone number is already registered", exception);
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Số điện thoại đã được đăng ký", exception);
             }
             throw exception;
         }
@@ -84,7 +84,7 @@ public class UserProfileService {
     public void changePassword(UserPrincipal principal, ChangePasswordRequest request, String currentToken) {
         User user = findUser(principal.id());
         if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mật khẩu hiện tại không đúng");
         }
         user.updatePasswordHash(passwordEncoder.encode(request.newPassword()));
         jwt.revoke(currentToken);
@@ -94,7 +94,7 @@ public class UserProfileService {
     public BrokerContactResponse brokerContact(UUID brokerId) {
         User broker = findUser(brokerId);
         if (broker.getRole() != UserRole.BROKER || broker.getStatus() != UserStatus.ACTIVE) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Broker not found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy môi giới");
         }
         return BrokerContactResponse.from(broker);
     }
@@ -105,13 +105,13 @@ public class UserProfileService {
         String username = request.username().trim();
         String phone = request.phone().trim();
         if (users.existsByEmail(email)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already registered");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email đã được đăng ký");
         }
         if (users.existsByUsername(username)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Username is already registered");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Tên đăng nhập đã được đăng ký");
         }
         if (users.existsByNormalizedPhone(normalizePhoneForLookup(phone))) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Phone number is already registered");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Số điện thoại đã được đăng ký");
         }
         try {
             User broker = User.createBroker(username, email, passwordEncoder.encode(request.password()),
@@ -121,10 +121,10 @@ public class UserProfileService {
             return UserProfileResponse.from(saved);
         } catch (DataIntegrityViolationException exception) {
             if (UserIdentityConstraints.isDuplicateEmailOrUsername(exception)) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Email or username is already registered", exception);
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Email hoặc tên đăng nhập đã được đăng ký", exception);
             }
             if (UserIdentityConstraints.isDuplicatePhone(exception)) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Phone number is already registered", exception);
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Số điện thoại đã được đăng ký", exception);
             }
             throw exception;
         }
@@ -134,7 +134,7 @@ public class UserProfileService {
     public UserProfileResponse updateUserStatus(UUID userId, UserStatus status) {
         User user = findUser(userId);
         if (user.getRole() == UserRole.ADMIN && status == UserStatus.LOCKED) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "Cannot lock an admin account");
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "Không thể khoá tài khoản quản trị viên");
         }
         user.updateStatus(status);
         return UserProfileResponse.from(user);
@@ -163,7 +163,7 @@ public class UserProfileService {
 
     private User findUser(UUID userId) {
         return users.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"));
     }
 
     private String normalizeOptional(String value) {
