@@ -143,7 +143,8 @@ class PropertyHttpTest {
         mockMvc.perform(post("/properties").header("Authorization", bearer(lockedBroker))
                         .contentType(MediaType.APPLICATION_JSON).content(payload))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(401));
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value("Yêu cầu đăng nhập"));
 
         authenticate(broker);
         when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
@@ -321,6 +322,68 @@ class PropertyHttpTest {
     }
 
     @Test
+    void searchWithUnsupportedParameterIsRejected() throws Exception {
+        mockMvc.perform(get("/properties").param("fooBar", "1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Tham số tìm kiếm không được hỗ trợ: fooBar"));
+    }
+
+    @Test
+    void searchWithInvalidStatusIsRejected() throws Exception {
+        mockMvc.perform(get("/properties").param("status", "NOPE"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Trạng thái bất động sản không hợp lệ"));
+    }
+
+    @Test
+    void searchWithInvalidDecimalIsRejected() throws Exception {
+        mockMvc.perform(get("/properties").param("minPrice", "not-a-number"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Giá trị số không hợp lệ cho minPrice"));
+    }
+
+    @Test
+    void searchWithEmptyAttributeFilterValueIsRejected() throws Exception {
+        mockMvc.perform(get("/properties").param("attr.area", ""))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Giá trị lọc thuộc tính là bắt buộc"));
+    }
+
+    @Test
+    void creatingPropertyWithoutCategoryIsRejected() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+
+        String payload = """
+                {"title":"Phòng trọ","address":"Trà Vinh","price":1500000,"attributes":{"ward":"phuong-1"}}
+                """;
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Cần cung cấp categoryId hoặc categorySlug"));
+    }
+
+    @Test
+    void creatingPropertyWithUnknownCategorySlugIsRejected() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("khong-ton-tai")).thenReturn(Optional.empty());
+
+        String payload = """
+                {"categorySlug":"khong-ton-tai","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
+                 "attributes":{"ward":"phuong-1"}}
+                """;
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Không tìm thấy danh mục"));
+    }
+
+    @Test
     void brokerNeedsPhoneAndCannotOperateOnAnotherBrokerProperty() throws Exception {
         User brokerWithoutPhone = user("nop@example.com", UserRole.BROKER, UserStatus.ACTIVE, "No Phone", null);
         authenticate(brokerWithoutPhone);
@@ -331,7 +394,8 @@ class PropertyHttpTest {
                         {"categorySlug":"tro","title":"Tin","address":"Trà Vinh","price":1,"attributes":{}}
                         """))
                 .andExpect(status().isUnprocessableContent())
-                .andExpect(jsonPath("$.status").value(422));
+                .andExpect(jsonPath("$.status").value(422))
+                .andExpect(jsonPath("$.message").value("Hồ sơ môi giới yêu cầu số điện thoại"));
 
         User owner = user("owner@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Owner", "0900000000");
         User other = user("other@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Other", "0911111111");
