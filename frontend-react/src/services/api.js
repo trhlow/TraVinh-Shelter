@@ -389,6 +389,8 @@ function normalizeProperty(item, index = 0) {
     area: Number(attributes.area || 0),
     length: Number(attributes.length || 0),
     width: Number(attributes.width || 0),
+    lat: numericCoordinate(attributes.lat),
+    lng: numericCoordinate(attributes.lng),
     size: attributes.size || (attributes.area ? `${attributes.area}m²` : 'Đang cập nhật'),
     bedrooms: Number(attributes.bedrooms || 0),
     bathrooms: Number(attributes.bathrooms || 0),
@@ -416,6 +418,11 @@ function normalizeProperty(item, index = 0) {
       responseTime: '15 phút',
     },
   };
+}
+
+function numericCoordinate(value) {
+  const coordinate = Number(value);
+  return Number.isFinite(coordinate) ? coordinate : null;
 }
 
 function statusLabel(status) {

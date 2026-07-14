@@ -73,3 +73,19 @@ test('renders the phone call button and no Zalo link', async () => {
   expect(phoneLink.closest('.contact-phone-zalo')).not.toBeNull();
   expect(within(contactCard).queryByRole('link', { name: /Chat Zalo|Zalo/i })).not.toBeInTheDocument();
 });
+
+test('renders a Google Map only when valid coordinates are available', async () => {
+  fetchPropertyDetail.mockResolvedValue({ ...baseProperty, lat: 9.9345, lng: 106.3456 });
+  render(<PropertyDetailPage propertyId="p-1" />);
+
+  const map = await screen.findByTitle('Bản đồ vị trí bất động sản');
+  expect(map).toHaveAttribute('src', expect.stringContaining('9.9345%2C106.3456'));
+});
+
+test('does not render a Google Map without coordinates', async () => {
+  fetchPropertyDetail.mockResolvedValue(baseProperty);
+  render(<PropertyDetailPage propertyId="p-1" />);
+
+  await screen.findAllByText(baseProperty.title);
+  expect(screen.queryByTitle('Bản đồ vị trí bất động sản')).not.toBeInTheDocument();
+});
