@@ -25,24 +25,24 @@ public class GlobalExceptionHandler {
         Map<String, String> fieldErrors = exception.getBindingResult().getFieldErrors().stream()
                 .collect(Collectors.toMap(
                         error -> error.getField(),
-                        error -> error.getDefaultMessage() == null ? "Invalid value" : error.getDefaultMessage(),
+                        error -> error.getDefaultMessage() == null ? "Giá trị không hợp lệ" : error.getDefaultMessage(),
                         (first, ignored) -> first));
         ApiError body = new ApiError(Instant.now(), HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(), "Validation failed", fieldErrors);
+                HttpStatus.BAD_REQUEST.getReasonPhrase(), "Dữ liệu không hợp lệ", fieldErrors);
         return ResponseEntity.badRequest().body(body);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     ResponseEntity<ApiError> handleMalformedRequestBody(HttpMessageNotReadableException exception) {
         ApiError body = new ApiError(Instant.now(), HttpStatus.BAD_REQUEST.value(),
-                HttpStatus.BAD_REQUEST.getReasonPhrase(), "Malformed request body", Map.of());
+                HttpStatus.BAD_REQUEST.getReasonPhrase(), "Nội dung yêu cầu không hợp lệ", Map.of());
         return ResponseEntity.badRequest().body(body);
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
     ResponseEntity<ApiError> handleNoResourceFound(NoResourceFoundException exception) {
         ApiError body = new ApiError(Instant.now(), HttpStatus.NOT_FOUND.value(),
-                HttpStatus.NOT_FOUND.getReasonPhrase(), "Resource not found", Map.of());
+                HttpStatus.NOT_FOUND.getReasonPhrase(), "Không tìm thấy tài nguyên", Map.of());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
     }
 
@@ -50,7 +50,7 @@ public class GlobalExceptionHandler {
     ResponseEntity<ApiError> handleUnexpected(Exception exception) {
         log.error("Unhandled backend exception", exception);
         ApiError body = new ApiError(Instant.now(), HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(), "An unexpected error occurred", Map.of());
+                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(), "Đã xảy ra lỗi không mong muốn", Map.of());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 
@@ -63,14 +63,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AuthenticationException.class)
     ResponseEntity<ApiError> handleAuthentication(AuthenticationException exception) {
-        ApiError body = new ApiError(Instant.now(), HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED.getReasonPhrase(), "Invalid email or password", Map.of());
+        ApiError body = new ApiError(Instant.now(), HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED.getReasonPhrase(), "Email hoặc mật khẩu không đúng", Map.of());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException exception) {
         ApiError body = new ApiError(Instant.now(), HttpStatus.FORBIDDEN.value(),
-                HttpStatus.FORBIDDEN.getReasonPhrase(), "Access is denied", Map.of());
+                HttpStatus.FORBIDDEN.getReasonPhrase(), "Truy cập bị từ chối", Map.of());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
 
