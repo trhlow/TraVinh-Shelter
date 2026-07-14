@@ -373,8 +373,6 @@ function normalizeProperty(item, index = 0) {
     title: item.title,
     address: item.address,
     ward: attributes.ward || 'all',
-    lat: attributes.lat ?? null,
-    lng: attributes.lng ?? null,
     category: categorySlug,
     categoryId: item.category?.id,
     transaction,
