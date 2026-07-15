@@ -82,23 +82,56 @@ Migration `V20__create_least_privilege_app_role.sql` tách user Flyway (DDL, ful
 chỉ SELECT/INSERT/UPDATE/DELETE, không DDL). App bị compromise (SQLi sót, RCE...) thì kẻ tấn công
 không thể DROP/ALTER schema qua kết nối runtime.
 
-**Rủi ro chưa verify được cho tới khi có instance DO Managed Postgres thật**: migration dùng
-`CREATE ROLE` và `ALTER DEFAULT PRIVILEGES`, cả hai đều cần quyền tương đối cao. Chưa thể xác nhận
-admin user do DigitalOcean Managed PostgreSQL cấp (`DB_USERNAME` hiện tại, ví dụ `travinh_app`)
-có đủ quyền `CREATE ROLE`/`ALTER DEFAULT PRIVILEGES` hay không — DO Managed Postgres thường cấp
-role kiểu `doadmin`-like với hầu hết quyền superuser trừ một số thao tác cấp cluster, nhưng cần
-kiểm tra thủ công. **Ở bước "Deploy lần đầu" bên dưới, sau khi Flyway chạy xong, xác nhận thủ công**:
+**Quan trọng — kiểm tra quyền TRƯỚC khi deploy thật, không phải sau**: migration V20 dùng
+`CREATE ROLE` và `ALTER DEFAULT PRIVILEGES`, cả hai đều cần quyền tương đối cao. Flyway chạy V20
+như một phần bình thường của quá trình migrate mỗi lần backend khởi động — nếu V20 lỗi, Flyway
+báo lỗi và Spring Boot **từ chối khởi động xong** (context không lên), bất kể `DB_APP_USERNAME`/
+`DB_APP_PASSWORD` trong `.env` được set hay bỏ trống thế nào. Nói cách khác: **bỏ trống
+`DB_APP_USERNAME`/`DB_APP_PASSWORD` không phải là fallback hợp lệ nếu V20 lỗi** — app chưa bao giờ
+chạy tới đoạn đọc `DB_APP_USERNAME`/`DB_APP_PASSWORD` cho datasource runtime, vì Flyway đã chặn ở
+bước migrate trước đó.
 
-```bash
-docker compose -f docker-compose.prod.yml logs backend | grep -i "20 - create least privilege"
-# Kỳ vọng thấy dòng "Migrating schema ... to version 20 - create least privilege app role"
-# và "Successfully applied N migrations" — không có lỗi permission denied cho CREATE ROLE.
-```
+Vì vậy, xác nhận quyền của admin user **trước khi deploy lần đầu**, không đợi tới khi thấy lỗi:
 
-Nếu migration V20 lỗi vì admin user DO không đủ quyền, tạm thời fallback an toàn: không set
-`DB_APP_USERNAME`/`DB_APP_PASSWORD` trong `.env` — `spring.datasource.username/password` tự động
-fallback về `DB_USERNAME`/`DB_PASSWORD` (hành vi cũ, full-privilege runtime, không breaking), rồi
-báo cáo cho DO support để bật quyền `CREATE ROLE` cho admin user.
+1. Trên DigitalOcean dashboard → Databases → cluster → **Users & Databases**, kiểm tra role mặc
+   định (`doadmin` hoặc user bạn tạo, ví dụ `travinh_app`). DO Managed PostgreSQL thường cấp cho
+   user quản trị mặc định gần như toàn bộ quyền superuser (trừ một vài thao tác cấp instance như
+   `pg_hba.conf`), nên `CREATE ROLE`/`ALTER DEFAULT PRIVILEGES` **thường có sẵn** — đây là đường
+   đi mặc định, kỳ vọng.
+2. Để chắc chắn trước khi deploy thật, kết nối thử bằng `psql` (hoặc `docker compose ... exec`)
+   bằng chính user sẽ dùng làm `DB_USERNAME` và chạy:
+   ```sql
+   SELECT rolcreaterole FROM pg_roles WHERE rolname = current_user;
+   -- Kỳ vọng: t (true)
+   ```
+   Nếu `t` → deploy bình thường như hướng dẫn dưới, V20 sẽ chạy thành công.
+
+**Nếu admin user KHÔNG có `CREATE ROLE` (trường hợp hiếm)** — remediation thật sự, không phải
+"bỏ trống biến env":
+
+- **Cách A (khuyến nghị) — bootstrap thủ công bằng một kết nối có đủ quyền, sau đó để Flyway ghi
+  nhận migration đã áp dụng**:
+  1. Xin DO support cấp `CREATE ROLE` cho admin user, HOẶC dùng một connection string khác (vd.
+     `doadmin` gốc của cluster) mà bạn xác nhận CÓ quyền superuser để chạy tay đúng nội dung SQL
+     trong `V20__create_least_privilege_app_role.sql` (thay `${appRuntimePassword}` và
+     `${migratorUsername}` bằng giá trị thật).
+  2. Sau khi chạy tay xong, đánh dấu migration này là "đã áp dụng" trong lịch sử Flyway để lần
+     khởi động backend tiếp theo không chạy lại nó: dùng Flyway CLI với `flyway repair` (thêm
+     baseline) hoặc — nếu không có Flyway CLI sẵn trên VPS — insert thủ công một dòng vào
+     `flyway_schema_history` khớp checksum của file V20 (lấy checksum bằng
+     `flyway info` hoặc tính bằng công cụ Flyway CLI cùng phiên bản với backend; không tự bịa
+     checksum). Đây là thao tác nhạy cảm — sai checksum sẽ khiến Flyway coi migration bị "sửa đổi"
+     và từ chối khởi động ở lần chạy kế tiếp; nếu không chắc, ưu tiên xin cấp quyền (bước 1) thay
+     vì tự chạy tay.
+  3. Khởi động lại backend — Flyway thấy V20 đã trong lịch sử, bỏ qua, các migration sau chạy
+     bình thường bằng admin user hiện tại.
+- **Cách B — hạ cấp về single-role tạm thời**: nếu không thể chạy V20 dưới bất kỳ hình thức nào
+  (kể cả thủ công), xóa hẳn file migration `V20__create_least_privilege_app_role.sql` khỏi
+  `db/migration/` trên nhánh deploy tạm thời (không chỉ bỏ trống env var) và bỏ luôn
+  `DB_APP_USERNAME`/`DB_APP_PASSWORD` khỏi `.env` — lúc này Flyway không còn migration nào đòi hỏi
+  `CREATE ROLE`, app chạy hoàn toàn bằng `DB_USERNAME`/`DB_PASSWORD` (hành vi cũ, full-privilege
+  runtime). Đây là phương án tạm, chấp nhận đánh đổi mất tính năng least-privilege cho tới khi xin
+  được quyền từ DO — cần khôi phục migration khi có quyền.
 
 ### GitHub Secrets (cho CI/CD tự động)
 
@@ -128,9 +161,11 @@ Xác nhận:
 - Test luồng chính: đăng nhập, xem property, đặt lịch xem, admin dashboard.
 - Sentry nhận được event test (trigger lỗi thử, hoặc dùng nút test DSN trên dashboard Sentry).
 - UptimeRobot chuyển xanh sau vài phút.
-- Migration V20 (least-privilege DB role) chạy thành công — xem mục "Least-privilege DB role"
-  ở trên. Nếu admin user của DO Managed Postgres không đủ quyền `CREATE ROLE`, bỏ trống
-  `DB_APP_USERNAME`/`DB_APP_PASSWORD` để fallback về hành vi cũ.
+- Migration V20 (least-privilege DB role) chạy thành công — xem log `Successfully applied N
+  migrations`, không có lỗi `permission denied for CREATE ROLE`. Quyền `CREATE ROLE` của admin
+  user cần được xác nhận **trước** bước này (xem mục "Least-privilege DB role" ở trên) — nếu chưa
+  xác nhận và V20 lỗi ở đây, backend sẽ không khởi động được; xử lý theo Cách A/B ở mục trên rồi
+  thử lại `docker compose -f docker-compose.prod.yml up -d`.
 
 Chỉ bật CI/CD tự động (job `deploy` trong `.github/workflows/ci.yml`, trigger khi push `main`) **sau khi**
 xác nhận deploy thủ công chạy đúng.
