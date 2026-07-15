@@ -11,7 +11,6 @@ import Icon from '../components/ui/Icon.jsx';
 import LoginPage from './LoginPage.jsx';
 import { isInRange, percentDelta, previousRange, resolveDateRange } from '../utils/dateRange.js';
 import { downloadCsv } from '../utils/exportCsv.js';
-import { trimLeadingEmptyMonths } from '../utils/chartSeries.js';
 import {
   changePassword,
   createProperty,
@@ -179,7 +178,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
     () => new Intl.DateTimeFormat('vi-VN', { month: 'numeric', year: 'numeric' }).format(new Date()),
     [],
   );
-  const activityChartData = useMemo(() => buildActivitySeries(listings, viewings), [listings, viewings]);
+  const activityChartData = useMemo(() => buildDailyActivitySeries(listings, viewings), [listings, viewings]);
   const confirmedViewingsThisMonth = useMemo(() => {
     const now = new Date();
     return viewings.filter((viewing) => (
@@ -541,8 +540,8 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
 
               <div className="dashboard-live-row">
                 <TrendBarLineChart
-                  title="Hoạt động môi giới theo tháng"
-                  subtitle="Số bài đăng mới và lịch hẹn đã xác nhận theo từng tháng, tính từ khi có dữ liệu thực tế"
+                  title="Hoạt động môi giới theo ngày"
+                  subtitle={`Số bài đăng mới và lịch hẹn đã xác nhận theo từng ngày trong tháng ${activityMonthLabel}`}
                   data={activityChartData}
                   currentLabel="Bài đăng"
                   previousLabel="Lịch hẹn xác nhận"
@@ -1193,42 +1192,36 @@ function toFormCategory(category) {
   return 'tro';
 }
 
-function buildActivitySeries(listings, viewings) {
-  const buckets = rollingMonthBuckets();
+export function buildDailyActivitySeries(listings, viewings, referenceDate = new Date()) {
+  const year = referenceDate.getFullYear();
+  const month = referenceDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const buckets = Array.from({ length: daysInMonth }, (_, index) => ({
+    day: index + 1,
+    label: String(index + 1),
+    current: 0,
+    previous: 0,
+  }));
+
+  function bucketForDate(raw) {
+    if (!raw) return null;
+    const date = new Date(raw);
+    if (Number.isNaN(date.getTime())) return null;
+    if (date.getFullYear() !== year || date.getMonth() !== month) return null;
+    return buckets[date.getDate() - 1];
+  }
+
   listings.forEach((listing) => {
-    const date = new Date(listing.createdAt || Date.now());
-    if (Number.isNaN(date.getTime())) return;
-    const bucket = buckets.find((item) => sameMonth(item.date, date));
+    const bucket = bucketForDate(listing.createdAt);
     if (bucket) bucket.current += 1;
   });
   viewings.forEach((viewing) => {
     if (viewing.status !== 'CONFIRMED') return;
-    const date = new Date(viewing.requestedAt || viewing.createdAt || Date.now());
-    if (Number.isNaN(date.getTime())) return;
-    const bucket = buckets.find((item) => sameMonth(item.date, date));
+    const bucket = bucketForDate(viewing.requestedAt || viewing.createdAt);
     if (bucket) bucket.previous += 1;
   });
-  return trimLeadingEmptyMonths(buckets.map((bucket) => ({
-    label: bucket.label,
-    current: bucket.current || 0,
-    previous: bucket.previous || 0,
-  })));
-}
 
-function rollingMonthBuckets(referenceDate = new Date(), length = 12) {
-  return Array.from({ length }, (_, index) => {
-    const date = new Date(referenceDate.getFullYear(), referenceDate.getMonth() - (length - 1 - index), 1);
-    return {
-      date,
-      label: `T${date.getMonth() + 1}`,
-      current: 0,
-      previous: 0,
-    };
-  });
-}
-
-function sameMonth(a, b) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+  return buckets.map(({ label, current, previous }) => ({ label, current, previous }));
 }
 
 function sameCalendarMonth(value, reference) {

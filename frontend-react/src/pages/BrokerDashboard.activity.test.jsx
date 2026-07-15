@@ -16,14 +16,15 @@ test('shows activity KPI and chart instead of commission on the broker overview'
   render(<BrokerDashboard session={session} onLogin={() => {}} onLogout={() => {}} currentPath="/broker/dashboard" section="dashboard" />);
   await waitFor(() => expect(screen.getAllByRole('heading', { name: 'Bảng điều khiển' }).length).toBeGreaterThan(0));
   expect(screen.getByText('Lịch hẹn xác nhận tháng này')).toBeInTheDocument();
-  expect(screen.getByText('Hoạt động môi giới theo tháng')).toBeInTheDocument();
+  expect(screen.getByText('Hoạt động môi giới theo ngày')).toBeInTheDocument();
   expect(screen.queryByText(/Hoa hồng/)).not.toBeInTheDocument();
 });
 
 test('activity chart shows exactly the current month when there is no real activity yet', async () => {
   render(<BrokerDashboard session={session} onLogin={() => {}} onLogout={() => {}} currentPath="/broker/dashboard" section="dashboard" />);
   await waitFor(() => expect(screen.getAllByRole('heading', { name: 'Bảng điều khiển' }).length).toBeGreaterThan(0));
-  const stage = screen.getByRole('img', { name: 'Hoạt động môi giới theo tháng' });
-  const monthLabels = within(stage).getAllByText(/^T\d{1,2}$/);
-  expect(monthLabels).toHaveLength(1);
+  const stage = screen.getByRole('img', { name: 'Hoạt động môi giới theo ngày' });
+  const daysInCurrentMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+  const dayLabels = within(stage).getAllByText(/^\d{1,2}$/);
+  expect(dayLabels.length).toBeGreaterThanOrEqual(daysInCurrentMonth);
 });
