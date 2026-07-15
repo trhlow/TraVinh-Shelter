@@ -49,22 +49,25 @@ public class BookingService {
     private final OtpStore otpStore;
     private final RateLimiter rateLimiter;
     private final SmsSender smsSender;
+    private final ViewingOtpProperties viewingOtpProperties;
 
     public BookingService(ViewingAppointmentRepository appointments, PropertyRepository properties,
-                          OtpStore otpStore, RateLimiter rateLimiter, SmsSender smsSender) {
+                          OtpStore otpStore, RateLimiter rateLimiter, SmsSender smsSender,
+                          ViewingOtpProperties viewingOtpProperties) {
         this.appointments = appointments;
         this.properties = properties;
         this.otpStore = otpStore;
         this.rateLimiter = rateLimiter;
         this.smsSender = smsSender;
+        this.viewingOtpProperties = viewingOtpProperties;
     }
 
     @Transactional
     public ViewingResponse create(UUID propertyId, CreateViewingRequest request) {
         Property property = properties.findById(propertyId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bất động sản"));
         if (property.getStatus() != PropertyStatus.AVAILABLE) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bất động sản");
         }
         validateSchedule(request);
         ViewingAppointment appointment = ViewingAppointment.create(propertyId, request);
@@ -74,13 +77,16 @@ public class BookingService {
     @Transactional(readOnly = true)
     public MessageResponse requestOtp(UUID propertyId, RequestViewingOtpRequest request) {
         Property property = properties.findById(propertyId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bất động sản"));
         if (property.getStatus() != PropertyStatus.AVAILABLE) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bất động sản");
+        }
+        if (!viewingOtpProperties.otpRequired()) {
+            return new MessageResponse("Xác minh OTP tạm thời không bắt buộc.");
         }
         String phone = request.visitorPhone().trim();
         if (!rateLimiter.tryAcquire("viewing-otp-request:" + phone, REQUEST_LIMIT, REQUEST_WINDOW)) {
-            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many requests. Please retry later.");
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Quá nhiều yêu cầu. Vui lòng thử lại sau.");
         }
         String code = otpStore.generate("viewing-otp:" + phone, OTP_TTL);
         smsSender.send(phone, "Ma OTP xac minh dat lich xem nha cua ban la: " + code + ". Ma co hieu luc 10 phut.");
@@ -89,9 +95,12 @@ public class BookingService {
 
     @Transactional
     public ViewingResponse verifyOtpAndCreate(UUID propertyId, VerifyViewingOtpRequest request) {
+        if (!viewingOtpProperties.otpRequired()) {
+            return create(propertyId, request.booking());
+        }
         String phone = request.booking().visitorPhone().trim();
         if (!rateLimiter.tryAcquire("viewing-otp-verify:" + phone, VERIFY_LIMIT, VERIFY_WINDOW)) {
-            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many requests. Please retry later.");
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Quá nhiều yêu cầu. Vui lòng thử lại sau.");
         }
         if (!otpStore.verify("viewing-otp:" + phone, request.otpCode())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, INVALID_OTP_MESSAGE);
@@ -151,7 +160,7 @@ public class BookingService {
     @Transactional
     public ViewingResponse updateStatus(UUID appointmentId, AppointmentStatus status) {
         ViewingAppointment appointment = appointments.findById(appointmentId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy lịch hẹn"));
         appointment.changeStatus(status);
         return ViewingResponse.of(appointment);
     }
@@ -165,10 +174,10 @@ public class BookingService {
     @Transactional
     public ViewingResponse updateStatusForBrokerOwner(UUID appointmentId, AppointmentStatus status, UUID brokerId) {
         ViewingAppointment appointment = appointments.findById(appointmentId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy lịch hẹn"));
         List<UUID> brokerPropertyIds = properties.findIdsByBrokerId(brokerId);
         if (!brokerPropertyIds.contains(appointment.getPropertyId())) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy lịch hẹn");
         }
         appointment.changeStatus(status);
         return ViewingResponse.of(appointment);

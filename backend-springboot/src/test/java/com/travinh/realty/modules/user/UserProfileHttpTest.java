@@ -1,6 +1,7 @@
 package com.travinh.realty.modules.user;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.hamcrest.Matchers.containsString;
@@ -120,7 +121,8 @@ class UserProfileHttpTest {
             mockMvc.perform(patch("/users/me").header("Authorization", bearer(broker))
                             .contentType(MediaType.APPLICATION_JSON).content(payload))
                     .andExpect(status().isUnprocessableContent())
-                    .andExpect(jsonPath("$.status").value(422));
+                    .andExpect(jsonPath("$.status").value(422))
+                    .andExpect(jsonPath("$.message").value("Hồ sơ môi giới yêu cầu số điện thoại"));
         }
 
         User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
@@ -148,6 +150,153 @@ class UserProfileHttpTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.facebookUrl").value("https://facebook.com/user"))
                 .andExpect(jsonPath("$.tiktokUrl").value("https://tiktok.com/@user"));
+    }
+
+    @Test
+    void malformedJsonBodyReturnsBadRequestNotServerError() throws Exception {
+        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        authenticate(user);
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+
+        mockMvc.perform(patch("/users/me").header("Authorization", bearer(user))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"fullName\":"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void profileUpdateRejectsInvalidPhoneFormat() throws Exception {
+        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        authenticate(user);
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+
+        mockMvc.perform(patch("/users/me").header("Authorization", bearer(user))
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                        {"fullName":"User","phone":"12345"}
+                        """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.phone").value("Số điện thoại không hợp lệ"));
+    }
+
+    @Test
+    void profileUpdateRejectsPhoneAlreadyRegisteredToAnotherUser() throws Exception {
+        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        authenticate(user);
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+        when(users.existsByNormalizedPhoneAndIdNot("0911111111", user.getId())).thenReturn(true);
+
+        mockMvc.perform(patch("/users/me").header("Authorization", bearer(user))
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                        {"fullName":"User","phone":"0911111111"}
+                        """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.message").value("Số điện thoại đã được đăng ký"));
+    }
+
+    @Test
+    void profileUpdateMapsDuplicatePhoneRaceToConflict() throws Exception {
+        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        authenticate(user);
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+        when(users.existsByNormalizedPhoneAndIdNot("0911111111", user.getId())).thenReturn(false);
+        doThrow(new DataIntegrityViolationException("duplicate",
+                new ConstraintViolationException("duplicate", new SQLException(), "users_phone_normalized_unique")))
+                .when(users).flush();
+
+        mockMvc.perform(patch("/users/me").header("Authorization", bearer(user))
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                        {"fullName":"User","phone":"0911111111"}
+                        """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.message").value("Số điện thoại đã được đăng ký"));
+    }
+
+    @Test
+    void changePasswordRejectsIncorrectCurrentPassword() throws Exception {
+        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        authenticate(user);
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+
+        mockMvc.perform(patch("/users/me/password").header("Authorization", bearer(user))
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                        {"currentPassword":"wrong-password","newPassword":"new-password-123"}
+                        """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Mật khẩu hiện tại không đúng"));
+    }
+
+    @Test
+    void adminCreateBrokerRejectsDuplicateEmailUsernameAndPhone() throws Exception {
+        User admin = user("admin@example.com", UserRole.ADMIN, UserStatus.ACTIVE, "Admin", "0900000000");
+        authenticate(admin);
+        String payload = "{\"username\":\"new.broker\",\"email\":\"new@example.com\",\"password\":\"correct-horse-battery-staple\",\"fullName\":\"New Broker\",\"phone\":\"0911111111\"}";
+
+        when(users.existsByEmail("new@example.com")).thenReturn(true);
+        mockMvc.perform(post("/admin/brokers").header("Authorization", bearer(admin)).contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Email đã được đăng ký"));
+
+        when(users.existsByEmail("new@example.com")).thenReturn(false);
+        when(users.existsByUsername("new.broker")).thenReturn(true);
+        mockMvc.perform(post("/admin/brokers").header("Authorization", bearer(admin)).contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Tên đăng nhập đã được đăng ký"));
+
+        when(users.existsByUsername("new.broker")).thenReturn(false);
+        when(users.existsByNormalizedPhone("0911111111")).thenReturn(true);
+        mockMvc.perform(post("/admin/brokers").header("Authorization", bearer(admin)).contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Số điện thoại đã được đăng ký"));
+    }
+
+    @Test
+    void adminCreateBrokerMapsDuplicatePhoneRaceToConflict() throws Exception {
+        User admin = user("admin@example.com", UserRole.ADMIN, UserStatus.ACTIVE, "Admin", "0900000000");
+        authenticate(admin);
+        String payload = "{\"username\":\"new.broker\",\"email\":\"new@example.com\",\"password\":\"correct-horse-battery-staple\",\"fullName\":\"New Broker\",\"phone\":\"0911111111\"}";
+        when(users.existsByEmail("new@example.com")).thenReturn(false);
+        when(users.existsByUsername("new.broker")).thenReturn(false);
+        when(users.existsByNormalizedPhone("0911111111")).thenReturn(false);
+        when(users.save(any(User.class))).thenThrow(new DataIntegrityViolationException("duplicate",
+                new ConstraintViolationException("duplicate", new SQLException(), "users_phone_normalized_unique")));
+
+        mockMvc.perform(post("/admin/brokers").header("Authorization", bearer(admin)).contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.message").value("Số điện thoại đã được đăng ký"));
+    }
+
+    @Test
+    void adminCannotLockAnAdminAccount() throws Exception {
+        User admin = user("admin@example.com", UserRole.ADMIN, UserStatus.ACTIVE, "Admin", "0900000000");
+        User otherAdmin = user("other-admin@example.com", UserRole.ADMIN, UserStatus.ACTIVE, "Other Admin", "0900000000");
+        authenticate(admin);
+        when(users.findById(otherAdmin.getId())).thenReturn(Optional.of(otherAdmin));
+
+        mockMvc.perform(patch("/admin/users/{userId}/status", otherAdmin.getId())
+                        .header("Authorization", bearer(admin))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"LOCKED\"}"))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.status").value(422))
+                .andExpect(jsonPath("$.message").value("Không thể khoá tài khoản quản trị viên"));
+    }
+
+    @Test
+    void adminUpdateStatusOfMissingUserReturnsNotFound() throws Exception {
+        User admin = user("admin@example.com", UserRole.ADMIN, UserStatus.ACTIVE, "Admin", "0900000000");
+        authenticate(admin);
+        UUID missingUserId = UUID.randomUUID();
+        when(users.findById(missingUserId)).thenReturn(Optional.empty());
+
+        mockMvc.perform(patch("/admin/users/{userId}/status", missingUserId)
+                        .header("Authorization", bearer(admin))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"LOCKED\"}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("Không tìm thấy người dùng"));
     }
 
     @Test
@@ -193,12 +342,17 @@ class UserProfileHttpTest {
         when(users.findById(locked.getId())).thenReturn(Optional.of(locked));
         mockMvc.perform(get("/brokers/{id}", locked.getId()))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value(404));
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("Không tìm thấy môi giới"));
 
         User regular = user("regular@example.com", UserRole.USER, UserStatus.ACTIVE, "Regular", "0900000000");
         when(users.findById(regular.getId())).thenReturn(Optional.of(regular));
-        mockMvc.perform(get("/brokers/{id}", regular.getId())).andExpect(status().isNotFound());
-        mockMvc.perform(get("/brokers/{id}", UUID.randomUUID())).andExpect(status().isNotFound());
+        mockMvc.perform(get("/brokers/{id}", regular.getId()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Không tìm thấy môi giới"));
+        mockMvc.perform(get("/brokers/{id}", UUID.randomUUID()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Không tìm thấy người dùng"));
     }
 
     @Test
@@ -244,7 +398,8 @@ class UserProfileHttpTest {
         when(users.save(any(User.class))).thenThrow(new DataIntegrityViolationException("duplicate", new ConstraintViolationException("duplicate", new SQLException(), "users_email_key")));
         mockMvc.perform(post("/admin/brokers").header("Authorization", bearer(admin)).contentType(MediaType.APPLICATION_JSON).content(payload))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.status").value(409));
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.message").value("Email hoặc tên đăng nhập đã được đăng ký"));
 
         User target = user("target@example.com", UserRole.USER, UserStatus.ACTIVE, "Target", "0900000000");
         String targetBearer = bearer(target);
@@ -271,7 +426,7 @@ class UserProfileHttpTest {
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.status").value(500))
                 .andExpect(jsonPath("$.error").value("Internal Server Error"))
-                .andExpect(jsonPath("$.message").value("An unexpected error occurred"))
+                .andExpect(jsonPath("$.message").value("Đã xảy ra lỗi không mong muốn"))
                 .andExpect(jsonPath("$.fieldErrors").isMap())
                 .andExpect(content().string(not(containsString("Resource already exists"))));
     }

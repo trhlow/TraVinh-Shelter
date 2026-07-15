@@ -119,7 +119,7 @@ class PropertyHttpTest {
         Category category = category(1L, "Trọ", "tro");
         String payload = """
                 {"categorySlug":"tro","title":"Phòng trọ sạch","address":"Trà Vinh",
-                 "price":1500000,"attributes":{"area":30,"rooms":1,"has_ac":true}}
+                 "price":1500000,"attributes":{"ward":"phuong-1","area":30,"rooms":1,"has_ac":true}}
                 """;
 
         mockMvc.perform(post("/properties").contentType(MediaType.APPLICATION_JSON).content(payload))
@@ -143,7 +143,8 @@ class PropertyHttpTest {
         mockMvc.perform(post("/properties").header("Authorization", bearer(lockedBroker))
                         .contentType(MediaType.APPLICATION_JSON).content(payload))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.status").value(401));
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value("Yêu cầu đăng nhập"));
 
         authenticate(broker);
         when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
@@ -165,10 +166,221 @@ class PropertyHttpTest {
     }
 
     @Test
+    void creatingPropertyWithoutWardAttributeIsRejected() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+
+        String payload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,"attributes":{}}
+                """;
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Vui lòng chọn phường/xã"));
+    }
+
+    @Test
+    void creatingPropertyWithOutOfRangeLatOrLngIsRejected() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+
+        String badLatPayload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
+                 "attributes":{"ward":"phuong-1","lat":999,"lng":105.9}}
+                """;
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(badLatPayload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("lat phải nằm trong khoảng -90 đến 90"));
+
+        String badLngPayload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
+                 "attributes":{"ward":"phuong-1","lat":10.5,"lng":-200}}
+                """;
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(badLngPayload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("lng phải nằm trong khoảng -180 đến 180"));
+    }
+
+    @Test
+    void creatingPropertyWithValidLatLngPersistsThem() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+        when(properties.save(any(Property.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        String payload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
+                 "attributes":{"ward":"phuong-1","lat":10.5,"lng":105.9}}
+                """;
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.attributes.lat").value(10.5))
+                .andExpect(jsonPath("$.attributes.lng").value(105.9));
+    }
+
+    @Test
+    void creatingPropertyWithTooManyAttributeEntriesIsRejected() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+
+        StringBuilder attributes = new StringBuilder();
+        for (int i = 0; i < 21; i++) {
+            if (i > 0) attributes.append(",");
+            attributes.append("\"key").append(i).append("\":\"value\"");
+        }
+        String payload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,"attributes":{%s}}
+                """.formatted(attributes);
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Quá nhiều thuộc tính (tối đa 20)"));
+    }
+
+    @Test
+    void creatingPropertyWithOversizedAttributeValueIsRejected() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+
+        String hugeValue = "a".repeat(10_001);
+        String payload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
+                 "attributes":{"description":"%s"}}
+                """.formatted(hugeValue);
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Giá trị thuộc tính quá dài cho khoá: description"));
+    }
+
+    @Test
+    void creatingPropertyWithNonScalarAttributeValueIsRejected() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+
+        String payload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
+                 "attributes":{"tags":["a","b","c"]}}
+                """;
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Giá trị thuộc tính phải là chuỗi, số hoặc boolean cho khoá: tags"));
+    }
+
+    @Test
+    void creatingPropertyWithMalformedAttributeKeyIsRejected() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+
+        String payload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
+                 "attributes":{"bad key":"value"}}
+                """;
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Khoá lọc thuộc tính không hợp lệ"));
+    }
+
+    @Test
     void invalidAttributeFilterKeyIsRejectedBeforeRepositorySearch() throws Exception {
         mockMvc.perform(get("/properties").param("attr.area);drop table properties;--", "30"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void searchWithUnsupportedParameterIsRejected() throws Exception {
+        mockMvc.perform(get("/properties").param("fooBar", "1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Tham số tìm kiếm không được hỗ trợ: fooBar"));
+    }
+
+    @Test
+    void searchWithInvalidStatusIsRejected() throws Exception {
+        mockMvc.perform(get("/properties").param("status", "NOPE"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Trạng thái bất động sản không hợp lệ"));
+    }
+
+    @Test
+    void searchWithInvalidDecimalIsRejected() throws Exception {
+        mockMvc.perform(get("/properties").param("minPrice", "not-a-number"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Giá trị số không hợp lệ cho minPrice"));
+    }
+
+    @Test
+    void searchWithEmptyAttributeFilterValueIsRejected() throws Exception {
+        mockMvc.perform(get("/properties").param("attr.area", ""))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Giá trị lọc thuộc tính là bắt buộc"));
+    }
+
+    @Test
+    void creatingPropertyWithoutCategoryIsRejected() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+
+        String payload = """
+                {"title":"Phòng trọ","address":"Trà Vinh","price":1500000,"attributes":{"ward":"phuong-1"}}
+                """;
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Cần cung cấp categoryId hoặc categorySlug"));
+    }
+
+    @Test
+    void creatingPropertyWithUnknownCategorySlugIsRejected() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("khong-ton-tai")).thenReturn(Optional.empty());
+
+        String payload = """
+                {"categorySlug":"khong-ton-tai","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
+                 "attributes":{"ward":"phuong-1"}}
+                """;
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Không tìm thấy danh mục"));
     }
 
     @Test
@@ -182,7 +394,8 @@ class PropertyHttpTest {
                         {"categorySlug":"tro","title":"Tin","address":"Trà Vinh","price":1,"attributes":{}}
                         """))
                 .andExpect(status().isUnprocessableContent())
-                .andExpect(jsonPath("$.status").value(422));
+                .andExpect(jsonPath("$.status").value(422))
+                .andExpect(jsonPath("$.message").value("Hồ sơ môi giới yêu cầu số điện thoại"));
 
         User owner = user("owner@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Owner", "0900000000");
         User other = user("other@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Other", "0911111111");
@@ -194,7 +407,7 @@ class PropertyHttpTest {
         mockMvc.perform(patch("/properties/{id}/status", property.getId()).header("Authorization", bearer(other))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"RENTED\"}"))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Property not found"));
+                .andExpect(jsonPath("$.message").value("Không tìm thấy bất động sản"));
     }
 
     @Test

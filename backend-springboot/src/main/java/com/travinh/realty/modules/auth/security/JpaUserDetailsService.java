@@ -23,7 +23,7 @@ public class JpaUserDetailsService implements UserDetailsService, UserDetailsPas
     public UserDetails updatePassword(UserDetails user, String newPassword) {
         com.travinh.realty.modules.user.model.User entity = userRepository.findByEmail(user.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("Invalid email or password"));
-        entity.updatePasswordHash(newPassword);
+        entity.upgradePasswordHash(newPassword);
         userRepository.save(entity);
         return UserPrincipal.from(entity);
     }

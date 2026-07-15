@@ -34,6 +34,8 @@ public class PropertyService {
     private static final String ATTRIBUTE_MIN_SUFFIX = ".min";
     private static final String ATTRIBUTE_MAX_SUFFIX = ".max";
     private static final String ATTRIBUTE_KEY_PATTERN = "^[A-Za-z0-9_.-]+$";
+    private static final int MAX_ATTRIBUTE_ENTRIES = 20;
+    private static final int MAX_ATTRIBUTE_VALUE_LENGTH = 10_000;
 
     private final PropertyRepository properties;
     private final CategoryRepository categories;
@@ -65,7 +67,7 @@ public class PropertyService {
     public PropertyResponse publicDetail(UUID propertyId) {
         Property property = findProperty(propertyId);
         if (property.getStatus() == PropertyStatus.HIDDEN) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bất động sản");
         }
         return PropertyResponse.from(property);
     }
@@ -74,9 +76,18 @@ public class PropertyService {
     public PropertyResponse create(UUID brokerId, CreatePropertyRequest request) {
         User broker = requireActiveBroker(brokerId);
         Category category = findCategory(request.categoryId(), request.categorySlug());
+        Map<String, Object> attributes = normalizeAttributes(request.attributes());
+        requireWard(attributes);
         Property property = Property.create(broker, category, request.title().trim(), request.address().trim(),
-                request.price(), normalizeAttributes(request.attributes()));
+                request.price(), attributes);
         return PropertyResponse.from(properties.save(property));
+    }
+
+    private void requireWard(Map<String, Object> attributes) {
+        Object ward = attributes.get("ward");
+        if (!(ward instanceof String wardValue) || wardValue.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vui lòng chọn phường/xã");
+        }
     }
 
     @Transactional
@@ -120,7 +131,7 @@ public class PropertyService {
             String key = entry.getKey();
             if (!key.startsWith(ATTRIBUTE_PREFIX)) {
                 if (!RESERVED_SEARCH_PARAMS.contains(key)) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported search parameter: " + key);
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tham số tìm kiếm không được hỗ trợ: " + key);
                 }
                 continue;
             }
@@ -144,15 +155,15 @@ public class PropertyService {
 
     private User requireActiveBroker(UUID userId) {
         User user = users.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication is required"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Yêu cầu đăng nhập"));
         if (user.getStatus() != UserStatus.ACTIVE) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication is required");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Yêu cầu đăng nhập");
         }
         if (user.getRole() != UserRole.BROKER) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Broker role is required");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Yêu cầu vai trò môi giới");
         }
         if (user.getPhone() == null || user.getPhone().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "Broker profile requires a phone number");
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "Hồ sơ môi giới yêu cầu số điện thoại");
         }
         return user;
     }
@@ -160,38 +171,64 @@ public class PropertyService {
     private Property findOwnedProperty(UUID propertyId, User broker) {
         Property property = findProperty(propertyId);
         if (!property.getBroker().getId().equals(broker.getId())) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bất động sản");
         }
         return property;
     }
 
     private Property findProperty(UUID propertyId) {
         return properties.findById(propertyId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Property not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bất động sản"));
     }
 
     private Category findCategory(Long categoryId, String categorySlug) {
         if (categoryId == null && blankToNull(categorySlug) == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "categoryId or categorySlug is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cần cung cấp categoryId hoặc categorySlug");
         }
         if (categoryId != null) {
             return categories.findById(categoryId)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy danh mục"));
         }
         return categories.findBySlug(categorySlug.trim().toLowerCase())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy danh mục"));
     }
 
     private Map<String, Object> normalizeAttributes(Map<String, Object> attributes) {
         if (attributes == null) {
             return new LinkedHashMap<>();
         }
-        return new LinkedHashMap<>(attributes);
+        if (attributes.size() > MAX_ATTRIBUTE_ENTRIES) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Quá nhiều thuộc tính (tối đa " + MAX_ATTRIBUTE_ENTRIES + ")");
+        }
+        Map<String, Object> normalized = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            String key = validAttributeKey(entry.getKey());
+            Object value = entry.getValue();
+            if (value instanceof String stringValue && stringValue.length() > MAX_ATTRIBUTE_VALUE_LENGTH) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Giá trị thuộc tính quá dài cho khoá: " + key);
+            }
+            if (value != null && !(value instanceof String) && !(value instanceof Number) && !(value instanceof Boolean)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Giá trị thuộc tính phải là chuỗi, số hoặc boolean cho khoá: " + key);
+            }
+            if ("lat".equals(key) && value instanceof Number number
+                    && (number.doubleValue() < -90 || number.doubleValue() > 90)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "lat phải nằm trong khoảng -90 đến 90");
+            }
+            if ("lng".equals(key) && value instanceof Number number
+                    && (number.doubleValue() < -180 || number.doubleValue() > 180)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "lng phải nằm trong khoảng -180 đến 180");
+            }
+            normalized.put(key, value);
+        }
+        return normalized;
     }
 
     private String validAttributeKey(String key) {
         if (key == null || key.isBlank() || !key.matches(ATTRIBUTE_KEY_PATTERN)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid attribute filter key");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Khoá lọc thuộc tính không hợp lệ");
         }
         return key;
     }
@@ -204,7 +241,7 @@ public class PropertyService {
         try {
             return PropertyStatus.valueOf(normalized.trim().toUpperCase());
         } catch (IllegalArgumentException exception) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid property status", exception);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trạng thái bất động sản không hợp lệ", exception);
         }
     }
 
@@ -217,14 +254,14 @@ public class PropertyService {
         try {
             return new BigDecimal(value.trim());
         } catch (RuntimeException exception) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid decimal value for " + name, exception);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Giá trị số không hợp lệ cho " + name, exception);
         }
     }
 
     private Object parseAttributeValue(String value) {
         String normalized = blankToNull(value);
         if (normalized == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Attribute filter value is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Giá trị lọc thuộc tính là bắt buộc");
         }
         if ("true".equalsIgnoreCase(normalized) || "false".equalsIgnoreCase(normalized)) {
             return Boolean.parseBoolean(normalized);
@@ -238,7 +275,7 @@ public class PropertyService {
 
     private String firstValue(java.util.List<String> values) {
         if (values == null || values.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Search parameter value is required");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Giá trị tham số tìm kiếm là bắt buộc");
         }
         return values.getFirst();
     }

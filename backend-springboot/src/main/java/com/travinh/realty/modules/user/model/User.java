@@ -63,6 +63,9 @@ public class User {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "password_changed_at", nullable = false)
+    private Instant passwordChangedAt;
+
     protected User() {
     }
 
@@ -76,6 +79,7 @@ public class User {
         user.phone = phone;
         user.role = UserRole.USER;
         user.status = UserStatus.ACTIVE;
+        user.passwordChangedAt = Instant.now();
         return user;
     }
 
@@ -94,6 +98,11 @@ public class User {
     }
 
     public void updatePasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+        this.passwordChangedAt = Instant.now();
+    }
+
+    public void upgradePasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
     }
 
@@ -117,4 +126,5 @@ public class User {
     public UserRole getRole() { return role; }
     public UserStatus getStatus() { return status; }
     public Instant getCreatedAt() { return createdAt; }
+    public Instant getPasswordChangedAt() { return passwordChangedAt; }
 }

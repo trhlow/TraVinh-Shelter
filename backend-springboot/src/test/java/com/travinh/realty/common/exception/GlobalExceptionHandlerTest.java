@@ -2,13 +2,33 @@ package com.travinh.realty.common.exception;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 class GlobalExceptionHandlerTest {
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
+
+    @Test
+    void malformedRequestBodyReturnsBadRequestInsteadOfServerError() {
+        HttpInputMessage emptyInputMessage = new HttpInputMessage() {
+            @Override public InputStream getBody() { return new ByteArrayInputStream(new byte[0]); }
+            @Override public HttpHeaders getHeaders() { return new HttpHeaders(); }
+        };
+        var exception = new HttpMessageNotReadableException("malformed JSON", emptyInputMessage);
+
+        var response = handler.handleMalformedRequestBody(exception);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().status()).isEqualTo(400);
+        assertThat(response.getBody().message()).isEqualTo("Nội dung yêu cầu không hợp lệ");
+    }
 
     @Test
     void unknownRouteReturnsNotFoundInsteadOfServerError() {
@@ -26,5 +46,19 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody().status()).isEqualTo(500);
+    }
+
+    @Test
+    void unauthenticatedRequestReturnsVietnameseMessage() {
+        var response = handler.handleAuthentication(new org.springframework.security.authentication.BadCredentialsException("bad"));
+
+        assertThat(response.getBody().message()).isEqualTo("Email hoặc mật khẩu không đúng");
+    }
+
+    @Test
+    void accessDeniedReturnsVietnameseMessage() {
+        var response = handler.handleAccessDenied(new org.springframework.security.access.AccessDeniedException("denied"));
+
+        assertThat(response.getBody().message()).isEqualTo("Truy cập bị từ chối");
     }
 }

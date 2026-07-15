@@ -21,6 +21,16 @@ export async function logout(token) {
   return request('/auth/logout', { method: 'POST', token });
 }
 
+export async function requestPasswordReset(email) {
+  if (USE_MOCK_API) return delay({ message: 'Nếu email này tồn tại, hướng dẫn đã được gửi.' }, 200);
+  return request('/auth/forgot-password', { method: 'POST', body: { email } });
+}
+
+export async function confirmPasswordReset(email, otpCode, newPassword) {
+  if (USE_MOCK_API) return delay({ message: 'Đặt lại mật khẩu thành công.' }, 200);
+  return request('/auth/reset-password', { method: 'POST', body: { email, otpCode, newPassword } });
+}
+
 export async function fetchCurrentUser(token) {
   if (USE_MOCK_API) {
     return delay({
@@ -339,7 +349,7 @@ async function request(path, options = {}) {
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    const error = new Error(body.message || `Request failed with ${response.status}`);
+    const error = new Error(body.message || `Yêu cầu thất bại với mã lỗi ${response.status}`);
     error.status = response.status;
     throw error;
   }

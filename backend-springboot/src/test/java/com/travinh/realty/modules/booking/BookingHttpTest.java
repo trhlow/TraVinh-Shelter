@@ -186,13 +186,13 @@ class BookingHttpTest {
         authenticate(broker);
         when(bookingService.updateStatusForBrokerOwner(eq(appointmentId), any(), any()))
                 .thenThrow(new org.springframework.web.server.ResponseStatusException(
-                        org.springframework.http.HttpStatus.NOT_FOUND, "Appointment not found"));
+                        org.springframework.http.HttpStatus.NOT_FOUND, "Không tìm thấy lịch hẹn"));
 
         mockMvc.perform(patch("/viewings/mine/{id}/status", appointmentId)
                         .header("Authorization", bearer(broker))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"CONFIRMED\"}"))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Appointment not found"));
+                .andExpect(jsonPath("$.message").value("Không tìm thấy lịch hẹn"));
     }
 
     @Test

@@ -39,4 +39,18 @@ class CreateBrokerRequestValidationTest {
         Set<ConstraintViolation<CreateBrokerRequest>> violations = validator.validate(requestWithPhone(phone));
         assertThat(violations).noneMatch(v -> v.getPropertyPath().toString().equals("phone"));
     }
+
+    @Test
+    void usernameWithInvalidCharactersReturnsVietnameseMessage() {
+        Set<ConstraintViolation<CreateBrokerRequest>> violations = validator.validate(new CreateBrokerRequest(
+                "bad username!", "broker@example.com", "password123", "Tên Môi Giới", "0900000000"));
+
+        assertThat(violations)
+                .extracting(v -> v.getPropertyPath().toString())
+                .contains("username");
+        assertThat(violations.stream()
+                .filter(v -> v.getPropertyPath().toString().equals("username"))
+                .findFirst().orElseThrow().getMessage())
+                .isEqualTo("Tên đăng nhập chỉ được chứa chữ, số và các ký tự _.-");
+    }
 }

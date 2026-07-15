@@ -22,6 +22,7 @@ import com.travinh.realty.modules.notification.EmailSender;
 import com.travinh.realty.modules.user.model.User;
 import com.travinh.realty.modules.user.repository.UserRepository;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,7 @@ import org.mockito.Mockito;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 class PasswordResetServiceTest {
@@ -113,6 +115,7 @@ class PasswordResetServiceTest {
     @Test
     void resetPasswordWithCorrectOtpUpdatesPasswordHash() {
         User user = User.register("broker", "broker@congtinland.vn", "old-hash", "Broker", "0900000000");
+        ReflectionTestUtils.setField(user, "passwordChangedAt", Instant.now().minus(Duration.ofDays(1)));
         when(users.findByEmail("broker@congtinland.vn")).thenReturn(Optional.of(user));
         String code = otpStore.generate("password-reset:broker@congtinland.vn", Duration.ofMinutes(10));
 
@@ -122,6 +125,7 @@ class PasswordResetServiceTest {
         assertThat(response.message()).isEqualTo("Mật khẩu đã được đặt lại.");
         assertThat(user.getPasswordHash()).isNotEqualTo("old-hash");
         assertThat(passwordEncoder.matches("NewPassword123", user.getPasswordHash())).isTrue();
+        assertThat(user.getPasswordChangedAt()).isAfter(Instant.now().minusSeconds(10));
     }
 
     @Test

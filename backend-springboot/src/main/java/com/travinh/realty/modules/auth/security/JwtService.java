@@ -7,6 +7,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.UUID;
 import javax.crypto.SecretKey;
@@ -43,9 +44,14 @@ public class JwtService {
     public String extractEmail(String token) { return parseClaims(token).getSubject(); }
     public boolean isTokenValid(String token, UserPrincipal principal) {
         Claims claims = parseClaims(token);
+        // JWT "iat" is serialized as a whole-second NumericDate (RFC 7519 section 2), so it always loses any
+        // sub-second fraction that passwordChangedAt (a raw Instant.now()) carries. Truncate before
+        // comparing so a token issued in the same second as the password change isn't spuriously rejected.
+        Instant passwordChangedAtSecond = principal.passwordChangedAt().truncatedTo(ChronoUnit.SECONDS);
         return claims.getSubject().equals(principal.getUsername())
                 && claims.getExpiration().after(new Date())
-                && !revokedTokens.isRevoked(claims.getId());
+                && !revokedTokens.isRevoked(claims.getId())
+                && !claims.getIssuedAt().toInstant().isBefore(passwordChangedAtSecond);
     }
 
     public void revoke(String token) {
