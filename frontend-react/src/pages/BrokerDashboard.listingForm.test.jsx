@@ -5,6 +5,22 @@ import userEvent from '@testing-library/user-event';
 import BrokerDashboard, { propertyPayload } from './BrokerDashboard.jsx';
 import { fetchBrokerDashboard } from '../services/api.js';
 
+const { capturedHandlersRef } = vi.hoisted(() => ({
+  capturedHandlersRef: { current: null },
+}));
+
+vi.mock('react-leaflet', () => ({
+  MapContainer: ({ children }) => <div data-testid="map-container">{children}</div>,
+  TileLayer: () => null,
+  Marker: ({ position }) => <div data-testid="map-marker" data-lat={position?.[0]} data-lng={position?.[1]} />,
+  useMap: () => ({ setView: vi.fn() }),
+  useMapEvents: (handlers) => { capturedHandlersRef.current = handlers; return null; },
+}));
+
+vi.mock('leaflet', () => ({
+  default: { divIcon: vi.fn(() => ({})) },
+}));
+
 describe('propertyPayload — area from length × width', () => {
   const base = {
     categorySlug: 'dat', transaction: 'sale', ward: 'phuong-tra-vinh',
@@ -135,11 +151,40 @@ describe('Listing form — field visibility', () => {
     expect(screen.getByText('Nhà vệ sinh')).toBeInTheDocument();
   });
 
-  test('shows latitude and longitude inputs with the Maps coordinate hint', async () => {
+  test('shows the LocationPicker map with its confirmation hint, no lat/lng number inputs', async () => {
     render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
-    expect(await screen.findByLabelText('Vĩ độ (lat)')).toBeInTheDocument();
-    expect(screen.getByLabelText('Kinh độ (lng)')).toBeInTheDocument();
-    expect(screen.getByText('Nhấn giữ trên ứng dụng Google Maps để lấy tọa độ.')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Tìm địa chỉ trên bản đồ')).toBeInTheDocument();
+    expect(screen.getByText('Bấm vào bản đồ để chọn đúng vị trí thực tế của bất động sản.')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Vĩ độ (lat)')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Kinh độ (lng)')).not.toBeInTheDocument();
+  });
+
+  test('a new listing starts with no map position selected', async () => {
+    render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
+    await screen.findByLabelText('Tìm địa chỉ trên bản đồ');
+    expect(screen.queryByText(/^Đã chọn:/)).not.toBeInTheDocument();
+  });
+
+  test('clicking the map updates the displayed coordinates in the form', async () => {
+    render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
+    await screen.findByLabelText('Tìm địa chỉ trên bản đồ');
+    capturedHandlersRef.current.click({ latlng: { lat: 9.927833, lng: 106.339167 } });
+    expect(await screen.findByText('Đã chọn: 9.927833, 106.339167')).toBeInTheDocument();
+  });
+
+  test('editing a listing with a saved position preloads it on the map', async () => {
+    fetchBrokerDashboard.mockResolvedValueOnce({
+      activeListings: 1,
+      totalListings: 1,
+      listings: [{
+        id: 'p-with-coords', title: 'Nhà có tọa độ', address: 'Test', image: '', statusLabel: 'Đang hiển thị',
+        rawStatus: 'AVAILABLE', priceLabel: '1 tỷ', area: 100, category: 'nha', rooms: [],
+        lat: 9.927833, lng: 106.339167,
+      }],
+    });
+    render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Chỉnh sửa tin' }));
+    expect(await screen.findByText('Đã chọn: 9.927833, 106.339167')).toBeInTheDocument();
   });
 
   test('category select offers Trọ, Nhà, Đất and defaults to Trọ, enabled', async () => {

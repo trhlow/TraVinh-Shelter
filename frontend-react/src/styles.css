@@ -1642,17 +1642,10 @@ img { display: block; max-width: 100%; }
 
 @media (max-width: 640px) {
   .dashboard-listing-grid { grid-template-columns: 1fr; }
-  .dashboard-coordinate-inputs { grid-template-columns: 1fr; }
 }
 
 .dashboard-listing-span2 { grid-column: span 2; }
 .dashboard-listing-span3 { grid-column: span 3; }
-
-.dashboard-coordinate-inputs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
 
 @media (max-width: 1024px) {
   .dashboard-listing-span2 { grid-column: span 2; }
