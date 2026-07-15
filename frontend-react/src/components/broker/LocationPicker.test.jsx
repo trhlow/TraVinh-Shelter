@@ -1,0 +1,96 @@
+import '@testing-library/jest-dom/vitest';
+import { afterEach, expect, test, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+
+const { capturedHandlersRef, mockSetView } = vi.hoisted(() => ({
+  capturedHandlersRef: { current: null },
+  mockSetView: vi.fn(),
+}));
+
+vi.mock('react-leaflet', () => ({
+  MapContainer: ({ children, center, zoom, className }) => (
+    <div data-testid="map-container" data-center={JSON.stringify(center)} data-zoom={zoom} className={className}>
+      {children}
+    </div>
+  ),
+  TileLayer: () => null,
+  Marker: ({ position }) => <div data-testid="map-marker" data-lat={position?.[0]} data-lng={position?.[1]} />,
+  useMap: () => ({ setView: mockSetView }),
+  useMapEvents: (handlers) => { capturedHandlersRef.current = handlers; return null; },
+}));
+
+vi.mock('leaflet', () => ({
+  default: { divIcon: vi.fn(() => ({})) },
+}));
+
+import LocationPicker from './LocationPicker.jsx';
+
+afterEach(() => { cleanup(); capturedHandlersRef.current = null; mockSetView.mockClear(); });
+
+test('with no position, centers on Trà Vinh and renders no marker', () => {
+  render(<LocationPicker lat={null} lng={null} onChange={vi.fn()} />);
+  const map = screen.getByTestId('map-container');
+  expect(JSON.parse(map.dataset.center)).toEqual([9.9347, 106.3453]);
+  expect(screen.queryByTestId('map-marker')).not.toBeInTheDocument();
+});
+
+test('with a valid position, centers on it and renders a marker there', () => {
+  render(<LocationPicker lat={9.927833} lng={106.339167} onChange={vi.fn()} />);
+  const map = screen.getByTestId('map-container');
+  expect(JSON.parse(map.dataset.center)).toEqual([9.927833, 106.339167]);
+  const marker = screen.getByTestId('map-marker');
+  expect(marker.dataset.lat).toBe('9.927833');
+  expect(marker.dataset.lng).toBe('106.339167');
+});
+
+test('clicking the map calls onChange with the clicked coordinates', () => {
+  const onChange = vi.fn();
+  render(<LocationPicker lat={null} lng={null} onChange={onChange} />);
+  capturedHandlersRef.current.click({ latlng: { lat: 9.93, lng: 106.34 } });
+  expect(onChange).toHaveBeenCalledWith(9.93, 106.34);
+});
+
+test('typing an address, after the debounce, recenters the map on the geocoding result', async () => {
+  vi.useFakeTimers();
+  global.fetch = vi.fn().mockResolvedValue({
+    json: () => Promise.resolve([{ lat: '9.93', lon: '106.34' }]),
+  });
+  render(<LocationPicker lat={null} lng={null} onChange={vi.fn()} />);
+  fireEvent.change(screen.getByLabelText('Tìm địa chỉ trên bản đồ'), { target: { value: 'Chợ Trà Vinh' } });
+  await act(async () => { await vi.advanceTimersByTimeAsync(500); });
+  expect(mockSetView).toHaveBeenCalledWith([9.93, 106.34], 15);
+  vi.useRealTimers();
+});
+
+test('address search never calls onChange — the broker must still click to confirm', async () => {
+  vi.useFakeTimers();
+  const onChange = vi.fn();
+  global.fetch = vi.fn().mockResolvedValue({
+    json: () => Promise.resolve([{ lat: '9.93', lon: '106.34' }]),
+  });
+  render(<LocationPicker lat={null} lng={null} onChange={onChange} />);
+  fireEvent.change(screen.getByLabelText('Tìm địa chỉ trên bản đồ'), { target: { value: 'Chợ Trà Vinh' } });
+  await act(async () => { await vi.advanceTimersByTimeAsync(500); });
+  expect(onChange).not.toHaveBeenCalled();
+  vi.useRealTimers();
+});
+
+test('no geocoding results shows a not-found message', async () => {
+  vi.useFakeTimers();
+  global.fetch = vi.fn().mockResolvedValue({ json: () => Promise.resolve([]) });
+  render(<LocationPicker lat={null} lng={null} onChange={vi.fn()} />);
+  fireEvent.change(screen.getByLabelText('Tìm địa chỉ trên bản đồ'), { target: { value: 'xyz khong ton tai' } });
+  await act(async () => { await vi.advanceTimersByTimeAsync(500); });
+  expect(screen.getByText('Không tìm thấy địa chỉ này')).toBeInTheDocument();
+  vi.useRealTimers();
+});
+
+test('shows the selected coordinates (6 decimal places) when a position is set', () => {
+  render(<LocationPicker lat={9.927833} lng={106.339167} onChange={vi.fn()} />);
+  expect(screen.getByText('Đã chọn: 9.927833, 106.339167')).toBeInTheDocument();
+});
+
+test('shows no coordinate line when there is no position yet', () => {
+  render(<LocationPicker lat={null} lng={null} onChange={vi.fn()} />);
+  expect(screen.queryByText(/^Đã chọn:/)).not.toBeInTheDocument();
+});

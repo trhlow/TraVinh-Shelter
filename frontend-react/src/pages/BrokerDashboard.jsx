@@ -8,6 +8,7 @@ import DateRangeFilter from '../components/dashboard/DateRangeFilter.jsx';
 import BrandLogo from '../components/BrandLogo.jsx';
 import { WARDS } from '../data/locations.js';
 import Icon from '../components/ui/Icon.jsx';
+import LocationPicker from '../components/broker/LocationPicker.jsx';
 import LoginPage from './LoginPage.jsx';
 import { isInRange, percentDelta, previousRange, resolveDateRange } from '../utils/dateRange.js';
 import { downloadCsv } from '../utils/exportCsv.js';
@@ -683,12 +684,13 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                   <FormField label="Chiều rộng (m)">
                     <input className="input" type="number" min="0" step="0.01" value={listingForm.width} onChange={(event) => setListingValue('width', event.target.value, setListingForm)} />
                   </FormField>
-                  <FormField label="Vị trí trên Google Maps" className="dashboard-listing-span2">
-                    <div className="dashboard-coordinate-inputs">
-                      <input className="input" type="number" min="-90" max="90" step="any" value={listingForm.lat} onChange={(event) => setListingValue('lat', event.target.value, setListingForm)} placeholder="Vĩ độ (lat)" aria-label="Vĩ độ (lat)" />
-                      <input className="input" type="number" min="-180" max="180" step="any" value={listingForm.lng} onChange={(event) => setListingValue('lng', event.target.value, setListingForm)} placeholder="Kinh độ (lng)" aria-label="Kinh độ (lng)" />
-                    </div>
-                    <p className="form-hint">Nhấn giữ trên ứng dụng Google Maps để lấy tọa độ.</p>
+                  <FormField label="Vị trí trên bản đồ" className="dashboard-listing-span2">
+                    <LocationPicker
+                      lat={numericOrNull(listingForm.lat)}
+                      lng={numericOrNull(listingForm.lng)}
+                      onChange={(pickedLat, pickedLng) => setListingForm((current) => ({ ...current, lat: String(pickedLat), lng: String(pickedLng) }))}
+                    />
+                    <p className="form-hint">Bấm vào bản đồ để chọn đúng vị trí thực tế của bất động sản.</p>
                   </FormField>
                   {listingForm.categorySlug === 'nha' && listingForm.transaction === 'rent' && (
                     <FormField label="Loại nhà">

@@ -1642,17 +1642,10 @@ img { display: block; max-width: 100%; }
 
 @media (max-width: 640px) {
   .dashboard-listing-grid { grid-template-columns: 1fr; }
-  .dashboard-coordinate-inputs { grid-template-columns: 1fr; }
 }
 
 .dashboard-listing-span2 { grid-column: span 2; }
 .dashboard-listing-span3 { grid-column: span 3; }
-
-.dashboard-coordinate-inputs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
 
 @media (max-width: 1024px) {
   .dashboard-listing-span2 { grid-column: span 2; }
@@ -3278,4 +3271,19 @@ img { display: block; max-width: 100%; }
   min-width: 0;
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+/* Broker location picker */
+.location-picker {
+  width: 100%;
+  height: 320px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-hairline);
+  margin-top: 8px;
+}
+
+.location-picker-search {
+  max-width: none;
+  margin-bottom: 8px;
 }
