@@ -5,6 +5,8 @@ import {
 import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../components/DashboardWidgets.jsx';
 import ViewingsPanel from '../components/dashboard/ViewingsPanel.jsx';
 import DateRangeFilter from '../components/dashboard/DateRangeFilter.jsx';
+import NotificationBell from '../components/dashboard/NotificationBell.jsx';
+import { buildBrokerNotifications } from '../utils/brokerNotifications.js';
 import BrandLogo from '../components/BrandLogo.jsx';
 import { WARDS } from '../data/locations.js';
 import Icon from '../components/ui/Icon.jsx';
@@ -159,6 +161,8 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   }, [rangedListings, stats, listingRange]);
 
   const wardChart = useMemo(() => buildWardData(rangedListings, (listing) => listing.ward), [rangedListings]);
+
+  const brokerNotifications = useMemo(() => buildBrokerNotifications({ listings, viewings }), [listings, viewings]);
 
   const prevListingRange = useMemo(() => previousRange(listingRange), [listingRange]);
   const prevRangedListings = useMemo(() => (
@@ -469,10 +473,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
             />
           </form>
           <div className="dashboard-topbar-actions">
-            <button className="dashboard-icon-btn" type="button" aria-label="Thông báo">
-              <Icon name="Bell" size={18} />
-              {(dashboardStats.pendingListings || viewings.length) > 0 && <span className="dashboard-icon-dot" />}
-            </button>
+            <NotificationBell notifications={brokerNotifications} />
             <div className="dashboard-user-chip">
               <span className="dashboard-user-avatar">{initialsFor(profile?.fullName || session.fullName || session.email)}</span>
               <span className="dashboard-user-name">{profile?.fullName || session.fullName || 'Môi giới'}</span>
@@ -1292,7 +1293,7 @@ function isAvailableListing(listing) {
   return listing.rawStatus === 'AVAILABLE' || String(listing.statusLabel || '').toLowerCase().includes('hiển thị');
 }
 
-function isPendingListing(listing) {
+export function isPendingListing(listing) {
   const status = String(listing.rawStatus || listing.statusLabel || '').toLowerCase();
   return status.includes('pending') || status.includes('chờ') || status.includes('duyệt');
 }
