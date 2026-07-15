@@ -71,9 +71,34 @@ ufw enable
 git clone https://github.com/trhlow/TraVinh-Shelter.git ~/travinh-shelter
 cd ~/travinh-shelter
 cp .env.example .env
-# Điền giá trị thật vào .env: DB_URL, DB_USERNAME, DB_PASSWORD, DOMAIN, JWT_SECRET,
-# CORS_ALLOWED_ORIGINS, SENTRY_DSN_BACKEND, BACKEND_IMAGE, FRONTEND_IMAGE
+# Điền giá trị thật vào .env: DB_URL, DB_USERNAME, DB_PASSWORD, DB_APP_USERNAME, DB_APP_PASSWORD,
+# DOMAIN, JWT_SECRET, CORS_ALLOWED_ORIGINS, SENTRY_DSN_BACKEND, BACKEND_IMAGE, FRONTEND_IMAGE
 ```
+
+### Least-privilege DB role (DB_APP_USERNAME / DB_APP_PASSWORD)
+
+Migration `V20__create_least_privilege_app_role.sql` tách user Flyway (DDL, full-privilege —
+`DB_USERNAME`/`DB_PASSWORD`) khỏi user JPA/Hikari runtime (`DB_APP_USERNAME`/`DB_APP_PASSWORD`,
+chỉ SELECT/INSERT/UPDATE/DELETE, không DDL). App bị compromise (SQLi sót, RCE...) thì kẻ tấn công
+không thể DROP/ALTER schema qua kết nối runtime.
+
+**Rủi ro chưa verify được cho tới khi có instance DO Managed Postgres thật**: migration dùng
+`CREATE ROLE` và `ALTER DEFAULT PRIVILEGES`, cả hai đều cần quyền tương đối cao. Chưa thể xác nhận
+admin user do DigitalOcean Managed PostgreSQL cấp (`DB_USERNAME` hiện tại, ví dụ `travinh_app`)
+có đủ quyền `CREATE ROLE`/`ALTER DEFAULT PRIVILEGES` hay không — DO Managed Postgres thường cấp
+role kiểu `doadmin`-like với hầu hết quyền superuser trừ một số thao tác cấp cluster, nhưng cần
+kiểm tra thủ công. **Ở bước "Deploy lần đầu" bên dưới, sau khi Flyway chạy xong, xác nhận thủ công**:
+
+```bash
+docker compose -f docker-compose.prod.yml logs backend | grep -i "20 - create least privilege"
+# Kỳ vọng thấy dòng "Migrating schema ... to version 20 - create least privilege app role"
+# và "Successfully applied N migrations" — không có lỗi permission denied cho CREATE ROLE.
+```
+
+Nếu migration V20 lỗi vì admin user DO không đủ quyền, tạm thời fallback an toàn: không set
+`DB_APP_USERNAME`/`DB_APP_PASSWORD` trong `.env` — `spring.datasource.username/password` tự động
+fallback về `DB_USERNAME`/`DB_PASSWORD` (hành vi cũ, full-privilege runtime, không breaking), rồi
+báo cáo cho DO support để bật quyền `CREATE ROLE` cho admin user.
 
 ### GitHub Secrets (cho CI/CD tự động)
 
@@ -103,6 +128,9 @@ Xác nhận:
 - Test luồng chính: đăng nhập, xem property, đặt lịch xem, admin dashboard.
 - Sentry nhận được event test (trigger lỗi thử, hoặc dùng nút test DSN trên dashboard Sentry).
 - UptimeRobot chuyển xanh sau vài phút.
+- Migration V20 (least-privilege DB role) chạy thành công — xem mục "Least-privilege DB role"
+  ở trên. Nếu admin user của DO Managed Postgres không đủ quyền `CREATE ROLE`, bỏ trống
+  `DB_APP_USERNAME`/`DB_APP_PASSWORD` để fallback về hành vi cũ.
 
 Chỉ bật CI/CD tự động (job `deploy` trong `.github/workflows/ci.yml`, trigger khi push `main`) **sau khi**
 xác nhận deploy thủ công chạy đúng.
