@@ -44,6 +44,7 @@ import com.travinh.realty.modules.auth.security.InMemoryRateLimiter;
 import com.travinh.realty.modules.auth.security.OtpStore;
 import com.travinh.realty.modules.auth.security.RateLimiter;
 import com.travinh.realty.modules.booking.dto.RequestViewingOtpRequest;
+import com.travinh.realty.modules.booking.dto.RequestViewingOtpResponse;
 import com.travinh.realty.modules.booking.dto.VerifyViewingOtpRequest;
 import com.travinh.realty.modules.notification.SmsSender;
 import java.time.Duration;
@@ -273,9 +274,10 @@ class BookingServiceTest {
         Property property = property(broker(), PropertyStatus.AVAILABLE);
         when(properties.findById(property.getId())).thenReturn(Optional.of(property));
 
-        MessageResponse response = service.requestOtp(property.getId(), new RequestViewingOtpRequest("0900000000"));
+        RequestViewingOtpResponse response = service.requestOtp(property.getId(), new RequestViewingOtpRequest("0900000000"));
 
         assertThat(response.message()).isEqualTo("Mã OTP đã được gửi qua SMS.");
+        assertThat(response.otpRequired()).isTrue();
         Mockito.verify(smsSender).send(Mockito.eq("0900000000"), Mockito.anyString());
     }
 
@@ -360,9 +362,10 @@ class BookingServiceTest {
         Property property = property(broker(), PropertyStatus.AVAILABLE);
         when(properties.findById(property.getId())).thenReturn(Optional.of(property));
 
-        MessageResponse response = service.requestOtp(property.getId(), new RequestViewingOtpRequest("0900000000"));
+        RequestViewingOtpResponse response = service.requestOtp(property.getId(), new RequestViewingOtpRequest("0900000000"));
 
         assertThat(response.message()).isEqualTo("Xác minh OTP tạm thời không bắt buộc.");
+        assertThat(response.otpRequired()).isFalse();
         Mockito.verifyNoInteractions(smsSender);
     }
 

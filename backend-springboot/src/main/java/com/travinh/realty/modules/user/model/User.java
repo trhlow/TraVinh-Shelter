@@ -114,6 +114,18 @@ public class User {
         this.status = status;
     }
 
+    public void anonymize() {
+        this.fullName = "Người dùng đã xoá";
+        this.phone = null;
+        this.avatarUrl = null;
+        this.facebookUrl = null;
+        this.tiktokUrl = null;
+        this.email = "deleted-" + id + "@congtinland.local";
+        this.username = "deleted-" + id;
+        this.status = UserStatus.DELETED;
+        this.passwordChangedAt = Instant.now();
+    }
+
     public UUID getId() { return id; }
     public String getUsername() { return username; }
     public String getPasswordHash() { return passwordHash; }

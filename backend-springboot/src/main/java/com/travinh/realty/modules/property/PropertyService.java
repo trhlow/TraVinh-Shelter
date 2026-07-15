@@ -15,6 +15,7 @@ import com.travinh.realty.modules.user.model.UserStatus;
 import com.travinh.realty.modules.user.repository.UserRepository;
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -36,6 +37,7 @@ public class PropertyService {
     private static final String ATTRIBUTE_KEY_PATTERN = "^[A-Za-z0-9_.-]+$";
     private static final int MAX_ATTRIBUTE_ENTRIES = 20;
     private static final int MAX_ATTRIBUTE_VALUE_LENGTH = 10_000;
+    private static final int MAX_ATTRIBUTE_LIST_SIZE = 100;
 
     private final PropertyRepository properties;
     private final CategoryRepository categories;
@@ -205,14 +207,7 @@ public class PropertyService {
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
             String key = validAttributeKey(entry.getKey());
             Object value = entry.getValue();
-            if (value instanceof String stringValue && stringValue.length() > MAX_ATTRIBUTE_VALUE_LENGTH) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "Giá trị thuộc tính quá dài cho khoá: " + key);
-            }
-            if (value != null && !(value instanceof String) && !(value instanceof Number) && !(value instanceof Boolean)) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "Giá trị thuộc tính phải là chuỗi, số hoặc boolean cho khoá: " + key);
-            }
+            validateAttributeValue(key, value, 0);
             if ("lat".equals(key) && value instanceof Number number
                     && (number.doubleValue() < -90 || number.doubleValue() > 90)) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "lat phải nằm trong khoảng -90 đến 90");
@@ -224,6 +219,47 @@ public class PropertyService {
             normalized.put(key, value);
         }
         return normalized;
+    }
+
+    /**
+     * Scalars are allowed at any depth. Lists/maps are allowed one level deep (a flat list of
+     * scalars-or-flat-objects, e.g. amenities/rooms; or a flat object, e.g. conditions) so that
+     * costs-style two-level shapes (map of flat objects) also pass, but arbitrary/unbounded
+     * nesting is rejected to keep the original DoS-prevention intent of this validation.
+     */
+    private void validateAttributeValue(String key, Object value, int depth) {
+        if (value == null || value instanceof Number || value instanceof Boolean) {
+            return;
+        }
+        if (value instanceof String stringValue) {
+            if (stringValue.length() > MAX_ATTRIBUTE_VALUE_LENGTH) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Giá trị thuộc tính quá dài cho khoá: " + key);
+            }
+            return;
+        }
+        if (depth == 0 && value instanceof List<?> list) {
+            if (list.size() > MAX_ATTRIBUTE_LIST_SIZE) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Danh sách quá dài cho khoá: " + key + " (tối đa " + MAX_ATTRIBUTE_LIST_SIZE + ")");
+            }
+            for (Object element : list) {
+                validateAttributeValue(key, element, depth + 1);
+            }
+            return;
+        }
+        if (depth <= 1 && value instanceof Map<?, ?> map) {
+            if (map.size() > MAX_ATTRIBUTE_ENTRIES) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Quá nhiều thuộc tính (tối đa " + MAX_ATTRIBUTE_ENTRIES + ")");
+            }
+            for (Object nestedValue : map.values()) {
+                validateAttributeValue(key, nestedValue, depth + 1);
+            }
+            return;
+        }
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Giá trị thuộc tính phải là chuỗi, số hoặc boolean cho khoá: " + key);
     }
 
     private String validAttributeKey(String key) {

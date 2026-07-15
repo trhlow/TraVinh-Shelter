@@ -170,22 +170,30 @@ export async function deleteProperty(token, propertyId) {
   return request(`/properties/${propertyId}`, { method: 'DELETE', token });
 }
 
-export async function createViewing(propertyId, payload) {
+export async function requestViewingOtp(propertyId, payload) {
+  if (USE_MOCK_API) {
+    return delay({ message: 'Xác minh OTP tạm thời không bắt buộc.', otpRequired: false }, 150);
+  }
+  return request(`/properties/${propertyId}/viewings/request-otp`, { method: 'POST', body: payload });
+}
+
+export async function verifyViewingOtp(propertyId, payload) {
+  const { booking, otpCode } = payload;
   if (USE_MOCK_API) {
     const record = {
       id: 'mock-viewing-' + Date.now(),
       status: 'PENDING',
       propertyId,
-      propertyTitle: payload.propertyTitle,
-      visitorName: payload.visitorName,
-      visitorPhone: payload.visitorPhone,
-      note: payload.note,
-      roomLabel: payload.roomLabel,
-      expectedMoveIn: payload.expectedMoveIn,
-      occupants: payload.occupants,
-      vehicles: payload.vehicles,
-      pets: payload.pets,
-      requestedAt: payload.requestedAt,
+      propertyTitle: booking.propertyTitle,
+      visitorName: booking.visitorName,
+      visitorPhone: booking.visitorPhone,
+      note: booking.note,
+      roomLabel: booking.roomLabel,
+      expectedMoveIn: booking.expectedMoveIn,
+      occupants: booking.occupants,
+      vehicles: booking.vehicles,
+      pets: booking.pets,
+      requestedAt: booking.requestedAt,
       createdAt: new Date().toISOString(),
     };
     try {
@@ -197,8 +205,11 @@ export async function createViewing(propertyId, payload) {
     }
     return delay(record, 150);
   }
-  const { propertyTitle: _title, ...backendPayload } = payload;
-  return request(`/properties/${propertyId}/viewings`, { method: 'POST', body: backendPayload });
+  const { propertyTitle: _title, ...backendBooking } = booking;
+  return request(`/properties/${propertyId}/viewings/verify-otp`, {
+    method: 'POST',
+    body: { booking: backendBooking, otpCode },
+  });
 }
 
 export async function fetchBrokerViewings(token) {

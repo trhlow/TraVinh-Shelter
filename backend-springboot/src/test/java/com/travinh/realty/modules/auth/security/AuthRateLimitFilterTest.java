@@ -64,4 +64,71 @@ class AuthRateLimitFilterTest {
             assertThat(response.getStatus()).isEqualTo(200);
         }
     }
+
+    @Test
+    void rateLimitsForgotPasswordAfterTenRequestsPerMinutePerIp() throws Exception {
+        AuthRateLimitFilter filter = new AuthRateLimitFilter(new ObjectMapper(), new InMemoryRateLimiter(),
+                new ClientIpResolver(List.of()));
+        FilterChain chain = (request, response) -> {};
+
+        for (int i = 0; i < 10; i++) {
+            MockHttpServletRequest request = new MockHttpServletRequest("POST", "/auth/forgot-password");
+            request.setRemoteAddr("203.0.113.11");
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            filter.doFilterInternal(request, response, chain);
+            assertThat(response.getStatus()).isEqualTo(200);
+        }
+
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/auth/forgot-password");
+        request.setRemoteAddr("203.0.113.11");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        filter.doFilterInternal(request, response, chain);
+
+        assertThat(response.getStatus()).isEqualTo(429);
+        assertThat(response.getContentAsString()).contains("Quá nhiều yêu cầu. Vui lòng thử lại sau.");
+    }
+
+    @Test
+    void rateLimitsResetPasswordAfterTenRequestsPerMinutePerIp() throws Exception {
+        AuthRateLimitFilter filter = new AuthRateLimitFilter(new ObjectMapper(), new InMemoryRateLimiter(),
+                new ClientIpResolver(List.of()));
+        FilterChain chain = (request, response) -> {};
+
+        for (int i = 0; i < 10; i++) {
+            MockHttpServletRequest request = new MockHttpServletRequest("POST", "/auth/reset-password");
+            request.setRemoteAddr("203.0.113.12");
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            filter.doFilterInternal(request, response, chain);
+            assertThat(response.getStatus()).isEqualTo(200);
+        }
+
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/auth/reset-password");
+        request.setRemoteAddr("203.0.113.12");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        filter.doFilterInternal(request, response, chain);
+
+        assertThat(response.getStatus()).isEqualTo(429);
+    }
+
+    @Test
+    void unmatchedPathIsRateLimitedByGlobalFallbackAfterThreeHundredRequestsPerMinutePerIp() throws Exception {
+        AuthRateLimitFilter filter = new AuthRateLimitFilter(new ObjectMapper(), new InMemoryRateLimiter(),
+                new ClientIpResolver(List.of()));
+        FilterChain chain = (request, response) -> {};
+
+        for (int i = 0; i < 300; i++) {
+            MockHttpServletRequest request = new MockHttpServletRequest("GET", "/some/random/path");
+            request.setRemoteAddr("203.0.113.13");
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            filter.doFilterInternal(request, response, chain);
+            assertThat(response.getStatus()).isEqualTo(200);
+        }
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/some/random/path");
+        request.setRemoteAddr("203.0.113.13");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        filter.doFilterInternal(request, response, chain);
+
+        assertThat(response.getStatus()).isEqualTo(429);
+    }
 }

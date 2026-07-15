@@ -49,6 +49,15 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Audit dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Review dependencies in PR
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
       - name: Lint
         run: npm run lint
 
@@ -79,6 +88,8 @@ jobs:
           DB_URL: jdbc:postgresql://ci-only-host:25060/travinh_realty?sslmode=require
           DB_USERNAME: travinh_app
           DB_PASSWORD: ci-only-postgres-password
+          DB_APP_USERNAME: travinh_app_runtime
+          DB_APP_PASSWORD: ci-only-app-runtime-password
           JWT_SECRET: ci-only-jwt-secret-that-is-at-least-32-bytes
           CORS_ALLOWED_ORIGINS: https://example.com
           DOMAIN: example.com

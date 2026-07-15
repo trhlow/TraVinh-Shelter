@@ -71,9 +71,67 @@ ufw enable
 git clone https://github.com/trhlow/TraVinh-Shelter.git ~/travinh-shelter
 cd ~/travinh-shelter
 cp .env.example .env
-# Điền giá trị thật vào .env: DB_URL, DB_USERNAME, DB_PASSWORD, DOMAIN, JWT_SECRET,
-# CORS_ALLOWED_ORIGINS, SENTRY_DSN_BACKEND, BACKEND_IMAGE, FRONTEND_IMAGE
+# Điền giá trị thật vào .env: DB_URL, DB_USERNAME, DB_PASSWORD, DB_APP_USERNAME, DB_APP_PASSWORD,
+# DOMAIN, JWT_SECRET, CORS_ALLOWED_ORIGINS, SENTRY_DSN_BACKEND, BACKEND_IMAGE, FRONTEND_IMAGE
 ```
+
+### Least-privilege DB role (DB_APP_USERNAME / DB_APP_PASSWORD)
+
+Migration `V20__create_least_privilege_app_role.sql` tách user Flyway (DDL, full-privilege —
+`DB_USERNAME`/`DB_PASSWORD`) khỏi user JPA/Hikari runtime (`DB_APP_USERNAME`/`DB_APP_PASSWORD`,
+chỉ SELECT/INSERT/UPDATE/DELETE, không DDL). App bị compromise (SQLi sót, RCE...) thì kẻ tấn công
+không thể DROP/ALTER schema qua kết nối runtime.
+
+**Quan trọng — kiểm tra quyền TRƯỚC khi deploy thật, không phải sau**: migration V20 dùng
+`CREATE ROLE` và `ALTER DEFAULT PRIVILEGES`, cả hai đều cần quyền tương đối cao. Flyway chạy V20
+như một phần bình thường của quá trình migrate mỗi lần backend khởi động — nếu V20 lỗi, Flyway
+báo lỗi và Spring Boot **từ chối khởi động xong** (context không lên), bất kể `DB_APP_USERNAME`/
+`DB_APP_PASSWORD` trong `.env` được set hay bỏ trống thế nào. Nói cách khác: **bỏ trống
+`DB_APP_USERNAME`/`DB_APP_PASSWORD` không phải là fallback hợp lệ nếu V20 lỗi** — app chưa bao giờ
+chạy tới đoạn đọc `DB_APP_USERNAME`/`DB_APP_PASSWORD` cho datasource runtime, vì Flyway đã chặn ở
+bước migrate trước đó.
+
+Vì vậy, xác nhận quyền của admin user **trước khi deploy lần đầu**, không đợi tới khi thấy lỗi:
+
+1. Trên DigitalOcean dashboard → Databases → cluster → **Users & Databases**, kiểm tra role mặc
+   định (`doadmin` hoặc user bạn tạo, ví dụ `travinh_app`). DO Managed PostgreSQL thường cấp cho
+   user quản trị mặc định gần như toàn bộ quyền superuser (trừ một vài thao tác cấp instance như
+   `pg_hba.conf`), nên `CREATE ROLE`/`ALTER DEFAULT PRIVILEGES` **thường có sẵn** — đây là đường
+   đi mặc định, kỳ vọng.
+2. Để chắc chắn trước khi deploy thật, kết nối thử bằng `psql` (hoặc `docker compose ... exec`)
+   bằng chính user sẽ dùng làm `DB_USERNAME` và chạy:
+   ```sql
+   SELECT rolcreaterole FROM pg_roles WHERE rolname = current_user;
+   -- Kỳ vọng: t (true)
+   ```
+   Nếu `t` → deploy bình thường như hướng dẫn dưới, V20 sẽ chạy thành công.
+
+**Nếu admin user KHÔNG có `CREATE ROLE` (trường hợp hiếm)** — remediation thật sự, không phải
+"bỏ trống biến env":
+
+- **Cách A (khuyến nghị) — bootstrap thủ công bằng một kết nối có đủ quyền, sau đó để Flyway ghi
+  nhận migration đã áp dụng**:
+  1. Xin DO support cấp `CREATE ROLE` cho admin user, HOẶC dùng một connection string khác (vd.
+     `doadmin` gốc của cluster) mà bạn xác nhận CÓ quyền superuser để chạy tay đúng nội dung SQL
+     trong `V20__create_least_privilege_app_role.sql` (thay `${appRuntimePassword}` và
+     `${migratorUsername}` bằng giá trị thật).
+  2. Sau khi chạy tay xong, đánh dấu migration này là "đã áp dụng" trong lịch sử Flyway để lần
+     khởi động backend tiếp theo không chạy lại nó: dùng Flyway CLI với `flyway repair` (thêm
+     baseline) hoặc — nếu không có Flyway CLI sẵn trên VPS — insert thủ công một dòng vào
+     `flyway_schema_history` khớp checksum của file V20 (lấy checksum bằng
+     `flyway info` hoặc tính bằng công cụ Flyway CLI cùng phiên bản với backend; không tự bịa
+     checksum). Đây là thao tác nhạy cảm — sai checksum sẽ khiến Flyway coi migration bị "sửa đổi"
+     và từ chối khởi động ở lần chạy kế tiếp; nếu không chắc, ưu tiên xin cấp quyền (bước 1) thay
+     vì tự chạy tay.
+  3. Khởi động lại backend — Flyway thấy V20 đã trong lịch sử, bỏ qua, các migration sau chạy
+     bình thường bằng admin user hiện tại.
+- **Cách B — hạ cấp về single-role tạm thời**: nếu không thể chạy V20 dưới bất kỳ hình thức nào
+  (kể cả thủ công), xóa hẳn file migration `V20__create_least_privilege_app_role.sql` khỏi
+  `db/migration/` trên nhánh deploy tạm thời (không chỉ bỏ trống env var) và bỏ luôn
+  `DB_APP_USERNAME`/`DB_APP_PASSWORD` khỏi `.env` — lúc này Flyway không còn migration nào đòi hỏi
+  `CREATE ROLE`, app chạy hoàn toàn bằng `DB_USERNAME`/`DB_PASSWORD` (hành vi cũ, full-privilege
+  runtime). Đây là phương án tạm, chấp nhận đánh đổi mất tính năng least-privilege cho tới khi xin
+  được quyền từ DO — cần khôi phục migration khi có quyền.
 
 ### GitHub Secrets (cho CI/CD tự động)
 
@@ -103,6 +161,11 @@ Xác nhận:
 - Test luồng chính: đăng nhập, xem property, đặt lịch xem, admin dashboard.
 - Sentry nhận được event test (trigger lỗi thử, hoặc dùng nút test DSN trên dashboard Sentry).
 - UptimeRobot chuyển xanh sau vài phút.
+- Migration V20 (least-privilege DB role) chạy thành công — xem log `Successfully applied N
+  migrations`, không có lỗi `permission denied for CREATE ROLE`. Quyền `CREATE ROLE` của admin
+  user cần được xác nhận **trước** bước này (xem mục "Least-privilege DB role" ở trên) — nếu chưa
+  xác nhận và V20 lỗi ở đây, backend sẽ không khởi động được; xử lý theo Cách A/B ở mục trên rồi
+  thử lại `docker compose -f docker-compose.prod.yml up -d`.
 
 Chỉ bật CI/CD tự động (job `deploy` trong `.github/workflows/ci.yml`, trigger khi push `main`) **sau khi**
 xác nhận deploy thủ công chạy đúng.
@@ -174,3 +237,11 @@ upload lên object storage) — lưu trên cùng VPS không bảo vệ khỏi m�
   Singapore về bản chất là "chuyển dữ liệu ra nước ngoài" dù chỉ là tầng lưu trữ — cần xác nhận với
   chuyên gia pháp lý/tuân thủ trước khi go-live chính thức với khách hàng thật, đây là quyết định
   pháp lý ngoài phạm vi kỹ thuật.
+- **`DELETE /users/me` (xoá tài khoản) chỉ là baseline kỹ thuật, KHÔNG phải xác nhận tuân thủ pháp
+  lý đầy đủ** — endpoint ẩn danh hoá các trường định danh cá nhân trên bản ghi `User`
+  (`fullName`/`phone`/`avatarUrl`/`facebookUrl`/`tiktokUrl`/`email`/`username`) và bump
+  `passwordChangedAt` để vô hiệu JWT hiện có, nhưng KHÔNG cascade-xoá property/booking liên quan
+  (giữ lại vì đó là dữ liệu giao dịch/audit) và không tự động xoá media đã upload hay audit log đã
+  ghi tên. Cùng loại rủi ro pháp lý "cross-border transfer" ở trên — cần xác nhận với chuyên gia
+  pháp lý/tuân thủ về phạm vi "quyền xoá dữ liệu" theo Nghị định 13/2023/NĐ-CP (hay văn bản thay
+  thế) trước khi go-live chính thức với khách hàng thật.
