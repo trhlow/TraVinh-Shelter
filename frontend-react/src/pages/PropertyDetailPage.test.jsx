@@ -74,15 +74,15 @@ test('renders the phone call button and no Zalo link', async () => {
   expect(within(contactCard).queryByRole('link', { name: /Chat Zalo|Zalo/i })).not.toBeInTheDocument();
 });
 
-test('renders a Google Map only when valid coordinates are available', async () => {
-  fetchPropertyDetail.mockResolvedValue({ ...baseProperty, lat: 9.9345, lng: 106.3456 });
+test('renders a Google Map only when the property has a mapEmbedUrl', async () => {
+  fetchPropertyDetail.mockResolvedValue({ ...baseProperty, mapEmbedUrl: 'https://www.google.com/maps/embed?pb=abc' });
   render(<PropertyDetailPage propertyId="p-1" />);
 
   const map = await screen.findByTitle('Bản đồ vị trí bất động sản');
-  expect(map).toHaveAttribute('src', expect.stringContaining('9.9345%2C106.3456'));
+  expect(map).toHaveAttribute('src', 'https://www.google.com/maps/embed?pb=abc');
 });
 
-test('does not render a Google Map without coordinates', async () => {
+test('does not render a Google Map without a mapEmbedUrl', async () => {
   fetchPropertyDetail.mockResolvedValue(baseProperty);
   render(<PropertyDetailPage propertyId="p-1" />);
 

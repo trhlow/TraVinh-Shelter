@@ -141,7 +141,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
   const hasCosts = property.costs && Object.keys(property.costs).length > 0;
   const hasConditions = property.conditions && Object.keys(property.conditions).length > 0;
   const hasRooms = isTro && Array.isArray(property.rooms) && property.rooms.length > 0;
-  const hasCoordinates = hasValidCoordinates(property.lat, property.lng);
+  const hasMapEmbed = Boolean(property.mapEmbedUrl);
 
   return (
     <MainLayout session={session} onLogout={onLogout} theme={theme} onToggleTheme={onToggleTheme}>
@@ -293,7 +293,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
               </div>
             )}
 
-            {hasCoordinates && <PropertyMap lat={property.lat} lng={property.lng} />}
+            {hasMapEmbed && <PropertyMap embedUrl={property.mapEmbedUrl} />}
 
             {/* Block 6: Room list — trọ only */}
             {hasRooms && (
@@ -376,13 +376,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
   );
 }
 
-function PropertyMap({ lat, lng }) {
-  const location = `${lat},${lng}`;
-  const mapsEmbedKey = import.meta.env.VITE_GOOGLE_MAPS_EMBED_API_KEY;
-  const src = mapsEmbedKey
-    ? `https://www.google.com/maps/embed/v1/view?key=${encodeURIComponent(mapsEmbedKey)}&center=${encodeURIComponent(location)}&zoom=16&language=vi`
-    : `https://www.google.com/maps?q=${encodeURIComponent(location)}&z=16&output=embed`;
-
+function PropertyMap({ embedUrl }) {
   return (
     <section className="card p-24 mt-16" aria-label="Vị trí bất động sản">
       <h2 className="detail-block-title">
@@ -392,16 +386,11 @@ function PropertyMap({ lat, lng }) {
       <iframe
         className="property-map"
         title="Bản đồ vị trí bất động sản"
-        src={src}
+        src={embedUrl}
         loading="lazy"
         allowFullScreen
         referrerPolicy="strict-origin-when-cross-origin"
       />
     </section>
   );
-}
-
-function hasValidCoordinates(lat, lng) {
-  return Number.isFinite(lat) && Number.isFinite(lng)
-    && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
 }
