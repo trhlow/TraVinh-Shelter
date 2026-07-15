@@ -180,14 +180,15 @@ function conicGradientFor(data, total) {
   }).join(', ')})`;
 }
 
-export function ThreeDDonutChart({ title, subtitle, data, centerLabel = 'tổng' }) {
+export function ThreeDDonutChart({ title, subtitle, data, centerLabel = 'tổng', compact = false }) {
   const [mode, setMode] = useState('3d');
   const normalized = withColors(data);
   const total = normalized.reduce((sum, item) => sum + item.value, 0);
+  const layoutClass = `chart3d-donut-layout${compact ? ' chart3d-donut-layout--compact' : ''}`;
 
   return (
     <ThreeDChartPanel title={title} subtitle={subtitle} mode={mode} onModeChange={setMode}>
-      <div className="chart3d-donut-layout">
+      <div className={layoutClass}>
         <div className="chart3d-donut" style={{ background: conicGradientFor(normalized, total || 1) }}>
           <div className="chart3d-donut-hole">
             <span className="chart3d-donut-total">{formatChartNumber(total)}</span>

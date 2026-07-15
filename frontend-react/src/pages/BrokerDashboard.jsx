@@ -539,29 +539,32 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                 <StatCard icon="CalendarCheck" title="Lịch hẹn xác nhận tháng này" value={confirmedViewingsThisMonth} tone="navy" />
               </div>
 
-              <div className="dashboard-live-row">
-                <TrendBarLineChart
-                  title="Hoạt động môi giới theo ngày"
-                  subtitle={`Số bài đăng mới và lịch hẹn đã xác nhận theo từng ngày trong tháng ${activityMonthLabel}`}
-                  data={activityChartData}
-                  currentLabel="Bài đăng"
-                  previousLabel="Lịch hẹn xác nhận"
-                />
-                <ThreeDDonutChart
-                  title="Loại hình BĐS đang quản lý"
-                  subtitle="Trọ, nhà và đất đang quản lý"
-                  data={managedTypeData}
-                  centerLabel="tin"
-                />
+              <div className="dashboard-charts-row">
+                <div className="dashboard-chart-span-2">
+                  <TrendBarLineChart
+                    title="Hoạt động môi giới theo ngày"
+                    subtitle={`Số bài đăng mới và lịch hẹn đã xác nhận theo từng ngày trong tháng ${activityMonthLabel}`}
+                    data={activityChartData}
+                    currentLabel="Bài đăng"
+                    previousLabel="Lịch hẹn xác nhận"
+                  />
+                </div>
+                <DashboardPanel title="Lịch hẹn sắp tới" count={viewingsLoading ? 'Đang tải' : `${upcomingViewings.length} lịch`}>
+                  <UpcomingViewingsSummary viewings={upcomingViewings} loading={viewingsLoading} />
+                </DashboardPanel>
               </div>
 
               <div className="dashboard-charts-row">
                 <div className="dashboard-chart-span-2">
                   <WardBarChart title="Tin đăng theo phường" data={wardChart} />
                 </div>
-                <DashboardPanel title="Lịch hẹn sắp tới" count={viewingsLoading ? 'Đang tải' : `${upcomingViewings.length} lịch`}>
-                  <UpcomingViewingsSummary viewings={upcomingViewings} loading={viewingsLoading} />
-                </DashboardPanel>
+                <ThreeDDonutChart
+                  title="Loại hình BĐS đang quản lý"
+                  subtitle="Trọ, nhà và đất đang quản lý"
+                  data={managedTypeData}
+                  centerLabel="tin"
+                  compact
+                />
               </div>
 
               <div className="dashboard-panels-row">
