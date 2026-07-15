@@ -52,7 +52,7 @@ test('clicking the map calls onChange with the clicked coordinates', () => {
 
 test('typing an address, after the debounce, recenters the map on the geocoding result', async () => {
   vi.useFakeTimers();
-  global.fetch = vi.fn().mockResolvedValue({
+  globalThis.fetch = vi.fn().mockResolvedValue({
     json: () => Promise.resolve([{ lat: '9.93', lon: '106.34' }]),
   });
   render(<LocationPicker lat={null} lng={null} onChange={vi.fn()} />);
@@ -65,7 +65,7 @@ test('typing an address, after the debounce, recenters the map on the geocoding 
 test('address search never calls onChange — the broker must still click to confirm', async () => {
   vi.useFakeTimers();
   const onChange = vi.fn();
-  global.fetch = vi.fn().mockResolvedValue({
+  globalThis.fetch = vi.fn().mockResolvedValue({
     json: () => Promise.resolve([{ lat: '9.93', lon: '106.34' }]),
   });
   render(<LocationPicker lat={null} lng={null} onChange={onChange} />);
@@ -77,7 +77,7 @@ test('address search never calls onChange — the broker must still click to con
 
 test('no geocoding results shows a not-found message', async () => {
   vi.useFakeTimers();
-  global.fetch = vi.fn().mockResolvedValue({ json: () => Promise.resolve([]) });
+  globalThis.fetch = vi.fn().mockResolvedValue({ json: () => Promise.resolve([]) });
   render(<LocationPicker lat={null} lng={null} onChange={vi.fn()} />);
   fireEvent.change(screen.getByLabelText('Tìm địa chỉ trên bản đồ'), { target: { value: 'xyz khong ton tai' } });
   await act(async () => { await vi.advanceTimersByTimeAsync(500); });

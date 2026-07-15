@@ -39,7 +39,6 @@ export default function LocationPicker({ lat, lng, onChange }) {
       runSearch(query);
     }, 500);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
   async function runSearch(text) {
