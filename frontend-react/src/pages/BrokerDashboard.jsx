@@ -8,7 +8,6 @@ import DateRangeFilter from '../components/dashboard/DateRangeFilter.jsx';
 import BrandLogo from '../components/BrandLogo.jsx';
 import { WARDS } from '../data/locations.js';
 import Icon from '../components/ui/Icon.jsx';
-import LocationPicker from '../components/broker/LocationPicker.jsx';
 import LoginPage from './LoginPage.jsx';
 import { isInRange, percentDelta, previousRange, resolveDateRange } from '../utils/dateRange.js';
 import { downloadCsv } from '../utils/exportCsv.js';
@@ -45,8 +44,8 @@ const EMPTY_FORM = {
   price: '',
   length: '',
   width: '',
-  lat: '',
-  lng: '',
+  mapEmbedInput: '',
+  mapEmbedUrl: '',
   bedrooms: '',
   bathrooms: '',
   houseType: 'tret',
@@ -86,6 +85,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   const [rangePreset, setRangePreset] = useState('all');
   const [rangeCustom, setRangeCustom] = useState({});
   const [quickSearch, setQuickSearch] = useState('');
+  const [mapEmbedError, setMapEmbedError] = useState('');
 
   const listings = stats.listings || [];
   const listingRange = useMemo(() => resolveDateRange(rangePreset, rangeCustom), [rangePreset, rangeCustom]);
@@ -372,8 +372,8 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       price: String(Math.round(property.rawPrice || 0)),
       length: property.length ? String(property.length) : '',
       width: property.width ? String(property.width) : '',
-      lat: coordinateFormValue(property.lat),
-      lng: coordinateFormValue(property.lng),
+      mapEmbedInput: property.mapEmbedUrl ? `<iframe src="${property.mapEmbedUrl}"></iframe>` : '',
+      mapEmbedUrl: property.mapEmbedUrl || '',
       bedrooms: property.bedrooms ? String(property.bedrooms) : '',
       bathrooms: property.bathrooms ? String(property.bathrooms) : '',
       houseType: property.houseType || 'tret',
@@ -434,6 +434,22 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       galleryFiles: files,
       galleryPreviews: files.map(objectUrlFor),
     }));
+  }
+
+  function handleMapEmbedChange(value) {
+    if (!value.trim()) {
+      setListingForm((current) => ({ ...current, mapEmbedInput: value, mapEmbedUrl: '' }));
+      setMapEmbedError('');
+      return;
+    }
+    const src = extractGoogleMapsEmbedSrc(value);
+    if (!src) {
+      setListingForm((current) => ({ ...current, mapEmbedInput: value, mapEmbedUrl: '' }));
+      setMapEmbedError('Mã nhúng không hợp lệ — hãy dán nguyên đoạn từ Google Maps (Chia sẻ → Nhúng bản đồ).');
+      return;
+    }
+    setListingForm((current) => ({ ...current, mapEmbedInput: value, mapEmbedUrl: src }));
+    setMapEmbedError('');
   }
 
   return (
@@ -684,13 +700,20 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                   <FormField label="Chiều rộng (m)">
                     <input className="input" type="number" min="0" step="0.01" value={listingForm.width} onChange={(event) => setListingValue('width', event.target.value, setListingForm)} />
                   </FormField>
-                  <FormField label="Vị trí trên bản đồ" className="dashboard-listing-span2">
-                    <LocationPicker
-                      lat={numericOrNull(listingForm.lat)}
-                      lng={numericOrNull(listingForm.lng)}
-                      onChange={(pickedLat, pickedLng) => setListingForm((current) => ({ ...current, lat: String(pickedLat), lng: String(pickedLng) }))}
+                  <FormField label="Mã nhúng Google Maps" className="dashboard-listing-span2">
+                    <textarea
+                      className="input"
+                      rows={3}
+                      value={listingForm.mapEmbedInput}
+                      onChange={(event) => handleMapEmbedChange(event.target.value)}
+                      placeholder='Dán nguyên đoạn <iframe src="https://www.google.com/maps/embed?...">...'
+                      aria-label="Mã nhúng Google Maps"
                     />
-                    <p className="form-hint">Bấm vào bản đồ để chọn đúng vị trí thực tế của bất động sản.</p>
+                    {mapEmbedError && <p className="form-error">{mapEmbedError}</p>}
+                    {listingForm.mapEmbedUrl && (
+                      <iframe className="location-embed-preview" src={listingForm.mapEmbedUrl} title="Xem trước vị trí" loading="lazy" />
+                    )}
+                    <p className="form-hint">Trên Google Maps: bấm Chia sẻ → Nhúng bản đồ → Sao chép HTML, dán nguyên vào đây.</p>
                   </FormField>
                   {listingForm.categorySlug === 'nha' && listingForm.transaction === 'rent' && (
                     <FormField label="Loại nhà">
@@ -1100,8 +1123,7 @@ export function propertyPayload(form) {
     ward: form.ward,
     length,
     width,
-    lat: coordinateOrNull(form.lat, -90, 90),
-    lng: coordinateOrNull(form.lng, -180, 180),
+    mapEmbedUrl: form.mapEmbedUrl || null,
     area: length != null && width != null ? Number((length * width).toFixed(2)) : null,
     description: form.description,
     amenities: form.amenities,
@@ -1138,16 +1160,6 @@ function numericOrNull(value) {
   if (value === '' || value == null) return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
-}
-
-function coordinateOrNull(value, min, max) {
-  const parsed = numericOrNull(value);
-  return parsed != null && parsed >= min && parsed <= max ? parsed : null;
-}
-
-function coordinateFormValue(value) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? String(parsed) : '';
 }
 
 export function extractGoogleMapsEmbedSrc(pastedHtml) {
