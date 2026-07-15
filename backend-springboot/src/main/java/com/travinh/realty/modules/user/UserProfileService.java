@@ -90,6 +90,12 @@ public class UserProfileService {
         jwt.revoke(currentToken);
     }
 
+    @Transactional
+    public void deleteCurrentUser(UserPrincipal principal) {
+        User user = findUser(principal.id());
+        user.anonymize();
+    }
+
     @Transactional(readOnly = true)
     public BrokerContactResponse brokerContact(UUID brokerId) {
         User broker = findUser(brokerId);

@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -211,6 +212,34 @@ class UserProfileHttpTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.message").value("Số điện thoại đã được đăng ký"));
+    }
+
+    @Test
+    void deleteCurrentUserAnonymizesAndReturnsNoContent() throws Exception {
+        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        authenticate(user);
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+
+        mockMvc.perform(delete("/users/me").header("Authorization", bearer(user)))
+                .andExpect(status().isNoContent());
+
+        org.assertj.core.api.Assertions.assertThat(user.getStatus()).isEqualTo(UserStatus.DELETED);
+        org.assertj.core.api.Assertions.assertThat(user.getFullName()).isEqualTo("Người dùng đã xoá");
+    }
+
+    @Test
+    void deletedUserJwtIssuedBeforeDeleteIsRejectedOnSubsequentAuthenticatedRequest() throws Exception {
+        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        authenticate(user);
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+        String token = bearer(user);
+
+        mockMvc.perform(delete("/users/me").header("Authorization", token))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/users/me").header("Authorization", token))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401));
     }
 
     @Test

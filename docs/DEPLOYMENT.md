@@ -237,3 +237,11 @@ upload lên object storage) — lưu trên cùng VPS không bảo vệ khỏi m�
   Singapore về bản chất là "chuyển dữ liệu ra nước ngoài" dù chỉ là tầng lưu trữ — cần xác nhận với
   chuyên gia pháp lý/tuân thủ trước khi go-live chính thức với khách hàng thật, đây là quyết định
   pháp lý ngoài phạm vi kỹ thuật.
+- **`DELETE /users/me` (xoá tài khoản) chỉ là baseline kỹ thuật, KHÔNG phải xác nhận tuân thủ pháp
+  lý đầy đủ** — endpoint ẩn danh hoá các trường định danh cá nhân trên bản ghi `User`
+  (`fullName`/`phone`/`avatarUrl`/`facebookUrl`/`tiktokUrl`/`email`/`username`) và bump
+  `passwordChangedAt` để vô hiệu JWT hiện có, nhưng KHÔNG cascade-xoá property/booking liên quan
+  (giữ lại vì đó là dữ liệu giao dịch/audit) và không tự động xoá media đã upload hay audit log đã
+  ghi tên. Cùng loại rủi ro pháp lý "cross-border transfer" ở trên — cần xác nhận với chuyên gia
+  pháp lý/tuân thủ về phạm vi "quyền xoá dữ liệu" theo Nghị định 13/2023/NĐ-CP (hay văn bản thay
+  thế) trước khi go-live chính thức với khách hàng thật.

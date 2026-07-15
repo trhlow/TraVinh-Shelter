@@ -196,6 +196,51 @@ class UserProfileServiceTest {
         assertThat(response.status()).isEqualTo(UserStatus.LOCKED);
     }
 
+    @Test
+    void deleteCurrentUserAnonymizesRedactedFieldsAndPreservesIdRoleCreatedAt() {
+        User user = user(UserRole.USER, UserStatus.ACTIVE, "Old name", "0900000000");
+        java.time.Instant createdAt = java.time.Instant.parse("2024-01-01T00:00:00Z");
+        java.time.Instant originalPasswordChangedAt = user.getPasswordChangedAt();
+        ReflectionTestUtils.setField(user, "createdAt", createdAt);
+        ReflectionTestUtils.setField(user, "facebookUrl", "https://facebook.com/user");
+        ReflectionTestUtils.setField(user, "tiktokUrl", "https://tiktok.com/@user");
+        ReflectionTestUtils.setField(user, "avatarUrl", "https://cdn.example.com/avatar.jpg");
+        UUID id = user.getId();
+        UserRole role = user.getRole();
+        when(users.findById(id)).thenReturn(Optional.of(user));
+
+        service().deleteCurrentUser(UserPrincipal.from(user));
+
+        assertThat(user.getId()).isEqualTo(id);
+        assertThat(user.getRole()).isEqualTo(role);
+        assertThat(user.getCreatedAt()).isEqualTo(createdAt);
+        assertThat(user.getFullName()).isEqualTo("Người dùng đã xoá");
+        assertThat(user.getPhone()).isNull();
+        assertThat(user.getAvatarUrl()).isNull();
+        assertThat(user.getFacebookUrl()).isNull();
+        assertThat(user.getTiktokUrl()).isNull();
+        assertThat(user.getEmail()).isEqualTo("deleted-" + id + "@congtinland.local");
+        assertThat(user.getUsername()).isEqualTo("deleted-" + id);
+        assertThat(user.getStatus()).isEqualTo(UserStatus.DELETED);
+        assertThat(user.getPasswordChangedAt()).isAfterOrEqualTo(originalPasswordChangedAt);
+    }
+
+    @Test
+    void sequentialDeletesOfDifferentUsersProduceUniquePlaceholdersWithoutCollision() {
+        User first = user(UserRole.USER, UserStatus.ACTIVE, "User One", "0900000001");
+        User second = user(UserRole.BROKER, UserStatus.ACTIVE, "User Two", "0900000002");
+        when(users.findById(first.getId())).thenReturn(Optional.of(first));
+        when(users.findById(second.getId())).thenReturn(Optional.of(second));
+
+        service().deleteCurrentUser(UserPrincipal.from(first));
+        service().deleteCurrentUser(UserPrincipal.from(second));
+
+        assertThat(first.getEmail()).isNotEqualTo(second.getEmail());
+        assertThat(first.getUsername()).isNotEqualTo(second.getUsername());
+        assertThat(first.getStatus()).isEqualTo(UserStatus.DELETED);
+        assertThat(second.getStatus()).isEqualTo(UserStatus.DELETED);
+    }
+
     private UserProfileService service() {
         return new UserProfileService(users, new BCryptPasswordEncoder(4), storage, jwt);
     }
