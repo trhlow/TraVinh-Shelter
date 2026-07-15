@@ -49,6 +49,13 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Audit dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Review dependencies in PR
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@v4
+
       - name: Lint
         run: npm run lint
 
