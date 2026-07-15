@@ -13,6 +13,7 @@ import Icon from '../components/ui/Icon.jsx';
 import LoginPage from './LoginPage.jsx';
 import { isInRange, percentDelta, previousRange, resolveDateRange } from '../utils/dateRange.js';
 import { downloadCsv } from '../utils/exportCsv.js';
+import { isGoogleMapsEmbedUrl } from '../utils/googleMapsEmbed.js';
 import {
   changePassword,
   createProperty,
@@ -1168,14 +1169,8 @@ function numericOrNull(value) {
 export function extractGoogleMapsEmbedSrc(pastedHtml) {
   const match = String(pastedHtml || '').match(/src=["']([^"']+)["']/i);
   if (!match) return null;
-  let url;
-  try {
-    url = new URL(match[1]);
-  } catch {
-    return null;
-  }
-  const isGoogleHost = url.hostname === 'google.com' || url.hostname.endsWith('.google.com');
-  return isGoogleHost ? url.href : null;
+  if (!isGoogleMapsEmbedUrl(match[1])) return null;
+  return new URL(match[1]).href;
 }
 
 function setListingValue(name, value, setListingForm) {
