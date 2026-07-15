@@ -55,6 +55,8 @@ jobs:
       - name: Review dependencies in PR
         if: github.event_name == 'pull_request'
         uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
 
       - name: Lint
         run: npm run lint
