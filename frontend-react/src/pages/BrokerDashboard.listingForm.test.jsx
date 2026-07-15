@@ -2,7 +2,7 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import BrokerDashboard, { propertyPayload } from './BrokerDashboard.jsx';
+import BrokerDashboard, { propertyPayload, extractGoogleMapsEmbedSrc } from './BrokerDashboard.jsx';
 import { fetchBrokerDashboard } from '../services/api.js';
 
 const { capturedHandlersRef } = vi.hoisted(() => ({
@@ -20,6 +20,41 @@ vi.mock('react-leaflet', () => ({
 vi.mock('leaflet', () => ({
   default: { divIcon: vi.fn(() => ({})) },
 }));
+
+describe('extractGoogleMapsEmbedSrc', () => {
+  test('extracts src from a full Google Maps iframe embed', () => {
+    const pasted = '<iframe src="https://www.google.com/maps/embed?pb=!1m17!1m12" width="600" height="450"></iframe>';
+    expect(extractGoogleMapsEmbedSrc(pasted)).toBe('https://www.google.com/maps/embed?pb=!1m17!1m12');
+  });
+
+  test('accepts single-quoted src attribute', () => {
+    const pasted = "<iframe src='https://www.google.com/maps/embed?pb=abc'></iframe>";
+    expect(extractGoogleMapsEmbedSrc(pasted)).toBe('https://www.google.com/maps/embed?pb=abc');
+  });
+
+  test('accepts a maps.google.com subdomain', () => {
+    const pasted = '<iframe src="https://maps.google.com/maps?q=1,2&output=embed"></iframe>';
+    expect(extractGoogleMapsEmbedSrc(pasted)).toBe('https://maps.google.com/maps?q=1,2&output=embed');
+  });
+
+  test('returns null when there is no src attribute', () => {
+    expect(extractGoogleMapsEmbedSrc('<iframe width="600"></iframe>')).toBeNull();
+  });
+
+  test('returns null when src is not a google.com host', () => {
+    const pasted = '<iframe src="https://evil.example.com/embed"></iframe>';
+    expect(extractGoogleMapsEmbedSrc(pasted)).toBeNull();
+  });
+
+  test('returns null for empty or whitespace-only input', () => {
+    expect(extractGoogleMapsEmbedSrc('')).toBeNull();
+    expect(extractGoogleMapsEmbedSrc('   ')).toBeNull();
+  });
+
+  test('returns null for a malformed URL in src', () => {
+    expect(extractGoogleMapsEmbedSrc('<iframe src="not a url"></iframe>')).toBeNull();
+  });
+});
 
 describe('propertyPayload — area from length × width', () => {
   const base = {

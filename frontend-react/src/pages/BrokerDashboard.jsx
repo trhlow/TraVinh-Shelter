@@ -1150,6 +1150,19 @@ function coordinateFormValue(value) {
   return Number.isFinite(parsed) ? String(parsed) : '';
 }
 
+export function extractGoogleMapsEmbedSrc(pastedHtml) {
+  const match = String(pastedHtml || '').match(/src=["']([^"']+)["']/i);
+  if (!match) return null;
+  let url;
+  try {
+    url = new URL(match[1]);
+  } catch {
+    return null;
+  }
+  const isGoogleHost = url.hostname === 'google.com' || url.hostname.endsWith('.google.com');
+  return isGoogleHost ? url.href : null;
+}
+
 function setListingValue(name, value, setListingForm) {
   setListingForm((current) => ({ ...current, [name]: value }));
 }
