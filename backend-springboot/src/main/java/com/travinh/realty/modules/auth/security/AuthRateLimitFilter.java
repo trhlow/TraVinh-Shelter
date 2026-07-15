@@ -20,11 +20,15 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     private static final Duration WINDOW = Duration.ofMinutes(1);
     private static final int DEFAULT_LIMIT = 10;
     private static final int SEARCH_LIMIT = 60;
+    private static final int GLOBAL_FALLBACK_LIMIT = 300;
+    private static final String GLOBAL_FALLBACK_GROUP = "__fallback__";
     private static final Pattern VIEWING_REQUEST_OTP_PATH = Pattern.compile("^/properties/[^/]+/viewings/request-otp$");
     private static final Pattern VIEWING_VERIFY_OTP_PATH = Pattern.compile("^/properties/[^/]+/viewings/verify-otp$");
 
     // path-group -> HTTP method + requests allowed per WINDOW per IP; tunable independently per group.
     private static final Map<String, RateLimitRule> RATE_LIMITED_GROUPS = rateLimitedGroups();
+    // Catches every request that no specific group above matches, so no path is ever fully unlimited (API4:2023).
+    private static final RateLimitRule GLOBAL_FALLBACK_RULE = new RateLimitRule(null, GLOBAL_FALLBACK_LIMIT);
 
     private record RateLimitRule(HttpMethod method, int limit) {
     }
@@ -44,7 +48,11 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         String group = rateLimitGroup(requestPath(request));
         RateLimitRule rule = group == null ? null : RATE_LIMITED_GROUPS.get(group);
-        if (rule == null || !rule.method().matches(request.getMethod()) || allow(request, group, rule)) {
+        boolean specificRuleApplies = rule != null && rule.method().matches(request.getMethod());
+        boolean allowed = specificRuleApplies
+                ? allow(request, group, rule)
+                : allow(request, GLOBAL_FALLBACK_GROUP, GLOBAL_FALLBACK_RULE);
+        if (allowed) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -71,6 +79,12 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         if ("/properties".equals(path)) {
             return "/properties";
         }
+        if ("/auth/forgot-password".equals(path)) {
+            return "/auth/forgot-password";
+        }
+        if ("/auth/reset-password".equals(path)) {
+            return "/auth/reset-password";
+        }
         return null;
     }
 
@@ -85,6 +99,8 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         groups.put("/properties/*/viewings/request-otp", new RateLimitRule(HttpMethod.POST, DEFAULT_LIMIT));
         groups.put("/properties/*/viewings/verify-otp", new RateLimitRule(HttpMethod.POST, DEFAULT_LIMIT));
         groups.put("/properties", new RateLimitRule(HttpMethod.GET, SEARCH_LIMIT));
+        groups.put("/auth/forgot-password", new RateLimitRule(HttpMethod.POST, DEFAULT_LIMIT));
+        groups.put("/auth/reset-password", new RateLimitRule(HttpMethod.POST, DEFAULT_LIMIT));
         return groups;
     }
 
