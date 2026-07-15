@@ -5,7 +5,8 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 vi.mock('../services/api.js', () => ({
   fetchPropertyDetail: vi.fn(),
   fetchPropertyMedia: vi.fn().mockResolvedValue([]),
-  createViewing: vi.fn().mockResolvedValue({ id: 'mock-viewing-1', status: 'PENDING' }),
+  requestViewingOtp: vi.fn().mockResolvedValue({ message: 'OK', otpRequired: false }),
+  verifyViewingOtp: vi.fn().mockResolvedValue({ id: 'mock-viewing-1', status: 'PENDING' }),
 }));
 
 import { fetchPropertyDetail } from '../services/api.js';

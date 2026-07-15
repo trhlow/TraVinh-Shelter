@@ -5,10 +5,11 @@ import userEvent from '@testing-library/user-event';
 import BookingForm from './BookingForm.jsx';
 
 vi.mock('../../services/api.js', () => ({
-  createViewing: vi.fn(() => Promise.resolve({ id: 'mock-viewing-1', status: 'PENDING' })),
+  requestViewingOtp: vi.fn(() => Promise.resolve({ message: 'OK', otpRequired: false })),
+  verifyViewingOtp: vi.fn(() => Promise.resolve({ id: 'mock-viewing-1', status: 'PENDING' })),
 }));
 
-import { createViewing } from '../../services/api.js';
+import { requestViewingOtp, verifyViewingOtp } from '../../services/api.js';
 
 afterEach(() => {
   cleanup();
@@ -19,6 +20,13 @@ function renderForm(overrides = {}) {
   return render(
     <BookingForm propertyId="p-test" propertyTitle="Nhà trọ test" {...overrides} />,
   );
+}
+
+async function fillAndSubmitForm({ name = 'Trần Văn B', phone = '0901234567', note } = {}) {
+  await userEvent.type(screen.getByLabelText(/Tên khách hàng/i), name);
+  await userEvent.type(screen.getByLabelText(/Số điện thoại/i), phone);
+  if (note) await userEvent.type(screen.getByLabelText(/Ghi chú/i), note);
+  await userEvent.click(screen.getByRole('button', { name: /Đặt lịch hẹn/i }));
 }
 
 describe('BookingForm', () => {
@@ -39,12 +47,12 @@ describe('BookingForm', () => {
     expect(screen.queryByLabelText(/Nuôi thú cưng/i)).not.toBeInTheDocument();
   });
 
-  test('shows validation errors and does NOT call createViewing when name+phone empty', async () => {
+  test('shows validation errors and does NOT call requestViewingOtp when name+phone empty', async () => {
     renderForm();
     await userEvent.click(screen.getByRole('button', { name: /Đặt lịch hẹn/i }));
     expect(await screen.findByText(/Vui lòng nhập tên khách hàng/i)).toBeInTheDocument();
     expect(screen.getByText(/Vui lòng nhập số điện thoại/i)).toBeInTheDocument();
-    expect(createViewing).not.toHaveBeenCalled();
+    expect(requestViewingOtp).not.toHaveBeenCalled();
   });
 
   test('rejects an invalid VN mobile number and does not submit', async () => {
@@ -53,34 +61,99 @@ describe('BookingForm', () => {
     await userEvent.type(screen.getByLabelText(/Số điện thoại/i), '0123456789');
     await userEvent.click(screen.getByRole('button', { name: /Đặt lịch hẹn/i }));
     expect(await screen.findByText(/Số điện thoại di động không hợp lệ/i)).toBeInTheDocument();
-    expect(createViewing).not.toHaveBeenCalled();
+    expect(requestViewingOtp).not.toHaveBeenCalled();
   });
 
-  test('calls createViewing once with only propertyTitle, visitorName, visitorPhone, note', async () => {
+  test('when OTP is not required, submits straight through and shows success', async () => {
     renderForm();
-    await userEvent.type(screen.getByLabelText(/Tên khách hàng/i), 'Trần Văn B');
-    await userEvent.type(screen.getByLabelText(/Số điện thoại/i), '0901234567');
-    await userEvent.type(screen.getByLabelText(/Ghi chú/i), 'Xem vào cuối tuần');
-    await userEvent.click(screen.getByRole('button', { name: /Đặt lịch hẹn/i }));
+    await fillAndSubmitForm({ note: 'Xem vào cuối tuần' });
 
-    await waitFor(() => expect(createViewing).toHaveBeenCalledTimes(1));
-    const [calledId, calledPayload] = createViewing.mock.calls[0];
+    await waitFor(() => expect(requestViewingOtp).toHaveBeenCalledTimes(1));
+    expect(requestViewingOtp).toHaveBeenCalledWith('p-test', { visitorPhone: '0901234567' });
+
+    await waitFor(() => expect(verifyViewingOtp).toHaveBeenCalledTimes(1));
+    const [calledId, calledPayload] = verifyViewingOtp.mock.calls[0];
     expect(calledId).toBe('p-test');
-    expect(calledPayload).toEqual({
+    expect(calledPayload.booking).toEqual({
       propertyTitle: 'Nhà trọ test',
       visitorName: 'Trần Văn B',
       visitorPhone: '0901234567',
       note: 'Xem vào cuối tuần',
     });
-  });
-
-  test('shows success message after valid submit', async () => {
-    renderForm();
-    await userEvent.type(screen.getByLabelText(/Tên khách hàng/i), 'Lê Thị C');
-    await userEvent.type(screen.getByLabelText(/Số điện thoại/i), '0912345678');
-    await userEvent.click(screen.getByRole('button', { name: /Đặt lịch hẹn/i }));
+    expect(calledPayload.otpCode).toMatch(/^\d{6}$/);
 
     expect(await screen.findByText(/Đã gửi yêu cầu đặt lịch/i)).toBeInTheDocument();
+  });
+
+  test('when OTP is required, shows the OTP step and does not call verifyViewingOtp yet', async () => {
+    requestViewingOtp.mockResolvedValueOnce({ message: 'Mã OTP đã được gửi qua SMS.', otpRequired: true });
+    renderForm();
+    await fillAndSubmitForm();
+
+    expect(await screen.findByLabelText(/Mã OTP/i)).toBeInTheDocument();
+    expect(verifyViewingOtp).not.toHaveBeenCalled();
+  });
+
+  test('submits the entered OTP code and shows success', async () => {
+    requestViewingOtp.mockResolvedValueOnce({ message: 'Mã OTP đã được gửi qua SMS.', otpRequired: true });
+    renderForm();
+    await fillAndSubmitForm();
+
+    await userEvent.type(await screen.findByLabelText(/Mã OTP/i), '123456');
+    await userEvent.click(screen.getByRole('button', { name: /Xác nhận/i }));
+
+    await waitFor(() => expect(verifyViewingOtp).toHaveBeenCalledTimes(1));
+    const [, calledPayload] = verifyViewingOtp.mock.calls[0];
+    expect(calledPayload.otpCode).toBe('123456');
+    expect(calledPayload.booking).toEqual({
+      propertyTitle: 'Nhà trọ test',
+      visitorName: 'Trần Văn B',
+      visitorPhone: '0901234567',
+      note: '',
+    });
+
+    expect(await screen.findByText(/Đã gửi yêu cầu đặt lịch/i)).toBeInTheDocument();
+  });
+
+  test('going back from the OTP step returns to the form', async () => {
+    requestViewingOtp.mockResolvedValueOnce({ message: 'Mã OTP đã được gửi qua SMS.', otpRequired: true });
+    renderForm();
+    await fillAndSubmitForm();
+    await screen.findByLabelText(/Mã OTP/i);
+
+    await userEvent.click(screen.getByRole('button', { name: /Đổi số điện thoại/i }));
+
+    expect(screen.getByLabelText(/Tên khách hàng/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Mã OTP/i)).not.toBeInTheDocument();
+  });
+
+  test('shows an inline error and allows retry when the OTP code is wrong', async () => {
+    requestViewingOtp.mockResolvedValueOnce({ message: 'Mã OTP đã được gửi qua SMS.', otpRequired: true });
+    verifyViewingOtp.mockRejectedValueOnce(new Error('Mã OTP không hợp lệ hoặc đã hết hạn'));
+    renderForm();
+    await fillAndSubmitForm();
+
+    await userEvent.type(await screen.findByLabelText(/Mã OTP/i), '000000');
+    await userEvent.click(screen.getByRole('button', { name: /Xác nhận/i }));
+
+    expect(await screen.findByText(/Mã OTP không hợp lệ hoặc đã hết hạn/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Mã OTP/i)).toBeInTheDocument();
+  });
+
+  test('shows the real error message instead of a generic fallback when request-otp fails', async () => {
+    requestViewingOtp.mockRejectedValueOnce(new Error('Không tìm thấy bất động sản'));
+    renderForm();
+    await fillAndSubmitForm();
+
+    expect(await screen.findByText('Không tìm thấy bất động sản')).toBeInTheDocument();
+  });
+
+  test('falls back to a generic message when the failure has no message (e.g. network error)', async () => {
+    requestViewingOtp.mockRejectedValueOnce(new Error());
+    renderForm();
+    await fillAndSubmitForm();
+
+    expect(await screen.findByText(/Có lỗi xảy ra. Vui lòng thử lại hoặc liên hệ trực tiếp\./i)).toBeInTheDocument();
   });
 
   test('never renders commission-related text', () => {

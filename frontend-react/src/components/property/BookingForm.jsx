@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Icon from '../ui/Icon.jsx';
-import { createViewing } from '../../services/api.js';
+import { requestViewingOtp, verifyViewingOtp } from '../../services/api.js';
 import { VN_MOBILE_PATTERN } from '../../utils/validation.js';
 
 function validate(fields) {
@@ -14,6 +14,11 @@ function validate(fields) {
   return errors;
 }
 
+// verifyOtpAndCreate ignores otpCode entirely when OTP is not required server-side, but the
+// field is still bound by a @Pattern(^\d{6}$) validator, so a syntactically valid placeholder
+// is needed to pass that check.
+const OTP_NOT_REQUIRED_PLACEHOLDER_CODE = '000000';
+
 export default function BookingForm({ propertyId, propertyTitle }) {
   const [fields, setFields] = useState({
     visitorName: '',
@@ -22,14 +27,30 @@ export default function BookingForm({ propertyId, propertyTitle }) {
   });
 
   const [errors, setErrors] = useState({});
+  const [step, setStep] = useState('form');
   const [sending, setSending] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpError, setOtpError] = useState('');
 
   function handleChange(e) {
     const { name, value } = e.target;
     setFields((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
+  }
+
+  function booking() {
+    return {
+      propertyTitle,
+      visitorName: fields.visitorName.trim(),
+      visitorPhone: fields.visitorPhone.trim(),
+      note: fields.note.trim(),
+    };
+  }
+
+  async function submitBooking(code) {
+    await verifyViewingOtp(propertyId, { booking: booking(), otpCode: code });
+    setStep('success');
   }
 
   async function handleSubmit(e) {
@@ -44,21 +65,45 @@ export default function BookingForm({ propertyId, propertyTitle }) {
     setSubmitError('');
 
     try {
-      await createViewing(propertyId, {
-        propertyTitle,
-        visitorName: fields.visitorName.trim(),
-        visitorPhone: fields.visitorPhone.trim(),
-        note: fields.note.trim() || undefined,
-      });
-      setSubmitted(true);
-    } catch {
-      setSubmitError('Có lỗi xảy ra. Vui lòng thử lại hoặc liên hệ trực tiếp.');
+      const response = await requestViewingOtp(propertyId, { visitorPhone: fields.visitorPhone.trim() });
+      if (response.otpRequired) {
+        setStep('otp');
+      } else {
+        await submitBooking(OTP_NOT_REQUIRED_PLACEHOLDER_CODE);
+      }
+    } catch (error) {
+      setSubmitError(error.message || 'Có lỗi xảy ra. Vui lòng thử lại hoặc liên hệ trực tiếp.');
     } finally {
       setSending(false);
     }
   }
 
-  if (submitted) {
+  function handleBackToForm() {
+    setStep('form');
+    setOtpCode('');
+    setOtpError('');
+  }
+
+  async function handleVerifyOtp(e) {
+    e.preventDefault();
+    if (!/^\d{6}$/.test(otpCode)) {
+      setOtpError('Mã OTP phải gồm 6 chữ số.');
+      return;
+    }
+
+    setSending(true);
+    setOtpError('');
+
+    try {
+      await submitBooking(otpCode);
+    } catch (error) {
+      setOtpError(error.message || 'Có lỗi xảy ra. Vui lòng thử lại hoặc liên hệ trực tiếp.');
+    } finally {
+      setSending(false);
+    }
+  }
+
+  if (step === 'success') {
     return (
       <div className="booking-form-success">
         <Icon name="CalendarCheck" size={32} className="icon-accent" />
@@ -66,6 +111,69 @@ export default function BookingForm({ propertyId, propertyTitle }) {
           Đã gửi yêu cầu đặt lịch, môi giới sẽ liên hệ bạn sớm.
         </p>
       </div>
+    );
+  }
+
+  if (step === 'otp') {
+    return (
+      <form className="booking-form" onSubmit={handleVerifyOtp} noValidate>
+        <h3 className="booking-form-title">
+          <Icon name="Calendar" size={18} className="icon-accent" />
+          Xác minh OTP
+        </h3>
+
+        <p className="booking-form-success-text">
+          Đã gửi mã OTP đến số {fields.visitorPhone.trim()}.
+        </p>
+
+        <div className="booking-form-field">
+          <label className="booking-form-label" htmlFor="bf-otpCode">
+            Mã OTP <span className="booking-form-required">*</span>
+          </label>
+          <input
+            id="bf-otpCode"
+            name="otpCode"
+            type="text"
+            inputMode="numeric"
+            maxLength={6}
+            placeholder="123456"
+            className={`booking-form-input${otpError ? ' booking-form-input--error' : ''}`}
+            value={otpCode}
+            onChange={(e) => {
+              setOtpCode(e.target.value);
+              if (otpError) setOtpError('');
+            }}
+          />
+          {otpError && <p className="booking-form-error">{otpError}</p>}
+        </div>
+
+        <button
+          type="submit"
+          className="btn btn-primary btn-md btn-full booking-form-submit"
+          disabled={sending}
+        >
+          {sending ? (
+            <>
+              <Icon name="Clock" size={16} />
+              Đang xác minh...
+            </>
+          ) : (
+            <>
+              <Icon name="CalendarCheck" size={16} />
+              Xác nhận
+            </>
+          )}
+        </button>
+
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm btn-full"
+          onClick={handleBackToForm}
+          disabled={sending}
+        >
+          Đổi số điện thoại
+        </button>
+      </form>
     );
   }
 

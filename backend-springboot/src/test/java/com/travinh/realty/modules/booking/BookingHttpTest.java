@@ -11,12 +11,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.travinh.realty.common.config.JwtProperties;
 import com.travinh.realty.common.config.SecurityConfig;
-import com.travinh.realty.common.dto.MessageResponse;
 import com.travinh.realty.common.exception.GlobalExceptionHandler;
 import com.travinh.realty.modules.admin.AuditService;
 import com.travinh.realty.modules.auth.security.JpaUserDetailsService;
 import com.travinh.realty.modules.auth.security.JwtService;
 import com.travinh.realty.modules.auth.security.UserPrincipal;
+import com.travinh.realty.modules.booking.dto.RequestViewingOtpResponse;
 import com.travinh.realty.modules.booking.dto.ViewingResponse;
 import com.travinh.realty.modules.booking.model.AppointmentStatus;
 import com.travinh.realty.modules.user.model.User;
@@ -60,12 +60,13 @@ class BookingHttpTest {
     void publicCanRequestViewingOtpWithoutToken() throws Exception {
         UUID propertyId = UUID.randomUUID();
         when(bookingService.requestOtp(eq(propertyId), any()))
-                .thenReturn(new MessageResponse("Mã OTP đã được gửi qua SMS."));
+                .thenReturn(new RequestViewingOtpResponse("Mã OTP đã được gửi qua SMS.", true));
 
         mockMvc.perform(post("/properties/{id}/viewings/request-otp", propertyId)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"visitorPhone\":\"0900000000\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Mã OTP đã được gửi qua SMS."));
+                .andExpect(jsonPath("$.message").value("Mã OTP đã được gửi qua SMS."))
+                .andExpect(jsonPath("$.otpRequired").value(true));
     }
 
     @Test
@@ -210,7 +211,7 @@ class BookingHttpTest {
     @Test
     void repeatedViewingOtpRequestsAreRateLimited() throws Exception {
         UUID propertyId = UUID.randomUUID();
-        when(bookingService.requestOtp(any(), any())).thenReturn(new MessageResponse("Mã OTP đã được gửi qua SMS."));
+        when(bookingService.requestOtp(any(), any())).thenReturn(new RequestViewingOtpResponse("Mã OTP đã được gửi qua SMS.", true));
         for (int attempt = 0; attempt < 10; attempt++) {
             mockMvc.perform(post("/properties/{id}/viewings/request-otp", propertyId)
                             .header("X-Forwarded-For", "203.0.113.77")
