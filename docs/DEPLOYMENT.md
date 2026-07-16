@@ -133,6 +133,12 @@ Vì vậy, xác nhận quyền của admin user **trước khi deploy lần đ�
   runtime). Đây là phương án tạm, chấp nhận đánh đổi mất tính năng least-privilege cho tới khi xin
   được quyền từ DO — cần khôi phục migration khi có quyền.
 
+**Migration V23 (pg_stat_statements)**: chạy an toàn dù DO Managed Postgres có preload extension
+này hay không (tự bỏ qua nếu thiếu `shared_preload_libraries`, không chặn deploy). Để tận dụng
+monitoring slow-query thật ở prod, vào DO control panel → database cluster → xác nhận
+`pg_stat_statements` nằm trong danh sách extension được hỗ trợ/bật sẵn trước khi coi đây là nguồn
+giám sát chính thức.
+
 ### GitHub Secrets (cho CI/CD tự động)
 
 Vào repo → Settings → Secrets and variables → Actions, thêm:
@@ -233,15 +239,19 @@ upload lên object storage) — lưu trên cùng VPS không bảo vệ khỏi m�
   (S3-compatible) khi ngân sách/thời gian cho phép — sẽ cần đổi `infrastructure/storage/` sang
   implementation mới thay vì `LocalMediaStorage`.
 - **2 nhà cung cấp khác nhau** (Vietnix VPS Việt Nam, DigitalOcean DB Singapore) — có cross-region
-  latency giữa app và DB, nên đo thử sau khi go-live. Nghị định 13/2023/NĐ-CP: dữ liệu lưu trữ ở DO
-  Singapore về bản chất là "chuyển dữ liệu ra nước ngoài" dù chỉ là tầng lưu trữ — cần xác nhận với
-  chuyên gia pháp lý/tuân thủ trước khi go-live chính thức với khách hàng thật, đây là quyết định
-  pháp lý ngoài phạm vi kỹ thuật.
+  latency giữa app và DB, nên đo thử sau khi go-live. **Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15**
+  (hiệu lực từ 01/01/2026, thay thế Nghị định 13/2023/NĐ-CP): dữ liệu lưu trữ ở DO Singapore về bản
+  chất là "chuyển dữ liệu ra nước ngoài" dù chỉ là tầng lưu trữ — cần xác nhận với chuyên gia pháp
+  lý/tuân thủ trước khi go-live chính thức với khách hàng thật, đây là quyết định pháp lý ngoài phạm
+  vi kỹ thuật. Luật mới còn có nghĩa vụ thông báo vi phạm dữ liệu trong 72 giờ và có thể yêu cầu đánh
+  giá tác động (DPIA)/chỉ định DPO nếu xử lý dữ liệu cá nhân nhạy cảm — cần rà soát riêng, không phải
+  việc kỹ thuật thuần tuý.
 - **`DELETE /users/me` (xoá tài khoản) chỉ là baseline kỹ thuật, KHÔNG phải xác nhận tuân thủ pháp
   lý đầy đủ** — endpoint ẩn danh hoá các trường định danh cá nhân trên bản ghi `User`
   (`fullName`/`phone`/`avatarUrl`/`facebookUrl`/`tiktokUrl`/`email`/`username`) và bump
   `passwordChangedAt` để vô hiệu JWT hiện có, nhưng KHÔNG cascade-xoá property/booking liên quan
   (giữ lại vì đó là dữ liệu giao dịch/audit) và không tự động xoá media đã upload hay audit log đã
   ghi tên. Cùng loại rủi ro pháp lý "cross-border transfer" ở trên — cần xác nhận với chuyên gia
-  pháp lý/tuân thủ về phạm vi "quyền xoá dữ liệu" theo Nghị định 13/2023/NĐ-CP (hay văn bản thay
-  thế) trước khi go-live chính thức với khách hàng thật.
+  pháp lý/tuân thủ về phạm vi "quyền xoá dữ liệu" theo Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15
+  (hiệu lực từ 01/01/2026, thay thế Nghị định 13/2023/NĐ-CP) trước khi go-live chính thức với khách
+  hàng thật.

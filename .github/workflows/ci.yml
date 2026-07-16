@@ -52,12 +52,6 @@ jobs:
       - name: Audit dependencies
         run: npm audit --omit=dev --audit-level=high
 
-      - name: Review dependencies in PR
-        if: github.event_name == 'pull_request'
-        uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: high
-
       - name: Lint
         run: npm run lint
 
@@ -66,6 +60,35 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  secret-scan:
+    name: Secret scanning (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        run: |
+          # Pinned by digest, not a mutable tag: security-scanning tools in this CI
+          # are always pinned immutably (same policy as the Trivy pin above).
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f detect \
+            --source /repo --redact --exit-code 1 --verbose
+
+  dependency-review:
+    name: Dependency review (SCA, repo-wide)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Review dependencies
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
 
   compose:
     name: Docker Compose config
@@ -114,23 +137,47 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push backend image
+      - name: Build backend image
         uses: docker/build-push-action@v6
         with:
           context: ./backend-springboot
-          push: true
+          push: false
+          load: true
           tags: ghcr.io/${{ github.repository_owner }}/travinh-shelter-backend:latest
 
-      - name: Build and push frontend image
+      - name: Scan backend image for vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0 — commit SHA; GHSA-69fq-xp46-6x23 tag force-push on 2026-03-19 (do not switch to mutable tag)
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/travinh-shelter-backend:latest
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+
+      - name: Push backend image
+        run: docker push ghcr.io/${{ github.repository_owner }}/travinh-shelter-backend:latest
+
+      - name: Build frontend image
         uses: docker/build-push-action@v6
         with:
           context: ./frontend-react
-          push: true
+          push: false
+          load: true
           build-args: |
             VITE_API_BASE_URL=/api/v1
             VITE_USE_MOCK_API=false
             VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }}
           tags: ghcr.io/${{ github.repository_owner }}/travinh-shelter-frontend:latest
+
+      - name: Scan frontend image for vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0 — commit SHA; GHSA-69fq-xp46-6x23 tag force-push on 2026-03-19 (do not switch to mutable tag)
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/travinh-shelter-frontend:latest
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+
+      - name: Push frontend image
+        run: docker push ghcr.io/${{ github.repository_owner }}/travinh-shelter-frontend:latest
 
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.0.3
