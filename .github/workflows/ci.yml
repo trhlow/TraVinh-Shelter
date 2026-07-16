@@ -52,12 +52,6 @@ jobs:
       - name: Audit dependencies
         run: npm audit --omit=dev --audit-level=high
 
-      - name: Review dependencies in PR
-        if: github.event_name == 'pull_request'
-        uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: high
-
       - name: Lint
         run: npm run lint
 
@@ -80,6 +74,19 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest detect \
             --source /repo --redact --exit-code 1 --verbose
+
+  dependency-review:
+    name: Dependency review (SCA, repo-wide)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Review dependencies
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
 
   compose:
     name: Docker Compose config
