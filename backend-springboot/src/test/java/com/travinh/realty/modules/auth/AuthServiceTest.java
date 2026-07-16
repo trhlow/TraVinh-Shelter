@@ -5,6 +5,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.travinh.realty.common.config.JwtProperties;
 import com.travinh.realty.modules.auth.security.InMemoryRateLimiter;
 import com.travinh.realty.modules.auth.security.JwtService;
@@ -18,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -79,6 +84,29 @@ class AuthServiceTest {
 
         for (int attempt = 0; attempt < 10; attempt++) {
             assertThat(service.login(request).email()).isEqualTo("minh@example.com");
+        }
+    }
+
+    @Test
+    void loginFailureIsLoggedAsSecurityEvent() {
+        Logger logger = (Logger) LoggerFactory.getLogger(AuthService.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("bad credentials"));
+            AuthService service = new AuthService(users, encoder, authenticationManager, jwt, properties,
+                    new InMemoryRateLimiter());
+
+            assertThatThrownBy(() -> service.login(new com.travinh.realty.modules.auth.dto.LoginRequest(
+                    "audit-test@example.com", "wrong-password")))
+                    .isInstanceOf(BadCredentialsException.class);
+
+            assertThat(appender.list)
+                    .anyMatch(event -> event.getLevel() == Level.WARN
+                            && event.getFormattedMessage().contains("audit-test@example.com"));
+        } finally {
+            logger.detachAppender(appender);
         }
     }
 }

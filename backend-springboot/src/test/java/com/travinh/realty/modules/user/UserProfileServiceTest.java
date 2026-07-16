@@ -5,6 +5,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.travinh.realty.modules.auth.security.JwtService;
 import com.travinh.realty.modules.auth.security.UserPrincipal;
 import com.travinh.realty.infrastructure.storage.LocalMediaStorage;
@@ -23,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -145,6 +150,29 @@ class UserProfileServiceTest {
         assertThat(updatedHash).isNotEqualTo(originalHash);
         assertThat(encoder.matches("new-password-secure", updatedHash)).isTrue();
         org.mockito.Mockito.verify(jwt).revoke("current-jwt-token");
+    }
+
+    @Test
+    void changePasswordIsLoggedAsSecurityEvent() {
+        Logger logger = (Logger) LoggerFactory.getLogger(UserProfileService.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(4);
+            User user = user(UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+            ReflectionTestUtils.setField(user, "passwordHash", encoder.encode("old-password"));
+            when(users.findById(user.getId())).thenReturn(Optional.of(user));
+
+            service().changePassword(UserPrincipal.from(user),
+                    new ChangePasswordRequest("old-password", "new-password-secure"), "current-jwt-token");
+
+            assertThat(appender.list)
+                    .anyMatch(event -> event.getLevel() == Level.INFO
+                            && event.getFormattedMessage().contains(user.getId().toString()));
+        } finally {
+            logger.detachAppender(appender);
+        }
     }
 
     @Test

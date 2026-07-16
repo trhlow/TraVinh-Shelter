@@ -9,6 +9,8 @@ import com.travinh.realty.modules.auth.security.UserPrincipal;
 import com.travinh.realty.modules.user.model.User;
 import com.travinh.realty.modules.user.repository.UserRepository;
 import java.time.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,6 +25,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class AuthService {
     private static final int MAX_FAILED_LOGINS_PER_ACCOUNT = 5;
     private static final Duration ACCOUNT_LOCKOUT_WINDOW = Duration.ofMinutes(15);
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private final UserRepository users; private final PasswordEncoder encoder; private final AuthenticationManager auth;
     private final JwtService jwt; private final JwtProperties properties; private final RateLimiter rateLimiter;
@@ -38,6 +41,7 @@ public class AuthService {
         try {
             authentication = auth.authenticate(new UsernamePasswordAuthenticationToken(email, request.password()));
         } catch (AuthenticationException exception) {
+            log.warn("Login failed for email={}", email);
             if (!rateLimiter.tryAcquire("login-account:" + email, MAX_FAILED_LOGINS_PER_ACCOUNT, ACCOUNT_LOCKOUT_WINDOW)) {
                 throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Quá nhiều yêu cầu. Vui lòng thử lại sau.");
             }
