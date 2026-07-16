@@ -128,23 +128,47 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push backend image
+      - name: Build backend image
         uses: docker/build-push-action@v6
         with:
           context: ./backend-springboot
-          push: true
+          push: false
+          load: true
           tags: ghcr.io/${{ github.repository_owner }}/travinh-shelter-backend:latest
 
-      - name: Build and push frontend image
+      - name: Scan backend image for vulnerabilities
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/travinh-shelter-backend:latest
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+
+      - name: Push backend image
+        run: docker push ghcr.io/${{ github.repository_owner }}/travinh-shelter-backend:latest
+
+      - name: Build frontend image
         uses: docker/build-push-action@v6
         with:
           context: ./frontend-react
-          push: true
+          push: false
+          load: true
           build-args: |
             VITE_API_BASE_URL=/api/v1
             VITE_USE_MOCK_API=false
             VITE_SENTRY_DSN=${{ secrets.VITE_SENTRY_DSN }}
           tags: ghcr.io/${{ github.repository_owner }}/travinh-shelter-frontend:latest
+
+      - name: Scan frontend image for vulnerabilities
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/travinh-shelter-frontend:latest
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+
+      - name: Push frontend image
+        run: docker push ghcr.io/${{ github.repository_owner }}/travinh-shelter-frontend:latest
 
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.0.3
