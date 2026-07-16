@@ -111,6 +111,28 @@ class AuthRateLimitFilterTest {
     }
 
     @Test
+    void rateLimitsLoginVerifyOtpAfterTenRequestsPerMinutePerIp() throws Exception {
+        AuthRateLimitFilter filter = new AuthRateLimitFilter(new ObjectMapper(), new InMemoryRateLimiter(),
+                new ClientIpResolver(List.of()));
+        FilterChain chain = (request, response) -> {};
+
+        for (int i = 0; i < 10; i++) {
+            MockHttpServletRequest request = new MockHttpServletRequest("POST", "/auth/login/verify-otp");
+            request.setRemoteAddr("203.0.113.14");
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            filter.doFilterInternal(request, response, chain);
+            assertThat(response.getStatus()).isEqualTo(200);
+        }
+
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/auth/login/verify-otp");
+        request.setRemoteAddr("203.0.113.14");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        filter.doFilterInternal(request, response, chain);
+
+        assertThat(response.getStatus()).isEqualTo(429);
+    }
+
+    @Test
     void unmatchedPathIsRateLimitedByGlobalFallbackAfterThreeHundredRequestsPerMinutePerIp() throws Exception {
         AuthRateLimitFilter filter = new AuthRateLimitFilter(new ObjectMapper(), new InMemoryRateLimiter(),
                 new ClientIpResolver(List.of()));

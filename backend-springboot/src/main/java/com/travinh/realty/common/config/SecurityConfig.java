@@ -66,7 +66,7 @@ public class SecurityConfig {
                         .accessDeniedHandler((request, response, accessDeniedException) ->
                                 writeApiError(response, objectMapper, HttpStatus.FORBIDDEN, "Truy cập bị từ chối")))
                 .authorizeHttpRequests(authorize -> authorize.requestMatchers(
-                                "/auth/login", "/auth/forgot-password", "/auth/reset-password", "/error").permitAll()
+                                "/auth/login", "/auth/login/verify-otp", "/auth/forgot-password", "/auth/reset-password", "/error").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/properties/**", "/categories/**", "/brokers/**", "/media/**").permitAll()

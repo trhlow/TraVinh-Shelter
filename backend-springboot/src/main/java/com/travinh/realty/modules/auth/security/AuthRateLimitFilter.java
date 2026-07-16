@@ -70,6 +70,9 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         if ("/auth/login".equals(path)) {
             return "/auth/login";
         }
+        if ("/auth/login/verify-otp".equals(path)) {
+            return "/auth/login/verify-otp";
+        }
         if (VIEWING_REQUEST_OTP_PATH.matcher(path).matches()) {
             return "/properties/*/viewings/request-otp";
         }
@@ -96,6 +99,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     private static Map<String, RateLimitRule> rateLimitedGroups() {
         Map<String, RateLimitRule> groups = new LinkedHashMap<>();
         groups.put("/auth/login", new RateLimitRule(HttpMethod.POST, DEFAULT_LIMIT));
+        groups.put("/auth/login/verify-otp", new RateLimitRule(HttpMethod.POST, DEFAULT_LIMIT));
         groups.put("/properties/*/viewings/request-otp", new RateLimitRule(HttpMethod.POST, DEFAULT_LIMIT));
         groups.put("/properties/*/viewings/verify-otp", new RateLimitRule(HttpMethod.POST, DEFAULT_LIMIT));
         groups.put("/properties", new RateLimitRule(HttpMethod.GET, SEARCH_LIMIT));
