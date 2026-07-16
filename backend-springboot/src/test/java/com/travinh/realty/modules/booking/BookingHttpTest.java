@@ -119,7 +119,7 @@ class BookingHttpTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401));
 
-        User user = user("user@example.com", UserRole.USER);
+        User user = user("admin@example.com", UserRole.ADMIN);
         authenticate(user);
         mockMvc.perform(get("/viewings/mine").header("Authorization", bearer(user)))
                 .andExpect(status().isForbidden())
@@ -199,7 +199,7 @@ class BookingHttpTest {
     @Test
     void nonBrokerCannotUpdateBrokerViewingStatus() throws Exception {
         UUID appointmentId = UUID.randomUUID();
-        User regularUser = user("user@example.com", UserRole.USER);
+        User regularUser = user("admin@example.com", UserRole.ADMIN);
         authenticate(regularUser);
 
         mockMvc.perform(patch("/viewings/mine/{id}/status", appointmentId)

@@ -58,6 +58,7 @@ class SecurityHttpTest {
     @Test
     void nonBrokerUserIsDeniedAccessToBrokerOnlyEndpoint() throws Exception {
         User user = user("user@example.com", UserStatus.ACTIVE);
+        ReflectionTestUtils.setField(user, "role", com.travinh.realty.modules.user.model.UserRole.ADMIN);
         when(userDetailsService.loadUserByUsername(user.getEmail())).thenReturn(UserPrincipal.from(user));
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/properties/mine")

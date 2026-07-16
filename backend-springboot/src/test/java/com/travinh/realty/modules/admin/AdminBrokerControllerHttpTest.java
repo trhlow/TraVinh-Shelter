@@ -123,7 +123,7 @@ class AdminBrokerControllerHttpTest {
         authenticate(admin);
         UUID userId = UUID.randomUUID();
         UserProfileResponse response = new UserProfileResponse(userId, "huy", "Phạm Quốc Huy", "0900000222",
-                null, "huy@example.com", null, null, UserRole.USER, UserStatus.LOCKED, Instant.now());
+                null, "huy@example.com", null, null, UserRole.BROKER, UserStatus.LOCKED, Instant.now());
         when(profiles.updateUserStatus(eq(userId), eq(UserStatus.LOCKED))).thenReturn(response);
 
         mockMvc.perform(patch("/admin/users/{userId}/status", userId)

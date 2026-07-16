@@ -111,8 +111,7 @@ class PropertyHttpTest {
     }
 
     @Test
-    void brokerCreatesAvailablePropertyAndUserCannotCreate() throws Exception {
-        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+    void brokerCreatesAvailablePropertyAndNonBrokerCannotCreate() throws Exception {
         User admin = user("admin@example.com", UserRole.ADMIN, UserStatus.ACTIVE, "Admin", "0900000000");
         User lockedBroker = user("locked@example.com", UserRole.BROKER, UserStatus.LOCKED, "Locked", "0900000000");
         User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
@@ -126,12 +125,6 @@ class PropertyHttpTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.status").value(401));
-
-        authenticate(user);
-        mockMvc.perform(post("/properties").header("Authorization", bearer(user))
-                        .contentType(MediaType.APPLICATION_JSON).content(payload))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.status").value(403));
 
         authenticate(admin);
         mockMvc.perform(post("/properties").header("Authorization", bearer(admin))

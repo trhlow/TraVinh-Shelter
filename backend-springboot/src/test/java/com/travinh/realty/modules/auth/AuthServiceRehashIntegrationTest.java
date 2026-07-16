@@ -63,7 +63,7 @@ class AuthServiceRehashIntegrationTest {
         String legacyBcryptHash = new BCryptPasswordEncoder().encode(PLAINTEXT_PASSWORD);
         User user = User.register(token, email, legacyBcryptHash, "Legacy Rehash User", "0900000000");
         users.saveAndFlush(user);
-        assertThat(user.getRole()).isEqualTo(UserRole.USER);
+        assertThat(user.getRole()).isEqualTo(UserRole.BROKER);
 
         AuthResponse response = authService.login(new LoginRequest(email, PLAINTEXT_PASSWORD));
 

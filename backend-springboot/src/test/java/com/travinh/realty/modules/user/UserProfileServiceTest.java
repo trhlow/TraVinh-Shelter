@@ -42,7 +42,7 @@ class UserProfileServiceTest {
 
     @Test
     void updatesOwnUserProfile() {
-        User user = user(UserRole.USER, UserStatus.ACTIVE, "Old name", null);
+        User user = user(UserRole.BROKER, UserStatus.ACTIVE, "Old name", null);
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
         UserProfileService service = service();
 
@@ -55,7 +55,7 @@ class UserProfileServiceTest {
 
     @Test
     void updatesOwnUserProfileIncludingSocialLinks() {
-        User user = user(UserRole.USER, UserStatus.ACTIVE, "Old name", null);
+        User user = user(UserRole.BROKER, UserStatus.ACTIVE, "Old name", null);
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
 
         CurrentUserProfileResponse response = service().updateCurrentProfile(UserPrincipal.from(user),
@@ -68,7 +68,7 @@ class UserProfileServiceTest {
 
     @Test
     void clearingSocialLinksWithBlankOrNullStoresNull() {
-        User user = user(UserRole.USER, UserStatus.ACTIVE, "User", null);
+        User user = user(UserRole.BROKER, UserStatus.ACTIVE, "User", null);
         ReflectionTestUtils.setField(user, "facebookUrl", "https://facebook.com/existing");
         ReflectionTestUtils.setField(user, "tiktokUrl", "https://tiktok.com/@existing");
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
@@ -98,7 +98,7 @@ class UserProfileServiceTest {
 
     @Test
     void profileUpdateRejectsDuplicatePhone() {
-        User user = user(UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        User user = user(UserRole.BROKER, UserStatus.ACTIVE, "User", "0900000000");
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
         when(users.existsByNormalizedPhoneAndIdNot("0911111111", user.getId())).thenReturn(true);
 
@@ -178,7 +178,7 @@ class UserProfileServiceTest {
     @Test
     void changePasswordRejectsWrongCurrentPassword() {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(4);
-        User user = user(UserRole.USER, UserStatus.ACTIVE, "User", null);
+        User user = user(UserRole.BROKER, UserStatus.ACTIVE, "User", null);
         ReflectionTestUtils.setField(user, "passwordHash", encoder.encode("correct-password"));
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
 
@@ -191,7 +191,7 @@ class UserProfileServiceTest {
 
     @Test
     void cannotLockAnAdminAccount() {
-        User admin = user(UserRole.USER, UserStatus.ACTIVE, "Admin", "0900000000");
+        User admin = user(UserRole.BROKER, UserStatus.ACTIVE, "Admin", "0900000000");
         ReflectionTestUtils.setField(admin, "role", UserRole.ADMIN);
         when(users.findById(admin.getId())).thenReturn(Optional.of(admin));
 
@@ -204,7 +204,7 @@ class UserProfileServiceTest {
 
     @Test
     void canUnlockAnAdminAccount() {
-        User admin = user(UserRole.USER, UserStatus.ACTIVE, "Admin", "0900000000");
+        User admin = user(UserRole.BROKER, UserStatus.ACTIVE, "Admin", "0900000000");
         ReflectionTestUtils.setField(admin, "role", UserRole.ADMIN);
         ReflectionTestUtils.setField(admin, "status", UserStatus.LOCKED);
         when(users.findById(admin.getId())).thenReturn(Optional.of(admin));
@@ -226,7 +226,7 @@ class UserProfileServiceTest {
 
     @Test
     void deleteCurrentUserAnonymizesRedactedFieldsAndPreservesIdRoleCreatedAt() {
-        User user = user(UserRole.USER, UserStatus.ACTIVE, "Old name", "0900000000");
+        User user = user(UserRole.BROKER, UserStatus.ACTIVE, "Old name", "0900000000");
         java.time.Instant createdAt = java.time.Instant.parse("2024-01-01T00:00:00Z");
         java.time.Instant originalPasswordChangedAt = user.getPasswordChangedAt();
         ReflectionTestUtils.setField(user, "createdAt", createdAt);
@@ -255,7 +255,7 @@ class UserProfileServiceTest {
 
     @Test
     void sequentialDeletesOfDifferentUsersProduceUniquePlaceholdersWithoutCollision() {
-        User first = user(UserRole.USER, UserStatus.ACTIVE, "User One", "0900000001");
+        User first = user(UserRole.BROKER, UserStatus.ACTIVE, "User One", "0900000001");
         User second = user(UserRole.BROKER, UserStatus.ACTIVE, "User Two", "0900000002");
         when(users.findById(first.getId())).thenReturn(Optional.of(first));
         when(users.findById(second.getId())).thenReturn(Optional.of(second));

@@ -52,7 +52,7 @@ public class User {
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(nullable = false, columnDefinition = "user_role")
-    private UserRole role = UserRole.USER;
+    private UserRole role = UserRole.BROKER;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
@@ -77,7 +77,7 @@ public class User {
         user.passwordHash = passwordHash;
         user.fullName = fullName;
         user.phone = phone;
-        user.role = UserRole.USER;
+        user.role = UserRole.BROKER;
         user.status = UserStatus.ACTIVE;
         user.passwordChangedAt = Instant.now();
         return user;

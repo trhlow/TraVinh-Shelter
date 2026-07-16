@@ -134,7 +134,6 @@ class MediaHttpTest {
 
     @Test
     void uploadImageEnforcesRoleOwnershipPhoneLimitAndContentType() throws Exception {
-        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
         User admin = user("admin@example.com", UserRole.ADMIN, UserStatus.ACTIVE, "Admin", "0900000000");
         User lockedBroker = user("locked@example.com", UserRole.BROKER, UserStatus.LOCKED, "Locked", "0900000000");
         User brokerWithoutPhone = user("nop@example.com", UserRole.BROKER, UserStatus.ACTIVE, "No Phone", null);
@@ -147,11 +146,6 @@ class MediaHttpTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().contentTypeCompatibleWith(org.springframework.http.MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.status").value(401));
-
-        authenticate(user);
-        mockMvc.perform(multipart("/properties/{propertyId}/media/images", property.getId()).file(file)
-                        .header("Authorization", bearer(user)))
-                .andExpect(status().isForbidden());
 
         authenticate(admin);
         mockMvc.perform(multipart("/properties/{propertyId}/media/images", property.getId()).file(file)
