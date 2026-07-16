@@ -80,6 +80,15 @@
   gap: 22px;
 }
 
+.chart3d-donut-layout--compact {
+  grid-template-columns: 1fr;
+}
+
+.chart3d-donut-layout--compact .chart3d-donut {
+  width: min(140px, 100%);
+  margin: 8px auto 16px;
+}
+
 .chart3d-donut {
   position: relative;
   width: min(230px, 100%);

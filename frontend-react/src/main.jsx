@@ -2,7 +2,6 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import * as Sentry from '@sentry/react';
 import App from './App.jsx';
-import 'leaflet/dist/leaflet.css';
 import './styles.css';
 import './styles/dashboard.css';
 import './styles/home.css';

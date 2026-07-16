@@ -1410,17 +1410,6 @@ img { display: block; max-width: 100%; }
   transform: translateY(-1px);
 }
 
-.dashboard-icon-dot {
-  position: absolute;
-  top: 9px;
-  right: 10px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-gold);
-  box-shadow: 0 0 0 2px var(--color-canvas);
-}
-
 .dashboard-user-chip {
   display: inline-flex;
   align-items: center;
@@ -3274,16 +3263,12 @@ img { display: block; max-width: 100%; }
 }
 
 /* Broker location picker */
-.location-picker {
+.location-embed-preview {
+  display: block;
   width: 100%;
-  height: 320px;
+  height: 240px;
+  border: 0;
   border-radius: var(--radius-md);
-  overflow: hidden;
-  border: 1px solid var(--color-hairline);
   margin-top: 8px;
-}
-
-.location-picker-search {
-  max-width: none;
-  margin-bottom: 8px;
+  background: var(--color-surface-soft);
 }

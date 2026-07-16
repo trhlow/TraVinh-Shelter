@@ -1,6 +1,7 @@
 import { detailImages, searchProperties } from '../data/templateData.js';
 import { BROKER_DASHBOARD, MOCK_PROPERTIES, MOCK_USERS, MOCK_ADMIN_BROKERS, MOCK_AUDIT_LOGS } from './mockData.js';
 import { buildAdminQuery, buildPropertyQuery, filterProperties } from './propertyFilters.js';
+import { isGoogleMapsEmbedUrl } from '../utils/googleMapsEmbed.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true';
@@ -398,8 +399,7 @@ function normalizeProperty(item, index = 0) {
     area: Number(attributes.area || 0),
     length: Number(attributes.length || 0),
     width: Number(attributes.width || 0),
-    lat: numericCoordinate(attributes.lat),
-    lng: numericCoordinate(attributes.lng),
+    mapEmbedUrl: isGoogleMapsEmbedUrl(attributes.mapEmbedUrl) ? attributes.mapEmbedUrl : null,
     size: attributes.size || (attributes.area ? `${attributes.area}m²` : 'Đang cập nhật'),
     bedrooms: Number(attributes.bedrooms || 0),
     bathrooms: Number(attributes.bathrooms || 0),
@@ -427,11 +427,6 @@ function normalizeProperty(item, index = 0) {
       responseTime: '15 phút',
     },
   };
-}
-
-function numericCoordinate(value) {
-  const coordinate = Number(value);
-  return Number.isFinite(coordinate) ? coordinate : null;
 }
 
 function statusLabel(status) {
