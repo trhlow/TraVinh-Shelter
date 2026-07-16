@@ -133,6 +133,12 @@ Vì vậy, xác nhận quyền của admin user **trước khi deploy lần đ�
   runtime). Đây là phương án tạm, chấp nhận đánh đổi mất tính năng least-privilege cho tới khi xin
   được quyền từ DO — cần khôi phục migration khi có quyền.
 
+**Migration V23 (pg_stat_statements)**: chạy an toàn dù DO Managed Postgres có preload extension
+này hay không (tự bỏ qua nếu thiếu `shared_preload_libraries`, không chặn deploy). Để tận dụng
+monitoring slow-query thật ở prod, vào DO control panel → database cluster → xác nhận
+`pg_stat_statements` nằm trong danh sách extension được hỗ trợ/bật sẵn trước khi coi đây là nguồn
+giám sát chính thức.
+
 ### GitHub Secrets (cho CI/CD tự động)
 
 Vào repo → Settings → Secrets and variables → Actions, thêm:
