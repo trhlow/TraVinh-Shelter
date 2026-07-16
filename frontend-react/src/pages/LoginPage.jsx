@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import BrandLogo, { BRAND_NAME } from '../components/BrandLogo.jsx';
-import { confirmPasswordReset, fetchCurrentUser, login, requestPasswordReset } from '../services/api.js';
+import { confirmPasswordReset, fetchCurrentUser, login, requestPasswordReset, verifyLoginOtp } from '../services/api.js';
 import { createSession } from '../services/session.js';
 import { validateLoginForm } from '../utils/validation.js';
 
@@ -10,6 +10,12 @@ const MODE_COPY = {
     subtitle: `Tiếp tục vào ${BRAND_NAME}.`,
     button: 'Đăng nhập',
     loading: 'Đang đăng nhập',
+  },
+  mfa: {
+    title: 'Xác minh 2 bước',
+    subtitle: 'Nhập mã OTP đã gửi đến email của bạn để hoàn tất đăng nhập.',
+    button: 'Xác nhận',
+    loading: 'Đang xác minh',
   },
   forgot: {
     title: 'Quên mật khẩu?',
@@ -39,6 +45,13 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
     setServerError('');
     setSuccessMessage('');
   }, [initialMode]);
+
+  async function completeLogin(auth) {
+    const profile = await fetchCurrentUser(auth.accessToken).catch(() => ({}));
+    const nextSession = createSession(auth, profile);
+    onLogin(nextSession);
+    window.location.hash = nextSession.role === 'ADMIN' ? '#/admin' : nextSession.role === 'BROKER' ? '#/broker/dashboard' : '#/';
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -76,13 +89,27 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
       return;
     }
 
+    if (mode === 'mfa') {
+      setSubmitting(true);
+      try {
+        const auth = await verifyLoginOtp(values.email, values.otpCode);
+        await completeLogin(auth);
+      } catch (exception) {
+        setServerError(exception.message || 'Xác minh OTP thất bại.');
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
     setSubmitting(true);
     try {
       const auth = await login(values.email, values.password);
-      const profile = await fetchCurrentUser(auth.accessToken).catch(() => ({}));
-      const nextSession = createSession(auth, profile);
-      onLogin(nextSession);
-      window.location.hash = nextSession.role === 'ADMIN' ? '#/admin' : nextSession.role === 'BROKER' ? '#/broker/dashboard' : '#/';
+      if (auth.mfaRequired) {
+        setMode('mfa');
+        return;
+      }
+      await completeLogin(auth);
     } catch (exception) {
       setServerError(exception.message || 'Đăng nhập thất bại.');
     } finally {
@@ -151,7 +178,7 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
             />
           </Field>
 
-          {!isForgot && !isReset && (
+          {!isForgot && !isReset && mode !== 'mfa' && (
             <Field error={errors.password} id="password" label="Mật khẩu">
               <input
                 className="input"
@@ -161,6 +188,21 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
                 type="password"
                 value={values.password}
                 onChange={(event) => updateValue('password', event.target.value)}
+              />
+            </Field>
+          )}
+
+          {mode === 'mfa' && (
+            <Field error={errors.otpCode} id="otpCode" label="Mã OTP">
+              <input
+                className="input"
+                id="otpCode"
+                inputMode="numeric"
+                maxLength={6}
+                name="otpCode"
+                placeholder="Nhập mã 6 số"
+                value={values.otpCode}
+                onChange={(event) => updateValue('otpCode', event.target.value)}
               />
             </Field>
           )}
@@ -206,7 +248,7 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
             </>
           )}
 
-          {!isForgot && !isReset && (
+          {!isForgot && !isReset && mode !== 'mfa' && (
             <div className="auth-row">
               <label className="auth-remember">
                 <input type="checkbox" />

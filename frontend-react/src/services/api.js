@@ -9,11 +9,29 @@ const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true';
 export async function login(email, password) {
   if (USE_MOCK_API) {
     const role = email.includes('admin') ? 'ADMIN' : 'BROKER';
-    return delay({ accessToken: 'mock-token', tokenType: 'Bearer', expiresIn: 3600, email, role, userId: role.toLowerCase() });
+    if (role === 'ADMIN') {
+      return delay({ mfaRequired: true }, 150);
+    }
+    return delay({ accessToken: 'mock-token', tokenType: 'Bearer', expiresIn: 3600, email, role, userId: role.toLowerCase(), mfaRequired: false });
   }
   return request('/auth/login', {
     method: 'POST',
     body: { email, password },
+  });
+}
+
+export async function verifyLoginOtp(email, otpCode) {
+  if (USE_MOCK_API) {
+    if (otpCode !== '123456') {
+      await delay(null, 150);
+      throw new Error('Mã OTP không hợp lệ hoặc đã hết hạn');
+    }
+    const role = 'ADMIN';
+    return delay({ accessToken: 'mock-token', tokenType: 'Bearer', expiresIn: 3600, email, role, userId: role.toLowerCase() });
+  }
+  return request('/auth/login/verify-otp', {
+    method: 'POST',
+    body: { email, otpCode },
   });
 }
 
