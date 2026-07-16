@@ -44,7 +44,7 @@ test('broker-activity chart spans 2 of the 3 grid columns and uses rotated label
 
 test('renders growth, distribution, density, and broker performance charts', () => {
   render(<ReportsSection data={data} loading={false} />);
-  expect(screen.getByText('Tăng trưởng người dùng mới')).toBeInTheDocument();
+  expect(screen.getByText('Tăng trưởng tài khoản mới')).toBeInTheDocument();
   expect(screen.getByText('Phân bổ tin đăng theo khu vực')).toBeInTheDocument();
   expect(screen.getByText('Mật độ tin — Phường Trà Vinh')).toBeInTheDocument();
   expect(screen.getByText('Mật độ tin — Phường Long Đức')).toBeInTheDocument();
@@ -77,13 +77,13 @@ test('ranks brokers by activity, not revenue', () => {
 test('user growth chart shows only months with real users, no fabricated bars', () => {
   const now = new Date();
   const growthData = {
-    users: [{ id: 'u1', role: 'USER', status: 'ACTIVE', createdAt: now.toISOString() }],
+    users: [{ id: 'u1', role: 'BROKER', status: 'ACTIVE', createdAt: now.toISOString() }],
     brokers: [],
     properties: [],
     viewings: [],
   };
   render(<ReportsSection data={growthData} loading={false} />);
-  const stage = screen.getByRole('img', { name: 'Tăng trưởng người dùng mới' });
+  const stage = screen.getByRole('img', { name: 'Tăng trưởng tài khoản mới' });
   const monthLabels = within(stage).getAllByText(/^T\d{1,2}$/);
   expect(monthLabels).toHaveLength(1);
 });
@@ -91,7 +91,7 @@ test('user growth chart shows only months with real users, no fabricated bars', 
 test('user growth chart shows 0 for the current month when there are no users at all', () => {
   const emptyData = { users: [], brokers: [], properties: [], viewings: [] };
   render(<ReportsSection data={emptyData} loading={false} />);
-  const stage = screen.getByRole('img', { name: 'Tăng trưởng người dùng mới' });
+  const stage = screen.getByRole('img', { name: 'Tăng trưởng tài khoản mới' });
   const monthLabels = within(stage).getAllByText(/^T\d{1,2}$/);
   expect(monthLabels).toHaveLength(1);
 });

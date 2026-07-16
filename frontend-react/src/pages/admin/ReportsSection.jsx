@@ -68,10 +68,10 @@ export default function ReportsSection({ data }) {
 
       <div className="dashboard-live-row">
         <TrendBarLineChart
-          title="Tăng trưởng người dùng mới"
+          title="Tăng trưởng tài khoản mới"
           subtitle="Tính từ khi có dữ liệu thực tế"
           data={userGrowthData}
-          currentLabel="Người dùng mới"
+          currentLabel="Tài khoản mới"
           previousLabel="Kỳ trước"
         />
         <ThreeDDonutChart
