@@ -275,7 +275,7 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
         <div className="auth-divider" />
 
         <div className="auth-footer-links">
-          {isForgot || isReset ? (
+          {isForgot || isReset || mode === 'mfa' ? (
             <button className="auth-link" type="button" onClick={() => switchMode('login')}>
               Quay lại đăng nhập
             </button>

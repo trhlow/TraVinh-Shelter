@@ -46,13 +46,13 @@ public class LoginMfaService {
 
     public void requestOtp(User user) {
         String email = user.getEmail();
-        if (!rateLimiter.tryAcquire("login-mfa-request:" + email, REQUEST_LIMIT, REQUEST_WINDOW)) {
-            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Quá nhiều yêu cầu. Vui lòng thử lại sau.");
-        }
         String code = otpStore.generate("login-mfa:" + email, OTP_TTL);
         emailSender.send(email, "Mã xác minh đăng nhập - Công Tín Land",
                 "Mã xác minh đăng nhập của bạn là: " + code
                         + ". Mã có hiệu lực trong 5 phút. Nếu bạn không yêu cầu, vui lòng bỏ qua email này.");
+        if (!rateLimiter.tryAcquire("login-mfa-request:" + email, REQUEST_LIMIT, REQUEST_WINDOW)) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Quá nhiều yêu cầu. Vui lòng thử lại sau.");
+        }
         log.info("Login MFA OTP sent for email={}", email);
     }
 
