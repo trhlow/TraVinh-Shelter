@@ -8,17 +8,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Proves V23__enable_pg_stat_statements.sql actually creates the extension when the server has
- * it preloaded (mirrors docker-compose.yml's dev command override), and proves the migration
- * doesn't fail deployment when it isn't preloaded (mirrors an unconfigured managed-Postgres prod).
+ * it preloaded (mirrors docker-compose.yml's dev command override). The non-preloaded/defensive
+ * path (an unconfigured managed-Postgres prod) is exercised transitively by every other
+ * integration test in the suite, which all migrate through V23 without
+ * shared_preload_libraries set and none fail — not covered by this file directly.
  */
 @Testcontainers(disabledWithoutDocker = true)
 class PgStatStatementsIntegrationTest {
