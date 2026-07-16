@@ -67,6 +67,20 @@ jobs:
       - name: Build
         run: npm run build
 
+  secret-scan:
+    name: Secret scanning (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest detect \
+            --source /repo --redact --exit-code 1 --verbose
+
   compose:
     name: Docker Compose config
     runs-on: ubuntu-latest
