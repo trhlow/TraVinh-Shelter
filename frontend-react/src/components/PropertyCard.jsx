@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Icon from './ui/Icon.jsx';
 import { wardLabel } from '../data/locations.js';
 
@@ -16,11 +17,18 @@ const CLOSED_STATUS = {
   RENTED: 'Đã thuê',
 };
 
-function Facts({ area, bedrooms, bathrooms }) {
+function Facts({ area, bedrooms, bathrooms, roomsTotal, roomsAvailable }) {
   const facts = [];
   if (area > 0) facts.push({ key: 'area', icon: 'Maximize2', text: `${area}m²` });
   if (bedrooms > 0) facts.push({ key: 'bed', icon: 'Bed', text: `${bedrooms} PN` });
   if (bathrooms > 0) facts.push({ key: 'bath', icon: 'Bath', text: `${bathrooms} WC` });
+  if (roomsTotal > 0) {
+    facts.push({
+      key: 'rooms',
+      icon: 'BedDouble',
+      text: roomsAvailable > 0 ? `Còn ${roomsAvailable} phòng` : 'Hết phòng trống',
+    });
+  }
   if (facts.length === 0) return null;
 
   return (
@@ -36,15 +44,32 @@ function Facts({ area, bedrooms, bathrooms }) {
   );
 }
 
+// A trọ listing with per-room prices shows the honest range instead of a
+// single number that matches no actual room.
+function roomsPriceLabel(rooms) {
+  const prices = rooms.map((room) => room.price).filter((price) => price > 0);
+  if (prices.length === 0) return null;
+  const fmt = (value) => (value / 1_000_000).toLocaleString('vi-VN', { maximumFractionDigits: 1 });
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  return min === max ? `${fmt(min)} triệu/tháng` : `${fmt(min)} – ${fmt(max)} triệu/tháng`;
+}
+
 export default function PropertyCard({ property }) {
   const href = property.id ? `#/property/${property.id}` : '#/property';
   const closedLabel = CLOSED_STATUS[property.status];
   const place = property.ward && property.ward !== 'all' ? wardLabel(property.ward) : property.address;
+  const rooms = Array.isArray(property.rooms) ? property.rooms : [];
+  const priceLabel = (rooms.length > 0 && roomsPriceLabel(rooms)) || property.priceLabel;
+  // A URL being present doesn't mean the photo loads — broken/unreachable
+  // URLs must fall back to the same empty state as no URL at all.
+  const [imageFailed, setImageFailed] = useState(false);
+  const hasImage = Boolean(property.image) && !imageFailed;
 
   return (
     <article className="pcard">
       <a href={href} className="pcard-media pcard-link" tabIndex={-1} aria-hidden="true">
-        {property.image ? (
+        {hasImage ? (
           <img
             className="pcard-img"
             src={property.image}
@@ -52,6 +77,7 @@ export default function PropertyCard({ property }) {
             width="400"
             height="300"
             loading="lazy"
+            onError={() => setImageFailed(true)}
           />
         ) : (
           <span className="pcard-img-empty">
@@ -66,11 +92,17 @@ export default function PropertyCard({ property }) {
       </a>
 
       <div className="pcard-body">
-        <p className={property.priceLabel ? 'pcard-price' : 'pcard-price pcard-price-empty'}>
-          {property.priceLabel || 'Giá thương lượng'}
+        <p className={priceLabel ? 'pcard-price' : 'pcard-price pcard-price-empty'}>
+          {priceLabel || 'Giá thương lượng'}
         </p>
 
-        <Facts area={property.area} bedrooms={property.bedrooms} bathrooms={property.bathrooms} />
+        <Facts
+          area={property.area}
+          bedrooms={property.bedrooms}
+          bathrooms={property.bathrooms}
+          roomsTotal={rooms.length}
+          roomsAvailable={rooms.filter((room) => room.available).length}
+        />
 
         {place && (
           <p className="pcard-ward">

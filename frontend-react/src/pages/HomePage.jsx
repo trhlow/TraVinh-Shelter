@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
-import FeaturedCarousel from '../components/FeaturedCarousel.jsx';
-import TroShowcaseCard from '../components/TroShowcaseCard.jsx';
+import PropertyCard from '../components/PropertyCard.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
 import PageMeta from '../components/PageMeta.jsx';
-import { featuredProperties } from '../data/templateData.js';
 import { WARDS, CATEGORIES } from '../data/locations.js';
 import { fetchProperties } from '../services/api.js';
 
@@ -50,12 +48,28 @@ const WHY_US = [
   { icon: 'Tag', title: 'Giá tốt, rõ ràng', desc: 'Giá niêm yết minh bạch, không phí ẩn, thương lượng trực tiếp với chủ nhà.' },
 ];
 
-const STATS = [
-  { value: '1.200', suffix: '+', label: 'Giao dịch thành công' },
-  { value: '3.500', suffix: '+', label: 'Khách hàng hài lòng' },
-  { value: '12', suffix: '', label: 'Năm kinh nghiệm' },
-  { value: '98', suffix: '%', label: 'Khách quay lại & giới thiệu' },
-];
+// Skeleton/card grid shared by every listing section on this page.
+function ListingGrid({ items, count = 4 }) {
+  if (items === null) {
+    return (
+      <div className="pcard-grid">
+        {Array.from({ length: count }, (_, i) => (
+          <div key={i} className="pcard-skeleton" aria-hidden="true" />
+        ))}
+      </div>
+    );
+  }
+  if (items.length === 0) {
+    return <p className="pcard-grid-empty">Chưa có tin đăng trong mục này.</p>;
+  }
+  return (
+    <div className="pcard-grid">
+      {items.map((property) => (
+        <PropertyCard key={property.id || property.title} property={property} />
+      ))}
+    </div>
+  );
+}
 
 function HeroSearchBar() {
   const [ward, setWard] = useState('all');
@@ -145,7 +159,9 @@ function SectionEyebrow({ text }) {
 }
 
 export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
-  const [properties, setProperties] = useState(featuredProperties);
+  // null = loading (skeletons). We never seed with template data: a fetch
+  // failure shows an honest empty state, not listings that don't exist.
+  const [properties, setProperties] = useState(null);
   const [troProperties, setTroProperties] = useState(null);
   const [nhaProperties, setNhaProperties] = useState(null);
   const [datProperties, setDatProperties] = useState(null);
@@ -153,8 +169,8 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
   useEffect(() => {
     let alive = true;
     fetchProperties({ category: 'all', transaction: 'all' })
-      .then(items => { if (alive && items.length > 0) setProperties(items.slice(0, 6)); })
-      .catch(() => { if (alive) setProperties(featuredProperties); });
+      .then(items => { if (alive) setProperties(items.slice(0, 8)); })
+      .catch(() => { if (alive) setProperties([]); });
     return () => { alive = false; };
   }, []);
 
@@ -215,7 +231,7 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
       </section>
 
       {/* 2. CATEGORIES */}
-      <section className="section" style={{ paddingTop: '80px' }}>
+      <section className="section">
         <div className="container">
           <div className="section-center">
             <SectionEyebrow text="Danh mục" />
@@ -239,7 +255,7 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
       </section>
 
       {/* 3. FEATURED PROPERTIES */}
-      <section className="section-subtle" style={{ paddingTop: '80px' }}>
+      <section className="section-subtle">
         <div className="container">
           <div className="section-header">
             <div className="section-header-text">
@@ -251,15 +267,14 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
               Xem tất cả <Icon name="ArrowRight" size={17} />
             </a>
           </div>
-          <FeaturedCarousel properties={properties} />
+          <ListingGrid items={properties} count={8} />
         </div>
       </section>
 
-      {/* 4. CATEGORY SHOWCASE ROWS — Trọ / Nhà / Đất */}
+      {/* 4. CATEGORY ROWS — Trọ / Nhà / Đất */}
       {SHOWCASE_ROWS.map(({ slug, title, subtitle }, index) => {
         const items = rowItems[slug];
-        const isLoading = items === null;
-        if (!isLoading && items.length === 0) return null;
+        if (items !== null && items.length === 0) return null;
         return (
           <section key={slug} className={index % 2 === 0 ? 'section' : 'section-subtle'}>
             <div className="container">
@@ -272,22 +287,14 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
                   Xem tất cả <Icon name="ArrowRight" size={15} />
                 </a>
               </div>
-              <div className="tro-showcase-row">
-                {isLoading
-                  ? Array.from({ length: 4 }, (_, i) => (
-                      <div key={i} className="skeleton tro-showcase-card-skeleton" aria-hidden="true" />
-                    ))
-                  : items.map(property => (
-                      <TroShowcaseCard key={property.id || property.title} property={property} />
-                    ))}
-              </div>
+              <ListingGrid items={items === null ? null : items.slice(0, 4)} />
             </div>
           </section>
         );
       })}
 
-      {/* 6. WHY CHOOSE US */}
-      <section className="section-subtle" style={{ paddingTop: '80px', paddingBottom: '80px', background: 'var(--color-surface-soft)' }}>
+      {/* 5. WHY CHOOSE US */}
+      <section className="section-subtle">
         <div className="container">
           <div className="section-center">
             <SectionEyebrow text="Vì sao chọn chúng tôi" />
@@ -302,22 +309,6 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
                 </span>
                 <h3 className="why-us-title">{item.title}</h3>
                 <p className="why-us-desc">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 7. STATS */}
-      <section className="section" style={{ paddingTop: '80px', paddingBottom: '80px' }}>
-        <div className="container">
-          <div className="stats-grid">
-            {STATS.map(s => (
-              <div key={s.label} className="stats-item">
-                <div className="stats-value">
-                  {s.value}<span className="stats-suffix">{s.suffix}</span>
-                </div>
-                <div className="stats-label">{s.label}</div>
               </div>
             ))}
           </div>
