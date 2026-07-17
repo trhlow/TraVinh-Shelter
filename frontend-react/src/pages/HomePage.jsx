@@ -36,10 +36,12 @@ const HERO_BG_IMAGE = 'https://images.unsplash.com/photo-1600607687939-ce8a6c251
 
 const TRUST_CHIPS = ['Pháp lý đã kiểm tra', 'Môi giới xác minh', 'Hình ảnh thực tế', 'Không phí ẩn'];
 
+// Descriptions, not fabricated counts: we don't have a live total per
+// category and won't invent one (see design.md — never show fake data).
 const CATEGORY_ICONS = {
-  tro: { icon: 'Key', count: '160 tin đăng' },
-  nha: { icon: 'Home', count: '320 tin đăng' },
-  dat: { icon: 'Layers', count: '210 tin đăng' },
+  tro: { icon: 'Key', blurb: 'Phòng trọ gần trường, khu dân cư' },
+  nha: { icon: 'Home', blurb: 'Nhà phố, nhà riêng để ở và đầu tư' },
+  dat: { icon: 'Layers', blurb: 'Đất thổ cư, đất nền pháp lý rõ' },
 };
 
 const WHY_US = [
@@ -161,18 +163,9 @@ function SectionEyebrow({ text }) {
 export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
   // null = loading (skeletons). We never seed with template data: a fetch
   // failure shows an honest empty state, not listings that don't exist.
-  const [properties, setProperties] = useState(null);
   const [troProperties, setTroProperties] = useState(null);
   const [nhaProperties, setNhaProperties] = useState(null);
   const [datProperties, setDatProperties] = useState(null);
-
-  useEffect(() => {
-    let alive = true;
-    fetchProperties({ category: 'all', transaction: 'all' })
-      .then(items => { if (alive) setProperties(items.slice(0, 8)); })
-      .catch(() => { if (alive) setProperties([]); });
-    return () => { alive = false; };
-  }, []);
 
   // Fetch each category separately.
   useEffect(() => {
@@ -246,7 +239,7 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
                 </span>
                 <span>
                   <span className="category-card-label">{cat.label}</span>
-                  <span className="category-card-count">{CATEGORY_ICONS[cat.slug].count}</span>
+                  <span className="category-card-count">{CATEGORY_ICONS[cat.slug].blurb}</span>
                 </span>
               </a>
             ))}
@@ -254,24 +247,8 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
         </div>
       </section>
 
-      {/* 3. FEATURED PROPERTIES */}
-      <section className="section-subtle">
-        <div className="container">
-          <div className="section-header">
-            <div className="section-header-text">
-              <SectionEyebrow text="Bất động sản nổi bật" />
-              <h2 className="text-display-md">Tin đăng chọn lọc tại Trà Vinh</h2>
-              <p>Đã kiểm tra pháp lý, hình ảnh thực tế, cập nhật mỗi ngày.</p>
-            </div>
-            <a href="#/search" className="section-header-link">
-              Xem tất cả <Icon name="ArrowRight" size={17} />
-            </a>
-          </div>
-          <ListingGrid items={properties} count={8} />
-        </div>
-      </section>
-
-      {/* 4. CATEGORY ROWS — Trọ / Nhà / Đất */}
+      {/* 3. CATEGORY ROWS — Trọ / Nhà / Đất. One listing appears once, in its
+          own category row; no redundant mixed "featured" grid above them. */}
       {SHOWCASE_ROWS.map(({ slug, title, subtitle }, index) => {
         const items = rowItems[slug];
         if (items !== null && items.length === 0) return null;

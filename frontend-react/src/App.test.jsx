@@ -19,7 +19,7 @@ afterEach(() => {
 test('renders the template home page', async () => {
   render(<App />);
 
-  expect(screen.getByRole('heading', { name: 'Tin đăng chọn lọc tại Trà Vinh' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Khám phá theo loại hình' })).toBeInTheDocument();
   await waitFor(() => expect(screen.getAllByText('Công Tín Land').length).toBeGreaterThan(0));
 });
 
@@ -125,5 +125,5 @@ test('routes to public projects and brokers pages', () => {
 test('the revenue route no longer resolves to a dedicated broker page', () => {
   window.location.hash = '#/broker/revenue';
   render(<App />);
-  expect(screen.getByRole('heading', { name: 'Tin đăng chọn lọc tại Trà Vinh' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Khám phá theo loại hình' })).toBeInTheDocument();
 });
