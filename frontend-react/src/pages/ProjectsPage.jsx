@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import MainLayout from '../layouts/MainLayout.jsx';
+import PageMeta from '../components/PageMeta.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import { WARDS } from '../data/locations.js';
 
@@ -56,6 +57,7 @@ export default function ProjectsPage({ session, onLogout, theme, onToggleTheme }
 
   return (
     <MainLayout session={session} onLogout={onLogout} theme={theme} onToggleTheme={onToggleTheme}>
+      <PageMeta routeKey="projects" />
       {/* Page header */}
       <div className="page-header">
         <div className="container">

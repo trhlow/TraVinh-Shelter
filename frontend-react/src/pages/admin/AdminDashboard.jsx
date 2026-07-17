@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import BrandLogo from '../../components/BrandLogo.jsx';
 import Icon from '../../components/ui/Icon.jsx';
 import NotificationBell from '../../components/dashboard/NotificationBell.jsx';
+import PageMeta from '../../components/PageMeta.jsx';
 import { buildAdminNotifications } from '../../utils/adminNotifications.js';
 import LoginPage from '../LoginPage.jsx';
 import OverviewSection from './OverviewSection.jsx';
@@ -136,6 +137,7 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
   if (session.role !== 'ADMIN') {
     return (
       <div className="dashboard-shell admin-theme">
+        <PageMeta routeKey="admin" />
         <AdminSidebar currentPath={currentPath} onLogout={onLogout} session={session} />
         <div className="dashboard-content">
           <div className="dashboard-main">
@@ -151,6 +153,7 @@ export default function AdminDashboard({ session, onLogin, onLogout, currentPath
 
   return (
     <div className="dashboard-shell admin-theme">
+      <PageMeta routeKey="admin" />
       <AdminSidebar currentPath={currentPath} onLogout={onLogout} session={session} />
       <div className="dashboard-content">
         <div className="dashboard-topbar">

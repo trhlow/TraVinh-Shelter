@@ -6,6 +6,7 @@ import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '
 import ViewingsPanel from '../components/dashboard/ViewingsPanel.jsx';
 import DateRangeFilter from '../components/dashboard/DateRangeFilter.jsx';
 import NotificationBell from '../components/dashboard/NotificationBell.jsx';
+import PageMeta from '../components/PageMeta.jsx';
 import { buildBrokerNotifications } from '../utils/brokerNotifications.js';
 import BrandLogo from '../components/BrandLogo.jsx';
 import { WARDS } from '../data/locations.js';
@@ -209,6 +210,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   if (session.role !== 'BROKER') {
     return (
       <div className="dashboard-shell">
+        <PageMeta routeKey="broker" />
         <BrokerSidebar currentPath={currentPath} />
         <div className="dashboard-content">
           <div className="dashboard-main">
@@ -458,6 +460,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
 
   return (
     <div className="dashboard-shell">
+      <PageMeta routeKey="broker" />
       <BrokerSidebar currentPath={currentPath} onLogout={onLogout} session={session} />
       <div className="dashboard-content">
         <div className="dashboard-topbar">

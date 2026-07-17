@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import MainLayout from '../layouts/MainLayout.jsx';
+import PageMeta from '../components/PageMeta.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import { fetchProperties } from '../services/api.js';
 import { MOCK_PROPERTIES } from '../services/mockData.js';
@@ -38,6 +39,7 @@ export default function BrokersPage({ session, onLogout, theme, onToggleTheme })
 
   return (
     <MainLayout session={session} onLogout={onLogout} theme={theme} onToggleTheme={onToggleTheme}>
+      <PageMeta routeKey="brokers" />
       {/* Page header */}
       <div className="page-header">
         <div className="container">

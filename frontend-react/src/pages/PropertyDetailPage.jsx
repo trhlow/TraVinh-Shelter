@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import ImageGallery from '../components/ImageGallery.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
+import PageMeta from '../components/PageMeta.jsx';
 import RoomList from '../components/property/RoomList.jsx';
 import BookingForm from '../components/property/BookingForm.jsx';
 import { detailImages } from '../data/templateData.js';
@@ -145,6 +146,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
 
   return (
     <MainLayout session={session} onLogout={onLogout} theme={theme} onToggleTheme={onToggleTheme}>
+      <PageMeta routeKey="property" data={{ propertyTitle: property.title }} />
       <div className="container">
         {/* Breadcrumb */}
         <nav className="breadcrumb">

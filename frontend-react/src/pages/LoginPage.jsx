@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import BrandLogo, { BRAND_NAME } from '../components/BrandLogo.jsx';
+import PageMeta from '../components/PageMeta.jsx';
 import { confirmPasswordReset, fetchCurrentUser, login, requestPasswordReset } from '../services/api.js';
 import { createSession } from '../services/session.js';
 import { validateLoginForm } from '../utils/validation.js';
@@ -105,20 +106,23 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
   if (session) {
     const href = session.role === 'ADMIN' ? '#/admin' : session.role === 'BROKER' ? '#/broker/dashboard' : '#/login';
     return (
-      <div className="auth-shell">
-        <div className="auth-card">
-          <div className="auth-brand-wrap">
-            <a href="#/">
-              <BrandLogo />
+      <>
+        <PageMeta routeKey="login" />
+        <div className="auth-shell">
+          <div className="auth-card">
+            <div className="auth-brand-wrap">
+              <a href="#/">
+                <BrandLogo />
+              </a>
+            </div>
+            <h1 className="auth-title">Bạn đã đăng nhập</h1>
+            <p className="auth-subtitle">{session.email}</p>
+            <a className="auth-btn" href={href}>
+              Vào trang làm việc
             </a>
           </div>
-          <h1 className="auth-title">Bạn đã đăng nhập</h1>
-          <p className="auth-subtitle">{session.email}</p>
-          <a className="auth-btn" href={href}>
-            Vào trang làm việc
-          </a>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -127,7 +131,9 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
   const copy = MODE_COPY[mode] || MODE_COPY.login;
 
   return (
-    <div className="auth-shell">
+    <>
+      <PageMeta routeKey="login" />
+      <div className="auth-shell">
       <div className="auth-card">
         <div className="auth-brand-wrap">
           <a href="#/" aria-label={BRAND_NAME}>
@@ -240,7 +246,8 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
           ) : null}
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 

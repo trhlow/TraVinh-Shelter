@@ -3,6 +3,7 @@ import FeaturedCarousel from '../components/FeaturedCarousel.jsx';
 import TroShowcaseCard from '../components/TroShowcaseCard.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
+import PageMeta from '../components/PageMeta.jsx';
 import { featuredProperties } from '../data/templateData.js';
 import { WARDS, CATEGORIES } from '../data/locations.js';
 import { fetchProperties } from '../services/api.js';
@@ -173,6 +174,7 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
 
   return (
     <MainLayout session={session} onLogout={onLogout} theme={theme} onToggleTheme={onToggleTheme}>
+      <PageMeta routeKey="home" />
       {/* 1. HERO */}
       <section className="hero">
         <div className="container">

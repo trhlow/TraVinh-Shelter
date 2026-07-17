@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import PropertyCard from '../components/PropertyCard.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
+import PageMeta from '../components/PageMeta.jsx';
 import { searchProperties } from '../data/templateData.js';
 import { WARDS } from '../data/locations.js';
 import { fetchCategories, fetchProperties } from '../services/api.js';
@@ -141,6 +142,7 @@ export default function SearchPage({ queryParams, session, onLogout, theme, onTo
 
   return (
     <MainLayout session={session} onLogout={onLogout} theme={theme} onToggleTheme={onToggleTheme}>
+      <PageMeta routeKey="search" />
       {/* Page header */}
       <div className="page-header">
         <div className="container">
