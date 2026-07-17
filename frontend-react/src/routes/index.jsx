@@ -1,11 +1,13 @@
-import AdminDashboard from '../pages/admin/AdminDashboard.jsx';
+import { lazy } from 'react';
 import BrokersPage from '../pages/BrokersPage.jsx';
-import BrokerDashboard from '../pages/BrokerDashboard.jsx';
 import HomePage from '../pages/HomePage.jsx';
 import LoginPage from '../pages/LoginPage.jsx';
 import ProjectsPage from '../pages/ProjectsPage.jsx';
 import PropertyDetailPage from '../pages/PropertyDetailPage.jsx';
 import SearchPage from '../pages/SearchPage.jsx';
+
+const AdminDashboard = lazy(() => import('../pages/admin/AdminDashboard.jsx'));
+const BrokerDashboard = lazy(() => import('../pages/BrokerDashboard.jsx'));
 
 function BrokerDashboardRoute(props) {
   return <BrokerDashboard {...props} section="dashboard" currentPath="/broker/dashboard" />;

@@ -3,7 +3,6 @@ import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import App from './App.jsx';
 import { resolveRoute } from './routes/index.jsx';
-import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 
 beforeEach(() => {
   window.location.hash = '#/';
@@ -31,7 +30,7 @@ test('routes to search page', async () => {
   await waitFor(() => expect(screen.getByTestId('property-grid')).toBeInTheDocument());
 });
 
-test('routes to broker dashboard for broker sessions', () => {
+test('routes to broker dashboard for broker sessions', async () => {
   window.localStorage.setItem('travinh-realty-session', JSON.stringify({
     token: 'test-token',
     email: 'broker@congtinland.vn',
@@ -40,10 +39,10 @@ test('routes to broker dashboard for broker sessions', () => {
   }));
   window.location.hash = '#/broker';
   render(<App />);
-  expect(screen.getAllByRole('heading', { name: 'Bảng điều khiển' }).length).toBeGreaterThan(0);
+  expect((await screen.findAllByRole('heading', { name: 'Bảng điều khiển' })).length).toBeGreaterThan(0);
 });
 
-test('routes to separate broker pages for broker sessions', () => {
+test('routes to separate broker pages for broker sessions', async () => {
   window.localStorage.setItem('travinh-realty-session', JSON.stringify({
     token: 'test-token',
     email: 'broker@congtinland.vn',
@@ -52,10 +51,10 @@ test('routes to separate broker pages for broker sessions', () => {
   }));
   window.location.hash = '#/broker/settings';
   render(<App />);
-  expect(screen.getAllByRole('heading', { name: 'Cài đặt' }).length).toBeGreaterThan(0);
+  expect((await screen.findAllByRole('heading', { name: 'Cài đặt' })).length).toBeGreaterThan(0);
 });
 
-test('routes to broker properties page for broker sessions', () => {
+test('routes to broker properties page for broker sessions', async () => {
   window.localStorage.setItem('travinh-realty-session', JSON.stringify({
     token: 'test-token',
     email: 'broker@congtinland.vn',
@@ -64,7 +63,7 @@ test('routes to broker properties page for broker sessions', () => {
   }));
   window.location.hash = '#/broker/properties';
   render(<App />);
-  expect(screen.getAllByRole('heading', { name: 'Tin đăng của tôi' }).length).toBeGreaterThan(0);
+  expect((await screen.findAllByRole('heading', { name: 'Tin đăng của tôi' })).length).toBeGreaterThan(0);
 });
 
 test('resolves every admin sub-path to the custom admin dashboard with a section', () => {
@@ -75,9 +74,10 @@ test('resolves every admin sub-path to the custom admin dashboard with a section
     ['/admin/viewings', 'viewings'],
     ['/admin/audit', 'audit'],
   ];
+  const adminPage = resolveRoute('/admin').Page;
   for (const [path, section] of cases) {
     const resolved = resolveRoute(path);
-    expect(resolved.Page).toBe(AdminDashboard);
+    expect(resolved.Page).toBe(adminPage);
     expect(resolved.params.section).toBe(section);
   }
 });
