@@ -5,37 +5,7 @@ import MainLayout from '../layouts/MainLayout.jsx';
 import PageMeta from '../components/PageMeta.jsx';
 import RoomList from '../components/property/RoomList.jsx';
 import BookingForm from '../components/property/BookingForm.jsx';
-import { detailImages } from '../data/templateData.js';
 import { fetchPropertyDetail, fetchPropertyMedia } from '../services/api.js';
-
-const fallbackProperty = {
-  title: 'NHÀ TRỌ THANH TRÚC - TRỐNG 2 PHÒNG',
-  address: 'Hẻm 42, Đường Điện Biên Phủ, Phường 6, TP Trà Vinh',
-  priceLabel: '1.2 Triệu / Tháng',
-  statusLabel: 'Cho thuê',
-  category: 'tro',
-  area: 20,
-  bedrooms: 1,
-  bathrooms: 1,
-  direction: 'Đông Nam',
-  description: `Hiện tại nhà trọ Thanh Trúc đang trống 2 phòng, cần tìm người thuê ưu tiên sinh viên hoặc người đi làm văn phòng.
-
-- Vị trí: Gần Đại học Trà Vinh (cách 5 phút đi xe), hẻm rộng an ninh, xe ba gác vào tận nơi.
-- Tiện ích: Phòng sạch sẽ, có gác lửng đúc kiên cố, toilet riêng trong phòng, có chỗ nấu ăn, wifi tốc độ cao miễn phí.
-- An ninh: Khu vực yên tĩnh, có camera an ninh 24/24, cổng rào chắc chắn.
-- Điện nước tính theo giá nhà nước.
-
-Liên hệ xem phòng gọi trước 30 phút.`,
-  broker: {
-    name: 'Nguyễn Văn A',
-    phone: '0901 234 567',
-    email: 'broker@congtinland.vn',
-    avatarUrl: '',
-  },
-};
-
-const fallbackBrokerAvatar =
-  'https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=300&q=80';
 
 // Map amenity keyword → lucide icon name
 const AMENITY_ICON_MAP = [
@@ -85,29 +55,31 @@ const CONDITION_LABELS = {
 };
 
 export default function PropertyDetailPage({ propertyId, session, onLogout, theme, onToggleTheme }) {
-  const [property, setProperty] = useState(fallbackProperty);
-  const [propertyLoaded, setPropertyLoaded] = useState(false);
-  const [mediaImages, setMediaImages] = useState(detailImages);
+  // null = still loading. We never seed with a fabricated listing: a failed
+  // fetch shows an error state, not a phòng trọ that doesn't exist.
+  const [property, setProperty] = useState(null);
+  const [loadError, setLoadError] = useState(false);
+  const [retryTick, setRetryTick] = useState(0);
+  const [mediaImages, setMediaImages] = useState([]);
   const [mediaLoading, setMediaLoading] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    setPropertyLoaded(false);
+    setProperty(null);
+    setLoadError(false);
     fetchPropertyDetail(propertyId)
       .then((item) => {
         if (!alive) return;
-        if (item) {
-          setProperty(item);
-          setPropertyLoaded(true);
-        }
+        if (item) setProperty(item);
+        else setLoadError(true);
       })
       .catch(() => {
-        if (alive) setProperty(fallbackProperty);
+        if (alive) setLoadError(true);
       });
     return () => {
       alive = false;
     };
-  }, [propertyId]);
+  }, [propertyId, retryTick]);
 
   useEffect(() => {
     let alive = true;
@@ -118,10 +90,10 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
         const images = items
           .filter((item) => item.mediaType === 'IMAGE')
           .map((item) => item.url);
-        setMediaImages(images.length > 0 ? images : detailImages);
+        setMediaImages(images);
       })
       .catch(() => {
-        if (alive) setMediaImages(detailImages);
+        if (alive) setMediaImages([]);
       })
       .finally(() => {
         if (alive) setMediaLoading(false);
@@ -129,7 +101,41 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
     return () => {
       alive = false;
     };
-  }, [propertyId]);
+  }, [propertyId, retryTick]);
+
+  if (property === null) {
+    return (
+      <MainLayout session={session} onLogout={onLogout} theme={theme} onToggleTheme={onToggleTheme}>
+        <PageMeta routeKey="property" />
+        <div className="container">
+          {loadError ? (
+            <div className="detail-state" role="alert">
+              <Icon name="AlertCircle" size={32} className="icon-muted" />
+              <h1 className="detail-state-title">Không tải được tin đăng</h1>
+              <p className="detail-state-text">
+                Tin có thể đã bị gỡ, hoặc kết nối đang gặp sự cố.
+              </p>
+              <div className="detail-state-actions">
+                <button
+                  type="button"
+                  className="detail-state-retry"
+                  onClick={() => setRetryTick((tick) => tick + 1)}
+                >
+                  Thử lại
+                </button>
+                <a href="#/search" className="detail-state-browse">Xem các tin đang đăng</a>
+              </div>
+            </div>
+          ) : (
+            <div className="detail-skeleton" aria-hidden="true">
+              <div className="detail-skeleton-gallery" />
+              <div className="detail-skeleton-block" />
+            </div>
+          )}
+        </div>
+      </MainLayout>
+    );
+  }
 
   const galleryImages = [property.image, ...mediaImages].filter(Boolean);
   const categoryLabel =
@@ -138,10 +144,13 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
       : property.category === 'dat'
       ? 'Đất'
       : 'Nhà';
-  const brokerPhone = property.broker?.phone || '0901 234 567';
+  // No fabricated contact fallbacks: a missing phone hides the call button
+  // rather than inventing a number nobody answers.
+  const brokerName = property.broker?.name || 'Công Tín Land';
+  const brokerPhone = property.broker?.phone || '';
   const brokerFacebook = property.broker?.facebook || '';
   const brokerTiktok = property.broker?.tiktok || '';
-  const brokerAvatar = property.broker?.avatarUrl || fallbackBrokerAvatar;
+  const brokerAvatar = property.broker?.avatarUrl || '';
   const isTro = property.category === 'tro';
 
   const hasAmenities = Array.isArray(property.amenities) && property.amenities.length > 0;
@@ -152,7 +161,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
 
   return (
     <MainLayout session={session} onLogout={onLogout} theme={theme} onToggleTheme={onToggleTheme}>
-      <PageMeta routeKey="property" data={{ propertyTitle: propertyLoaded ? property.title : undefined }} />
+      <PageMeta routeKey="property" data={{ propertyTitle: property.title }} />
       <div className="container">
         {/* Breadcrumb */}
         <nav className="breadcrumb">
@@ -168,11 +177,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
           {/* ── Left column ── */}
           <div className="detail-main">
             {/* Gallery */}
-            <ImageGallery
-              images={galleryImages}
-              title={property.title}
-              fallbackImage={detailImages[0]}
-            />
+            <ImageGallery images={galleryImages} title={property.title} />
             {mediaLoading && (
               <div className="media-loading-notice">Đang tải thư viện ảnh...</div>
             )}
@@ -320,15 +325,15 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
             {/* Broker contact card */}
             <div className="contact-card">
               <div className="contact-card-broker">
-                <img
-                  alt="Broker Avatar"
-                  className="contact-avatar"
-                  src={brokerAvatar}
-                />
+                {brokerAvatar ? (
+                  <img alt="" className="contact-avatar" src={brokerAvatar} />
+                ) : (
+                  <span className="contact-avatar contact-avatar-initial" aria-hidden="true">
+                    {brokerName.charAt(0)}
+                  </span>
+                )}
                 <div>
-                  <p className="contact-card-name">
-                    {property.broker?.name || 'Nguyễn Văn A'}
-                  </p>
+                  <p className="contact-card-name">{brokerName}</p>
                   <p className="contact-card-verified">
                     <Icon name="ShieldCheck" size={14} className="icon-accent" />
                     Môi giới uy tín
@@ -337,12 +342,14 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
               </div>
 
               <div className="contact-buttons">
-                <div className="contact-phone-zalo">
-                  <a href={`tel:${brokerPhone.replace(/\s+/g, '')}`} className="contact-phone-zalo-call">
-                    <Icon name="Phone" size={18} />
-                    Gọi ngay: {brokerPhone}
-                  </a>
-                </div>
+                {brokerPhone && (
+                  <div className="contact-phone-zalo">
+                    <a href={`tel:${brokerPhone.replace(/\s+/g, '')}`} className="contact-phone-zalo-call">
+                      <Icon name="Phone" size={18} />
+                      Gọi ngay: {brokerPhone}
+                    </a>
+                  </div>
+                )}
                 {brokerFacebook && (
                   <a
                     href={brokerFacebook}

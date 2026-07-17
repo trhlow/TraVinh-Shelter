@@ -348,3 +348,90 @@
   font-weight: 600;
   padding: 2px 8px;
 }
+
+/* ── Redesign states (redesign/ui-rebuild) ─────────────── */
+
+.detail-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-16) var(--space-4);
+  text-align: center;
+}
+
+.detail-state-title {
+  font-size: var(--text-title);
+  font-weight: 700;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.detail-state-text {
+  font-size: var(--text-body);
+  color: var(--color-muted);
+  margin: 0;
+}
+
+.detail-state-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.detail-state-retry {
+  padding: var(--space-2) var(--space-6);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.detail-state-retry:hover { background: var(--color-primary-hover); }
+
+.detail-state-browse {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-6);
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-sm);
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.detail-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6) 0 var(--space-16);
+}
+
+.detail-skeleton-gallery,
+.detail-skeleton-block {
+  border-radius: var(--radius-md);
+  background: var(--color-surface-strong);
+  animation: pcard-pulse 1.1s ease-in-out infinite alternate;
+}
+
+.detail-skeleton-gallery { aspect-ratio: 16 / 9; }
+.detail-skeleton-block { height: 180px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .detail-skeleton-gallery,
+  .detail-skeleton-block { animation: none; }
+}
+
+.contact-avatar-initial {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-strong);
+  color: var(--color-primary);
+  font-size: var(--text-title);
+  font-weight: 700;
+}
