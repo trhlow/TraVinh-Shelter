@@ -3272,3 +3272,30 @@ img { display: block; max-width: 100%; }
   margin-top: 8px;
   background: var(--color-surface-soft);
 }
+
+/* ── Page loader (lazy route fallback) ─────────────────── */
+.page-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.page-loader-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-hairline);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: page-loader-spin 0.7s linear infinite;
+}
+
+@keyframes page-loader-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-loader-spinner {
+    animation-duration: 2.4s;
+  }
+}
