@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import PropertyCard from '../components/PropertyCard.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
 import PageMeta from '../components/PageMeta.jsx';
-import { searchProperties } from '../data/templateData.js';
 import { WARDS } from '../data/locations.js';
 import { fetchCategories, fetchProperties } from '../services/api.js';
 
@@ -59,7 +58,7 @@ export default function SearchPage({ queryParams, session, onLogout, theme, onTo
   const [filters, setFilters] = useState(() => filtersFromQuery(queryParams));
   const [appliedFilters, setAppliedFilters] = useState(() => filtersFromQuery(queryParams));
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
-  const [properties, setProperties] = useState(searchProperties);
+  const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [sort, setSort] = useState('newest');
@@ -95,7 +94,7 @@ export default function SearchPage({ queryParams, session, onLogout, theme, onTo
       .catch((exception) => {
         if (!alive) return;
         setError(exception.message || 'Không tải được danh sách tin.');
-        setProperties(searchProperties);
+        setProperties([]);
       })
       .finally(() => {
         if (alive) setLoading(false);
