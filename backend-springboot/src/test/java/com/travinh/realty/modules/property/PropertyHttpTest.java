@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -499,6 +500,40 @@ class PropertyHttpTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"RENTED\"}"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Không tìm thấy bất động sản"));
+    }
+
+    @Test
+    void brokerCannotUpdateAnotherBrokerProperty() throws Exception {
+        User owner = user("owner@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Owner", "0900000000");
+        User other = user("other@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Other", "0911111111");
+        Property property = property(owner, category(1L, "Trọ", "tro"), "Tin", PropertyStatus.AVAILABLE, Map.of());
+        authenticate(other);
+        when(users.findById(other.getId())).thenReturn(Optional.of(other));
+        when(properties.findById(property.getId())).thenReturn(Optional.of(property));
+
+        mockMvc.perform(patch("/properties/{id}", property.getId()).header("Authorization", bearer(other))
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                        {"categorySlug":"tro","title":"Chiếm quyền","address":"Trà Vinh","price":1,
+                         "attributes":{"ward":"phuong-1"}}
+                        """))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Không tìm thấy bất động sản"));
+        org.mockito.Mockito.verify(properties, org.mockito.Mockito.never()).save(any(Property.class));
+    }
+
+    @Test
+    void brokerCannotDeleteAnotherBrokerProperty() throws Exception {
+        User owner = user("owner@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Owner", "0900000000");
+        User other = user("other@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Other", "0911111111");
+        Property property = property(owner, category(1L, "Trọ", "tro"), "Tin", PropertyStatus.AVAILABLE, Map.of());
+        authenticate(other);
+        when(users.findById(other.getId())).thenReturn(Optional.of(other));
+        when(properties.findById(property.getId())).thenReturn(Optional.of(property));
+
+        mockMvc.perform(delete("/properties/{id}", property.getId()).header("Authorization", bearer(other)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Không tìm thấy bất động sản"));
+        org.mockito.Mockito.verify(properties, org.mockito.Mockito.never()).delete(any(Property.class));
     }
 
     @Test
