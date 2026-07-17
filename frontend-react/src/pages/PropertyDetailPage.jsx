@@ -86,14 +86,20 @@ const CONDITION_LABELS = {
 
 export default function PropertyDetailPage({ propertyId, session, onLogout, theme, onToggleTheme }) {
   const [property, setProperty] = useState(fallbackProperty);
+  const [propertyLoaded, setPropertyLoaded] = useState(false);
   const [mediaImages, setMediaImages] = useState(detailImages);
   const [mediaLoading, setMediaLoading] = useState(false);
 
   useEffect(() => {
     let alive = true;
+    setPropertyLoaded(false);
     fetchPropertyDetail(propertyId)
       .then((item) => {
-        if (alive && item) setProperty(item);
+        if (!alive) return;
+        if (item) {
+          setProperty(item);
+          setPropertyLoaded(true);
+        }
       })
       .catch(() => {
         if (alive) setProperty(fallbackProperty);
@@ -146,7 +152,7 @@ export default function PropertyDetailPage({ propertyId, session, onLogout, them
 
   return (
     <MainLayout session={session} onLogout={onLogout} theme={theme} onToggleTheme={onToggleTheme}>
-      <PageMeta routeKey="property" data={{ propertyTitle: property.title }} />
+      <PageMeta routeKey="property" data={{ propertyTitle: propertyLoaded ? property.title : undefined }} />
       <div className="container">
         {/* Breadcrumb */}
         <nav className="breadcrumb">
