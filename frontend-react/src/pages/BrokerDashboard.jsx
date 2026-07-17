@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import '../styles/dashboard.css';
 import {
   buildDailySeries, buildWardData, ThreeDDonutChart, TrendBarLineChart, WardBarChart,
 } from '../components/Charts.jsx';

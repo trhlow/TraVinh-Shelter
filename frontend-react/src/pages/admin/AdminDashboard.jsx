@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import '../../styles/dashboard.css';
 import BrandLogo from '../../components/BrandLogo.jsx';
 import Icon from '../../components/ui/Icon.jsx';
 import NotificationBell from '../../components/dashboard/NotificationBell.jsx';
