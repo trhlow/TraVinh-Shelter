@@ -301,7 +301,11 @@ Use `routeKey="home"` in `HomePage`, `"search"` in `SearchPage`, `"projects"` in
 
 - [ ] **Step 2: Add PageMeta to PropertyDetailPage with the live listing title**
 
-`PropertyDetailPage.jsx:87` initialises state as `useState(fallbackProperty)`, so `property.title` is always a string — it holds the fallback listing's name until the fetch resolves. That is correct behaviour here: the page body already renders that same fallback content, so the title matches what the user sees.
+`PropertyDetailPage.jsx:87` initialises state as `useState(fallbackProperty)`, so `property.title` is always a string — it holds the fallback listing's name until the fetch resolves.
+
+**This step's original reasoning was wrong and was corrected during the final review.** It claimed passing `property.title` unconditionally was fine because the page body renders that same fallback content, so the title would match what the user sees. What it missed: `property.title` being *always* truthy makes `buildPageMeta`'s generic `'Chi tiết bất động sản — Công Tín Land'` branch dead code, and titles `/#/property`, `/#/property/detail` and **every listing whose fetch fails** as `NHÀ TRỌ THANH TRÚC - TRỐNG 2 PHÒNG — Công Tín Land` — putting a specific phòng trọ's name on a failed đất or nhà listing's tab, bookmark and history entry. It also contradicted the design spec, which requires the generic title until data arrives.
+
+The shipped implementation tracks a `propertyLoaded` flag (reset when `propertyId` changes, set only on a real fetch result) and passes `propertyTitle: propertyLoaded ? property.title : undefined`. The page body is deliberately left alone — the fallback body is pre-existing debt, out of scope for this branch.
 
 ```jsx
 import PageMeta from '../components/PageMeta.jsx';
@@ -642,7 +646,9 @@ Evidence required — do not claim success without pasting the actual output:
 1. `npm test -- --run` — green, with the file/test counts shown.
 2. `npx vite build` — main chunk and CSS sizes quoted next to the `386.84 kB` / `82.33 kB` baseline.
 3. Browser check: tab titles correct on home / brokers / a property page; both dashboards styled.
-4. `curl`-free head check in the browser devtools: exactly **one** `<title>` in `<head>`, and `<meta name="robots" content="noindex">` present on `/#/admin/overview` but absent on `/#/`.
+4. Head check in the browser devtools: `<meta name="robots" content="noindex">` present on `/#/admin/overview` but absent on `/#/`, and the **first** `<title>` in `<head>` is the route's.
+
+   **Correction to an earlier version of this criterion**, which demanded exactly one `<title>`: that is wrong and would read as a failure. `index.html:6` ships a static `<title>Công Tín Land</title>`, so a real browser's `<head>` holds **two** title elements. React special-cases `title` in `mountHoistable` and inserts its own *before* any existing one, so React's title is always first and `document.title` (first-title-wins) returns it. The static tag is a useful pre-hydration default — do not delete it. jsdom tests never see this because they render into an empty head.
 
 ## Out of scope — do not do these here
 
