@@ -27,6 +27,30 @@ function ChartTooltip({ leftPct, topPct, rows }) {
   );
 }
 
+// ChartPanelHeader — the title/subtitle block every chart panel opens with.
+function ChartPanelHeader({ title, subtitle }) {
+  return (
+    <div className="chart3d-header">
+      <div>
+        <h2 className="chart-title">{title}</h2>
+        {subtitle && <p className="chart3d-subtitle">{subtitle}</p>}
+      </div>
+    </div>
+  );
+}
+
+// ChartEmptyState — the "no data in this range" block panels fall back to.
+function ChartEmptyState({ message = 'Chưa có dữ liệu trong khoảng thời gian này.' }) {
+  return (
+    <div className="widget-state-block">
+      <span className="widget-state-icon">
+        <Icon name="BarChart3" size={24} strokeWidth={1.75} />
+      </span>
+      <p className="widget-state-title">{message}</p>
+    </div>
+  );
+}
+
 // Groups items into one entry per real ward (all 4, even at 0) so ward charts
 // stay visually comparable between renders and dashboards.
 export function buildWardData(items, getWardCode) {
@@ -195,18 +219,8 @@ export function TrendLineChart({ title, subtitle, data, currentLabel = 'Hiện t
   if (isEmpty) {
     return (
       <section className="chart-panel">
-        <div className="chart3d-header">
-          <div>
-            <h2 className="chart-title">{title}</h2>
-            {subtitle && <p className="chart3d-subtitle">{subtitle}</p>}
-          </div>
-        </div>
-        <div className="widget-state-block">
-          <span className="widget-state-icon">
-            <Icon name="BarChart3" size={24} strokeWidth={1.75} />
-          </span>
-          <p className="widget-state-title">Chưa có dữ liệu trong khoảng thời gian này.</p>
-        </div>
+        <ChartPanelHeader title={title} subtitle={subtitle} />
+        <ChartEmptyState />
       </section>
     );
   }
@@ -247,12 +261,7 @@ export function TrendLineChart({ title, subtitle, data, currentLabel = 'Hiện t
 
   return (
     <section className="chart-panel" style={{ '--trend-chart-width': `${idealWidthPx}px` }}>
-      <div className="chart3d-header">
-        <div>
-          <h2 className="chart-title">{title}</h2>
-          {subtitle && <p className="chart3d-subtitle">{subtitle}</p>}
-        </div>
-      </div>
+      <ChartPanelHeader title={title} subtitle={subtitle} />
       <div className="chart-hover-wrap">
         <svg className="trend-line-svg" viewBox={`0 0 ${viewBoxWidth} 50`} preserveAspectRatio="none" role="img" aria-label={title}>
           <defs>
@@ -326,18 +335,8 @@ export function CategoryBreakdown({ title, subtitle, data, totalLabel = 'Tổng 
   if (isEmpty) {
     return (
       <section className="chart-panel">
-        <div className="chart3d-header">
-          <div>
-            <h2 className="chart-title">{title}</h2>
-            {subtitle && <p className="chart3d-subtitle">{subtitle}</p>}
-          </div>
-        </div>
-        <div className="widget-state-block">
-          <span className="widget-state-icon">
-            <Icon name="BarChart3" size={24} strokeWidth={1.75} />
-          </span>
-          <p className="widget-state-title">Chưa có dữ liệu trong khoảng thời gian này.</p>
-        </div>
+        <ChartPanelHeader title={title} subtitle={subtitle} />
+        <ChartEmptyState />
       </section>
     );
   }
@@ -354,12 +353,7 @@ export function CategoryBreakdown({ title, subtitle, data, totalLabel = 'Tổng 
 
   return (
     <section className="chart-panel">
-      <div className="chart3d-header">
-        <div>
-          <h2 className="chart-title">{title}</h2>
-          {subtitle && <p className="chart3d-subtitle">{subtitle}</p>}
-        </div>
-      </div>
+      <ChartPanelHeader title={title} subtitle={subtitle} />
       <div className="category-breakdown-rows">
         {rows.map((row) => (
           <div className="category-breakdown-row" key={row.label}>
@@ -392,12 +386,7 @@ export function RankingList({ title, subtitle, data, primaryLabel = 'Chỉ số 
   const maxCurrent = Math.max(...data.map((item) => item.current || 0), 1);
   return (
     <section className="chart-panel">
-      <div className="chart3d-header">
-        <div>
-          <h2 className="chart-title">{title}</h2>
-          {subtitle && <p className="chart3d-subtitle">{subtitle}</p>}
-        </div>
-      </div>
+      <ChartPanelHeader title={title} subtitle={subtitle} />
       <ol className="ranking-list">
         {data.map((item, index) => (
           <li className="ranking-list-row" key={item.label}>
@@ -442,12 +431,7 @@ export function WardCategoryMatrix({ title, subtitle, wards }) {
 
   return (
     <section className="chart-panel">
-      <div className="chart3d-header">
-        <div>
-          <h2 className="chart-title">{title}</h2>
-          {subtitle && <p className="chart3d-subtitle">{subtitle}</p>}
-        </div>
-      </div>
+      <ChartPanelHeader title={title} subtitle={subtitle} />
       <table className="ward-category-matrix">
         <thead>
           <tr>
