@@ -43,7 +43,6 @@ const FOOTER_COLS = [
     title: 'Công cụ',
     links: [
       ['Tìm kiếm', '#/search'],
-      ['Dự án', '#/projects'],
       ['Môi giới', '#/brokers'],
       ['Đăng nhập', '#/login'],
     ],
@@ -106,9 +105,6 @@ export function Header({ session, onLogout, theme, onToggleTheme }) {
             </div>
           </div>
 
-          <a className="navbar-link" href="#/projects">
-            <Icon name="Building" size={16} /> Dự án
-          </a>
           <a className="navbar-link" href="#/brokers">
             <Icon name="IdCard" size={16} /> Môi giới
           </a>
@@ -216,7 +212,6 @@ export default function MainLayout({ children, session, onLogout, theme, onToggl
         {[
           { href: '#/', icon: 'Home', label: 'Home' },
           { href: '#/search', icon: 'Search', label: 'Tìm kiếm' },
-          { href: '#/projects', icon: 'Building', label: 'Dự án' },
           { href: '#/brokers', icon: 'IdCard', label: 'Môi giới' },
           {
             href: session?.role === 'BROKER' ? '#/broker/properties' : session?.role === 'ADMIN' ? '#/admin' : '#/login',

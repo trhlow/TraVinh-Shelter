@@ -111,12 +111,13 @@ test('routes to forgot password page', () => {
   expect(screen.getByRole('button', { name: 'Gửi liên kết đặt lại' })).toBeInTheDocument();
 });
 
-test('routes to public projects and brokers pages', () => {
+test('the removed projects route falls back to the home page', () => {
   window.location.hash = '#/projects';
   render(<App />);
-  expect(screen.getByRole('heading', { name: 'Khu đô thị và dự án nổi bật' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Khám phá theo loại hình' })).toBeInTheDocument();
+});
 
-  cleanup();
+test('routes to the public brokers page', () => {
   window.location.hash = '#/brokers';
   render(<App />);
   expect(screen.getByRole('heading', { name: 'Hồ sơ môi giới Công Tín Land' })).toBeInTheDocument();

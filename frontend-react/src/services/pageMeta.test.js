@@ -9,7 +9,7 @@ test('home has the brand title and is indexable', () => {
 });
 
 test('every public route is indexable', () => {
-  for (const key of ['home', 'search', 'property', 'projects', 'brokers']) {
+  for (const key of ['home', 'search', 'property', 'brokers']) {
     expect(buildPageMeta(key).robots).toBe('index');
   }
 });
@@ -35,7 +35,7 @@ test('unknown route keys fall back to home metadata', () => {
 });
 
 test('every route supplies a title and a description', () => {
-  for (const key of ['home', 'search', 'property', 'projects', 'brokers', 'login', 'broker', 'admin']) {
+  for (const key of ['home', 'search', 'property', 'brokers', 'login', 'broker', 'admin']) {
     const meta = buildPageMeta(key);
     expect(meta.title, key).toMatch(/Công Tín Land/);
     expect(meta.description, key).toBeTruthy();

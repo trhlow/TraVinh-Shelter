@@ -17,11 +17,6 @@ const PAGE_META = {
     description: 'Thông tin chi tiết bất động sản tại Trà Vinh: giá, diện tích, pháp lý, tiện ích và liên hệ môi giới.',
     robots: 'index',
   },
-  projects: {
-    title: `Dự án — ${BRAND}`,
-    description: 'Các dự án bất động sản tại Trà Vinh do Công Tín Land phân phối.',
-    robots: 'index',
-  },
   brokers: {
     title: `Đội ngũ môi giới — ${BRAND}`,
     description: 'Đội ngũ môi giới Công Tín Land am hiểu thị trường Trà Vinh, đồng hành từ lúc xem nhà đến khi công chứng.',
