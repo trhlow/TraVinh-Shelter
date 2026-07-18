@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import '../styles/dashboard.css';
 import {
-  buildDailySeries, buildWardData, ThreeDDonutChart, TrendBarLineChart, WardBarChart,
+  buildDailySeries, buildWardData, CategoryBreakdown, TrendLineChart,
 } from '../components/Charts.jsx';
 import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../components/DashboardWidgets.jsx';
 import ViewingsPanel from '../components/dashboard/ViewingsPanel.jsx';
@@ -540,13 +540,13 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
               </div>
 
               <div className="grid-2 dashboard-stats-row">
-                <StatCard icon="Building" title="Tin đăng đang hoạt động" value={dashboardStats.activeListings} tone="navy" trend={trendFor(activeListingsDelta)} series={activeListingsSparkline} />
+                <StatCard icon="Building" title="Tin đăng đang hoạt động" value={dashboardStats.activeListings} tone="navy" trend={trendFor(activeListingsDelta)} trendContext="so với kỳ trước" series={activeListingsSparkline} seriesCaption="7 ngày gần nhất" />
                 <StatCard icon="CalendarCheck" title="Lịch hẹn xác nhận tháng này" value={confirmedViewingsThisMonth} tone="navy" />
               </div>
 
               <div className="dashboard-charts-row">
                 <div className="dashboard-chart-span-2">
-                  <TrendBarLineChart
+                  <TrendLineChart
                     title="Hoạt động môi giới theo ngày"
                     subtitle={`Số bài đăng mới và lịch hẹn đã xác nhận theo từng ngày trong tháng ${activityMonthLabel}`}
                     data={activityChartData}
@@ -561,14 +561,13 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
 
               <div className="dashboard-charts-row">
                 <div className="dashboard-chart-span-2">
-                  <WardBarChart title="Tin đăng theo phường" data={wardChart} />
+                  <CategoryBreakdown title="Tin đăng theo phường" data={wardChart.map((ward) => ({ label: ward.label.replace('Phường ', ''), value: ward.count }))} totalLabel="Tổng cộng" />
                 </div>
-                <ThreeDDonutChart
+                <CategoryBreakdown
                   title="Loại hình BĐS đang quản lý"
                   subtitle="Trọ, nhà và đất đang quản lý"
                   data={managedTypeData}
-                  centerLabel="tin"
-                  compact
+                  totalLabel="Tổng cộng"
                 />
               </div>
 
