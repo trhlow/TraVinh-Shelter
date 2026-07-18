@@ -88,10 +88,11 @@ test('user growth chart shows only months with real users, no fabricated bars', 
   expect(monthLabels).toHaveLength(1);
 });
 
-test('user growth chart shows 0 for the current month when there are no users at all', () => {
+test('user growth chart shows empty state when there are no users at all', () => {
   const emptyData = { users: [], brokers: [], properties: [], viewings: [] };
-  render(<ReportsSection data={emptyData} loading={false} />);
-  const stage = screen.getByRole('img', { name: 'Tăng trưởng người dùng mới' });
-  const monthLabels = within(stage).getAllByText(/^T\d{1,2}$/);
-  expect(monthLabels).toHaveLength(1);
+  const { container } = render(<ReportsSection data={emptyData} loading={false} />);
+  expect(screen.getByText('Tăng trưởng người dùng mới')).toBeInTheDocument();
+  // Both user-growth and broker-activity charts show empty state when data is empty.
+  // Check that at least one empty-state message appears.
+  expect(screen.getAllByText('Chưa có dữ liệu trong khoảng thời gian này.')).toHaveLength(2);
 });

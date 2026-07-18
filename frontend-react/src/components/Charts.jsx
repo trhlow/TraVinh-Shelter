@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CATEGORIES, WARDS } from '../data/locations.js';
+import Icon from './ui/Icon.jsx';
 
 // Inline SVG resolves var(--color-*) fine, so charts stay theme-reactive.
 const CHART_PALETTE = [
@@ -832,6 +833,27 @@ export function TrendBarLineChart({ title, subtitle, data, currentLabel = 'Hiệ
   const right = viewBoxWidth - TREND_RIGHT_MARGIN;
   const idealWidthPx = viewBoxWidth * TREND_PX_PER_UNIT;
   const hasPrevious = data.some((point) => point.previous);
+  const isEmpty = data.every((point) => !point.current && !point.previous);
+
+  if (isEmpty) {
+    return (
+      <section className="chart-panel">
+        <div className="chart3d-header">
+          <div>
+            <h2 className="chart-title">{title}</h2>
+            {subtitle && <p className="chart3d-subtitle">{subtitle}</p>}
+          </div>
+        </div>
+        <div className="widget-state-block">
+          <span className="widget-state-icon">
+            <Icon name="BarChart3" size={24} strokeWidth={1.75} />
+          </span>
+          <p className="widget-state-title">Chưa có dữ liệu trong khoảng thời gian này.</p>
+        </div>
+      </section>
+    );
+  }
+
   const axisMax = Math.max(...data.flatMap((point) => [point.current || 0, point.previous || 0]), 1);
   const columnWidth = (right - left) / data.length;
   const barWidth = columnWidth * 0.4;

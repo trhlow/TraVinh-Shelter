@@ -482,6 +482,33 @@ test('TrendBarLineChart hides the line and second legend item when every previou
   expect(heights[1]).toBe(32);
 });
 
+test('TrendBarLineChart shows an empty state when every point is entirely zero', () => {
+  const data = [
+    { label: 'T1', current: 0, previous: 0 },
+    { label: 'T2', current: 0, previous: 0 },
+  ];
+  const { container } = render(
+    <TrendBarLineChart title="Hoạt động" subtitle="Theo tháng" data={data} currentLabel="Bài đăng" previousLabel="Lịch hẹn" />,
+  );
+
+  expect(screen.getByText('Hoạt động')).toBeInTheDocument();
+  expect(screen.getByText('Chưa có dữ liệu trong khoảng thời gian này.')).toBeInTheDocument();
+  expect(container.querySelector('.combo-bar')).not.toBeInTheDocument();
+  expect(container.querySelector('circle')).not.toBeInTheDocument();
+});
+
+test('TrendBarLineChart still renders bars normally when data is sparse but not all-zero', () => {
+  const data = [
+    { label: 'T1', current: 0, previous: 0 },
+    { label: 'T2', current: 3, previous: 0 },
+    { label: 'T3', current: 0, previous: 0 },
+  ];
+  const { container } = render(<TrendBarLineChart title="Hoạt động" data={data} />);
+
+  expect(screen.queryByText('Chưa có dữ liệu trong khoảng thời gian này.')).not.toBeInTheDocument();
+  expect(container.querySelectorAll('.combo-bar')).toHaveLength(3);
+});
+
 test('TrendBarLineChart renders a narrow viewBox and CSS width for a single data point (no stretched empty canvas)', () => {
   const data = [{ label: 'T7', current: 6, previous: 0 }];
   const { container } = render(<TrendBarLineChart title="Test" data={data} />);
