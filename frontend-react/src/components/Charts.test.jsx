@@ -386,6 +386,20 @@ test('ThreeDDonutChart exposes one focusable, labeled segment per data item, eac
   expect(screen.getByRole('img', { name: 'Đất: 1, 25%' })).toBeInTheDocument();
 });
 
+test('ThreeDDonutChart shows an empty state instead of a misleading full ring when every value is zero', () => {
+  const data = [
+    { label: 'Trọ', value: 0 },
+    { label: 'Nhà', value: 0 },
+    { label: 'Đất', value: 0 },
+  ];
+  const { container } = render(<ThreeDDonutChart title="Loại hình" data={data} />);
+
+  expect(screen.getByText('Loại hình')).toBeInTheDocument();
+  expect(screen.getByText('Chưa có dữ liệu trong khoảng thời gian này.')).toBeInTheDocument();
+  expect(container.querySelector('.chart3d-donut')).not.toBeInTheDocument();
+  expect(screen.queryByRole('img', { name: /Trọ/ })).not.toBeInTheDocument();
+});
+
 // ── TrendBarLineChart ─────────────────────────────────────
 
 test('TrendBarLineChart renders title, subtitle, and one bar per data point scaled to the real combined max', () => {

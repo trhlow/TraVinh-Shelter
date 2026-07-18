@@ -92,7 +92,7 @@ test('user growth chart shows empty state when there are no users at all', () =>
   const emptyData = { users: [], brokers: [], properties: [], viewings: [] };
   const { container } = render(<ReportsSection data={emptyData} loading={false} />);
   expect(screen.getByText('Tăng trưởng người dùng mới')).toBeInTheDocument();
-  // Both user-growth and broker-activity charts show empty state when data is empty.
-  // Check that at least one empty-state message appears.
-  expect(screen.getAllByText('Chưa có dữ liệu trong khoảng thời gian này.')).toHaveLength(2);
+  // User-growth, broker-activity, and the category-breakdown donut all show their own
+  // empty state when data is empty.
+  expect(screen.getAllByText('Chưa có dữ liệu trong khoảng thời gian này.')).toHaveLength(3);
 });

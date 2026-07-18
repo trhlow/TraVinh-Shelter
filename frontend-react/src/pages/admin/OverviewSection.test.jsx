@@ -44,6 +44,7 @@ test('renders a category-breakdown donut beside the system activity chart', () =
       { id: 'p1', title: 'A', ward: 'phuong-tra-vinh', category: 'tro', rawStatus: 'AVAILABLE', createdAt: '2026-06-01T00:00:00Z' },
       { id: 'p2', title: 'B', ward: 'phuong-tra-vinh', category: 'nha', rawStatus: 'AVAILABLE', createdAt: '2026-06-02T00:00:00Z' },
       { id: 'p3', title: 'C', ward: 'phuong-tra-vinh', category: 'nha', rawStatus: 'AVAILABLE', createdAt: '2026-06-03T00:00:00Z' },
+      { id: 'p4', title: 'D', ward: 'phuong-tra-vinh', category: 'dat', rawStatus: 'AVAILABLE', createdAt: '2026-06-04T00:00:00Z' },
     ],
     viewings: [],
   };
@@ -52,6 +53,7 @@ test('renders a category-breakdown donut beside the system activity chart', () =
   expect(screen.getByText('Phân bổ theo danh mục')).toBeInTheDocument();
   expect(screen.getByRole('img', { name: /Nhà: 2, \d+%/ })).toBeInTheDocument();
   expect(screen.getByRole('img', { name: /Trọ: 1, \d+%/ })).toBeInTheDocument();
+  expect(screen.getByRole('img', { name: /Đất: 1, \d+%/ })).toBeInTheDocument();
 });
 
 test('system activity chart trims months before the platform had any real data', () => {

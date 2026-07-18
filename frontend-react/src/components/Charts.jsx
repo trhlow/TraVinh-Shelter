@@ -253,6 +253,21 @@ export function ThreeDDonutChart({ title, subtitle, data, centerLabel = 'tổng'
   const [hovered, setHovered] = useState(null);
   const normalized = withColors(data);
   const total = normalized.reduce((sum, item) => sum + item.value, 0);
+  const isEmpty = total === 0;
+
+  if (isEmpty) {
+    return (
+      <ThreeDChartPanel title={title} subtitle={subtitle} mode={mode} onModeChange={setMode}>
+        <div className="widget-state-block">
+          <span className="widget-state-icon">
+            <Icon name="BarChart3" size={24} strokeWidth={1.75} />
+          </span>
+          <p className="widget-state-title">Chưa có dữ liệu trong khoảng thời gian này.</p>
+        </div>
+      </ThreeDChartPanel>
+    );
+  }
+
   const layoutClass = `chart3d-donut-layout${compact ? ' chart3d-donut-layout--compact' : ''}`;
   const segments = donutSegments(normalized, total || 1, DONUT_HIT_R);
 

@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import BrokerDashboard from './BrokerDashboard.jsx';
 
 beforeEach(() => {
@@ -25,6 +25,9 @@ test('activity chart shows the empty state when there is no real activity data',
   await waitFor(() => expect(screen.getAllByRole('heading', { name: 'Bảng điều khiển' }).length).toBeGreaterThan(0));
   // Since API is unavailable in tests, the dashboard starts with no listings/viewings,
   // so the activity chart shows the empty-state instead of bars (all data is zero).
-  expect(screen.getByText('Hoạt động môi giới theo ngày')).toBeInTheDocument();
-  expect(screen.getByText('Chưa có dữ liệu trong khoảng thời gian này.')).toBeInTheDocument();
+  // The "Loại hình BĐS đang quản lý" donut also shows its own empty state for the same
+  // reason, so the empty-state message is scoped to this chart's own panel.
+  const heading = screen.getByText('Hoạt động môi giới theo ngày');
+  const panel = heading.closest('.chart-panel');
+  expect(within(panel).getByText('Chưa có dữ liệu trong khoảng thời gian này.')).toBeInTheDocument();
 });
