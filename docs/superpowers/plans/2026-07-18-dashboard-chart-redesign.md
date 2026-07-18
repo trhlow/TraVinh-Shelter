@@ -662,7 +662,7 @@ Add to `dashboard.css`:
 .mini-bar-sparkline {
   display: flex;
   align-items: flex-end;
-  gap: 4px;
+  gap: var(--space-1);
   height: 32px;
 }
 
@@ -776,15 +776,15 @@ Add to `dashboard.css`, near the existing `.stat-card-*` rules:
 .stat-card-trend-block {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  margin-bottom: 14px;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
 }
 
 .stat-card-trend-line {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 15px;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
   font-weight: 700;
   line-height: 1.3;
 }
@@ -798,16 +798,18 @@ Add to `dashboard.css`, near the existing `.stat-card-*` rules:
 }
 
 .stat-card-trend-context {
-  font-size: 12px;
+  font-size: var(--text-caption);
   color: var(--color-muted);
 }
 
 .stat-card-series-caption {
-  font-size: 11px;
+  font-size: var(--text-badge);
   color: var(--color-muted);
-  margin: 6px 0 0;
+  margin: var(--space-2) 0 0;
 }
 ```
+
+(Font sizes use the project's 6-value scale — `--text-sm` at weight 700 for the trend value rather than inventing a new 15px size, per design.md's "cần nhấn thì đổi weight, không đổi size." Spacing uses the 4px scale tokens throughout, no raw px on any margin/padding/gap.)
 
 - [ ] **Step 8: Run tests to verify they pass**
 
@@ -933,7 +935,7 @@ Add to `dashboard.css`:
 .ranking-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -942,7 +944,7 @@ Add to `dashboard.css`:
 .ranking-list-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .ranking-list-rank {
@@ -954,7 +956,7 @@ Add to `dashboard.css`:
   justify-content: center;
   border-radius: var(--radius-full);
   background: var(--color-surface-strong);
-  font-size: 12px;
+  font-size: var(--text-caption);
   font-weight: 700;
   color: var(--color-muted);
 }
@@ -967,9 +969,9 @@ Add to `dashboard.css`:
 .ranking-list-top {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
-  font-size: 13.5px;
-  margin-bottom: 4px;
+  gap: var(--space-2);
+  font-size: var(--text-caption);
+  margin-bottom: var(--space-1);
 }
 
 .ranking-list-name {
@@ -998,6 +1000,8 @@ Add to `dashboard.css`:
   background: var(--color-primary);
 }
 ```
+
+(Font sizes and margin/padding/gap values use the project's token scale — no raw px on any of them, matching the fix applied to Task 2's `CategoryBreakdown` CSS after review. `.ranking-list-rank`'s `width`/`height: 22px` are element dimensions, not margin/padding/gap/font-size, so they're outside the scale rule's scope — same treatment as existing dimension values elsewhere in `dashboard.css`, e.g. `.kpi-trend-sparkline`'s `width: 32px`.)
 
 - [ ] **Step 5: Run tests, verify pass**
 
@@ -1147,15 +1151,15 @@ Add to `dashboard.css`:
 .ward-category-matrix {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13.5px;
+  font-size: var(--text-caption);
 }
 
 .ward-category-matrix th {
   text-align: right;
-  font-size: 12px;
+  font-size: var(--text-badge);
   font-weight: 600;
   color: var(--color-muted);
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--color-hairline);
 }
 
@@ -1165,7 +1169,7 @@ Add to `dashboard.css`:
 
 .ward-category-matrix td {
   text-align: right;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--color-hairline);
   color: var(--color-body);
   font-variant-numeric: tabular-nums;
@@ -1183,7 +1187,7 @@ Add to `dashboard.css`:
 }
 ```
 
-(`td.ward-category-matrix-label` — the JSX already applies `className="ward-category-matrix-label"` directly on the `<td>`, so this selector's higher specificity overrides the bare `.ward-category-matrix td` rule's `text-align: right` without needing `!important`, keeping this project's "0 `!important` in the stylesheet" discipline intact.)
+(`td.ward-category-matrix-label` — the JSX already applies `className="ward-category-matrix-label"` directly on the `<td>`, so this selector's higher specificity overrides the bare `.ward-category-matrix td` rule's `text-align: right` without needing `!important`, keeping this project's "0 `!important` in the stylesheet" discipline intact. Font sizes and padding use the token scale — no raw px — matching the fix applied to Task 2's CSS after review.)
 
 - [ ] **Step 5: Run tests, verify pass**
 
