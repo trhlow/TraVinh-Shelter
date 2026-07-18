@@ -1312,3 +1312,57 @@ export function RankingList({ title, subtitle, data, primaryLabel = 'Chỉ số 
   );
 }
 
+/**
+ * WardCategoryMatrix — ward × category count table, replacing 4 separate
+ * per-ward density charts. A table of real (possibly-zero) counts is always
+ * honest — unlike a chart, there's no geometry that can misrepresent an
+ * all-zero row, so this needs no separate empty-state branch.
+ */
+export function WardCategoryMatrix({ title, subtitle, wards }) {
+  const rows = wards.map((ward) => {
+    const counts = Object.fromEntries(ward.data.map((item) => [item.slug, item.count]));
+    const total = ward.data.reduce((sum, item) => sum + item.count, 0);
+    return { code: ward.code, label: ward.label.replace('Phường ', ''), counts, total };
+  });
+  const maxCount = Math.max(...rows.flatMap((row) => CATEGORIES.map((category) => row.counts[category.slug] || 0)), 1);
+
+  function cellStyle(count) {
+    if (!count) return undefined;
+    const intensity = Math.round((count / maxCount) * 60);
+    return { backgroundColor: `color-mix(in srgb, var(--color-primary), transparent ${100 - intensity}%)` };
+  }
+
+  return (
+    <section className="chart-panel">
+      <div className="chart3d-header">
+        <div>
+          <h2 className="chart-title">{title}</h2>
+          {subtitle && <p className="chart3d-subtitle">{subtitle}</p>}
+        </div>
+      </div>
+      <table className="ward-category-matrix">
+        <thead>
+          <tr>
+            <th>Phường</th>
+            {CATEGORIES.map((category) => <th key={category.slug}>{category.label}</th>)}
+            <th>Tổng</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.code}>
+              <td className="ward-category-matrix-label">{row.label}</td>
+              {CATEGORIES.map((category) => (
+                <td key={category.slug} style={cellStyle(row.counts[category.slug])}>
+                  {row.counts[category.slug] || 0}
+                </td>
+              ))}
+              <td className="ward-category-matrix-total">{row.total}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+

@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import {
   buildDailySeries, buildMonthlySeries, buildWardData, Sparkline, TrendAreaChart, WardBarChart,
   buildCategoryDensityData, CategoryBarChart, TrendBarLineChart, ThreeDDonutChart, TrendLineChart, CategoryBreakdown,
-  MiniBarSparkline, RankingList,
+  MiniBarSparkline, RankingList, WardCategoryMatrix,
 } from './Charts.jsx';
 
 afterEach(() => cleanup());
@@ -728,4 +728,38 @@ test('RankingList handles the single-row empty placeholder without crashing', ()
   render(<RankingList title="Top môi giới" data={data} primaryLabel="tin đăng" secondaryLabel="lịch hẹn" />);
   expect(screen.getByText('Chưa có')).toBeInTheDocument();
   expect(screen.getAllByRole('listitem')).toHaveLength(1);
+});
+
+// ── WardCategoryMatrix ────────────────────────────────────
+
+test('WardCategoryMatrix renders one row per ward with a column per category plus a total', () => {
+  const wards = [
+    {
+      code: 'phuong-tra-vinh',
+      label: 'Phường Trà Vinh',
+      data: [
+        { slug: 'tro', label: 'Trọ', count: 3, pct: 75 },
+        { slug: 'nha', label: 'Nhà', count: 1, pct: 25 },
+        { slug: 'dat', label: 'Đất', count: 0, pct: 0 },
+      ],
+    },
+  ];
+  render(<WardCategoryMatrix title="Mật độ tin theo phường" wards={wards} />);
+
+  expect(screen.getByRole('heading', { name: 'Mật độ tin theo phường' })).toBeInTheDocument();
+  const row = screen.getByText('Trà Vinh').closest('tr');
+  expect(row).toHaveTextContent('Trà Vinh');
+  expect(row).toHaveTextContent('3');
+  expect(row).toHaveTextContent('1');
+  expect(row).toHaveTextContent('0');
+  expect(row).toHaveTextContent('4'); // total = 3+1+0
+});
+
+test('WardCategoryMatrix renders every ward as a real row even when every count is zero (honest, not misleading)', () => {
+  const wards = [
+    { code: 'w1', label: 'Phường A', data: [{ slug: 'tro', label: 'Trọ', count: 0, pct: 0 }, { slug: 'nha', label: 'Nhà', count: 0, pct: 0 }, { slug: 'dat', label: 'Đất', count: 0, pct: 0 }] },
+  ];
+  render(<WardCategoryMatrix title="X" wards={wards} />);
+  const row = screen.getByText('A').closest('tr');
+  expect(row).toHaveTextContent('0');
 });
