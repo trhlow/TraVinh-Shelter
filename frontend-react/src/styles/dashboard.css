@@ -1250,14 +1250,7 @@
   text-align: center;
 }
 
-/* ── Admin quick actions + filter bar ──────────────────── */
-.admin-quick-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
+/* ── Admin filter bar ──────────────────────────────────── */
 .admin-filter-bar {
   display: flex;
   flex-wrap: wrap;
@@ -1271,6 +1264,13 @@
 }
 
 .admin-filter-bar .input { width: auto; }
+
+.admin-filter-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
 
 .admin-topbar-actions {
   display: flex;

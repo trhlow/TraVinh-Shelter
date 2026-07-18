@@ -77,13 +77,6 @@ export default function OverviewSection({ data }) {
 
   return (
     <>
-      <div className="admin-quick-actions">
-        <a className="btn btn-primary btn-sm" href="#/admin/brokers">
-          ＋ Cấp tài khoản môi giới
-        </a>
-        <button className="btn btn-ghost btn-sm" type="button" onClick={exportOverview}>Xuất báo cáo</button>
-      </div>
-
       <div className="admin-filter-bar">
         <DateRangeFilter
           preset={preset}
@@ -98,9 +91,15 @@ export default function OverviewSection({ data }) {
           <option value="all">Tất cả danh mục</option>
           {CATEGORIES.map((item) => <option key={item.slug} value={item.slug}>{item.label}</option>)}
         </select>
+        <div className="admin-filter-bar-actions">
+          <a className="btn btn-primary btn-sm" href="#/admin/brokers">
+            ＋ Cấp tài khoản môi giới
+          </a>
+          <button className="btn btn-ghost btn-sm" type="button" onClick={exportOverview}>Xuất báo cáo</button>
+        </div>
       </div>
 
-      <div className="grid-5 dashboard-stats-row">
+      <div className="grid-4 dashboard-stats-row">
         {kpis.map((kpi) => (
           <StatCard
             key={kpi.title}
