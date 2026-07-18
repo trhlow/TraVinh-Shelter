@@ -3,11 +3,12 @@ import MainLayout from '../layouts/MainLayout.jsx';
 import PageMeta from '../components/PageMeta.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import { fetchProperties } from '../services/api.js';
-import { MOCK_PROPERTIES } from '../services/mockData.js';
 import { WARDS } from '../data/locations.js';
 
 export default function BrokersPage({ session, onLogout, theme, onToggleTheme }) {
-  const [properties, setProperties] = useState(MOCK_PROPERTIES);
+  // null = loading. Brokers are derived from real listings, never seeded
+  // with mock data (see design.md).
+  const [properties, setProperties] = useState(null);
   const [query, setQuery] = useState('');
   const [ward, setWard] = useState('all');
   const [sort, setSort] = useState('top-sales');
@@ -16,17 +17,19 @@ export default function BrokersPage({ session, onLogout, theme, onToggleTheme })
     let alive = true;
     fetchProperties({ category: 'all', transaction: 'all' })
       .then((items) => {
-        if (alive && items.length > 0) setProperties(items);
+        if (alive) setProperties(items);
       })
       .catch(() => {
-        if (alive) setProperties(MOCK_PROPERTIES);
+        if (alive) setProperties([]);
       });
     return () => {
       alive = false;
     };
   }, []);
 
+  const loading = properties === null;
   const brokers = useMemo(() => {
+    if (!properties) return [];
     const normalizedQuery = query.trim().toLowerCase();
     return brokerStatsFrom(properties)
       .filter((broker) => ward === 'all' || broker.wards.includes(ward))
@@ -76,6 +79,15 @@ export default function BrokersPage({ session, onLogout, theme, onToggleTheme })
         </div>
 
         {/* Broker grid */}
+        {loading ? (
+          <div className="broker-grid">
+            {Array.from({ length: 3 }, (_, i) => (
+              <div key={i} className="pcard-skeleton" aria-hidden="true" />
+            ))}
+          </div>
+        ) : brokers.length === 0 ? (
+          <p className="pcard-grid-empty">Chưa tìm thấy môi giới phù hợp.</p>
+        ) : (
         <div className="broker-grid">
           {brokers.map((broker, index) => (
             <article key={broker.email} className="broker-profile-card">
@@ -159,6 +171,7 @@ export default function BrokersPage({ session, onLogout, theme, onToggleTheme })
             </article>
           ))}
         </div>
+        )}
       </div>
       </section>
     </MainLayout>
