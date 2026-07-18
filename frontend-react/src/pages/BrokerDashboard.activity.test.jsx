@@ -20,7 +20,7 @@ test('shows activity KPI and chart instead of commission on the broker overview'
   expect(screen.queryByText(/Hoa hồng/)).not.toBeInTheDocument();
 });
 
-test('activity chart shows every day of the current month', async () => {
+test('activity chart shows the empty state when there is no real activity data', async () => {
   render(<BrokerDashboard session={session} onLogin={() => {}} onLogout={() => {}} currentPath="/broker/dashboard" section="dashboard" />);
   await waitFor(() => expect(screen.getAllByRole('heading', { name: 'Bảng điều khiển' }).length).toBeGreaterThan(0));
   // Since API is unavailable in tests, the dashboard starts with no listings/viewings,
