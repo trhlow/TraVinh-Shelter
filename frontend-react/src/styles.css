@@ -44,13 +44,18 @@
   /* Fixed dark ink — for on-photo badges, avatar fallbacks */
   --color-ink-fixed:        #16211c;
 
-  /* Charts — data-series palette */
-  --chart-1: #1d5a44;
-  --chart-2: var(--color-success);
-  --chart-3: #c69a4c;
-  --chart-4: #4f8a6f;
-  --chart-5: #b9743f;
-  --chart-6: #8a938d;
+  /* Charts — categorical data-series palette (green,magenta,blue,yellow,aqua,orange).
+     Fixed order is the CVD-safety mechanism — validated with the dataviz skill's
+     validate_palette.js, do not reorder or add slots without re-running it.
+     Slots 1-4 additionally pass the harder all-pairs check (worst normal-vision
+     ΔE 15.6), which the donut chart needs since its slices all touch in a ring;
+     slots 5-6 are adjacent-only, safe for bar/line but not for a 5th+ donut slice. */
+  --chart-1: #008300;
+  --chart-2: #e87ba4;
+  --chart-3: #2a78d6;
+  --chart-4: #eda100;
+  --chart-5: #1baf7a;
+  --chart-6: #eb6834;
 
   /* Shadows — single tier */
   --shadow-card:     rgba(22,33,28,0.02) 0 0 0 1px,
@@ -108,11 +113,18 @@
   --color-error:            #f87171;
   --color-error-bg:         #7f1d1d;
 
-  --chart-1: #4f8a6f;
-  --chart-3: #c69a4c;
-  --chart-4: #63a084;
-  --chart-5: #b9743f;
-  --chart-6: #8a938d;
+  /* Same fixed order as the light block, re-stepped for the dark surface
+     and validated separately — see the light block's comment for the
+     all-pairs/adjacent split. Previously this block silently omitted
+     chart-2 and relied on it cascading from --color-success; now every
+     slot is explicit so the set can't drift out of sync with the light
+     scale's slot count. */
+  --chart-1: #008300;
+  --chart-2: #d55181;
+  --chart-3: #3987e5;
+  --chart-4: #c98500;
+  --chart-5: #199e70;
+  --chart-6: #d95926;
 
   --shadow-card:     rgba(255,255,255,0.06) 0 0 0 1px,
                      rgba(0,0,0,0.4) 0 2px 6px 0,
@@ -147,7 +159,19 @@
   --shadow-card: rgba(255, 255, 255, 0.06) 0 0 0 1px,
                  rgba(0, 0, 0, 0.4) 0 2px 6px 0,
                  rgba(0, 0, 0, 0.5) 0 4px 8px 0;
+  /* Self-contained categorical set, validated against this scope's own
+     #141218 canvas — .admin-theme is always-dark regardless of the site
+     light/dark toggle, so it cannot borrow chart-2..6 from [data-theme]
+     the way it used to (those resolve against the SITE's dark surface,
+     not admin's, and could silently mismatch if the toggle were light).
+     Slot 1 doubles as --color-primary (admin's own accent); slots 1-4
+     additionally clear all-pairs for the donut chart's cyclic adjacency. */
   --chart-1: #8b5cf6;
+  --chart-2: #008300;
+  --chart-3: #d55181;
+  --chart-4: #c98500;
+  --chart-5: #199e70;
+  --chart-6: #d95926;
   background: var(--color-canvas);
   color: var(--color-body);
 }
