@@ -3,7 +3,7 @@ import { afterEach, expect, test, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import {
   buildDailySeries, buildMonthlySeries, buildWardData, Sparkline, TrendAreaChart, WardBarChart,
-  buildCategoryDensityData, CategoryBarChart, TrendBarLineChart,
+  buildCategoryDensityData, CategoryBarChart, TrendBarLineChart, ThreeDDonutChart,
 } from './Charts.jsx';
 
 afterEach(() => cleanup());
@@ -55,8 +55,37 @@ test('WardBarChart columns are clickable when onSelectWard is provided', () => {
   const data = buildWardData([{ ward: 'phuong-tra-vinh' }], (item) => item.ward);
   const onSelectWard = vi.fn();
   render(<WardBarChart title="Theo phường" data={data} onSelectWard={onSelectWard} />);
-  fireEvent.click(screen.getByRole('button', { name: 'Phường Trà Vinh: 1 tin' }));
+  // aria-label now also carries percent (hover/focus tooltip parity — the
+  // dataviz skill requires the same detail on keyboard focus as on hover).
+  fireEvent.click(screen.getByRole('button', { name: 'Phường Trà Vinh: 1 tin, 100%' }));
   expect(onSelectWard).toHaveBeenCalledWith('phuong-tra-vinh');
+});
+
+test('WardBarChart shows a tooltip on hover and hides it on mouse leave', () => {
+  const data = buildWardData([{ ward: 'phuong-tra-vinh' }], (item) => item.ward);
+  render(<WardBarChart title="Theo phường" data={data} />);
+
+  const bar = screen.getByRole('img', { name: 'Phường Trà Vinh: 1 tin, 100%' });
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+
+  fireEvent.mouseEnter(bar);
+  expect(screen.getByRole('tooltip')).toHaveTextContent('Phường Trà Vinh');
+  expect(screen.getByRole('tooltip')).toHaveTextContent('1 tin · 100%');
+
+  fireEvent.mouseLeave(bar);
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+});
+
+test('WardBarChart shows the same tooltip on keyboard focus as on hover, and hides it on blur', () => {
+  const data = buildWardData([{ ward: 'phuong-tra-vinh' }], (item) => item.ward);
+  render(<WardBarChart title="Theo phường" data={data} />);
+
+  const bar = screen.getByRole('img', { name: 'Phường Trà Vinh: 1 tin, 100%' });
+  fireEvent.focus(bar);
+  expect(screen.getByRole('tooltip')).toHaveTextContent('1 tin · 100%');
+
+  fireEvent.blur(bar);
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
 });
 
 test('WardBarChart bar height reflects count, and encodes percent as a direct label — not a second axis', () => {
@@ -273,6 +302,29 @@ test('CategoryBarChart renders title, category labels, and encodes both count an
   expect(container.querySelector('.combo-svg path')).toBeNull();
 });
 
+test('CategoryBarChart shows a tooltip on hover/focus with category, count, and percent', () => {
+  const data = buildCategoryDensityData([
+    { ward: 'phuong-tra-vinh', category: 'tro' },
+    { ward: 'phuong-tra-vinh', category: 'nha' },
+  ], 'phuong-tra-vinh');
+  render(<CategoryBarChart title="Test" data={data} />);
+
+  const troBar = screen.getByRole('img', { name: 'Trọ: 1 tin, 50%' });
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+
+  fireEvent.mouseEnter(troBar);
+  expect(screen.getByRole('tooltip')).toHaveTextContent('Trọ');
+  expect(screen.getByRole('tooltip')).toHaveTextContent('1 tin · 50%');
+
+  fireEvent.mouseLeave(troBar);
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+
+  fireEvent.focus(troBar);
+  expect(screen.getByRole('tooltip')).toHaveTextContent('1 tin · 50%');
+  fireEvent.blur(troBar);
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+});
+
 test('CategoryBarChart scales bar height to the real max, not a fixed range', () => {
   const highVolume = buildCategoryDensityData(
     Array.from({ length: 7 }, () => ({ ward: 'phuong-tra-vinh', category: 'tro' })),
@@ -283,6 +335,55 @@ test('CategoryBarChart scales bar height to the real max, not a fixed range', ()
   const heights = bars.map((bar) => Number(bar.getAttribute('height')));
   // max count (7, all in "tro") must render at the full plot height (bottom 38 - top 6 = 32)
   expect(Math.max(...heights)).toBe(32);
+});
+
+// ── ThreeDDonutChart ──────────────────────────────────────
+// The conic-gradient ring has no per-wedge DOM of its own, so hover/focus
+// is served by an invisible SVG arc overlaid per segment (see donutSegments
+// in Charts.jsx). These tests exercise that overlay, not the gradient.
+
+test('ThreeDDonutChart shows a tooltip with label, value, and percent on hover, and hides it on mouse leave', () => {
+  const data = [
+    { label: 'Trọ', value: 2 },
+    { label: 'Nhà', value: 6 },
+  ];
+  render(<ThreeDDonutChart title="Loại hình" data={data} />);
+
+  const troWedge = screen.getByRole('img', { name: 'Trọ: 2, 25%' });
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+
+  fireEvent.mouseEnter(troWedge);
+  const tooltip = screen.getByRole('tooltip');
+  expect(tooltip).toHaveTextContent('Trọ');
+  expect(tooltip).toHaveTextContent('2 · 25%');
+
+  fireEvent.mouseLeave(troWedge);
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+});
+
+test('ThreeDDonutChart shows the same tooltip on keyboard focus as on hover, and hides it on blur', () => {
+  const data = [{ label: 'Trọ', value: 2 }, { label: 'Nhà', value: 6 }];
+  render(<ThreeDDonutChart title="Loại hình" data={data} />);
+
+  const nhaWedge = screen.getByRole('img', { name: 'Nhà: 6, 75%' });
+  fireEvent.focus(nhaWedge);
+  expect(screen.getByRole('tooltip')).toHaveTextContent('6 · 75%');
+
+  fireEvent.blur(nhaWedge);
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+});
+
+test('ThreeDDonutChart exposes one focusable, labeled segment per data item, each with its own value and share of the total', () => {
+  const data = [
+    { label: 'Trọ', value: 1 },
+    { label: 'Nhà', value: 2 },
+    { label: 'Đất', value: 1 },
+  ];
+  render(<ThreeDDonutChart title="Loại hình" data={data} />);
+
+  expect(screen.getByRole('img', { name: 'Trọ: 1, 25%' })).toBeInTheDocument();
+  expect(screen.getByRole('img', { name: 'Nhà: 2, 50%' })).toBeInTheDocument();
+  expect(screen.getByRole('img', { name: 'Đất: 1, 25%' })).toBeInTheDocument();
 });
 
 // ── TrendBarLineChart ─────────────────────────────────────
@@ -312,6 +413,39 @@ test('TrendBarLineChart renders title, subtitle, and one bar per data point scal
 
   expect(container.querySelector('.combo-chart-legend')).toHaveTextContent('Bài đăng');
   expect(container.querySelector('.combo-chart-legend')).toHaveTextContent('Lịch hẹn');
+});
+
+test('TrendBarLineChart tooltip lists both series at the hovered point ("one tooltip, every series")', () => {
+  const data = [
+    { label: 'T1', current: 2, previous: 5 },
+    { label: 'T2', current: 8, previous: 1 },
+  ];
+  render(
+    <TrendBarLineChart title="Hoạt động" data={data} currentLabel="Bài đăng" previousLabel="Lịch hẹn" />,
+  );
+
+  const t1 = screen.getByRole('img', { name: 'T1: Bài đăng 2, Lịch hẹn 5' });
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+
+  fireEvent.mouseEnter(t1);
+  const tooltip = screen.getByRole('tooltip');
+  expect(tooltip).toHaveTextContent('Bài đăng');
+  expect(tooltip).toHaveTextContent('2');
+  expect(tooltip).toHaveTextContent('Lịch hẹn');
+  expect(tooltip).toHaveTextContent('5');
+
+  fireEvent.mouseLeave(t1);
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+});
+
+test('TrendBarLineChart tooltip shows only the current series when there is no previous data', () => {
+  const data = [{ label: 'T1', current: 3, previous: 0 }];
+  render(<TrendBarLineChart title="Test" data={data} currentLabel="Bài đăng" previousLabel="Lịch hẹn" />);
+
+  fireEvent.focus(screen.getByRole('img', { name: 'T1: 3' }));
+  const tooltip = screen.getByRole('tooltip');
+  expect(tooltip).toHaveTextContent('Bài đăng');
+  expect(tooltip).not.toHaveTextContent('Lịch hẹn');
 });
 
 test('TrendBarLineChart exposes role=img with the title as its accessible name, and month labels are findable inside it', () => {

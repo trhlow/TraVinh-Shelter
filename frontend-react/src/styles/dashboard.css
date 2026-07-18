@@ -22,6 +22,70 @@
   line-height: 1.35;
 }
 
+/* ── Hover layer: every chart mark is interactive by default ──
+   (dataviz skill, interaction.md). One shared tooltip primitive positioned
+   from the SVG's own viewBox percentages, so it lines up with the mark
+   regardless of the panel's rendered pixel size. */
+.chart-hover-wrap {
+  position: relative;
+}
+
+.chart-mark-hit {
+  cursor: pointer;
+}
+
+.chart-mark-hit:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+/* Hovered/focused mark lifts — a visible response, not just the tooltip. */
+.chart-mark-hit:hover .combo-bar,
+.chart-mark-hit:focus-visible .combo-bar {
+  filter: brightness(1.12);
+}
+
+.chart-tooltip {
+  position: absolute;
+  z-index: 5;
+  transform: translate(-50%, -100%);
+  min-width: max-content;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--color-ink);
+  color: var(--color-canvas);
+  font-size: 12px;
+  line-height: 1.4;
+  box-shadow: var(--shadow-dropdown);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.chart-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chart-tooltip-row + .chart-tooltip-row {
+  margin-top: 2px;
+}
+
+.chart-tooltip-key {
+  width: 8px;
+  height: 2px;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+.chart-tooltip-value {
+  font-weight: 700;
+}
+
+.chart-tooltip-label {
+  opacity: 0.8;
+}
+
 /* ── 3D chart primitives ───────────────────────────────── */
 .chart3d-panel {
   min-height: 100%;
@@ -87,6 +151,27 @@
 .chart3d-donut-layout--compact .chart3d-donut {
   width: min(140px, 100%);
   margin: 8px auto 16px;
+}
+
+/* Invisible SVG arcs layered over the conic-gradient ring purely for
+   hit-testing, keyboard focus, and the hover tooltip — the gradient div has
+   no per-wedge DOM to attach handlers to. A hovered/focused wedge gets a
+   translucent highlight ring drawn on top, standing in for the "mark
+   lifts" hover response since the gradient itself can't be dimmed per-slice. */
+.chart3d-donut-hit-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.chart3d-donut-hit {
+  cursor: pointer;
+}
+
+.chart3d-donut-hit:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .chart3d-donut {

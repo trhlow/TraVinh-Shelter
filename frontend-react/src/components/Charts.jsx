@@ -34,6 +34,29 @@ function Legend({ data, total }) {
   );
 }
 
+/**
+ * ChartTooltip — the shared hover/focus readout every interactive mark
+ * shows (dataviz skill, interaction.md: "the hover layer is part of the
+ * deliverable, not an upgrade"). `leftPct`/`topPct` are 0-100 positions
+ * within the chart's own SVG viewBox — since every chart here uses
+ * preserveAspectRatio="none" on a fixed-unit viewBox, those units map
+ * linearly to percentage-of-container regardless of rendered pixel size,
+ * so no pixel measurement or ResizeObserver is needed.
+ */
+function ChartTooltip({ leftPct, topPct, rows }) {
+  return (
+    <div className="chart-tooltip" role="tooltip" style={{ left: `${leftPct}%`, top: `${topPct}%` }}>
+      {rows.map((row) => (
+        <div className="chart-tooltip-row" key={row.label}>
+          {row.color && <span className="chart-tooltip-key" style={{ backgroundColor: row.color }} />}
+          <span className="chart-tooltip-label">{row.label}</span>
+          <span className="chart-tooltip-value">{row.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function DonutChart({ title, data, centerLabel }) {
   const normalized = withColors(data);
   const totalValue = normalized.reduce((sum, item) => sum + item.value, 0);
@@ -180,20 +203,116 @@ function conicGradientFor(data, total) {
   }).join(', ')})`;
 }
 
+// The gradient's visible ring band, expressed in the overlay's own 0-42
+// viewBox: .chart3d-donut-hole sits at `inset: 25%`, so the hole radius is
+// 50% of the ring's outer radius. r/strokeWidth below cover exactly that
+// band (outer edge ~15.9, inner edge ~8) so the invisible hit arcs — and
+// the highlight drawn on hover — sit where the gradient wedges actually are.
+const DONUT_HIT_R = 11.9;
+const DONUT_HIT_STROKE = 7.9;
+
+// Per-segment hit-arc geometry, clockwise from 12 o'clock (matching
+// conicGradientFor's 0%-at-top convention) so the invisible hit arcs land
+// exactly on their gradient wedge.
+//
+// stroke-dasharray/stroke-dashoffset operate in the circle's own arc-length
+// units — its real circumference (2πr) — not in percent. The classic
+// percent-sums-to-100 trick (dash values that add up to 100, offset as a
+// quarter-turn = 25) only works at the specific radius whose circumference
+// is ~100 (r≈15.915); this overlay's hit radius is chosen to match the
+// donut's actual visual ring band instead, so its circumference is
+// smaller. `pct` (for the tooltip's percent label) and `dashLen`/
+// `offsetLen` (real arc-length units, for the SVG attributes) are kept
+// separate so neither gets silently coupled to the other again.
+function donutSegments(data, total, radius) {
+  const circumference = 2 * Math.PI * radius;
+  let cursorLen = 0;
+  return data.map((item) => {
+    const pct = total > 0 ? (item.value / total) * 100 : 0;
+    const dashLen = (pct / 100) * circumference;
+    const segment = {
+      item,
+      pct,
+      dashLen,
+      offsetLen: circumference / 4 - cursorLen,
+      circumference,
+      // Mid-angle, as a percent of the full circle measured clockwise from
+      // 12 o'clock (matching conicGradientFor) — kept alongside the raw
+      // dasharray/offset arc lengths so the tooltip never has to reverse
+      // the stroke-dashoffset formula to find it.
+      midPct: total > 0 ? ((cursorLen / circumference) * 100) + pct / 2 : 0,
+    };
+    cursorLen += dashLen;
+    return segment;
+  });
+}
+
 export function ThreeDDonutChart({ title, subtitle, data, centerLabel = 'tổng', compact = false }) {
   const [mode, setMode] = useState('3d');
+  const [hovered, setHovered] = useState(null);
   const normalized = withColors(data);
   const total = normalized.reduce((sum, item) => sum + item.value, 0);
   const layoutClass = `chart3d-donut-layout${compact ? ' chart3d-donut-layout--compact' : ''}`;
+  const segments = donutSegments(normalized, total || 1, DONUT_HIT_R);
+
+  const hoveredSegment = hovered != null ? segments[hovered] : null;
+  let tooltipPos = null;
+  if (hoveredSegment) {
+    // Anchor the tooltip at the segment's mid-angle, just outside the ring.
+    // conic-gradient convention: 0% sits at 12 o'clock, clockwise.
+    const angleRad = ((hoveredSegment.midPct / 100) * 360 - 90) * (Math.PI / 180);
+    const r = DONUT_HIT_R + DONUT_HIT_STROKE / 2 + 2;
+    tooltipPos = {
+      leftPct: ((21 + r * Math.cos(angleRad)) / 42) * 100,
+      topPct: ((21 + r * Math.sin(angleRad)) / 42) * 100,
+    };
+  }
 
   return (
     <ThreeDChartPanel title={title} subtitle={subtitle} mode={mode} onModeChange={setMode}>
       <div className={layoutClass}>
         <div className="chart3d-donut" style={{ background: conicGradientFor(normalized, total || 1) }}>
+          <svg className="chart3d-donut-hit-overlay" viewBox="0 0 42 42">
+            {segments.map((segment, index) => (
+              <g
+                key={segment.item.label}
+                role="img"
+                tabIndex={0}
+                aria-label={`${segment.item.label}: ${segment.item.value}, ${Math.round(segment.pct)}%`}
+                onMouseEnter={() => setHovered(index)}
+                onMouseLeave={() => setHovered((current) => (current === index ? null : current))}
+                onFocus={() => setHovered(index)}
+                onBlur={() => setHovered((current) => (current === index ? null : current))}
+              >
+                <circle
+                  className="chart3d-donut-hit"
+                  cx="21"
+                  cy="21"
+                  r={DONUT_HIT_R}
+                  fill="none"
+                  stroke={hovered === index ? 'rgb(255 255 255 / 0.3)' : 'transparent'}
+                  strokeWidth={DONUT_HIT_STROKE}
+                  strokeDasharray={`${segment.dashLen} ${segment.circumference - segment.dashLen}`}
+                  strokeDashoffset={segment.offsetLen}
+                />
+              </g>
+            ))}
+          </svg>
           <div className="chart3d-donut-hole">
             <span className="chart3d-donut-total">{formatChartNumber(total)}</span>
             <span className="chart3d-donut-label">{centerLabel}</span>
           </div>
+          {hoveredSegment && tooltipPos && (
+            <ChartTooltip
+              leftPct={tooltipPos.leftPct}
+              topPct={tooltipPos.topPct}
+              rows={[{
+                label: hoveredSegment.item.label,
+                value: `${hoveredSegment.item.value} · ${Math.round(hoveredSegment.pct)}%`,
+                color: hoveredSegment.item.color,
+              }]}
+            />
+          )}
         </div>
         <Legend data={normalized} total={total || 1} />
       </div>
@@ -473,6 +592,7 @@ function comboChartTickY(pct) {
  */
 export function WardBarChart({ title, data, onSelectWard }) {
   const { left, right, top, bottom } = COMBO_CHART_PLOT;
+  const [hovered, setHovered] = useState(null);
   const max = Math.max(...data.map((ward) => ward.count), 1);
   const columnWidth = (right - left) / data.length;
   const barWidth = columnWidth * 0.4;
@@ -495,9 +615,12 @@ export function WardBarChart({ title, data, onSelectWard }) {
     value: Math.round((max * pct) / 100),
   }));
 
+  const hoveredPoint = hovered != null ? points[hovered] : null;
+
   return (
     <section className="chart-panel">
       <h2 className="chart-title">{title}</h2>
+      <div className="chart-hover-wrap">
       <svg className="combo-svg" viewBox="0 0 100 50" preserveAspectRatio="none">
         <line x1={left} y1={top} x2={left} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
         <line x1={left} y1={bottom} x2={right} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
@@ -508,27 +631,27 @@ export function WardBarChart({ title, data, onSelectWard }) {
           </text>
         ))}
 
-        {points.map((point) => (
-          onSelectWard ? (
-            <g
-              key={point.ward.code}
-              role="button"
-              tabIndex={0}
-              aria-label={`${point.ward.label}: ${point.ward.count} tin`}
-              className="combo-bar-group"
-              onClick={() => onSelectWard(point.ward.code)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  onSelectWard(point.ward.code);
-                }
-              }}
-            >
-              <rect className="combo-bar" x={point.barLeftX} y={point.barTopY} width={barWidth} height={point.barHeight} fill={barColor} />
-            </g>
-          ) : (
-            <rect className="combo-bar" key={point.ward.code} x={point.barLeftX} y={point.barTopY} width={barWidth} height={point.barHeight} fill={barColor} />
-          )
+        {points.map((point, index) => (
+          <g
+            key={point.ward.code}
+            role={onSelectWard ? 'button' : 'img'}
+            tabIndex={0}
+            aria-label={`${point.ward.label}: ${point.ward.count} tin, ${point.ward.pct}%`}
+            className="combo-bar-group chart-mark-hit"
+            onClick={onSelectWard ? () => onSelectWard(point.ward.code) : undefined}
+            onKeyDown={onSelectWard ? (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                onSelectWard(point.ward.code);
+              }
+            } : undefined}
+            onMouseEnter={() => setHovered(index)}
+            onMouseLeave={() => setHovered((current) => (current === index ? null : current))}
+            onFocus={() => setHovered(index)}
+            onBlur={() => setHovered((current) => (current === index ? null : current))}
+          >
+            <rect className="combo-bar" x={point.barLeftX} y={point.barTopY} width={barWidth} height={point.barHeight} fill={barColor} />
+          </g>
         ))}
 
         {points.map((point) => (
@@ -550,6 +673,18 @@ export function WardBarChart({ title, data, onSelectWard }) {
           </text>
         ))}
       </svg>
+      {hoveredPoint && (
+        <ChartTooltip
+          leftPct={hoveredPoint.columnCenterX}
+          topPct={(hoveredPoint.barTopY / 50) * 100}
+          rows={[{
+            label: hoveredPoint.ward.label,
+            value: `${hoveredPoint.ward.count} tin · ${hoveredPoint.ward.pct}%`,
+            color: barColor,
+          }]}
+        />
+      )}
+      </div>
       <div className="combo-chart-legend">
         <span className="combo-chart-legend-item">
           <span className="combo-chart-legend-swatch" style={{ backgroundColor: barColor }} />
@@ -572,6 +707,7 @@ export function WardBarChart({ title, data, onSelectWard }) {
  */
 export function CategoryBarChart({ title, data }) {
   const { left, right, top, bottom } = COMBO_CHART_PLOT;
+  const [hovered, setHovered] = useState(null);
   const max = Math.max(...data.map((item) => item.count), 1);
   const columnWidth = (right - left) / data.length;
   const barWidth = columnWidth * 0.4;
@@ -594,9 +730,12 @@ export function CategoryBarChart({ title, data }) {
     value: Math.round((max * pct) / 100),
   }));
 
+  const hoveredPoint = hovered != null ? points[hovered] : null;
+
   return (
     <section className="chart-panel">
       <h2 className="chart-title">{title}</h2>
+      <div className="chart-hover-wrap">
       <svg className="combo-svg" viewBox="0 0 100 50" preserveAspectRatio="none">
         <line x1={left} y1={top} x2={left} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
         <line x1={left} y1={bottom} x2={right} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
@@ -607,8 +746,20 @@ export function CategoryBarChart({ title, data }) {
           </text>
         ))}
 
-        {points.map((point) => (
-          <rect className="combo-bar" key={point.item.slug} x={point.barLeftX} y={point.barTopY} width={barWidth} height={point.barHeight} fill={barColor} />
+        {points.map((point, index) => (
+          <g
+            key={point.item.slug}
+            role="img"
+            tabIndex={0}
+            aria-label={`${point.item.label}: ${point.item.count} tin, ${point.item.pct}%`}
+            className="combo-bar-group chart-mark-hit"
+            onMouseEnter={() => setHovered(index)}
+            onMouseLeave={() => setHovered((current) => (current === index ? null : current))}
+            onFocus={() => setHovered(index)}
+            onBlur={() => setHovered((current) => (current === index ? null : current))}
+          >
+            <rect className="combo-bar" x={point.barLeftX} y={point.barTopY} width={barWidth} height={point.barHeight} fill={barColor} />
+          </g>
         ))}
 
         {points.map((point) => (
@@ -630,6 +781,18 @@ export function CategoryBarChart({ title, data }) {
           </text>
         ))}
       </svg>
+      {hoveredPoint && (
+        <ChartTooltip
+          leftPct={hoveredPoint.columnCenterX}
+          topPct={(hoveredPoint.barTopY / 50) * 100}
+          rows={[{
+            label: hoveredPoint.item.label,
+            value: `${hoveredPoint.item.count} tin · ${hoveredPoint.item.pct}%`,
+            color: barColor,
+          }]}
+        />
+      )}
+      </div>
       <div className="combo-chart-legend">
         <span className="combo-chart-legend-item">
           <span className="combo-chart-legend-swatch" style={{ backgroundColor: barColor }} />
@@ -663,6 +826,7 @@ const TREND_PX_PER_UNIT = 7;
 
 export function TrendBarLineChart({ title, subtitle, data, currentLabel = 'Hiện tại', previousLabel = 'So sánh', rotateLabels = false }) {
   const { top, bottom } = COMBO_CHART_PLOT;
+  const [hovered, setHovered] = useState(null);
   const left = TREND_LEFT_MARGIN;
   const viewBoxWidth = TREND_LEFT_MARGIN + data.length * TREND_COLUMN_UNIT_WIDTH + TREND_RIGHT_MARGIN;
   const right = viewBoxWidth - TREND_RIGHT_MARGIN;
@@ -694,6 +858,12 @@ export function TrendBarLineChart({ title, subtitle, data, currentLabel = 'Hiệ
     value: Math.round((axisMax * pct) / 100),
   }));
 
+  const hoveredPoint = hovered != null ? points[hovered] : null;
+  const tooltipRows = hoveredPoint ? [
+    { label: currentLabel, value: hoveredPoint.point.current || 0, color: barColor },
+    ...(hasPrevious ? [{ label: previousLabel, value: hoveredPoint.point.previous || 0, color: lineColor }] : []),
+  ] : [];
+
   return (
     <section className="chart-panel" style={{ '--trend-chart-width': `${idealWidthPx}px` }}>
       <div className="chart3d-header">
@@ -702,6 +872,7 @@ export function TrendBarLineChart({ title, subtitle, data, currentLabel = 'Hiệ
           {subtitle && <p className="chart3d-subtitle">{subtitle}</p>}
         </div>
       </div>
+      <div className="chart-hover-wrap">
       <svg
         className="trend-chart-svg"
         viewBox={`0 0 ${viewBoxWidth} 50`}
@@ -718,13 +889,25 @@ export function TrendBarLineChart({ title, subtitle, data, currentLabel = 'Hiệ
           </text>
         ))}
 
-        {points.map((p) => (
-          <rect className="combo-bar" key={p.point.label} x={p.barLeftX} y={p.barTopY} width={barWidth} height={p.barHeight} fill={barColor} />
-        ))}
-
         {hasPrevious && <path d={linePath} fill="none" stroke={lineColor} strokeWidth="0.6" />}
-        {hasPrevious && points.map((p) => (
-          <circle key={`dot-${p.point.label}`} cx={p.columnCenterX} cy={p.lineY} r="1" fill={lineColor} />
+
+        {points.map((p, index) => (
+          <g
+            key={p.point.label}
+            role="img"
+            tabIndex={0}
+            aria-label={hasPrevious
+              ? `${p.point.label}: ${currentLabel} ${p.point.current || 0}, ${previousLabel} ${p.point.previous || 0}`
+              : `${p.point.label}: ${p.point.current || 0}`}
+            className="combo-bar-group chart-mark-hit"
+            onMouseEnter={() => setHovered(index)}
+            onMouseLeave={() => setHovered((current) => (current === index ? null : current))}
+            onFocus={() => setHovered(index)}
+            onBlur={() => setHovered((current) => (current === index ? null : current))}
+          >
+            <rect className="combo-bar" x={p.barLeftX} y={p.barTopY} width={barWidth} height={p.barHeight} fill={barColor} />
+            {hasPrevious && <circle cx={p.columnCenterX} cy={p.lineY} r="1.6" fill={lineColor} />}
+          </g>
         ))}
 
         {!rotateLabels && points.map((p) => (
@@ -733,6 +916,14 @@ export function TrendBarLineChart({ title, subtitle, data, currentLabel = 'Hiệ
           </text>
         ))}
       </svg>
+      {hoveredPoint && (
+        <ChartTooltip
+          leftPct={(hoveredPoint.columnCenterX / viewBoxWidth) * 100}
+          topPct={(Math.min(hoveredPoint.barTopY, hoveredPoint.lineY) / 50) * 100}
+          rows={tooltipRows}
+        />
+      )}
+      </div>
       {rotateLabels && (
         <div className="trend-chart-labels-row">
           {points.map((p) => (
