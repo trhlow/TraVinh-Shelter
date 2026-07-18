@@ -1134,6 +1134,70 @@ export function TrendLineChart({ title, subtitle, data, currentLabel = 'Hiện t
   );
 }
 
+export function CategoryBreakdown({ title, subtitle, data, totalLabel = 'Tổng cộng' }) {
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+  const isEmpty = total === 0;
+
+  if (isEmpty) {
+    return (
+      <section className="chart-panel">
+        <div className="chart3d-header">
+          <div>
+            <h2 className="chart-title">{title}</h2>
+            {subtitle && <p className="chart3d-subtitle">{subtitle}</p>}
+          </div>
+        </div>
+        <div className="widget-state-block">
+          <span className="widget-state-icon">
+            <Icon name="BarChart3" size={24} strokeWidth={1.75} />
+          </span>
+          <p className="widget-state-title">Chưa có dữ liệu trong khoảng thời gian này.</p>
+        </div>
+      </section>
+    );
+  }
+
+  // Every row already carries its own text label, so identity doesn't depend on hue —
+  // one shade ramp of --color-primary is used instead of the multi-hue CHART_PALETTE
+  // (a distinct hue per row was read as "this category is flagged/different" rather
+  // than "this is just the Nth row").
+  const rows = data.map((item, index) => ({
+    ...item,
+    pct: Math.round((item.value / total) * 100),
+    color: `color-mix(in srgb, var(--color-primary), white ${index * 22}%)`,
+  }));
+
+  return (
+    <section className="chart-panel">
+      <div className="chart3d-header">
+        <div>
+          <h2 className="chart-title">{title}</h2>
+          {subtitle && <p className="chart3d-subtitle">{subtitle}</p>}
+        </div>
+      </div>
+      <div className="category-breakdown-rows">
+        {rows.map((row) => (
+          <div className="category-breakdown-row" key={row.label}>
+            <div className="category-breakdown-row-top">
+              <span className="category-breakdown-label">{row.label}</span>
+              <span className="category-breakdown-value">
+                <b>{row.value}</b> <span className="category-breakdown-pct">· {row.pct}%</span>
+              </span>
+            </div>
+            <div className="category-breakdown-track">
+              <div className="category-breakdown-fill" style={{ width: `${row.pct}%`, backgroundColor: row.color }} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="category-breakdown-total">
+        <span>{totalLabel}</span>
+        <span className="category-breakdown-total-value">{total}</span>
+      </div>
+    </section>
+  );
+}
+
 /**
  * GaugeChart — circular progress gauge showing value/max as a percentage.
  *

@@ -3,7 +3,7 @@ import { afterEach, expect, test, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import {
   buildDailySeries, buildMonthlySeries, buildWardData, Sparkline, TrendAreaChart, WardBarChart,
-  buildCategoryDensityData, CategoryBarChart, TrendBarLineChart, ThreeDDonutChart, TrendLineChart,
+  buildCategoryDensityData, CategoryBarChart, TrendBarLineChart, ThreeDDonutChart, TrendLineChart, CategoryBreakdown,
 } from './Charts.jsx';
 
 afterEach(() => cleanup());
@@ -651,4 +651,36 @@ test('TrendLineChart renders every date label when there are few data points', (
   const { container } = render(<TrendLineChart title="A" data={data} />);
   const labelTexts = Array.from(container.querySelectorAll('.trend-line-svg text')).map((node) => node.textContent);
   expect(labelTexts).toEqual(['1', '2', '3', '4', '5']);
+});
+
+// ── CategoryBreakdown ─────────────────────────────────────
+
+test('CategoryBreakdown renders each row with its value and computed percent, plus a total line', () => {
+  const data = [{ label: 'Nhà', value: 12 }, { label: 'Đất', value: 10 }, { label: 'Trọ', value: 2 }];
+  render(<CategoryBreakdown title="Phân bổ theo danh mục" data={data} totalLabel="Tổng cộng" />);
+
+  expect(screen.getByRole('heading', { name: 'Phân bổ theo danh mục' })).toBeInTheDocument();
+  expect(screen.getByText('Nhà')).toBeInTheDocument();
+  expect(screen.getByText('12')).toBeInTheDocument();
+  expect(screen.getByText('· 50%')).toBeInTheDocument();
+  expect(screen.getByText('Đất')).toBeInTheDocument();
+  expect(screen.getByText('· 42%')).toBeInTheDocument();
+  expect(screen.getByText('Tổng cộng')).toBeInTheDocument();
+  expect(screen.getByText('24')).toBeInTheDocument();
+});
+
+test('CategoryBreakdown gives each row a distinct shade of the same primary color, not a multi-hue palette', () => {
+  const data = [{ label: 'A', value: 3 }, { label: 'B', value: 2 }, { label: 'C', value: 1 }];
+  const { container } = render(<CategoryBreakdown title="X" data={data} />);
+  const fills = Array.from(container.querySelectorAll('.category-breakdown-fill')).map((el) => el.style.backgroundColor);
+  expect(fills).toHaveLength(3);
+  expect(new Set(fills).size).toBe(3); // all distinct
+  fills.forEach((fill) => expect(fill).toContain('color-mix'));
+});
+
+test('CategoryBreakdown shows an empty state instead of a misleading full bar when every value is zero', () => {
+  const data = [{ label: 'A', value: 0 }, { label: 'B', value: 0 }];
+  render(<CategoryBreakdown title="X" data={data} />);
+  expect(screen.getByText('Chưa có dữ liệu trong khoảng thời gian này.')).toBeInTheDocument();
+  expect(screen.queryByText('A')).not.toBeInTheDocument();
 });
