@@ -588,6 +588,31 @@ export function Sparkline({ series = [] }) {
   );
 }
 
+/**
+ * MiniBarSparkline — bar-chart variant of Sparkline for a stat card's hero
+ * layout. The last `activeCount` bars render in the brand accent color, the
+ * rest in a muted track color — recent activity reads as more prominent
+ * than older days.
+ */
+export function MiniBarSparkline({ series = [], activeCount = 2 }) {
+  if (series.length < 2) return null;
+  const max = Math.max(...series, 1);
+  return (
+    <div className="mini-bar-sparkline">
+      {series.map((value, index) => {
+        const isActive = index >= series.length - activeCount;
+        return (
+          <span
+            key={index}
+            className={`mini-bar-sparkline-bar${isActive ? ' is-active' : ''}`}
+            style={{ height: `${Math.max(8, (value / max) * 100)}%` }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 const COMBO_CHART_TICK_PERCENTS = [0, 25, 50, 75, 100];
 const COMBO_CHART_PLOT = { left: 10, right: 90, top: 6, bottom: 38 };
 

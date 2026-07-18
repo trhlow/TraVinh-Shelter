@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import {
   buildDailySeries, buildMonthlySeries, buildWardData, Sparkline, TrendAreaChart, WardBarChart,
   buildCategoryDensityData, CategoryBarChart, TrendBarLineChart, ThreeDDonutChart, TrendLineChart, CategoryBreakdown,
+  MiniBarSparkline,
 } from './Charts.jsx';
 
 afterEach(() => cleanup());
@@ -231,6 +232,23 @@ test('Sparkline renders nothing for fewer than 2 points', () => {
 test('Sparkline renders a line path for 2+ points', () => {
   const { container } = render(<Sparkline series={[1, 3, 2]} />);
   expect(container.querySelector('.sparkline-line')).toBeInTheDocument();
+});
+
+// ── MiniBarSparkline ──────────────────────────────────────
+
+test('MiniBarSparkline renders one bar per value and marks the last activeCount bars active', () => {
+  const { container } = render(<MiniBarSparkline series={[1, 2, 3, 4, 5]} activeCount={2} />);
+  const bars = container.querySelectorAll('.mini-bar-sparkline-bar');
+  expect(bars).toHaveLength(5);
+  expect(Array.from(bars).filter((bar) => bar.classList.contains('is-active'))).toHaveLength(2);
+  expect(bars[3]).toHaveClass('is-active');
+  expect(bars[4]).toHaveClass('is-active');
+  expect(bars[0]).not.toHaveClass('is-active');
+});
+
+test('MiniBarSparkline renders nothing for fewer than 2 points, matching Sparkline', () => {
+  const { container } = render(<MiniBarSparkline series={[3]} />);
+  expect(container).toBeEmptyDOMElement();
 });
 
 // ── buildCategoryDensityData / CategoryBarChart ──────────
