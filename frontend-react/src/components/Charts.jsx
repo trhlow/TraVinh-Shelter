@@ -462,41 +462,37 @@ function comboChartTickY(pct) {
 }
 
 /**
- * WardBarChart — combo bar (count, left axis) + line (percent, right axis)
- * per ward, one shared SVG coordinate system so the line always lines up
- * over each bar. Expects `data` from buildWardData so all 4 wards always
- * render.
+ * WardBarChart — single-axis bar (count) per ward, with each bar's share of
+ * the total as a direct label. Previously this also plotted `ward.pct` as a
+ * line on a second right-hand axis; pct is `count / total * 100`, a fixed
+ * rescaling of the same count already on the bar, so the second scale added
+ * no information and is exactly the dual-axis anti-pattern the dataviz
+ * skill flags as its #1 chart mistake (two y-scales invent an alignment
+ * that isn't in the data). Expects `data` from buildWardData so all 4
+ * wards always render.
  */
 export function WardBarChart({ title, data, onSelectWard }) {
   const { left, right, top, bottom } = COMBO_CHART_PLOT;
-  const leftMax = Math.max(...data.map((ward) => ward.count), 1);
+  const max = Math.max(...data.map((ward) => ward.count), 1);
   const columnWidth = (right - left) / data.length;
   const barWidth = columnWidth * 0.4;
   const barColor = CHART_PALETTE[0];
-  const lineColor = CHART_PALETTE[4];
 
   const points = data.map((ward, index) => {
     const columnCenterX = left + columnWidth * (index + 0.5);
-    const barTopY = bottom - (ward.count / leftMax) * (bottom - top);
-    const lineY = bottom - (ward.pct / 100) * (bottom - top);
+    const barTopY = bottom - (ward.count / max) * (bottom - top);
     return {
       ward,
       columnCenterX,
       barLeftX: columnCenterX - barWidth / 2,
       barTopY,
       barHeight: bottom - barTopY,
-      lineY,
     };
   });
 
-  const linePath = `M${points.map((point) => `${point.columnCenterX},${point.lineY}`).join(' L')}`;
   const leftTicks = COMBO_CHART_TICK_PERCENTS.map((pct) => ({
     y: comboChartTickY(pct),
-    value: Math.round((leftMax * pct) / 100),
-  }));
-  const rightTicks = COMBO_CHART_TICK_PERCENTS.map((pct) => ({
-    y: comboChartTickY(pct),
-    value: pct,
+    value: Math.round((max * pct) / 100),
   }));
 
   return (
@@ -504,16 +500,10 @@ export function WardBarChart({ title, data, onSelectWard }) {
       <h2 className="chart-title">{title}</h2>
       <svg className="combo-svg" viewBox="0 0 100 50" preserveAspectRatio="none">
         <line x1={left} y1={top} x2={left} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
-        <line x1={right} y1={top} x2={right} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
         <line x1={left} y1={bottom} x2={right} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
 
         {leftTicks.map((tick) => (
           <text key={`left-${tick.y}`} x={left - 1.5} y={tick.y + 1} textAnchor="end" fontSize="3" fill="var(--color-muted)">
-            {tick.value}
-          </text>
-        ))}
-        {rightTicks.map((tick) => (
-          <text key={`right-${tick.y}`} x={right + 1.5} y={tick.y + 1} textAnchor="start" fontSize="3" fill="var(--color-muted)">
             {tick.value}
           </text>
         ))}
@@ -541,9 +531,17 @@ export function WardBarChart({ title, data, onSelectWard }) {
           )
         ))}
 
-        <path d={linePath} fill="none" stroke={lineColor} strokeWidth="0.6" />
         {points.map((point) => (
-          <circle key={`dot-${point.ward.code}`} cx={point.columnCenterX} cy={point.lineY} r="1" fill={lineColor} />
+          <text
+            key={`pct-${point.ward.code}`}
+            x={point.columnCenterX}
+            y={point.barTopY - 1.5}
+            textAnchor="middle"
+            fontSize="3"
+            fill="var(--color-body)"
+          >
+            {point.ward.pct}%
+          </text>
         ))}
 
         {points.map((point) => (
@@ -555,11 +553,7 @@ export function WardBarChart({ title, data, onSelectWard }) {
       <div className="combo-chart-legend">
         <span className="combo-chart-legend-item">
           <span className="combo-chart-legend-swatch" style={{ backgroundColor: barColor }} />
-          Số tin đăng
-        </span>
-        <span className="combo-chart-legend-item">
-          <span className="combo-chart-legend-line" style={{ backgroundColor: lineColor }} />
-          Tỉ lệ (%)
+          Số tin đăng — nhãn trên cột là tỉ lệ trong tổng số
         </span>
       </div>
     </section>
@@ -567,41 +561,37 @@ export function WardBarChart({ title, data, onSelectWard }) {
 }
 
 /**
- * CategoryBarChart — combo bar (count, left axis) + line (percent, right
- * axis) per property category (Trọ/Nhà/Đất) for a single ward. Shares its
- * coordinate system with WardBarChart via COMBO_CHART_PLOT/comboChartTickY,
- * so the two charts stay visually and behaviorally consistent.
+ * CategoryBarChart — single-axis bar (count) per property category
+ * (Trọ/Nhà/Đất) for a single ward, with each bar's share of the total as a
+ * direct label. Previously plotted `item.pct` as a line on a second right
+ * axis alongside the count bars — same dual-axis anti-pattern as
+ * WardBarChart (pct is a fixed rescaling of count, so the second scale
+ * added no information); see that component's comment for the full
+ * rationale. Shares its coordinate system with WardBarChart via
+ * COMBO_CHART_PLOT/comboChartTickY so the two stay visually consistent.
  */
 export function CategoryBarChart({ title, data }) {
   const { left, right, top, bottom } = COMBO_CHART_PLOT;
-  const leftMax = Math.max(...data.map((item) => item.count), 1);
+  const max = Math.max(...data.map((item) => item.count), 1);
   const columnWidth = (right - left) / data.length;
   const barWidth = columnWidth * 0.4;
   const barColor = CHART_PALETTE[0];
-  const lineColor = CHART_PALETTE[4];
 
   const points = data.map((item, index) => {
     const columnCenterX = left + columnWidth * (index + 0.5);
-    const barTopY = bottom - (item.count / leftMax) * (bottom - top);
-    const lineY = bottom - (item.pct / 100) * (bottom - top);
+    const barTopY = bottom - (item.count / max) * (bottom - top);
     return {
       item,
       columnCenterX,
       barLeftX: columnCenterX - barWidth / 2,
       barTopY,
       barHeight: bottom - barTopY,
-      lineY,
     };
   });
 
-  const linePath = `M${points.map((point) => `${point.columnCenterX},${point.lineY}`).join(' L')}`;
   const leftTicks = COMBO_CHART_TICK_PERCENTS.map((pct) => ({
     y: comboChartTickY(pct),
-    value: Math.round((leftMax * pct) / 100),
-  }));
-  const rightTicks = COMBO_CHART_TICK_PERCENTS.map((pct) => ({
-    y: comboChartTickY(pct),
-    value: pct,
+    value: Math.round((max * pct) / 100),
   }));
 
   return (
@@ -609,16 +599,10 @@ export function CategoryBarChart({ title, data }) {
       <h2 className="chart-title">{title}</h2>
       <svg className="combo-svg" viewBox="0 0 100 50" preserveAspectRatio="none">
         <line x1={left} y1={top} x2={left} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
-        <line x1={right} y1={top} x2={right} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
         <line x1={left} y1={bottom} x2={right} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
 
         {leftTicks.map((tick) => (
           <text key={`left-${tick.y}`} x={left - 1.5} y={tick.y + 1} textAnchor="end" fontSize="3" fill="var(--color-muted)">
-            {tick.value}
-          </text>
-        ))}
-        {rightTicks.map((tick) => (
-          <text key={`right-${tick.y}`} x={right + 1.5} y={tick.y + 1} textAnchor="start" fontSize="3" fill="var(--color-muted)">
             {tick.value}
           </text>
         ))}
@@ -627,9 +611,17 @@ export function CategoryBarChart({ title, data }) {
           <rect className="combo-bar" key={point.item.slug} x={point.barLeftX} y={point.barTopY} width={barWidth} height={point.barHeight} fill={barColor} />
         ))}
 
-        <path d={linePath} fill="none" stroke={lineColor} strokeWidth="0.6" />
         {points.map((point) => (
-          <circle key={`dot-${point.item.slug}`} cx={point.columnCenterX} cy={point.lineY} r="1" fill={lineColor} />
+          <text
+            key={`pct-${point.item.slug}`}
+            x={point.columnCenterX}
+            y={point.barTopY - 1.5}
+            textAnchor="middle"
+            fontSize="3"
+            fill="var(--color-body)"
+          >
+            {point.item.pct}%
+          </text>
         ))}
 
         {points.map((point) => (
@@ -641,11 +633,7 @@ export function CategoryBarChart({ title, data }) {
       <div className="combo-chart-legend">
         <span className="combo-chart-legend-item">
           <span className="combo-chart-legend-swatch" style={{ backgroundColor: barColor }} />
-          Số tin đăng
-        </span>
-        <span className="combo-chart-legend-item">
-          <span className="combo-chart-legend-line" style={{ backgroundColor: lineColor }} />
-          Tỉ lệ (%)
+          Số tin đăng — nhãn trên cột là tỉ lệ trong tổng số
         </span>
       </div>
     </section>

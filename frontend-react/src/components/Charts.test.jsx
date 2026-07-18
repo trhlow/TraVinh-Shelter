@@ -46,7 +46,9 @@ test('WardBarChart renders a column with count, name, and percent per ward', () 
   expect(screen.getByRole('heading', { name: 'Tin đăng theo phường' })).toBeInTheDocument();
   expect(screen.getByText('Hòa Thuận')).toBeInTheDocument();
   expect(screen.getByText('Trà Vinh')).toBeInTheDocument();
-  expect(screen.getByText('100')).toBeInTheDocument();
+  // The single ward with a listing holds 100% of the (tiny) total; percent is
+  // a direct label on its bar now, not a second axis.
+  expect(screen.getByText('100%')).toBeInTheDocument();
 });
 
 test('WardBarChart columns are clickable when onSelectWard is provided', () => {
@@ -57,7 +59,7 @@ test('WardBarChart columns are clickable when onSelectWard is provided', () => {
   expect(onSelectWard).toHaveBeenCalledWith('phuong-tra-vinh');
 });
 
-test('WardBarChart draws both the count bar and the percent line for the same ward', () => {
+test('WardBarChart bar height reflects count, and encodes percent as a direct label — not a second axis', () => {
   const items = [
     { ward: 'phuong-nguyet-hoa' },
     { ward: 'phuong-nguyet-hoa' },
@@ -69,16 +71,15 @@ test('WardBarChart draws both the count bar and the percent line for the same wa
   const bars = Array.from(container.querySelectorAll('.combo-bar'));
   const heights = bars.map((bar) => Number(bar.getAttribute('height')));
   // data is always in WARDS order (Trà Vinh, Long Đức, Nguyệt Hóa, Hòa Thuận);
-  // only Nguyệt Hóa has listings (count=3=leftMax) -> its bar spans the full plot height (38-6=32)
+  // only Nguyệt Hóa has listings (count=3=max) -> its bar spans the full plot height (38-6=32)
   expect(heights).toEqual([0, 0, 32, 0]);
 
-  const dots = Array.from(container.querySelectorAll('circle'));
-  const dotYs = dots.map((dot) => Number(dot.getAttribute('cy')));
-  // only Nguyệt Hóa has pct=100% -> its line point sits at the very top (y=6); the rest sit at
-  // the bottom (y=38, pct=0%)
-  expect(dotYs).toEqual([38, 38, 6, 38]);
-
-  expect(container.querySelectorAll('.combo-value-label')).toHaveLength(0);
+  // Percent used to be a line on a second y-axis (the dual-axis anti-pattern
+  // the dataviz skill flags); it's now a plain text label per bar instead.
+  // Only Nguyệt Hóa has listings, so it alone shows a non-zero percent.
+  expect(screen.getByText('100%')).toBeInTheDocument();
+  expect(container.querySelectorAll('circle')).toHaveLength(0);
+  expect(container.querySelector('.combo-svg path')).toBeNull();
 });
 
 // ── buildDailySeries ──────────────────────────────────────
@@ -258,18 +259,18 @@ test('CategoryBarChart renders title, category labels, and encodes both count an
 
   const bars = Array.from(container.querySelectorAll('.combo-bar'));
   const heights = bars.map((bar) => Number(bar.getAttribute('height')));
-  // data is always in CATEGORIES order (Trọ, Nhà, Đất): counts 4/1/0 of leftMax=4
+  // data is always in CATEGORIES order (Trọ, Nhà, Đất): counts 4/1/0 of max=4
   // -> bar heights scale to 32/8/0 (plot height 38-6=32)
   expect(heights).toEqual([32, 8, 0]);
 
-  const dots = Array.from(container.querySelectorAll('circle'));
-  const dotYs = dots.map((dot) => Number(dot.getAttribute('cy')));
-  // percents 80/20/0 map onto the fixed 0-100 right axis (top 6, bottom 38)
-  expect(dotYs[0]).toBeCloseTo(12.4);
-  expect(dotYs[1]).toBeCloseTo(31.6);
-  expect(dotYs[2]).toBe(38);
-
-  expect(container.querySelectorAll('.combo-value-label')).toHaveLength(0);
+  // Percent used to be a line on a second y-axis (the dual-axis anti-pattern
+  // the dataviz skill flags: pct is a fixed rescaling of count, so a second
+  // scale for it adds no information); it's now a direct label per bar.
+  expect(screen.getByText('80%')).toBeInTheDocument();
+  expect(screen.getByText('20%')).toBeInTheDocument();
+  expect(screen.getByText('0%')).toBeInTheDocument();
+  expect(container.querySelectorAll('circle')).toHaveLength(0);
+  expect(container.querySelector('.combo-svg path')).toBeNull();
 });
 
 test('CategoryBarChart scales bar height to the real max, not a fixed range', () => {
