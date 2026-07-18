@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { CATEGORIES, WARDS } from '../data/locations.js';
 import Icon from './ui/Icon.jsx';
 
@@ -986,6 +986,146 @@ export function TrendBarLineChart({ title, subtitle, data, currentLabel = 'Hiệ
         {hasPrevious && (
           <span className="combo-chart-legend-item">
             <span className="combo-chart-legend-line" style={{ backgroundColor: lineColor }} />
+            {previousLabel}
+          </span>
+        )}
+      </div>
+    </section>
+  );
+}
+
+const TREND_LABEL_DENSITY_THRESHOLD = 10;
+
+export function TrendLineChart({ title, subtitle, data, currentLabel = 'Hiện tại', previousLabel = 'So sánh' }) {
+  const { top, bottom } = COMBO_CHART_PLOT;
+  const [hovered, setHovered] = useState(null);
+  const gradientId = useId();
+  const left = TREND_LEFT_MARGIN;
+  const viewBoxWidth = TREND_LEFT_MARGIN + data.length * TREND_COLUMN_UNIT_WIDTH + TREND_RIGHT_MARGIN;
+  const right = viewBoxWidth - TREND_RIGHT_MARGIN;
+  const idealWidthPx = viewBoxWidth * TREND_PX_PER_UNIT;
+  const hasPrevious = data.some((point) => point.previous);
+  const isEmpty = data.every((point) => !point.current && !point.previous);
+
+  if (isEmpty) {
+    return (
+      <section className="chart-panel">
+        <div className="chart3d-header">
+          <div>
+            <h2 className="chart-title">{title}</h2>
+            {subtitle && <p className="chart3d-subtitle">{subtitle}</p>}
+          </div>
+        </div>
+        <div className="widget-state-block">
+          <span className="widget-state-icon">
+            <Icon name="BarChart3" size={24} strokeWidth={1.75} />
+          </span>
+          <p className="widget-state-title">Chưa có dữ liệu trong khoảng thời gian này.</p>
+        </div>
+      </section>
+    );
+  }
+
+  const axisMax = Math.max(...data.flatMap((point) => [point.current || 0, point.previous || 0]), 1);
+  const columnWidth = (right - left) / data.length;
+  const primaryColor = 'var(--color-primary)';
+  const secondaryColor = 'color-mix(in srgb, var(--color-primary), transparent 55%)';
+
+  const points = data.map((point, index) => {
+    const x = left + columnWidth * (index + 0.5);
+    return {
+      point,
+      x,
+      currentY: bottom - ((point.current || 0) / axisMax) * (bottom - top),
+      previousY: bottom - ((point.previous || 0) / axisMax) * (bottom - top),
+    };
+  });
+
+  const currentLinePath = `M${points.map((p) => `${p.x},${p.currentY}`).join(' L')}`;
+  const areaPath = `${currentLinePath} L${points[points.length - 1].x},${bottom} L${points[0].x},${bottom} Z`;
+  const previousLinePath = `M${points.map((p) => `${p.x},${p.previousY}`).join(' L')}`;
+  const lastPoint = points[points.length - 1];
+
+  // Never render a <text> per point once there are more than TREND_LABEL_DENSITY_THRESHOLD
+  // points (e.g. a 28-31-day month) — a mobile-width chart can't fit that many labels
+  // without overlap. Keep every Nth label plus the last one always.
+  const labelStep = data.length > TREND_LABEL_DENSITY_THRESHOLD
+    ? Math.ceil(data.length / TREND_LABEL_DENSITY_THRESHOLD)
+    : 1;
+  const visibleLabelPoints = points.filter((_, index) => index % labelStep === 0 || index === points.length - 1);
+
+  const hoveredPoint = hovered != null ? points[hovered] : null;
+  const tooltipRows = hoveredPoint ? [
+    { label: currentLabel, value: hoveredPoint.point.current || 0, color: primaryColor },
+    ...(hasPrevious ? [{ label: previousLabel, value: hoveredPoint.point.previous || 0, color: secondaryColor }] : []),
+  ] : [];
+
+  return (
+    <section className="chart-panel" style={{ '--trend-chart-width': `${idealWidthPx}px` }}>
+      <div className="chart3d-header">
+        <div>
+          <h2 className="chart-title">{title}</h2>
+          {subtitle && <p className="chart3d-subtitle">{subtitle}</p>}
+        </div>
+      </div>
+      <div className="chart-hover-wrap">
+        <svg className="trend-line-svg" viewBox={`0 0 ${viewBoxWidth} 50`} preserveAspectRatio="none" role="img" aria-label={title}>
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.18" />
+              <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <line x1={left} y1={bottom} x2={right} y2={bottom} stroke={TRACK_COLOR} strokeWidth="0.3" />
+          <path d={areaPath} fill={`url(#${gradientId})`} stroke="none" />
+          {hasPrevious && <path d={previousLinePath} fill="none" stroke={secondaryColor} strokeWidth="1" />}
+          <path d={currentLinePath} fill="none" stroke={primaryColor} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx={lastPoint.x} cy={lastPoint.currentY} r="1.4" fill="var(--color-canvas)" stroke={primaryColor} strokeWidth="1" />
+          {hoveredPoint && hoveredPoint !== lastPoint && (
+            <circle cx={hoveredPoint.x} cy={hoveredPoint.currentY} r="1.4" fill="var(--color-canvas)" stroke={primaryColor} strokeWidth="1" />
+          )}
+          {points.map((p, index) => (
+            <rect
+              key={p.point.label}
+              role="img"
+              tabIndex={0}
+              aria-label={hasPrevious
+                ? `${p.point.label}: ${currentLabel} ${p.point.current || 0}, ${previousLabel} ${p.point.previous || 0}`
+                : `${p.point.label}: ${p.point.current || 0}`}
+              className="trend-line-hit"
+              x={left + columnWidth * index}
+              y={top}
+              width={columnWidth}
+              height={bottom - top}
+              fill="transparent"
+              onMouseEnter={() => setHovered(index)}
+              onMouseLeave={() => setHovered((current) => (current === index ? null : current))}
+              onFocus={() => setHovered(index)}
+              onBlur={() => setHovered((current) => (current === index ? null : current))}
+            />
+          ))}
+          {visibleLabelPoints.map((p) => (
+            <text key={`x-label-${p.point.label}`} x={p.x} y={bottom + 4} textAnchor="middle" fontSize="3" fill="var(--color-muted)">
+              {p.point.label}
+            </text>
+          ))}
+        </svg>
+        {hoveredPoint && (
+          <ChartTooltip
+            leftPct={(hoveredPoint.x / viewBoxWidth) * 100}
+            topPct={(Math.min(hoveredPoint.currentY, hoveredPoint.previousY) / 50) * 100}
+            rows={tooltipRows}
+          />
+        )}
+      </div>
+      <div className="combo-chart-legend">
+        <span className="combo-chart-legend-item">
+          <span className="combo-chart-legend-line" style={{ backgroundColor: primaryColor }} />
+          {currentLabel}
+        </span>
+        {hasPrevious && (
+          <span className="combo-chart-legend-item">
+            <span className="combo-chart-legend-line" style={{ backgroundColor: secondaryColor }} />
             {previousLabel}
           </span>
         )}

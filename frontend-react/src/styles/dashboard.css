@@ -943,6 +943,16 @@
   height: 220px;
 }
 
+.trend-line-svg {
+  display: block;
+  width: min(100%, var(--trend-chart-width));
+  height: 220px;
+}
+
+.trend-line-hit {
+  cursor: pointer;
+}
+
 .combo-chart-legend {
   display: flex;
   justify-content: center;

@@ -3,7 +3,7 @@ import { afterEach, expect, test, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import {
   buildDailySeries, buildMonthlySeries, buildWardData, Sparkline, TrendAreaChart, WardBarChart,
-  buildCategoryDensityData, CategoryBarChart, TrendBarLineChart, ThreeDDonutChart,
+  buildCategoryDensityData, CategoryBarChart, TrendBarLineChart, ThreeDDonutChart, TrendLineChart,
 } from './Charts.jsx';
 
 afterEach(() => cleanup());
@@ -575,4 +575,80 @@ test('TrendBarLineChart without rotateLabels keeps rendering in-SVG text labels 
   expect(container.querySelector('.trend-chart-labels-row')).not.toBeInTheDocument();
   const stage = screen.getByRole('img', { name: 'Test' });
   expect(within(stage).getByText('T1')).toBeInTheDocument();
+});
+
+// ── TrendLineChart ────────────────────────────────────────
+
+test('TrendLineChart renders title, subtitle, and a line ending on the last data point', () => {
+  const data = [
+    { label: '12/07', current: 2, previous: 5 },
+    { label: '13/07', current: 8, previous: 1 },
+  ];
+  render(<TrendLineChart title="Xu hướng" subtitle="Theo ngày" data={data} currentLabel="Tin đăng" previousLabel="Lịch hẹn" />);
+
+  expect(screen.getByRole('heading', { name: 'Xu hướng' })).toBeInTheDocument();
+  expect(screen.getByText('Theo ngày')).toBeInTheDocument();
+  expect(screen.getByRole('img', { name: '12/07: Tin đăng 2, Lịch hẹn 5' })).toBeInTheDocument();
+  expect(screen.getByRole('img', { name: '13/07: Tin đăng 8, Lịch hẹn 1' })).toBeInTheDocument();
+});
+
+test('TrendLineChart shows the primary line, an area fill, and a secondary line only when previous data exists', () => {
+  const withPrevious = [
+    { label: 'T1', current: 3, previous: 1 },
+    { label: 'T2', current: 5, previous: 2 },
+  ];
+  const { container: withContainer } = render(<TrendLineChart title="A" data={withPrevious} />);
+  expect(withContainer.querySelectorAll('path')).toHaveLength(3); // area fill + primary line + secondary line
+
+  cleanup();
+
+  const noPrevious = [
+    { label: 'T1', current: 3, previous: 0 },
+    { label: 'T2', current: 5, previous: 0 },
+  ];
+  const { container: withoutContainer } = render(<TrendLineChart title="B" data={noPrevious} />);
+  expect(withoutContainer.querySelectorAll('path')).toHaveLength(2); // area fill + primary line only
+  expect(screen.queryByText('So sánh')).not.toBeInTheDocument();
+});
+
+test('TrendLineChart tooltip lists both series at the hovered point', () => {
+  const data = [
+    { label: 'T1', current: 2, previous: 5 },
+    { label: 'T2', current: 8, previous: 1 },
+  ];
+  render(<TrendLineChart title="A" data={data} currentLabel="Bài đăng" previousLabel="Lịch hẹn" />);
+
+  const t1 = screen.getByRole('img', { name: 'T1: Bài đăng 2, Lịch hẹn 5' });
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+
+  fireEvent.mouseEnter(t1);
+  const tooltip = screen.getByRole('tooltip');
+  expect(tooltip).toHaveTextContent('Bài đăng');
+  expect(tooltip).toHaveTextContent('2');
+  expect(tooltip).toHaveTextContent('Lịch hẹn');
+  expect(tooltip).toHaveTextContent('5');
+
+  fireEvent.mouseLeave(t1);
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+});
+
+test('TrendLineChart shows an empty state when every point is entirely zero', () => {
+  const data = [{ label: 'T1', current: 0, previous: 0 }, { label: 'T2', current: 0, previous: 0 }];
+  render(<TrendLineChart title="A" data={data} />);
+  expect(screen.getByText('Chưa có dữ liệu trong khoảng thời gian này.')).toBeInTheDocument();
+});
+
+test('TrendLineChart thins date labels when there are many data points, but always keeps the last label', () => {
+  const data = Array.from({ length: 31 }, (_, index) => ({ label: `${index + 1}`, current: 1, previous: 0 }));
+  const { container } = render(<TrendLineChart title="A" data={data} />);
+  const labelTexts = Array.from(container.querySelectorAll('.trend-line-svg text')).map((node) => node.textContent);
+  expect(labelTexts.length).toBeLessThan(31);
+  expect(labelTexts).toContain('31');
+});
+
+test('TrendLineChart renders every date label when there are few data points', () => {
+  const data = Array.from({ length: 5 }, (_, index) => ({ label: `${index + 1}`, current: 1, previous: 0 }));
+  const { container } = render(<TrendLineChart title="A" data={data} />);
+  const labelTexts = Array.from(container.querySelectorAll('.trend-line-svg text')).map((node) => node.textContent);
+  expect(labelTexts).toEqual(['1', '2', '3', '4', '5']);
 });
