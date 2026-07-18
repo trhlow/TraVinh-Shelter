@@ -50,6 +50,10 @@ export default function OverviewSection({ data }) {
     () => buildDailySeries(filteredProperties, (property) => property.createdAt, 7).map((bucket) => bucket.count),
     [filteredProperties],
   );
+  const listingsDelta = useMemo(
+    () => (prevProperties ? percentDelta(filteredProperties.length, prevProperties.length) : null),
+    [filteredProperties, prevProperties],
+  );
   const kpis = [
     { icon: 'Users', title: 'Tổng số người dùng', value: users.length, tone: 'navy' },
     { icon: 'IdCard', title: 'Môi giới hoạt động', value: activeBrokers, tone: 'green', href: '#/admin/brokers' },
@@ -123,7 +127,7 @@ export default function OverviewSection({ data }) {
             value={filteredProperties.length}
             tone="navy"
             href="#/admin/properties"
-            trend={prevProperties ? { value: `${percentDelta(filteredProperties.length, prevProperties.length) >= 0 ? '▲' : '▼'} ${Math.abs(percentDelta(filteredProperties.length, prevProperties.length))}%`, direction: percentDelta(filteredProperties.length, prevProperties.length) >= 0 ? 'up' : 'down' } : undefined}
+            trend={listingsDelta == null ? undefined : { value: `${listingsDelta >= 0 ? '+' : '-'}${Math.abs(listingsDelta)}%`, direction: listingsDelta >= 0 ? 'up' : 'down' }}
             trendContext="so với kỳ trước"
             series={totalListingsSparkline}
             seriesCaption="7 ngày gần nhất"
