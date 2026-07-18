@@ -906,7 +906,15 @@ export function TrendBarLineChart({ title, subtitle, data, currentLabel = 'Hiệ
             onBlur={() => setHovered((current) => (current === index ? null : current))}
           >
             <rect className="combo-bar" x={p.barLeftX} y={p.barTopY} width={barWidth} height={p.barHeight} fill={barColor} />
-            {hasPrevious && <circle cx={p.columnCenterX} cy={p.lineY} r="1.6" fill={lineColor} />}
+            {hasPrevious && (
+              <circle
+                className="trend-line-dot"
+                cx={p.columnCenterX}
+                cy={p.lineY}
+                r={hovered === index ? 1.1 : 0.5}
+                fill={lineColor}
+              />
+            )}
           </g>
         ))}
 

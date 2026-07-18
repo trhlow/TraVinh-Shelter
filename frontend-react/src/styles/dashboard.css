@@ -862,6 +862,10 @@
   height: 96px;
 }
 
+.trend-line-dot {
+  transition: r 120ms ease;
+}
+
 .trend-chart-dot {
   fill: var(--chart-1);
   cursor: pointer;
