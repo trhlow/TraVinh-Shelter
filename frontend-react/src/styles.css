@@ -132,50 +132,6 @@
   --shadow-dropdown: 0 4px 16px rgba(0,0,0,0.5);
 }
 
-/* ── Admin area: fixed đen-tím theme, never follows the site's light/dark toggle ───── */
-.admin-theme {
-  color-scheme: dark;
-  --color-canvas: #141218;
-  --color-surface-soft: #1c1a24;
-  --color-surface-strong: #262331;
-  --color-ink: #f2f0f6;
-  --color-body: #d6d0e0;
-  --color-muted: #a89fc2;
-  --color-muted-soft: #7a7195;
-  --color-primary: #8b5cf6;
-  --color-primary-active: #7c3aed;
-  --color-primary-disabled: #4c3a7a;
-  --color-on-primary: #ffffff;
-  --color-hairline: #2e2a3d;
-  --color-hairline-soft: #211f2b;
-  --color-border-strong: #453f5c;
-  --color-success: #4ade80;
-  --color-success-bg: #14532d;
-  --color-warning: #fbbf24;
-  --color-warning-bg: #78350f;
-  --color-error: #f87171;
-  --color-error-bg: #7f1d1d;
-  --color-sidebar-bg: #1a1625;
-  --shadow-card: rgba(255, 255, 255, 0.06) 0 0 0 1px,
-                 rgba(0, 0, 0, 0.4) 0 2px 6px 0,
-                 rgba(0, 0, 0, 0.5) 0 4px 8px 0;
-  /* Self-contained categorical set, validated against this scope's own
-     #141218 canvas — .admin-theme is always-dark regardless of the site
-     light/dark toggle, so it cannot borrow chart-2..6 from [data-theme]
-     the way it used to (those resolve against the SITE's dark surface,
-     not admin's, and could silently mismatch if the toggle were light).
-     Slot 1 doubles as --color-primary (admin's own accent); slots 1-4
-     additionally clear all-pairs for the donut chart's cyclic adjacency. */
-  --chart-1: #8b5cf6;
-  --chart-2: #008300;
-  --chart-3: #d55181;
-  --chart-4: #c98500;
-  --chart-5: #199e70;
-  --chart-6: #d95926;
-  background: var(--color-canvas);
-  color: var(--color-body);
-}
-
 /* ============================================================
    RESET & BASE
    ============================================================ */
