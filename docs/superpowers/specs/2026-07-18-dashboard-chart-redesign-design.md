@@ -39,6 +39,29 @@ trong implementation):
    sản phẩm thật — tiêu đề thật là "Tổng quan hoạt động và xu hướng tin đăng" (admin) / tương đương cho
    broker.
 
+## Bổ sung từ audit tham khảo (2026-07-18, sau khi spec ban đầu đã viết)
+
+Người dùng chia sẻ 3 bài audit UI/UX bên ngoài (broker/admin/public site) để **tham khảo, không phải yêu
+cầu nguyên văn** — đã xác minh một số claim cụ thể trong đó **sai** so với code thật (ví dụ: audit nói
+trạng thái `CONFIRMED` chưa dịch, nhưng `ViewingsPanel.jsx:5` đã là `"Đã xác nhận"` từ trước — claim không
+đối chiếu code thật, không tin nguyên văn các claim khác chưa tự kiểm chứng). Sau khi lọc, đúng **3 điểm**
+chạm vào phạm vi chart đang spec, đủ cụ thể/ít rủi ro để đưa vào ngay:
+
+1. **"Mật độ tin từng phường" (admin Reports) không nên là 4 card riêng** — audit chỉ ra 4 `CategoryBarChart`
+   nhỏ đứng cạnh nhau khó so sánh hơn 1 bảng ma trận Phường × Danh mục. Đồng ý — xem component
+   `WardCategoryMatrix` mới bên dưới, thay hoàn toàn cách tiếp cận "4 CategoryBreakdown" ban đầu dự định.
+2. **"Top môi giới theo hoạt động" (admin Reports) không phải dữ liệu chuỗi thời gian** — chỉ 6 môi giới
+   xếp hạng theo hoạt động, không có trục ngày/tháng thật. Dùng `TrendLineChart` (line chart) cho dữ liệu
+   này là sai loại biểu đồ ngay từ trong code hiện tại (đã vậy trước khi có audit — đây là lỗi có thật, audit
+   chỉ giúp phát hiện, không phải ý kiến thẩm mỹ). Thay bằng `RankingList` mới bên dưới.
+3. **Trục ngày trên chart nhiều điểm cần thưa nhãn theo chiều rộng** — khi `TrendLineChart` render dữ liệu
+   theo ngày (ví dụ broker's 28-31 điểm/tháng), không nhồi hết nhãn ngày vào cùng lúc trên màn hẹp. Thêm vào
+   phần "Trục ngày" của `TrendLineChart` bên dưới.
+
+Các phần khác của audit (đổi bộ KPI admin, filter toolbar chuẩn hóa, data table, redesign toàn broker/public
+site, design token mới #176247...) **không** đưa vào phạm vi này — đổi ý nghĩa dữ liệu hiển thị hoặc là dự
+án độc lập, để riêng làm backlog sau.
+
 ## Phạm vi — quyết định qua 3 câu hỏi làm rõ
 
 **Q1 — WardBarChart/CategoryBarChart (cột đứng) có nằm trong phạm vi?** → **Có**, làm lại theo ngôn ngữ
@@ -72,7 +95,7 @@ spec IA-redesign: "nơi cấu trúc đã ổn thì không tái cấu trúc, ch�
 
 Xóa 10 component cũ không còn dùng sau redesign: `DonutChart`, `BarChart`, `ThreeDAreaChart`,
 `HorizontalBarChart`, `TrendAreaChart`, `GaugeChart` (đã chết từ trước), cộng với `ThreeDDonutChart`,
-`TrendBarLineChart`, `WardBarChart`, `CategoryBarChart` (bị 3 component mới dưới đây thay thế hoàn toàn ở
+`TrendBarLineChart`, `WardBarChart`, `CategoryBarChart` (bị 5 component mới dưới đây thay thế hoàn toàn ở
 mọi call site). Xóa luôn phần hỗ trợ chỉ phục vụ các component trên: `ThreeDChartPanel`, `ChartModeToggle`,
 `conicGradientFor`, `donutSegments`, `DONUT_HIT_R`, `DONUT_HIT_STROKE`, `TREND_LEFT_MARGIN` v.v. (rà lại
 lúc viết plan — chỉ xóa phần thực sự không còn ai gọi, xác nhận bằng grep sau khi 3 component mới đã thay
@@ -113,6 +136,12 @@ phải render đúng single-series khi đó, y như hành vi hiện tại).
   bug điểm và nhãn lệch nhau vì 2 hệ toạ độ tách rời (CSS flex cho nhãn, SVG viewBox cho điểm); component
   thật vốn đã tính `columnCenterX` dùng chung cho bar/dot/label như `TrendBarLineChart` hiện tại — **bắt
   buộc giữ nguyên nguyên tắc "1 hàm tính x, dùng lại cho mọi thứ cần căn theo trục", không tách riêng**).
+- **Thưa nhãn ngày khi nhiều điểm** (bổ sung từ audit, mục 3): khi `data.length` vượt một ngưỡng (ví dụ
+  > 10 điểm — con số chính xác chốt lúc viết plan, dựa trên độ rộng nhãn ngày thực tế "12/07" ~5 ký tự),
+  không render `<text>` cho mọi điểm — chỉ render nhãn ở một số điểm cách đều (ví dụ mỗi điểm thứ N) cộng
+  điểm đầu/cuối luôn hiện. Áp dụng cho mọi kích thước màn hình bằng cùng 1 logic (không cần media query
+  riêng, vì ngưỡng đã tính theo số điểm dữ liệu, không theo viewport) — khớp với trường hợp cụ thể nhất
+  cần xử lý: broker's `activityChartData` có 28-31 điểm/tháng.
 - **Bỏ hẳn control "7 ngày/30 ngày/12 tháng" trong chart** — mockup có control này để ngữ cảnh hoá hình
   ảnh, nhưng trang đã có `DateRangeFilter`/`admin-filter-bar` ở cấp trang lọc đúng dữ liệu này rồi. Thêm
   1 control thứ 2 ngay trong chart sẽ tạo 2 nơi lọc thời gian độc lập, gây nhầm "cái nào mới là bộ lọc thật"
@@ -166,6 +195,38 @@ MiniBarSparkline({ series, activeCount = 2 })
 đây" nổi bật hơn quá khứ). Hover từng cột: theo điểm micro-polish #1, dùng nền/opacity nhẹ, **không** dùng
 viền `outline` đậm (tránh cảm giác "đã chọn").
 
+### 4. `RankingList` — thay `TrendLineChart` riêng cho "Top môi giới theo hoạt động" (admin Reports)
+
+```
+RankingList({ title, subtitle, data, primaryLabel, secondaryLabel })
+```
+
+`data: [{ label, current, previous }]` — **shape y hệt** những gì `topBrokerData`/`buildTopBrokerData` đã
+trả (không đổi hàm tính dữ liệu, chỉ đổi component tiêu thụ). Không có avatar trong dữ liệu hiện có — không
+tự bịa thêm ảnh đại diện.
+
+Hình dạng: danh sách xếp hạng, mỗi dòng = số thứ tự (`1.`, `2.`...) + `label` (tên môi giới, đã rút gọn sẵn
+từ `buildTopBrokerData`) + 2 số liệu bên phải (`current` gắn `primaryLabel`, `previous` gắn
+`secondaryLabel`, ví dụ "12 tin đăng · 5 lịch hẹn"). Có thể thêm 1 thanh ngang mảnh dưới tên thể hiện độ dài
+tương đối của `current` so với người xếp hạng cao nhất (không bắt buộc, chỉ nếu không tốn thêm effort đáng
+kể lúc code — nếu phức tạp hơn dự kiến, bỏ qua, danh sách xếp hạng thuần text vẫn đúng yêu cầu). Trường hợp
+dữ liệu rỗng/placeholder (`buildTopBrokerData` trả `[{label:'Chưa có', current:0, previous:0}]` khi không
+có môi giới) — hiện đúng dòng đó bình thường (đã là placeholder hợp lệ từ trước, không phải trường hợp cần
+`widget-state-block`).
+
+### 5. `WardCategoryMatrix` — thay 4 `CategoryBreakdown` riêng lẻ cho "Mật độ tin từng phường" (admin Reports)
+
+```
+WardCategoryMatrix({ title, subtitle, wards })
+```
+
+`wards`: **dùng thẳng shape `wardDensityData` hiện có** — `[{ code, label, data: [{slug, label, count,
+pct}] }]`, không đổi `buildCategoryDensityData`/cách tính. Bảng: mỗi hàng = 1 phường, cột = Trọ/Nhà/Đất +
+Tổng (tổng hàng = sum của `count` 3 category). Tô nền ô rất nhẹ theo độ lớn tương đối của `count` trong
+toàn bảng (`color-mix(in srgb, var(--color-primary), transparent X%)`, X tính theo `count/maxCountInTable`
+— cùng kỹ thuật color-mix đã dùng cho `CategoryBreakdown`, không phải kỹ thuật mới). Đây thay thế hoàn
+toàn khối `dashboard-ward-density-row` (4 card riêng) hiện có — **xóa** khối đó, 1 bảng duy nhất chiếm chỗ.
+
 ## Thay đổi `StatCard` (`components/DashboardWidgets.jsx`) — chỉ nhánh có `series`
 
 **Không đổi hành vi của StatCard khi không có `series`** (đa số KPI card khác trong app — "Tổng số người
@@ -210,15 +271,20 @@ Kế thừa cấu trúc đã có từ plan IA-redesign trước (header gộp, f
 nguyên y hệt (chart ở cột rộng, breakdown/upcoming-viewings ở cột hẹp) — chỉ tên component và data-mapping
 (`count`→`value` cho ward data) đổi.
 
-`ReportsSection.jsx`: tương tự, `TrendBarLineChart`→`TrendLineChart` (2 nơi), `ThreeDDonutChart`→
-`CategoryBreakdown`, `CategoryBarChart`→`CategoryBreakdown` (4 nơi trong `.map`, `dashboard-ward-density-row`
-giữ nguyên grid 4 cột hiện có). Không đổi vị trí bất kỳ panel nào trên trang.
+`ReportsSection.jsx`: `TrendBarLineChart`→`TrendLineChart` chỉ cho "Tăng trưởng người dùng mới" (dữ liệu
+chuỗi tháng thật) — **"Top môi giới theo hoạt động" đổi sang `RankingList`**, không phải `TrendLineChart`
+(sửa từ quyết định ban đầu của spec này, xem mục "Bổ sung từ audit"). `ThreeDDonutChart`→`CategoryBreakdown`
+("Phân bổ tin đăng theo khu vực"). **`CategoryBarChart` × 4 (`dashboard-ward-density-row`) đổi hoàn toàn
+sang 1 `WardCategoryMatrix`** thay vì 4 `CategoryBreakdown` — đây là điểm duy nhất ở `ReportsSection.jsx`
+thực sự đổi số lượng panel (4 card → 1 bảng), không chỉ đổi da. Các panel khác trên trang giữ nguyên vị trí.
 
 ## Ngoài phạm vi
 
 - Không thêm control lọc thời gian mới trong chart (đã giải thích ở trên).
 - Không đổi `admin-filter-bar`/`DateRangeFilter` hiện có.
-- Không đổi bố cục `BrokerDashboard.jsx`/`ReportsSection.jsx` (chỉ đổi da component).
+- Không đổi bố cục hàng/cột tổng thể của `BrokerDashboard.jsx`/`ReportsSection.jsx` — ngoại lệ duy nhất đã
+  nêu rõ ở trên: `dashboard-ward-density-row` (4 card) → 1 `WardCategoryMatrix`, vì đây là hệ quả trực tiếp
+  của việc đổi loại biểu diễn dữ liệu (4 chart nhỏ → 1 bảng), không phải tái cấu trúc trang.
 - Không bắt buộc dọn `--chart-1..6` token/`CHART_PALETTE` nếu không còn ai dùng — để lại, rủi ro thấp.
 - Không thêm `onSelectWard`-kiểu drill-down mới cho `CategoryBreakdown` (prop này tồn tại ở `WardBarChart`
   cũ nhưng xác nhận qua grep: không nơi nào thực sự truyền nó — không phải chức năng đang hoạt động, không
@@ -226,9 +292,11 @@ giữ nguyên grid 4 cột hiện có). Không đổi vị trí bất kỳ panel
 
 ## Test plan (chi tiết hoá lúc viết plan)
 
-- `Charts.test.jsx`: viết lại toàn bộ test cho `TrendLineChart`/`CategoryBreakdown`/`MiniBarSparkline`
-  (thay test cũ của `TrendBarLineChart`/`ThreeDDonutChart`/`WardBarChart`/`CategoryBarChart`, không giữ
-  song song 2 bộ test cho 2 API khác nhau của cùng 1 nhu cầu).
+- `Charts.test.jsx`: viết lại toàn bộ test cho `TrendLineChart`/`CategoryBreakdown`/`MiniBarSparkline`/
+  `RankingList`/`WardCategoryMatrix` (thay test cũ của `TrendBarLineChart`/`ThreeDDonutChart`/
+  `WardBarChart`/`CategoryBarChart`, không giữ song song 2 bộ test cho 2 API khác nhau của cùng 1 nhu cầu).
+  Thêm case riêng cho `TrendLineChart`'s thưa-nhãn-ngày (nhiều điểm → không phải mọi điểm đều có `<text>`)
+  và `RankingList`'s trường hợp placeholder rỗng (`[{label:'Chưa có', current:0, previous:0}]`).
 - `OverviewSection.test.jsx`, `BrokerDashboard.*.test.jsx`, `ReportsSection.test.jsx`: cập nhật theo tên
   component mới nếu test hiện tại query theo tên cũ; hầu hết vẫn pass nếu chỉ query theo text/role.
 - `DashboardWidgets.test.jsx` (nếu tồn tại — xác nhận lúc viết plan): thêm case `StatCard` với
