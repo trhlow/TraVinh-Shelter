@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { buildDailySeries, TrendBarLineChart } from '../../components/Charts.jsx';
+import { buildDailySeries, ThreeDDonutChart, TrendBarLineChart } from '../../components/Charts.jsx';
 import { DashboardPanel, StatCard } from '../../components/DashboardWidgets.jsx';
 import DateRangeFilter from '../../components/dashboard/DateRangeFilter.jsx';
 import { WARDS, CATEGORIES } from '../../data/locations.js';
@@ -66,6 +66,15 @@ export default function OverviewSection({ data }) {
   ];
 
   const systemActivityData = useMemo(() => buildSystemActivitySeries(properties, viewings), [properties, viewings]);
+
+  const categoryDistributionData = useMemo(
+    () => CATEGORIES.map((item) => ({
+      label: item.label,
+      value: filteredProperties.filter((property) => property.category === item.slug).length,
+    })),
+    [filteredProperties],
+  );
+
   const recentAuditItems = useMemo(() => buildAuditItems({ users, properties: filteredProperties, viewings: filteredViewings }).slice(0, 5), [users, filteredProperties, filteredViewings]);
 
   const exportOverview = () => {
@@ -114,13 +123,21 @@ export default function OverviewSection({ data }) {
         ))}
       </div>
 
-      <div className="dashboard-live-row">
-        <TrendBarLineChart
-          title="Hoạt động hệ thống theo tháng"
-          subtitle="Tin đăng mới và lịch hẹn đã xác nhận, tính từ khi có dữ liệu thực tế"
-          data={systemActivityData}
-          currentLabel="Tin đăng"
-          previousLabel="Lịch hẹn xác nhận"
+      <div className="dashboard-charts-row">
+        <div className="dashboard-chart-span-2">
+          <TrendBarLineChart
+            title="Hoạt động hệ thống theo tháng"
+            subtitle="Tin đăng mới và lịch hẹn đã xác nhận, tính từ khi có dữ liệu thực tế"
+            data={systemActivityData}
+            currentLabel="Tin đăng"
+            previousLabel="Lịch hẹn xác nhận"
+          />
+        </div>
+        <ThreeDDonutChart
+          compact
+          title="Phân bổ theo danh mục"
+          data={categoryDistributionData}
+          centerLabel="tin đăng"
         />
       </div>
 
