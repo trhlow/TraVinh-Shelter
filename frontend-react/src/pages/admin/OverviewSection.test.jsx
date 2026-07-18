@@ -36,7 +36,7 @@ test('renders monthly activity chart and system status panel', () => {
   expect(screen.queryByText('Doanh thu tháng này')).not.toBeInTheDocument();
 });
 
-test('renders a category-breakdown donut beside the system activity chart', () => {
+test('renders a category-breakdown panel beside the system activity chart', () => {
   const mixedCategoryData = {
     users: [],
     brokers: [],
@@ -50,10 +50,19 @@ test('renders a category-breakdown donut beside the system activity chart', () =
   };
   render(<OverviewSection data={mixedCategoryData} loading={false} />);
 
-  expect(screen.getByText('Phân bổ theo danh mục')).toBeInTheDocument();
-  expect(screen.getByRole('img', { name: /Nhà: 2, \d+%/ })).toBeInTheDocument();
-  expect(screen.getByRole('img', { name: /Trọ: 1, \d+%/ })).toBeInTheDocument();
-  expect(screen.getByRole('img', { name: /Đất: 1, \d+%/ })).toBeInTheDocument();
+  const panel = screen.getByText('Phân bổ theo danh mục').closest('section');
+
+  const nhaRow = within(panel).getByText('Nhà').closest('.category-breakdown-row');
+  expect(within(nhaRow).getByText('2')).toBeInTheDocument();
+  expect(within(nhaRow).getByText('· 50%')).toBeInTheDocument();
+
+  const troRow = within(panel).getByText('Trọ').closest('.category-breakdown-row');
+  expect(within(troRow).getByText('1')).toBeInTheDocument();
+  expect(within(troRow).getByText('· 25%')).toBeInTheDocument();
+
+  const datRow = within(panel).getByText('Đất').closest('.category-breakdown-row');
+  expect(within(datRow).getByText('1')).toBeInTheDocument();
+  expect(within(datRow).getByText('· 25%')).toBeInTheDocument();
 });
 
 test('system activity chart trims months before the platform had any real data', () => {

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { buildDailySeries, ThreeDDonutChart, TrendBarLineChart } from '../../components/Charts.jsx';
+import { buildDailySeries, CategoryBreakdown, TrendLineChart } from '../../components/Charts.jsx';
 import { DashboardPanel, StatCard } from '../../components/DashboardWidgets.jsx';
 import DateRangeFilter from '../../components/dashboard/DateRangeFilter.jsx';
 import { WARDS, CATEGORIES } from '../../data/locations.js';
@@ -53,15 +53,6 @@ export default function OverviewSection({ data }) {
   const kpis = [
     { icon: 'Users', title: 'Tổng số người dùng', value: users.length, tone: 'navy' },
     { icon: 'IdCard', title: 'Môi giới hoạt động', value: activeBrokers, tone: 'green', href: '#/admin/brokers' },
-    {
-      icon: 'Building',
-      title: 'Tổng số tin đăng',
-      value: filteredProperties.length,
-      tone: 'navy',
-      trend: prevProperties ? percentDelta(filteredProperties.length, prevProperties.length) : null,
-      series: totalListingsSparkline,
-      href: '#/admin/properties',
-    },
     { icon: 'CalendarCheck', title: 'Lịch hẹn xác nhận tháng này', value: confirmedViewingsThisMonth, tone: 'green' },
   ];
 
@@ -78,7 +69,8 @@ export default function OverviewSection({ data }) {
   const recentAuditItems = useMemo(() => buildAuditItems({ users, properties: filteredProperties, viewings: filteredViewings }).slice(0, 5), [users, filteredProperties, filteredViewings]);
 
   const exportOverview = () => {
-    downloadCsv('bao-cao-tong-quan.csv', kpis.map((kpi) => ({ metric: kpi.title, value: kpi.value })), [
+    const rows = [...kpis, { title: 'Tổng số tin đăng', value: filteredProperties.length }];
+    downloadCsv('bao-cao-tong-quan.csv', rows.map((kpi) => ({ metric: kpi.title, value: kpi.value })), [
       { key: 'metric', label: 'Chỉ số' },
       { key: 'value', label: 'Giá trị' },
     ]);
@@ -108,7 +100,7 @@ export default function OverviewSection({ data }) {
         </div>
       </div>
 
-      <div className="grid-4 dashboard-stats-row">
+      <div className="grid-3 dashboard-stats-row">
         {kpis.map((kpi) => (
           <StatCard
             key={kpi.title}
@@ -123,36 +115,46 @@ export default function OverviewSection({ data }) {
         ))}
       </div>
 
-      <div className="dashboard-charts-row">
-        <div className="dashboard-chart-span-2">
-          <TrendBarLineChart
+      <div className="dashboard-hero-row">
+        <div className="dashboard-hero-col-narrow">
+          <StatCard
+            icon="Building"
+            title="Tổng số tin đăng"
+            value={filteredProperties.length}
+            tone="navy"
+            href="#/admin/properties"
+            trend={prevProperties ? { value: `${percentDelta(filteredProperties.length, prevProperties.length) >= 0 ? '▲' : '▼'} ${Math.abs(percentDelta(filteredProperties.length, prevProperties.length))}%`, direction: percentDelta(filteredProperties.length, prevProperties.length) >= 0 ? 'up' : 'down' } : undefined}
+            trendContext="so với kỳ trước"
+            series={totalListingsSparkline}
+            seriesCaption="7 ngày gần nhất"
+          />
+          <CategoryBreakdown
+            title="Phân bổ theo danh mục"
+            data={categoryDistributionData}
+            totalLabel="Tổng cộng"
+          />
+        </div>
+        <div className="dashboard-hero-col-wide">
+          <TrendLineChart
             title="Hoạt động hệ thống theo tháng"
             subtitle="Tin đăng mới và lịch hẹn đã xác nhận, tính từ khi có dữ liệu thực tế"
             data={systemActivityData}
             currentLabel="Tin đăng"
             previousLabel="Lịch hẹn xác nhận"
           />
+          <AuditTimeline items={recentAuditItems} />
         </div>
-        <ThreeDDonutChart
-          compact
-          title="Phân bổ theo danh mục"
-          data={categoryDistributionData}
-          centerLabel="tin đăng"
-        />
       </div>
 
-      <div className="dashboard-panels-row">
-        <AuditTimeline items={recentAuditItems} />
-        <DashboardPanel title="Tình trạng hệ thống" count={`${filteredProperties.length} tin trong bộ lọc`}>
-          <div className="dashboard-system-lines">
-            <div className="dashboard-system-line"><span className="dashboard-system-line-label">Tổng bài đăng</span><span className="dashboard-system-line-value">{properties.length}</span></div>
-            <div className="dashboard-system-line"><span className="dashboard-system-line-label">Bài đăng đang hiển thị</span><span className="dashboard-system-line-value">{visibleCount}</span></div>
-            <div className="dashboard-system-line"><span className="dashboard-system-line-label">Môi giới được cấp</span><span className="dashboard-system-line-value">{brokers.length}</span></div>
-            <div className="dashboard-system-line"><span className="dashboard-system-line-label">Lịch hẹn chờ</span><span className="dashboard-system-line-value">{viewings.filter((viewing) => viewing.status === 'PENDING').length}</span></div>
-            <div className="dashboard-system-line"><span className="dashboard-system-line-label">Tài khoản bị khóa</span><span className="dashboard-system-line-value">{users.filter((user) => user.status === 'LOCKED' || user.status === 'BLOCKED').length}</span></div>
-          </div>
-        </DashboardPanel>
-      </div>
+      <DashboardPanel title="Tình trạng hệ thống" count={`${filteredProperties.length} tin trong bộ lọc`}>
+        <div className="dashboard-system-lines">
+          <div className="dashboard-system-line"><span className="dashboard-system-line-label">Tổng bài đăng</span><span className="dashboard-system-line-value">{properties.length}</span></div>
+          <div className="dashboard-system-line"><span className="dashboard-system-line-label">Bài đăng đang hiển thị</span><span className="dashboard-system-line-value">{visibleCount}</span></div>
+          <div className="dashboard-system-line"><span className="dashboard-system-line-label">Môi giới được cấp</span><span className="dashboard-system-line-value">{brokers.length}</span></div>
+          <div className="dashboard-system-line"><span className="dashboard-system-line-label">Lịch hẹn chờ</span><span className="dashboard-system-line-value">{viewings.filter((viewing) => viewing.status === 'PENDING').length}</span></div>
+          <div className="dashboard-system-line"><span className="dashboard-system-line-label">Tài khoản bị khóa</span><span className="dashboard-system-line-value">{users.filter((user) => user.status === 'LOCKED' || user.status === 'BLOCKED').length}</span></div>
+        </div>
+      </DashboardPanel>
     </>
   );
 }
