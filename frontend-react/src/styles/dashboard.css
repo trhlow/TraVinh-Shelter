@@ -1403,3 +1403,73 @@
   color: var(--color-ink);
   font-weight: 700;
 }
+
+/* ── RankingList ───────────────────────────────────────────── */
+
+.ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ranking-list-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ranking-list-rank {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-strong);
+  font-size: var(--text-caption);
+  font-weight: 700;
+  color: var(--color-muted);
+}
+
+.ranking-list-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ranking-list-top {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text-caption);
+  margin-bottom: var(--space-1);
+}
+
+.ranking-list-name {
+  color: var(--color-ink);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ranking-list-stats {
+  color: var(--color-muted);
+  flex-shrink: 0;
+}
+
+.ranking-list-track {
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--color-hairline);
+  overflow: hidden;
+}
+
+.ranking-list-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+}

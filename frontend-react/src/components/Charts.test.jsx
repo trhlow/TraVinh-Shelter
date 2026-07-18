@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import {
   buildDailySeries, buildMonthlySeries, buildWardData, Sparkline, TrendAreaChart, WardBarChart,
   buildCategoryDensityData, CategoryBarChart, TrendBarLineChart, ThreeDDonutChart, TrendLineChart, CategoryBreakdown,
-  MiniBarSparkline,
+  MiniBarSparkline, RankingList,
 } from './Charts.jsx';
 
 afterEach(() => cleanup());
@@ -701,4 +701,31 @@ test('CategoryBreakdown shows an empty state instead of a misleading full bar wh
   render(<CategoryBreakdown title="X" data={data} />);
   expect(screen.getByText('Chưa có dữ liệu trong khoảng thời gian này.')).toBeInTheDocument();
   expect(screen.queryByText('A')).not.toBeInTheDocument();
+});
+
+// ── RankingList ───────────────────────────────────────────
+
+test('RankingList renders numbered rows with both stat labels, in the given order', () => {
+  const data = [
+    { label: 'N.V.Toàn', current: 12, previous: 5 },
+    { label: 'T.M.Linh', current: 8, previous: 3 },
+  ];
+  render(<RankingList title="Top môi giới" data={data} primaryLabel="tin đăng" secondaryLabel="lịch hẹn xác nhận" />);
+
+  expect(screen.getByRole('heading', { name: 'Top môi giới' })).toBeInTheDocument();
+  const rows = screen.getAllByRole('listitem');
+  expect(rows).toHaveLength(2);
+  expect(rows[0]).toHaveTextContent('1');
+  expect(rows[0]).toHaveTextContent('N.V.Toàn');
+  expect(rows[0]).toHaveTextContent('12 tin đăng');
+  expect(rows[0]).toHaveTextContent('5 lịch hẹn xác nhận');
+  expect(rows[1]).toHaveTextContent('2');
+  expect(rows[1]).toHaveTextContent('T.M.Linh');
+});
+
+test('RankingList handles the single-row empty placeholder without crashing', () => {
+  const data = [{ label: 'Chưa có', current: 0, previous: 0 }];
+  render(<RankingList title="Top môi giới" data={data} primaryLabel="tin đăng" secondaryLabel="lịch hẹn" />);
+  expect(screen.getByText('Chưa có')).toBeInTheDocument();
+  expect(screen.getAllByRole('listitem')).toHaveLength(1);
 });

@@ -1275,3 +1275,40 @@ export function GaugeChart({ title, value, max = 100, label }) {
   );
 }
 
+/**
+ * RankingList — numbered ranking, for categorical data with no time axis
+ * (e.g. "top brokers by activity"). A line/bar trend chart is the wrong
+ * form for this: there's no date/month per row, just a ranked comparison.
+ */
+export function RankingList({ title, subtitle, data, primaryLabel = 'Chỉ số 1', secondaryLabel = 'Chỉ số 2' }) {
+  const maxCurrent = Math.max(...data.map((item) => item.current || 0), 1);
+  return (
+    <section className="chart-panel">
+      <div className="chart3d-header">
+        <div>
+          <h2 className="chart-title">{title}</h2>
+          {subtitle && <p className="chart3d-subtitle">{subtitle}</p>}
+        </div>
+      </div>
+      <ol className="ranking-list">
+        {data.map((item, index) => (
+          <li className="ranking-list-row" key={item.label}>
+            <span className="ranking-list-rank">{index + 1}</span>
+            <div className="ranking-list-body">
+              <div className="ranking-list-top">
+                <span className="ranking-list-name">{item.label}</span>
+                <span className="ranking-list-stats">
+                  {item.current || 0} {primaryLabel} · {item.previous || 0} {secondaryLabel}
+                </span>
+              </div>
+              <div className="ranking-list-track">
+                <div className="ranking-list-fill" style={{ width: `${Math.max(4, ((item.current || 0) / maxCurrent) * 100)}%` }} />
+              </div>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
