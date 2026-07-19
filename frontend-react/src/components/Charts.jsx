@@ -225,6 +225,17 @@ export function TrendLineChart({ title, subtitle, data, currentLabel = 'Hiện t
     );
   }
 
+  // A single point has no direction to draw — the line/area geometry either
+  // renders nothing or a misleading flat shape. Say so honestly instead.
+  if (data.length < 2) {
+    return (
+      <section className="chart-panel">
+        <ChartPanelHeader title={title} subtitle={subtitle} />
+        <ChartEmptyState message="Chưa đủ dữ liệu để thể hiện xu hướng." />
+      </section>
+    );
+  }
+
   const axisMax = Math.max(...data.flatMap((point) => [point.current || 0, point.previous || 0]), 1);
   const columnWidth = (right - left) / data.length;
   const primaryColor = 'var(--color-primary)';
@@ -423,9 +434,12 @@ export function WardCategoryMatrix({ title, subtitle, wards }) {
   });
   const maxCount = Math.max(...rows.flatMap((row) => CATEGORIES.map((category) => row.counts[category.slug] || 0)), 1);
 
+  // Four visually distinct tiers (rather than one continuous, low-contrast
+  // ramp) so a reader can tell "a little" from "a lot" at a glance.
   function cellStyle(count) {
     if (!count) return undefined;
-    const intensity = Math.round((count / maxCount) * 60);
+    const ratio = count / maxCount;
+    const intensity = ratio >= 0.99 ? 90 : ratio >= 0.66 ? 70 : ratio >= 0.33 ? 45 : 20;
     return { backgroundColor: `color-mix(in srgb, var(--color-primary), transparent ${100 - intensity}%)` };
   }
 

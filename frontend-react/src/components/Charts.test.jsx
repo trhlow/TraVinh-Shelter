@@ -232,6 +232,13 @@ test('TrendLineChart shows an empty state when every point is entirely zero', ()
   expect(screen.getByText('Chưa có dữ liệu trong khoảng thời gian này.')).toBeInTheDocument();
 });
 
+test('TrendLineChart shows an insufficient-data state instead of a floating single point when there is only one data point', () => {
+  const data = [{ label: 'T7', current: 1, previous: 0 }];
+  const { container } = render(<TrendLineChart title="A" data={data} />);
+  expect(screen.getByText('Chưa đủ dữ liệu để thể hiện xu hướng.')).toBeInTheDocument();
+  expect(container.querySelector('.trend-line-svg')).not.toBeInTheDocument();
+});
+
 test('TrendLineChart thins date labels when there are many data points, but always keeps the last label', () => {
   const data = Array.from({ length: 31 }, (_, index) => ({ label: `${index + 1}`, current: 1, previous: 0 }));
   const { container } = render(<TrendLineChart title="A" data={data} />);
@@ -338,4 +345,30 @@ test('WardCategoryMatrix renders every ward as a real row even when every count 
   render(<WardCategoryMatrix title="X" wards={wards} />);
   const row = screen.getByText('A').closest('tr');
   expect(row).toHaveTextContent('0');
+});
+
+test('WardCategoryMatrix gives the max-count cell a visibly stronger tint than a low-count cell, for readable contrast', () => {
+  const wards = [
+    {
+      code: 'w1',
+      label: 'Phường A',
+      data: [
+        { slug: 'tro', label: 'Trọ', count: 1, pct: 10 },
+        { slug: 'nha', label: 'Nhà', count: 10, pct: 90 },
+        { slug: 'dat', label: 'Đất', count: 0, pct: 0 },
+      ],
+    },
+  ];
+  const { container } = render(<WardCategoryMatrix title="X" wards={wards} />);
+  const cells = container.querySelectorAll('tbody td');
+  const [, troCell, nhaCell, datCell] = cells; // label, Trọ, Nhà, Đất, Tổng
+  expect(datCell.style.backgroundColor).toBe('');
+  const troOpacityMatch = troCell.style.backgroundColor.match(/transparent (\d+)%/);
+  const nhaOpacityMatch = nhaCell.style.backgroundColor.match(/transparent (\d+)%/);
+  expect(troOpacityMatch).toBeTruthy();
+  expect(nhaOpacityMatch).toBeTruthy();
+  // Lower transparent% means a stronger/more opaque tint — the max-count cell
+  // (Nhà, 10 of 10) must be visibly stronger than the low-count cell (Trọ, 1 of 10).
+  expect(Number(nhaOpacityMatch[1])).toBeLessThan(Number(troOpacityMatch[1]));
+  expect(Number(nhaOpacityMatch[1])).toBeLessThanOrEqual(15); // near-max tier reads as strongly tinted
 });

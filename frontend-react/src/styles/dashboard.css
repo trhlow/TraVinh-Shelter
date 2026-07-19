@@ -347,6 +347,7 @@
   line-height: 1.15;
   letter-spacing: -0.02em;
   margin: 0 0 4px;
+  font-variant-numeric: tabular-nums;
 }
 
 .stat-card-meta {
@@ -757,6 +758,7 @@
 
 .category-breakdown-value {
   color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
 }
 
 .category-breakdown-pct {
@@ -789,6 +791,7 @@
 .category-breakdown-total-value {
   color: var(--color-ink);
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── RankingList ───────────────────────────────────────────── */
@@ -846,10 +849,11 @@
 .ranking-list-stats {
   color: var(--color-muted);
   flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 .ranking-list-track {
-  height: 4px;
+  height: 6px;
   border-radius: var(--radius-full);
   background: var(--color-hairline);
   overflow: hidden;

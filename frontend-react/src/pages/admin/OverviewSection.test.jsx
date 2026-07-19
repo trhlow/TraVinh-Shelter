@@ -76,9 +76,12 @@ test('system activity chart trims months before the platform had any real data',
     viewings: [],
   };
   render(<OverviewSection data={recentOnly} loading={false} />);
-  const stage = screen.getByRole('img', { name: 'Hoạt động hệ thống theo tháng' });
-  const monthLabels = within(stage).getAllByText(/^T\d{1,2}$/);
-  expect(monthLabels).toHaveLength(1);
+  // Only one real month of data survives trimming — a single point can't show a
+  // trend line, so TrendLineChart shows an honest insufficient-data message
+  // instead of fabricating a chart around one floating dot.
+  expect(screen.getByText('Hoạt động hệ thống theo tháng')).toBeInTheDocument();
+  expect(screen.getByText('Chưa đủ dữ liệu để thể hiện xu hướng.')).toBeInTheDocument();
+  expect(screen.queryByRole('img', { name: 'Hoạt động hệ thống theo tháng' })).not.toBeInTheDocument();
 });
 
 test('Tổng số tin đăng KPI value narrows when a date preset excludes older listings', () => {

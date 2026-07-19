@@ -90,9 +90,12 @@ test('user growth chart shows only months with real users, no fabricated bars', 
     viewings: [],
   };
   render(<ReportsSection data={growthData} loading={false} />);
-  const stage = screen.getByRole('img', { name: 'Tăng trưởng người dùng mới' });
-  const monthLabels = within(stage).getAllByText(/^T\d{1,2}$/);
-  expect(monthLabels).toHaveLength(1);
+  // Only one real month of data survives trimming — a single point can't show a
+  // trend line, so TrendLineChart shows an honest insufficient-data message
+  // instead of fabricating a chart around one floating dot.
+  expect(screen.getByText('Tăng trưởng người dùng mới')).toBeInTheDocument();
+  expect(screen.getByText('Chưa đủ dữ liệu để thể hiện xu hướng.')).toBeInTheDocument();
+  expect(screen.queryByRole('img', { name: 'Tăng trưởng người dùng mới' })).not.toBeInTheDocument();
 });
 
 test('user growth chart shows empty state when there are no users at all', () => {
