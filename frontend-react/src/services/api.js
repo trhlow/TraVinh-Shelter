@@ -75,7 +75,10 @@ export async function uploadCurrentUserAvatar(token, file) {
 
 export async function fetchProperties(filters) {
   if (USE_MOCK_API) {
-    return delay(filterProperties(MOCK_PROPERTIES, filters));
+    const filtered = filterProperties(MOCK_PROPERTIES, filters);
+    const sorted = filters?.sort ? sortProperties(filtered, filters.sort) : filtered;
+    const limited = filters?.size ? sorted.slice(0, filters.size) : sorted;
+    return delay(limited);
   }
   const query = buildPropertyQuery(filters);
   const response = await request(`/properties${query ? `?${query}` : ''}`);
