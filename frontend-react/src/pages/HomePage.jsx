@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import PropertyCard from '../components/PropertyCard.jsx';
+import PropertyCarousel from '../components/PropertyCarousel.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
 import PageMeta from '../components/PageMeta.jsx';
@@ -166,6 +167,7 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
   const [troProperties, setTroProperties] = useState(null);
   const [nhaProperties, setNhaProperties] = useState(null);
   const [datProperties, setDatProperties] = useState(null);
+  const [newestProperties, setNewestProperties] = useState(null);
 
   // Fetch each category separately.
   useEffect(() => {
@@ -176,6 +178,16 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
         .then(items => { if (alive) setItems(items.slice(0, 8)); })
         .catch(() => { if (alive) setItems([]); });
     });
+    return () => { alive = false; };
+  }, []);
+
+  // Newest listings across all categories, independent of the category
+  // rows below — intentionally not deduplicated (see commit message).
+  useEffect(() => {
+    let alive = true;
+    fetchProperties({ sort: 'createdAt,desc', size: 12 })
+      .then((items) => { if (alive) setNewestProperties(items); })
+      .catch(() => { if (alive) setNewestProperties([]); });
     return () => { alive = false; };
   }, []);
 
@@ -222,6 +234,9 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
           </div>
         </div>
       </section>
+
+      {/* 1.5 NEWEST LISTINGS CAROUSEL */}
+      <PropertyCarousel items={newestProperties} />
 
       {/* 2. CATEGORIES */}
       <section className="section">
