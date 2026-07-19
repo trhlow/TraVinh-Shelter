@@ -70,9 +70,11 @@ function PropertyCarousel({ items /* Property[] | null */, visibleCount = 3 })
 
 - **Desktop**: hiện đúng 3 card. Mỗi lần bấm mũi tên → nhảy nguyên nhóm 3 tin tiếp theo (không cuộn
   từng pixel, không cuộn từng 1 card).
-- **Tablet**: hiện 2 card/lần. Dự án không dùng token breakpoint (đã kiểm tra: `styles.css` dùng
-  `@media (min-width: 768px)`/`(min-width: 1024px)` trực tiếp, không có custom property) — dùng
-  `@media (min-width: 768px)` cho mốc tablet, khớp quy ước sẵn có trong file.
+- **Tablet**: hiện 2 card/lần. Đã kiểm tra: `card.css` (nơi định nghĩa `.pcard-grid` mà carousel tái
+  dùng `PropertyCard`/style họ hàng) dùng breakpoint riêng `744px`/`1128px`/`1440px` — khác với
+  `styles.css`'s `768px`/`1024px` của khu vực dashboard. Vì carousel thuộc họ component trang công
+  khai (public site), dùng đúng mốc `744px` (tablet) / `1128px` (desktop) của `card.css` để nhất quán
+  với `.pcard-grid`, không lấy mốc của dashboard.
 - **Mobile**: hiện 1 card đầy đủ + hé một phần card tiếp theo (dùng `scroll-snap-align` +
   `overflow-x: auto`, không cần JS điều khiển bước nhảy — để trình duyệt xử lý cuộn/vuốt tự nhiên).
 - **Desktop/tablet**: dùng JS để track `startIndex`, cập nhật `transform: translateX(...)` hoặc
