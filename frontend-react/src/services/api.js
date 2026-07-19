@@ -1,5 +1,5 @@
 import { BROKER_DASHBOARD, MOCK_PROPERTIES, MOCK_USERS, MOCK_ADMIN_BROKERS, MOCK_AUDIT_LOGS } from './mockData.js';
-import { buildAdminQuery, buildPropertyQuery, filterProperties } from './propertyFilters.js';
+import { buildAdminQuery, buildPropertyQuery, filterProperties, paginateProperties, sortProperties } from './propertyFilters.js';
 import { isGoogleMapsEmbedUrl } from '../utils/googleMapsEmbed.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
@@ -80,6 +80,27 @@ export async function fetchProperties(filters) {
   const query = buildPropertyQuery(filters);
   const response = await request(`/properties${query ? `?${query}` : ''}`);
   return normalizePagedProperties(response);
+}
+
+// Separate from fetchProperties() on purpose: that function's bare-array return shape
+// is relied on by HomePage's category rows and fetchPropertyDetail's fallback fetch.
+// Changing it would force every call site to change too. This function exists only
+// for pages that need real pagination (SearchPage), and mirrors the real backend's
+// Page<> shape (content/totalElements/totalPages/number) in both branches.
+export async function fetchPropertiesPage(filters, page = 0, size = 9, sort = 'createdAt,desc') {
+  if (USE_MOCK_API) {
+    const filtered = filterProperties(MOCK_PROPERTIES, filters);
+    const sorted = sortProperties(filtered, sort);
+    return delay(paginateProperties(sorted, page, size));
+  }
+  const query = buildPropertyQuery({ ...filters, page, size, sort });
+  const response = await request(`/properties${query ? `?${query}` : ''}`);
+  return {
+    items: (response.content || []).map(normalizeProperty),
+    totalElements: response.totalElements ?? 0,
+    totalPages: response.totalPages ?? 1,
+    page: response.number ?? page,
+  };
 }
 
 export async function fetchPropertyDetail(propertyId) {
