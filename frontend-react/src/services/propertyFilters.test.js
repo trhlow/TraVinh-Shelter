@@ -89,6 +89,19 @@ describe('sortProperties', () => {
     sortProperties(items, 'price,asc');
     expect(items).toEqual(original);
   });
+
+  test('sorts by price using the raw mock shape (price field, no rawPrice)', () => {
+    // MOCK_PROPERTIES items never carry rawPrice (that field is added later by
+    // normalizeProperty() for real-API responses) - sorting must still work
+    // against their plain `price` field, mirroring filterProperties' fallback.
+    const mockShaped = [
+      { id: 'x', price: 2 },
+      { id: 'y', price: 1 },
+      { id: 'z', price: 3 },
+    ];
+    expect(sortProperties(mockShaped, 'price,asc').map((item) => item.id)).toEqual(['y', 'x', 'z']);
+    expect(sortProperties(mockShaped, 'price,desc').map((item) => item.id)).toEqual(['z', 'x', 'y']);
+  });
 });
 
 describe('paginateProperties', () => {

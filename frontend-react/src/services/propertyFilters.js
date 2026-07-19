@@ -60,8 +60,8 @@ export function buildAdminQuery(params = {}) {
 // convention so the same string works for both the real API call and this local sort.
 const SORT_COMPARATORS = {
   'createdAt,desc': (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  'price,asc': (a, b) => (a.rawPrice ?? 0) - (b.rawPrice ?? 0),
-  'price,desc': (a, b) => (b.rawPrice ?? 0) - (a.rawPrice ?? 0),
+  'price,asc': (a, b) => (a.rawPrice ?? a.price ?? 0) - (b.rawPrice ?? b.price ?? 0),
+  'price,desc': (a, b) => (b.rawPrice ?? b.price ?? 0) - (a.rawPrice ?? a.price ?? 0),
 };
 
 export function sortProperties(properties, sort) {
