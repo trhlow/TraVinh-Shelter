@@ -26,7 +26,13 @@ export default function PropertyCarousel({ items, visibleCount = 3 }) {
     // the optimistic default rather than disabling both arrows on a
     // meaningless 0/0/0 reading.
     if (!track || track.scrollWidth === 0) return;
-    setButtonState(getCarouselButtonState(track.scrollLeft, track.scrollWidth, track.clientWidth));
+    const next = getCarouselButtonState(track.scrollLeft, track.scrollWidth, track.clientWidth);
+    // onScroll fires many times per gesture; skip the update when the flags
+    // haven't actually flipped so most scroll ticks don't force a re-render
+    // of the whole card list.
+    setButtonState((prev) => (
+      prev.canGoPrev === next.canGoPrev && prev.canGoNext === next.canGoNext ? prev : next
+    ));
   }
 
   useEffect(() => {
