@@ -106,124 +106,64 @@
 }
 
 /* ============================================================
-   HOME — SHOWCASE CARDS (Trọ / Nhà / Đất rows)
+   HOME — NEWEST LISTINGS CAROUSEL
    ============================================================ */
-.tro-showcase-row {
+.carousel-header-actions {
   display: flex;
-  gap: 16px;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.carousel-arrows {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.carousel-arrow-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-hairline);
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.carousel-arrow-btn:hover:not(:disabled) {
+  background: var(--color-surface-soft);
+  border-color: var(--color-hairline-strong);
+}
+
+.carousel-arrow-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.carousel-track {
+  display: flex;
+  gap: var(--space-4);
   overflow-x: auto;
-  padding-bottom: 8px;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
+  padding-bottom: var(--space-2);
 }
 
-.tro-showcase-card {
-  display: flex;
-  flex-direction: column;
-  flex: 0 0 260px;
+.carousel-item {
+  flex: 0 0 85%;
   scroll-snap-align: start;
-  background: var(--color-canvas);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  text-decoration: none;
-  color: inherit;
-  transition: box-shadow 200ms ease;
+  min-width: 0;
 }
 
-.tro-showcase-card:hover {
-  box-shadow: var(--shadow-card);
+@media (min-width: 744px) {
+  .carousel-item { flex-basis: calc(50% - var(--space-4) / 2); }
 }
 
-.tro-showcase-image {
-  position: relative;
-  flex: 0 0 auto;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  background: var(--color-surface-strong);
-}
-
-.tro-showcase-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  display: block;
-  transition: transform 300ms ease;
-}
-
-.tro-showcase-card:hover .tro-showcase-image img {
-  transform: scale(1.03);
-}
-
-.tro-showcase-badge {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.tro-showcase-rooms {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  background: var(--color-ink-fixed);
-  color: var(--color-on-primary);
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.tro-showcase-body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px;
-}
-
-.tro-showcase-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1.25;
-  color: var(--color-ink);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.tro-showcase-address {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin: 0;
-  font-size: 14px;
-  color: var(--color-muted);
-}
-
-.tro-showcase-price {
-  margin: 2px 0 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--color-ink);
-}
-
-.tro-showcase-total {
-  margin: 0;
-  font-size: 13px;
-  color: var(--color-muted);
-}
-
-.tro-showcase-card-skeleton {
-  flex: 0 0 260px;
-  aspect-ratio: 1 / 1.35;
+@media (min-width: 1128px) {
+  .carousel-item { flex-basis: calc(33.333% - (var(--space-4) * 2 / 3)); }
 }
 
 /* ============================================================

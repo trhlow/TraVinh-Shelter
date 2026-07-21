@@ -2,9 +2,10 @@ import { useMemo, useState } from 'react';
 import {
   buildCategoryDensityData,
   buildWardData,
-  CategoryBarChart,
-  ThreeDDonutChart,
-  TrendBarLineChart,
+  CategoryBreakdown,
+  RankingList,
+  TrendLineChart,
+  WardCategoryMatrix,
 } from '../../components/Charts.jsx';
 import { DashboardPanel, StateBlock, StatusBadge } from '../../components/DashboardWidgets.jsx';
 import DateRangeFilter from '../../components/dashboard/DateRangeFilter.jsx';
@@ -67,36 +68,31 @@ export default function ReportsSection({ data }) {
       </div>
 
       <div className="dashboard-live-row">
-        <TrendBarLineChart
-          title="Tăng trưởng tài khoản mới"
+        <TrendLineChart
+          title="Tăng trưởng người dùng mới"
           subtitle="Tính từ khi có dữ liệu thực tế"
           data={userGrowthData}
           currentLabel="Tài khoản mới"
           previousLabel="Kỳ trước"
         />
-        <ThreeDDonutChart
+        <CategoryBreakdown
           title="Phân bổ tin đăng theo khu vực"
           subtitle="Theo các phường/khu vực đang có dữ liệu trong hệ thống"
           data={distributionData}
-          centerLabel="tin đăng"
+          totalLabel="Tổng cộng"
         />
       </div>
 
-      <div className="dashboard-ward-density-row">
-        {wardDensityData.map((wardChart) => (
-          <CategoryBarChart key={wardChart.code} title={`Mật độ tin — ${wardChart.label}`} data={wardChart.data} />
-        ))}
-      </div>
+      <WardCategoryMatrix title="Mật độ tin theo phường" subtitle="Số lượng tin đăng theo từng danh mục, theo phường" wards={wardDensityData} />
 
       <div className="dashboard-charts-row">
         <div className="dashboard-chart-span-2">
-          <TrendBarLineChart
+          <RankingList
             title="Top môi giới theo hoạt động"
             subtitle="Xếp hạng theo tổng số tin đăng và lịch hẹn đã xác nhận"
             data={topBrokerData}
-            currentLabel="Tin đăng"
-            previousLabel="Lịch hẹn xác nhận"
-            rotateLabels
+            primaryLabel="tin đăng"
+            secondaryLabel="lịch hẹn xác nhận"
           />
         </div>
         <BrokerPerformancePanel brokers={brokers} properties={properties} viewings={viewings} />

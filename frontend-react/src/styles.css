@@ -44,13 +44,18 @@
   /* Fixed dark ink — for on-photo badges, avatar fallbacks */
   --color-ink-fixed:        #16211c;
 
-  /* Charts — data-series palette */
-  --chart-1: #1d5a44;
-  --chart-2: var(--color-success);
-  --chart-3: #c69a4c;
-  --chart-4: #4f8a6f;
-  --chart-5: #b9743f;
-  --chart-6: #8a938d;
+  /* Charts — categorical data-series palette (green,magenta,blue,yellow,aqua,orange).
+     Fixed order is the CVD-safety mechanism — validated with the dataviz skill's
+     validate_palette.js, do not reorder or add slots without re-running it.
+     Slots 1-4 additionally pass the harder all-pairs check (worst normal-vision
+     ΔE 15.6), which the donut chart needs since its slices all touch in a ring;
+     slots 5-6 are adjacent-only, safe for bar/line but not for a 5th+ donut slice. */
+  --chart-1: #008300;
+  --chart-2: #e87ba4;
+  --chart-3: #2a78d6;
+  --chart-4: #eda100;
+  --chart-5: #1baf7a;
+  --chart-6: #eb6834;
 
   /* Shadows — single tier */
   --shadow-card:     rgba(22,33,28,0.02) 0 0 0 1px,
@@ -108,48 +113,23 @@
   --color-error:            #f87171;
   --color-error-bg:         #7f1d1d;
 
-  --chart-1: #4f8a6f;
-  --chart-3: #c69a4c;
-  --chart-4: #63a084;
-  --chart-5: #b9743f;
-  --chart-6: #8a938d;
+  /* Same fixed order as the light block, re-stepped for the dark surface
+     and validated separately — see the light block's comment for the
+     all-pairs/adjacent split. Previously this block silently omitted
+     chart-2 and relied on it cascading from --color-success; now every
+     slot is explicit so the set can't drift out of sync with the light
+     scale's slot count. */
+  --chart-1: #008300;
+  --chart-2: #d55181;
+  --chart-3: #3987e5;
+  --chart-4: #c98500;
+  --chart-5: #199e70;
+  --chart-6: #d95926;
 
   --shadow-card:     rgba(255,255,255,0.06) 0 0 0 1px,
                      rgba(0,0,0,0.4) 0 2px 6px 0,
                      rgba(0,0,0,0.5) 0 4px 8px 0;
   --shadow-dropdown: 0 4px 16px rgba(0,0,0,0.5);
-}
-
-/* ── Admin area: fixed đen-tím theme, never follows the site's light/dark toggle ───── */
-.admin-theme {
-  color-scheme: dark;
-  --color-canvas: #141218;
-  --color-surface-soft: #1c1a24;
-  --color-surface-strong: #262331;
-  --color-ink: #f2f0f6;
-  --color-body: #d6d0e0;
-  --color-muted: #a89fc2;
-  --color-muted-soft: #7a7195;
-  --color-primary: #8b5cf6;
-  --color-primary-active: #7c3aed;
-  --color-primary-disabled: #4c3a7a;
-  --color-on-primary: #ffffff;
-  --color-hairline: #2e2a3d;
-  --color-hairline-soft: #211f2b;
-  --color-border-strong: #453f5c;
-  --color-success: #4ade80;
-  --color-success-bg: #14532d;
-  --color-warning: #fbbf24;
-  --color-warning-bg: #78350f;
-  --color-error: #f87171;
-  --color-error-bg: #7f1d1d;
-  --color-sidebar-bg: #1a1625;
-  --shadow-card: rgba(255, 255, 255, 0.06) 0 0 0 1px,
-                 rgba(0, 0, 0, 0.4) 0 2px 6px 0,
-                 rgba(0, 0, 0, 0.5) 0 4px 8px 0;
-  --chart-1: #8b5cf6;
-  background: var(--color-canvas);
-  color: var(--color-body);
 }
 
 /* ============================================================
@@ -1225,7 +1205,9 @@ img { display: block; max-width: 100%; }
 
 .dashboard-main {
   padding: 26px;
-  max-width: none;
+  max-width: 1600px;
+  margin-inline: auto;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 22px;
@@ -1307,6 +1289,7 @@ img { display: block; max-width: 100%; }
   color: var(--color-ink);
   letter-spacing: -0.02em;
   margin-bottom: 4px;
+  font-variant-numeric: tabular-nums;
 }
 
 .stat-card-label {
@@ -1542,6 +1525,25 @@ img { display: block; max-width: 100%; }
 
 @media (max-width: 1024px) {
   .dashboard-panels-row { grid-template-columns: 1fr; }
+}
+
+.dashboard-hero-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.dashboard-hero-col-narrow,
+.dashboard-hero-col-wide {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-hero-row { grid-template-columns: 1fr; }
 }
 
 .dashboard-profile-grid {
@@ -2479,57 +2481,6 @@ img { display: block; max-width: 100%; }
 /* ============================================================
    PROJECT CARD
    ============================================================ */
-.project-card {
-  background: var(--color-canvas);
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  transition: box-shadow 180ms ease, transform 180ms ease;
-}
-
-.project-card:hover {
-  box-shadow: var(--shadow-card);
-  transform: translateY(-2px);
-}
-
-.project-card-image {
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  position: relative;
-}
-
-.project-card-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.project-card-body {
-  padding: 16px;
-}
-
-.project-card-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--color-ink);
-  margin: 0 0 8px;
-}
-
-.project-card-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  font-size: 13px;
-  color: var(--color-muted);
-  margin-bottom: 12px;
-}
-
-.project-card-meta-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
 /* ============================================================
    PROPERTY DETAIL PAGE
    ============================================================ */
@@ -2806,19 +2757,6 @@ img { display: block; max-width: 100%; }
   margin: 0;
 }
 
-.project-card-badge {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-}
-
-.project-card-price {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--color-primary);
-  white-space: nowrap;
-}
-
 .broker-listings-stack {
   display: flex;
   flex-direction: column;
@@ -2886,6 +2824,80 @@ img { display: block; max-width: 100%; }
   font-size: 14px;
 }
 
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-8);
+  flex-wrap: wrap;
+}
+
+.pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-hairline);
+  background: var(--color-canvas);
+  color: var(--color-body);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: var(--color-surface-soft);
+  border-color: var(--color-hairline-strong);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.pagination-page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pagination-page-btn:hover:not(:disabled):not(.is-active) {
+  background: var(--color-surface-soft);
+}
+
+.pagination-page-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pagination-page-btn.is-active {
+  background: var(--color-primary);
+  color: var(--color-canvas);
+  border-color: var(--color-primary);
+}
+
+.pagination-ellipsis {
+  color: var(--color-muted);
+  padding: 0 var(--space-1);
+}
+
 /* ============================================================
    BROKER LISTING LINK
    ============================================================ */
@@ -2923,8 +2935,8 @@ img { display: block; max-width: 100%; }
   width: 72px;
   height: 72px;
   border-radius: var(--radius-full);
-  background: var(--color-ink-fixed);
-  color: var(--color-on-primary);
+  background: var(--color-surface-strong);
+  color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3271,4 +3283,31 @@ img { display: block; max-width: 100%; }
   border-radius: var(--radius-md);
   margin-top: 8px;
   background: var(--color-surface-soft);
+}
+
+/* ── Page loader (lazy route fallback) ─────────────────── */
+.page-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.page-loader-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-hairline);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: page-loader-spin 0.7s linear infinite;
+}
+
+@keyframes page-loader-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-loader-spinner {
+    animation-duration: 2.4s;
+  }
 }

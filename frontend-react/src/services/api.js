@@ -1,6 +1,5 @@
-import { detailImages, searchProperties } from '../data/templateData.js';
 import { BROKER_DASHBOARD, MOCK_PROPERTIES, MOCK_USERS, MOCK_ADMIN_BROKERS, MOCK_AUDIT_LOGS } from './mockData.js';
-import { buildAdminQuery, buildPropertyQuery, filterProperties } from './propertyFilters.js';
+import { buildAdminQuery, buildPropertyQuery, filterProperties, paginateProperties, sortProperties } from './propertyFilters.js';
 import { isGoogleMapsEmbedUrl } from '../utils/googleMapsEmbed.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
@@ -94,30 +93,53 @@ export async function uploadCurrentUserAvatar(token, file) {
 
 export async function fetchProperties(filters) {
   if (USE_MOCK_API) {
-    return delay(filterProperties(MOCK_PROPERTIES, filters));
+    const filtered = filterProperties(MOCK_PROPERTIES, filters);
+    const sorted = filters?.sort ? sortProperties(filtered, filters.sort) : filtered;
+    const limited = filters?.size ? sorted.slice(0, filters.size) : sorted;
+    return delay(limited);
   }
   const query = buildPropertyQuery(filters);
   const response = await request(`/properties${query ? `?${query}` : ''}`);
   return normalizePagedProperties(response);
 }
 
+// Separate from fetchProperties() on purpose: that function's bare-array return shape
+// is relied on by HomePage's category rows and fetchPropertyDetail's fallback fetch.
+// Changing it would force every call site to change too. This function exists only
+// for pages that need real pagination (SearchPage), and mirrors the real backend's
+// Page<> shape (content/totalElements/totalPages/number) in both branches.
+export async function fetchPropertiesPage(filters, page = 0, size = 9, sort = 'createdAt,desc') {
+  if (USE_MOCK_API) {
+    const filtered = filterProperties(MOCK_PROPERTIES, filters);
+    const sorted = sortProperties(filtered, sort);
+    return delay(paginateProperties(sorted, page, size));
+  }
+  const query = buildPropertyQuery({ ...filters, page, size, sort });
+  const response = await request(`/properties${query ? `?${query}` : ''}`);
+  return {
+    items: (response.content || []).map(normalizeProperty),
+    totalElements: response.totalElements ?? 0,
+    totalPages: response.totalPages ?? 1,
+    page: response.number ?? page,
+  };
+}
+
 export async function fetchPropertyDetail(propertyId) {
   if (USE_MOCK_API || !propertyId) {
+    // Mirror the real backend: an unknown id is a 404, not "some other
+    // listing". The detail page owns the not-found presentation.
     const items = await fetchProperties({});
-    return items.find((item) => item.id === propertyId) ?? items[0] ?? null;
+    return items.find((item) => item.id === propertyId) ?? null;
   }
   const response = await request(`/properties/${propertyId}`);
-  return normalizeProperty(response, 0);
+  return normalizeProperty(response);
 }
 
 export async function fetchPropertyMedia(propertyId) {
   if (USE_MOCK_API || !propertyId) {
-    return delay(detailImages.map((url, index) => ({
-      id: `mock-media-${index}`,
-      mediaType: 'IMAGE',
-      url,
-      thumbnail: index === 0,
-    })), 80);
+    // No invented galleries: a listing shows its own photo(s) or an honest
+    // empty state, same as the real backend when no media was uploaded.
+    return delay([], 80);
   }
   return request(`/properties/${propertyId}/media`);
 }
@@ -148,12 +170,12 @@ export async function fetchBrokerDashboard(token) {
 
 export async function createProperty(token, payload) {
   const response = await request('/properties', { method: 'POST', token, body: payload });
-  return normalizeProperty(response, 0);
+  return normalizeProperty(response);
 }
 
 export async function updateProperty(token, propertyId, payload) {
   const response = await request(`/properties/${propertyId}`, { method: 'PATCH', token, body: payload });
-  return normalizeProperty(response, 0);
+  return normalizeProperty(response);
 }
 
 export async function uploadPropertyImage(token, propertyId, file, thumbnail = false) {
@@ -181,7 +203,7 @@ export async function updatePropertyStatus(token, propertyId, status) {
     token,
     body: { status },
   });
-  return normalizeProperty(response, 0);
+  return normalizeProperty(response);
 }
 
 export async function deleteProperty(token, propertyId) {
@@ -363,7 +385,7 @@ export async function updateAdminPropertyStatus(token, propertyId, status, targe
     token,
     body: { status },
   });
-  return normalizeProperty(response, 0);
+  return normalizeProperty(response);
 }
 
 async function request(path, options = {}) {
@@ -392,9 +414,8 @@ function normalizePagedProperties(response) {
   return content.map(normalizeProperty);
 }
 
-function normalizeProperty(item, index = 0) {
+function normalizeProperty(item) {
   const attributes = item.attributes || {};
-  const fallback = searchProperties[index % searchProperties.length] || {};
   const price = Number(item.price || 0);
   const categorySlug = item.category?.slug || item.category || 'nha';
   const transaction = attributes.transaction || (categorySlug === 'tro' ? 'rent' : 'sale');
@@ -423,7 +444,9 @@ function normalizeProperty(item, index = 0) {
     bathrooms: Number(attributes.bathrooms || 0),
     direction: attributes.direction || 'Đang cập nhật',
     legal: attributes.legal || 'Đang cập nhật',
-    image: attributes.image || fallback.image || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=80',
+    // No stock-photo stand-ins: a listing without a photo renders the card's
+    // honest "Chưa có ảnh" frame instead of somebody else's living room.
+    image: attributes.image || '',
     description: attributes.description || 'Thông tin chi tiết đang được cập nhật.',
     amenities: Array.isArray(attributes.amenities) ? attributes.amenities : [],
     costs: attributes.costs || null, // costs.*.value is a preformatted display string (e.g. '3.500đ/kWh'), not a numeric

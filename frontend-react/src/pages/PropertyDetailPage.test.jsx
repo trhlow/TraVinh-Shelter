@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, expect, test, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 
 vi.mock('../services/api.js', () => ({
   fetchPropertyDetail: vi.fn(),
@@ -89,4 +89,23 @@ test('does not render a Google Map without a mapEmbedUrl', async () => {
 
   await screen.findAllByText(baseProperty.title);
   expect(screen.queryByTitle('Bản đồ vị trí bất động sản')).not.toBeInTheDocument();
+});
+
+test('titles the tab with the loaded property name once fetch succeeds', async () => {
+  fetchPropertyDetail.mockResolvedValue(baseProperty);
+  render(<PropertyDetailPage propertyId="p-1" />);
+
+  await waitFor(() => {
+    expect(document.title).toBe(`${baseProperty.title} — Công Tín Land`);
+  });
+});
+
+test('titles the tab with the generic listing title when the fetch fails', async () => {
+  fetchPropertyDetail.mockRejectedValue(new Error('network error'));
+  render(<PropertyDetailPage propertyId="p-1" />);
+
+  await waitFor(() => {
+    expect(document.title).toBe('Chi tiết bất động sản — Công Tín Land');
+  });
+  expect(document.title).not.toContain('NHÀ TRỌ THANH TRÚC');
 });

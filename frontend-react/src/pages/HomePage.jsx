@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import FeaturedCarousel from '../components/FeaturedCarousel.jsx';
-import TroShowcaseCard from '../components/TroShowcaseCard.jsx';
+import PropertyCard from '../components/PropertyCard.jsx';
+import PropertyCarousel from '../components/PropertyCarousel.jsx';
 import Icon from '../components/ui/Icon.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
-import { featuredProperties } from '../data/templateData.js';
+import PageMeta from '../components/PageMeta.jsx';
 import { WARDS, CATEGORIES } from '../data/locations.js';
 import { fetchProperties } from '../services/api.js';
 
@@ -37,10 +37,12 @@ const HERO_BG_IMAGE = 'https://images.unsplash.com/photo-1600607687939-ce8a6c251
 
 const TRUST_CHIPS = ['Pháp lý đã kiểm tra', 'Môi giới xác minh', 'Hình ảnh thực tế', 'Không phí ẩn'];
 
+// Descriptions, not fabricated counts: we don't have a live total per
+// category and won't invent one (see design.md — never show fake data).
 const CATEGORY_ICONS = {
-  tro: { icon: 'Key', count: '160 tin đăng' },
-  nha: { icon: 'Home', count: '320 tin đăng' },
-  dat: { icon: 'Layers', count: '210 tin đăng' },
+  tro: { icon: 'Key', blurb: 'Phòng trọ gần trường, khu dân cư' },
+  nha: { icon: 'Home', blurb: 'Nhà phố, nhà riêng để ở và đầu tư' },
+  dat: { icon: 'Layers', blurb: 'Đất thổ cư, đất nền pháp lý rõ' },
 };
 
 const WHY_US = [
@@ -49,12 +51,28 @@ const WHY_US = [
   { icon: 'Tag', title: 'Giá tốt, rõ ràng', desc: 'Giá niêm yết minh bạch, không phí ẩn, thương lượng trực tiếp với chủ nhà.' },
 ];
 
-const STATS = [
-  { value: '1.200', suffix: '+', label: 'Giao dịch thành công' },
-  { value: '3.500', suffix: '+', label: 'Khách hàng hài lòng' },
-  { value: '12', suffix: '', label: 'Năm kinh nghiệm' },
-  { value: '98', suffix: '%', label: 'Khách quay lại & giới thiệu' },
-];
+// Skeleton/card grid shared by every listing section on this page.
+function ListingGrid({ items, count = 4 }) {
+  if (items === null) {
+    return (
+      <div className="pcard-grid">
+        {Array.from({ length: count }, (_, i) => (
+          <div key={i} className="pcard-skeleton" aria-hidden="true" />
+        ))}
+      </div>
+    );
+  }
+  if (items.length === 0) {
+    return <p className="pcard-grid-empty">Chưa có tin đăng trong mục này.</p>;
+  }
+  return (
+    <div className="pcard-grid">
+      {items.map((property) => (
+        <PropertyCard key={property.id || property.title} property={property} />
+      ))}
+    </div>
+  );
+}
 
 function HeroSearchBar() {
   const [ward, setWard] = useState('all');
@@ -144,18 +162,12 @@ function SectionEyebrow({ text }) {
 }
 
 export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
-  const [properties, setProperties] = useState(featuredProperties);
+  // null = loading (skeletons). We never seed with template data: a fetch
+  // failure shows an honest empty state, not listings that don't exist.
   const [troProperties, setTroProperties] = useState(null);
   const [nhaProperties, setNhaProperties] = useState(null);
   const [datProperties, setDatProperties] = useState(null);
-
-  useEffect(() => {
-    let alive = true;
-    fetchProperties({ category: 'all', transaction: 'all' })
-      .then(items => { if (alive && items.length > 0) setProperties(items.slice(0, 6)); })
-      .catch(() => { if (alive) setProperties(featuredProperties); });
-    return () => { alive = false; };
-  }, []);
+  const [newestProperties, setNewestProperties] = useState(null);
 
   // Fetch each category separately.
   useEffect(() => {
@@ -169,10 +181,21 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
     return () => { alive = false; };
   }, []);
 
+  // Newest listings across all categories, independent of the category
+  // rows below — intentionally not deduplicated (see commit message).
+  useEffect(() => {
+    let alive = true;
+    fetchProperties({ sort: 'createdAt,desc', size: 12 })
+      .then((items) => { if (alive) setNewestProperties(items); })
+      .catch(() => { if (alive) setNewestProperties([]); });
+    return () => { alive = false; };
+  }, []);
+
   const rowItems = { tro: troProperties, nha: nhaProperties, dat: datProperties };
 
   return (
     <MainLayout session={session} onLogout={onLogout} theme={theme} onToggleTheme={onToggleTheme}>
+      <PageMeta routeKey="home" />
       {/* 1. HERO */}
       <section className="hero">
         <div className="container">
@@ -212,8 +235,11 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
         </div>
       </section>
 
+      {/* 1.5 NEWEST LISTINGS CAROUSEL */}
+      <PropertyCarousel items={newestProperties} />
+
       {/* 2. CATEGORIES */}
-      <section className="section" style={{ paddingTop: '80px' }}>
+      <section className="section">
         <div className="container">
           <div className="section-center">
             <SectionEyebrow text="Danh mục" />
@@ -228,7 +254,7 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
                 </span>
                 <span>
                   <span className="category-card-label">{cat.label}</span>
-                  <span className="category-card-count">{CATEGORY_ICONS[cat.slug].count}</span>
+                  <span className="category-card-count">{CATEGORY_ICONS[cat.slug].blurb}</span>
                 </span>
               </a>
             ))}
@@ -236,28 +262,11 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
         </div>
       </section>
 
-      {/* 3. FEATURED PROPERTIES */}
-      <section className="section-subtle" style={{ paddingTop: '80px' }}>
-        <div className="container">
-          <div className="section-header">
-            <div className="section-header-text">
-              <SectionEyebrow text="Bất động sản nổi bật" />
-              <h2 className="text-display-md">Tin đăng chọn lọc tại Trà Vinh</h2>
-              <p>Đã kiểm tra pháp lý, hình ảnh thực tế, cập nhật mỗi ngày.</p>
-            </div>
-            <a href="#/search" className="section-header-link">
-              Xem tất cả <Icon name="ArrowRight" size={17} />
-            </a>
-          </div>
-          <FeaturedCarousel properties={properties} />
-        </div>
-      </section>
-
-      {/* 4. CATEGORY SHOWCASE ROWS — Trọ / Nhà / Đất */}
+      {/* 3. CATEGORY ROWS — Trọ / Nhà / Đất. One listing appears once, in its
+          own category row; no redundant mixed "featured" grid above them. */}
       {SHOWCASE_ROWS.map(({ slug, title, subtitle }, index) => {
         const items = rowItems[slug];
-        const isLoading = items === null;
-        if (!isLoading && items.length === 0) return null;
+        if (items !== null && items.length === 0) return null;
         return (
           <section key={slug} className={index % 2 === 0 ? 'section' : 'section-subtle'}>
             <div className="container">
@@ -270,22 +279,14 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
                   Xem tất cả <Icon name="ArrowRight" size={15} />
                 </a>
               </div>
-              <div className="tro-showcase-row">
-                {isLoading
-                  ? Array.from({ length: 4 }, (_, i) => (
-                      <div key={i} className="skeleton tro-showcase-card-skeleton" aria-hidden="true" />
-                    ))
-                  : items.map(property => (
-                      <TroShowcaseCard key={property.id || property.title} property={property} />
-                    ))}
-              </div>
+              <ListingGrid items={items === null ? null : items.slice(0, 4)} />
             </div>
           </section>
         );
       })}
 
-      {/* 6. WHY CHOOSE US */}
-      <section className="section-subtle" style={{ paddingTop: '80px', paddingBottom: '80px', background: 'var(--color-surface-soft)' }}>
+      {/* 5. WHY CHOOSE US */}
+      <section className="section-subtle">
         <div className="container">
           <div className="section-center">
             <SectionEyebrow text="Vì sao chọn chúng tôi" />
@@ -300,22 +301,6 @@ export default function HomePage({ session, onLogout, theme, onToggleTheme }) {
                 </span>
                 <h3 className="why-us-title">{item.title}</h3>
                 <p className="why-us-desc">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 7. STATS */}
-      <section className="section" style={{ paddingTop: '80px', paddingBottom: '80px' }}>
-        <div className="container">
-          <div className="stats-grid">
-            {STATS.map(s => (
-              <div key={s.label} className="stats-item">
-                <div className="stats-value">
-                  {s.value}<span className="stats-suffix">{s.suffix}</span>
-                </div>
-                <div className="stats-label">{s.label}</div>
               </div>
             ))}
           </div>

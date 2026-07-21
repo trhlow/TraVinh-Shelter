@@ -36,6 +36,35 @@ test('renders monthly activity chart and system status panel', () => {
   expect(screen.queryByText('Doanh thu tháng này')).not.toBeInTheDocument();
 });
 
+test('renders a category-breakdown panel beside the system activity chart', () => {
+  const mixedCategoryData = {
+    users: [],
+    brokers: [],
+    properties: [
+      { id: 'p1', title: 'A', ward: 'phuong-tra-vinh', category: 'tro', rawStatus: 'AVAILABLE', createdAt: '2026-06-01T00:00:00Z' },
+      { id: 'p2', title: 'B', ward: 'phuong-tra-vinh', category: 'nha', rawStatus: 'AVAILABLE', createdAt: '2026-06-02T00:00:00Z' },
+      { id: 'p3', title: 'C', ward: 'phuong-tra-vinh', category: 'nha', rawStatus: 'AVAILABLE', createdAt: '2026-06-03T00:00:00Z' },
+      { id: 'p4', title: 'D', ward: 'phuong-tra-vinh', category: 'dat', rawStatus: 'AVAILABLE', createdAt: '2026-06-04T00:00:00Z' },
+    ],
+    viewings: [],
+  };
+  render(<OverviewSection data={mixedCategoryData} loading={false} />);
+
+  const panel = screen.getByText('Phân bổ theo danh mục').closest('section');
+
+  const nhaRow = within(panel).getByText('Nhà').closest('.category-breakdown-row');
+  expect(within(nhaRow).getByText('2')).toBeInTheDocument();
+  expect(within(nhaRow).getByText('· 50%')).toBeInTheDocument();
+
+  const troRow = within(panel).getByText('Trọ').closest('.category-breakdown-row');
+  expect(within(troRow).getByText('1')).toBeInTheDocument();
+  expect(within(troRow).getByText('· 25%')).toBeInTheDocument();
+
+  const datRow = within(panel).getByText('Đất').closest('.category-breakdown-row');
+  expect(within(datRow).getByText('1')).toBeInTheDocument();
+  expect(within(datRow).getByText('· 25%')).toBeInTheDocument();
+});
+
 test('system activity chart trims months before the platform had any real data', () => {
   const now = new Date();
   const recentOnly = {
@@ -47,9 +76,12 @@ test('system activity chart trims months before the platform had any real data',
     viewings: [],
   };
   render(<OverviewSection data={recentOnly} loading={false} />);
-  const stage = screen.getByRole('img', { name: 'Hoạt động hệ thống theo tháng' });
-  const monthLabels = within(stage).getAllByText(/^T\d{1,2}$/);
-  expect(monthLabels).toHaveLength(1);
+  // Only one real month of data survives trimming — a single point can't show a
+  // trend line, so TrendLineChart shows an honest insufficient-data message
+  // instead of fabricating a chart around one floating dot.
+  expect(screen.getByText('Hoạt động hệ thống theo tháng')).toBeInTheDocument();
+  expect(screen.getByText('Chưa đủ dữ liệu để thể hiện xu hướng.')).toBeInTheDocument();
+  expect(screen.queryByRole('img', { name: 'Hoạt động hệ thống theo tháng' })).not.toBeInTheDocument();
 });
 
 test('Tổng số tin đăng KPI value narrows when a date preset excludes older listings', () => {

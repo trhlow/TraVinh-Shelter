@@ -17,6 +17,11 @@ const RAW_MOCK_PROPERTIES = [
     direction: 'Đông Nam',
     legal: 'Sổ hồng riêng',
     image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1449844908441-8829872d2607?auto=format&fit=crop&w=900&q=80',
+    ],
     description: 'Nhà mới xây, thiết kế hiện đại, nội thất cao cấp. Khu dân cư an ninh, gần trường học, chợ và bệnh viện.',
     broker: { name: 'Nguyễn Văn Toàn', phone: '0912345678', email: 'toan@congtinland.vn', facebook: 'https://facebook.com/toan.congtinland', rating: '4.9 (128 đánh giá)', responseTime: '5 phút' },
     amenities: ['Sân để xe', 'Tủ bếp', 'Máy bơm nước', 'Cửa bảo vệ'],
@@ -44,6 +49,11 @@ const RAW_MOCK_PROPERTIES = [
     direction: 'Tây Nam',
     legal: 'Thổ cư',
     image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1439066615861-d1af74d74000?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=900&q=80',
+    ],
     description: 'Lô đất vuông vức, mặt tiền rộng, thuận tiện kinh doanh hoặc xây nhà ở lâu dài.',
     broker: { name: 'Trần Mỹ Linh', phone: '0908899777', email: 'linh@congtinland.vn', facebook: 'https://facebook.com/linh.congtinland', rating: '4.8 (76 đánh giá)', responseTime: '8 phút' },
     summary: {
@@ -68,6 +78,11 @@ const RAW_MOCK_PROPERTIES = [
     direction: 'Đông',
     legal: 'Hợp đồng thuê',
     image: 'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=900&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=900&q=80',
+    ],
     description: 'Căn hộ đủ nội thất, ban công thoáng, phù hợp gia đình trẻ hoặc chuyên gia làm việc tại trung tâm.',
     broker: { name: 'Lê Minh Khang', phone: '0934567890', email: 'khang@congtinland.vn', facebook: 'https://facebook.com/khang.congtinland', rating: '4.7 (54 đánh giá)', responseTime: '10 phút' },
     amenities: ['Giường', 'Tủ lạnh', 'Máy lạnh', 'Wifi', 'Nước nóng', 'Tủ quần áo', 'Bếp từ'],
@@ -95,6 +110,11 @@ const RAW_MOCK_PROPERTIES = [
     direction: 'Nam',
     legal: 'Sổ hồng riêng',
     image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1560184897-ae75f418493e?auto=format&fit=crop&w=900&q=80',
+    ],
     description: 'Nhà góc hai mặt tiền, khu dân cư hoàn thiện hạ tầng, thích hợp vừa ở vừa kinh doanh.',
     broker: { name: 'Phạm Quốc Huy', phone: '0987654321', email: 'huy@congtinland.vn', facebook: 'https://facebook.com/huy.congtinland', rating: '4.9 (91 đánh giá)', responseTime: '4 phút' },
     amenities: ['Sân vườn', 'Gara xe hơi', 'Sân thượng', 'Hệ thống camera'],
@@ -121,7 +141,12 @@ const RAW_MOCK_PROPERTIES = [
     bedrooms: 0,
     direction: 'Tây',
     legal: 'Đất cây lâu năm',
-    image: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80',
+    image: 'https://images.unsplash.com/photo-1439066615861-d1af74d74000?auto=format&fit=crop&w=900&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1439066615861-d1af74d74000?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=900&q=80',
+    ],
     description: 'Khu đất yên tĩnh, đường xe hơi, phù hợp làm nhà vườn hoặc đầu tư dài hạn.',
     broker: { name: 'Trần Mỹ Linh', phone: '0908899777', email: 'linh@congtinland.vn', facebook: 'https://facebook.com/linh.congtinland', rating: '4.8 (76 đánh giá)', responseTime: '8 phút' },
   },
@@ -143,6 +168,11 @@ const RAW_MOCK_PROPERTIES = [
     direction: 'Bắc',
     legal: 'Sổ hồng riêng',
     image: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=900&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=900&q=80',
+    ],
     description: 'Nhà hoàn thiện, khu dân cư hiện hữu, pháp lý rõ ràng và bàn giao nhanh.',
     broker: { name: 'Nguyễn Văn Toàn', phone: '0912345678', email: 'toan@congtinland.vn', facebook: 'https://facebook.com/toan.congtinland', rating: '4.9 (128 đánh giá)', responseTime: '5 phút' },
   },
@@ -162,6 +192,11 @@ const RAW_MOCK_PROPERTIES = [
     direction: 'Đông Nam',
     legal: 'Hợp đồng thuê',
     image: 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=900&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=80',
+    ],
     description: 'Phòng trọ sạch sẽ, gần Đại học Trà Vinh, toilet khép kín, an ninh tốt.',
     broker: { name: 'Lê Minh Khang', phone: '0934567890', email: 'khang@congtinland.vn', facebook: 'https://facebook.com/khang.congtinland', rating: '4.7 (54 đánh giá)', responseTime: '10 phút' },
     rooms: [
@@ -208,6 +243,11 @@ const RAW_MOCK_PROPERTIES = [
     direction: 'Nam',
     legal: 'Hợp đồng thuê',
     image: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=900&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=900&q=80',
+      'https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83?auto=format&fit=crop&w=900&q=80',
+    ],
     description: 'Phòng trọ mới xây, đầy đủ nội thất, khu vực yên tĩnh, gần chợ và siêu thị Hòa Thuận.',
     broker: { name: 'Võ Hoàng Nam', phone: '0923456789', email: 'nam@congtinland.vn', facebook: 'https://facebook.com/nam.congtinland', rating: '4.8 (39 đánh giá)', responseTime: '7 phút' },
     rooms: [
@@ -269,6 +309,9 @@ export const MOCK_PROPERTIES = RAW_MOCK_PROPERTIES.flatMap((item, rawIndex) => (
       ...item,
       id: variant === 0 ? item.id : `${item.id}-v${variant}`,
       title: variant === 0 ? item.title : `${item.title} (khu ${variant + 1})`,
+      // Each variant shows a distinct photo — three identical cards in a row
+      // read as broken/fake data, not as one listing multiplied for density.
+      image: item.images?.[variant] || item.image,
       // Variant 0 must stay the canonical listing (original ward/category) so drill-downs
       // and filters find the item they expect; only variants 1-2 rotate for data variety.
       ward: variant === 0 ? item.ward : WARD_CYCLE[index % WARD_CYCLE.length],
