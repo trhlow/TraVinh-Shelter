@@ -310,8 +310,8 @@ export default function SearchPage({ queryParams, session, onLogout, theme, onTo
             )}
 
             <div data-testid="property-grid" className="grid-3">
-              {loading && [1, 2, 3, 4, 5, 6].map((item) => (
-                <div key={item} className="skeleton skeleton-card" />
+              {loading && Array.from({ length: PAGE_SIZE }, (_, i) => (
+                <div key={i} className="skeleton skeleton-card" />
               ))}
               {!loading && properties.length === 0 && (
                 <div className="card empty-state">

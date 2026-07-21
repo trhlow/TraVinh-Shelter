@@ -2846,6 +2846,11 @@ img { display: block; max-width: 100%; }
   cursor: pointer;
 }
 
+.pagination-btn:hover:not(:disabled) {
+  background: var(--color-surface-soft);
+  border-color: var(--color-hairline-strong);
+}
+
 .pagination-btn:disabled {
   opacity: 0.4;
   cursor: default;
