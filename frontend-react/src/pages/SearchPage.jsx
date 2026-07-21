@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import PropertyCard from '../components/PropertyCard.jsx';
 import MainLayout from '../layouts/MainLayout.jsx';
 import PageMeta from '../components/PageMeta.jsx';
 import { WARDS } from '../data/locations.js';
-import { fetchCategories, fetchProperties } from '../services/api.js';
+import { fetchCategories, fetchPropertiesPage } from '../services/api.js';
+import Pagination from '../components/Pagination.jsx';
 
 const DEFAULT_CATEGORIES = [
   { name: 'Trọ', slug: 'tro' },
@@ -31,6 +32,13 @@ const PRICE_GROUPS = {
     ['3 - 5 tỷ', '3000000000', '5000000000'],
     ['Trên 5 tỷ', '5000000000', ''],
   ],
+};
+
+const PAGE_SIZE = 9;
+const SORT_PARAM = {
+  newest: 'createdAt,desc',
+  'price-asc': 'price,asc',
+  'price-desc': 'price,desc',
 };
 
 function filtersFromQuery(queryParams = {}) {
@@ -62,11 +70,16 @@ export default function SearchPage({ queryParams, session, onLogout, theme, onTo
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [sort, setSort] = useState('newest');
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+  const resultsRef = useRef(null);
 
   useEffect(() => {
     const nextFilters = filtersFromQuery(queryParams);
     setFilters(nextFilters);
     setAppliedFilters(nextFilters);
+    setPage(0);
   }, [queryKey]);
 
   useEffect(() => {
@@ -87,14 +100,19 @@ export default function SearchPage({ queryParams, session, onLogout, theme, onTo
     let alive = true;
     setLoading(true);
     setError('');
-    fetchProperties(appliedFilters)
-      .then((items) => {
-        if (alive) setProperties(items);
+    fetchPropertiesPage(appliedFilters, page, PAGE_SIZE, SORT_PARAM[sort] || SORT_PARAM.newest)
+      .then((result) => {
+        if (!alive) return;
+        setProperties(result.items);
+        setTotalPages(result.totalPages);
+        setTotalElements(result.totalElements);
       })
       .catch((exception) => {
         if (!alive) return;
         setError(exception.message || 'Không tải được danh sách tin.');
         setProperties([]);
+        setTotalPages(1);
+        setTotalElements(0);
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -102,14 +120,7 @@ export default function SearchPage({ queryParams, session, onLogout, theme, onTo
     return () => {
       alive = false;
     };
-  }, [appliedFilters]);
-
-  const sortedProperties = useMemo(() => {
-    const items = [...properties];
-    if (sort === 'price-asc') return items.sort((a, b) => (a.rawPrice || 0) - (b.rawPrice || 0));
-    if (sort === 'price-desc') return items.sort((a, b) => (b.rawPrice || 0) - (a.rawPrice || 0));
-    return items;
-  }, [properties, sort]);
+  }, [appliedFilters, sort, page]);
 
   const subtitle = subtitleFor(appliedFilters, brokerName);
   const priceOptions = priceOptionsFor(filters);
@@ -266,24 +277,24 @@ export default function SearchPage({ queryParams, session, onLogout, theme, onTo
 
             <button
               className="btn btn-primary btn-full"
-              onClick={() => setAppliedFilters(filters)}
+              onClick={() => { setAppliedFilters(filters); setPage(0); }}
             >
               Tìm kiếm ngay
             </button>
           </aside>
 
           {/* Results area */}
-          <section>
+          <section ref={resultsRef}>
             <div className="results-toolbar">
               <span className="results-count">
-                {loading ? 'Đang tìm...' : `${sortedProperties.length} kết quả`}
+                {loading ? 'Đang tìm...' : `${totalElements} kết quả`}
               </span>
               <div className="filter-bar-inner">
                 <span className="results-count">Sắp xếp:</span>
                 <select
                   className="sort-select"
                   value={sort}
-                  onChange={(event) => setSort(event.target.value)}
+                  onChange={(event) => { setSort(event.target.value); setPage(0); }}
                 >
                   <option value="newest">Mới nhất</option>
                   <option value="price-asc">Giá thấp đến cao</option>
@@ -302,16 +313,26 @@ export default function SearchPage({ queryParams, session, onLogout, theme, onTo
               {loading && [1, 2, 3, 4, 5, 6].map((item) => (
                 <div key={item} className="skeleton skeleton-card" />
               ))}
-              {!loading && sortedProperties.length === 0 && (
+              {!loading && properties.length === 0 && (
                 <div className="card empty-state">
                   <h2 className="empty-state-title">Chưa có tin phù hợp</h2>
                   <p className="empty-state-desc">Hãy thử nới bộ lọc hoặc chọn khu vực khác.</p>
                 </div>
               )}
-              {!loading && sortedProperties.map((property) => (
+              {!loading && properties.map((property) => (
                 <PropertyCard key={property.id || property.title} property={property} compact />
               ))}
             </div>
+
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              disabled={loading}
+              onPageChange={(nextPage) => {
+                setPage(nextPage);
+                resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+            />
           </section>
         </div>
       </div>
