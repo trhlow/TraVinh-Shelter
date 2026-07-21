@@ -100,7 +100,7 @@ test('user growth chart shows only months with real users, no fabricated bars', 
 
 test('user growth chart shows empty state when there are no users at all', () => {
   const emptyData = { users: [], brokers: [], properties: [], viewings: [] };
-  const { container } = render(<ReportsSection data={emptyData} loading={false} />);
+  render(<ReportsSection data={emptyData} loading={false} />);
   expect(screen.getByText('Tăng trưởng người dùng mới')).toBeInTheDocument();
   // User-growth and the category-breakdown chart both show their own empty state when
   // data is empty. Broker activity ("Top môi giới theo hoạt động") is a RankingList now,

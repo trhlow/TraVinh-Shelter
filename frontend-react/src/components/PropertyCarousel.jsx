@@ -38,7 +38,6 @@ export default function PropertyCarousel({ items, visibleCount = 3 }) {
   useEffect(() => {
     updateButtonState();
     // items changes the track's content/width — re-measure once rendered.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items]);
 
   function scrollByOneView(direction) {

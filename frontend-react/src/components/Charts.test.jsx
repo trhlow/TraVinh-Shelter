@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
-import { afterEach, expect, test, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { afterEach, expect, test } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import {
   buildDailySeries, buildMonthlySeries, buildWardData, Sparkline,
   buildCategoryDensityData, TrendLineChart, CategoryBreakdown,
