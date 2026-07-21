@@ -26,10 +26,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.travinh.realty.common.dto.MessageResponse;
 import com.travinh.realty.modules.auth.security.OtpStore;
 import com.travinh.realty.modules.auth.security.RateLimiter;
 import com.travinh.realty.modules.booking.dto.RequestViewingOtpRequest;
+import com.travinh.realty.modules.booking.dto.RequestViewingOtpResponse;
 import com.travinh.realty.modules.booking.dto.VerifyViewingOtpRequest;
 import com.travinh.realty.modules.notification.SmsSender;
 import java.time.Duration;
@@ -75,14 +75,14 @@ public class BookingService {
     }
 
     @Transactional(readOnly = true)
-    public MessageResponse requestOtp(UUID propertyId, RequestViewingOtpRequest request) {
+    public RequestViewingOtpResponse requestOtp(UUID propertyId, RequestViewingOtpRequest request) {
         Property property = properties.findById(propertyId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bất động sản"));
         if (property.getStatus() != PropertyStatus.AVAILABLE) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bất động sản");
         }
         if (!viewingOtpProperties.otpRequired()) {
-            return new MessageResponse("Xác minh OTP tạm thời không bắt buộc.");
+            return new RequestViewingOtpResponse("Xác minh OTP tạm thời không bắt buộc.", false);
         }
         String phone = request.visitorPhone().trim();
         if (!rateLimiter.tryAcquire("viewing-otp-request:" + phone, REQUEST_LIMIT, REQUEST_WINDOW)) {
@@ -90,7 +90,7 @@ public class BookingService {
         }
         String code = otpStore.generate("viewing-otp:" + phone, OTP_TTL);
         smsSender.send(phone, "Ma OTP xac minh dat lich xem nha cua ban la: " + code + ". Ma co hieu luc 10 phut.");
-        return new MessageResponse("Mã OTP đã được gửi qua SMS.");
+        return new RequestViewingOtpResponse("Mã OTP đã được gửi qua SMS.", true);
     }
 
     @Transactional

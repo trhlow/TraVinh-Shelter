@@ -4,7 +4,9 @@ import com.travinh.realty.common.dto.MessageResponse;
 import com.travinh.realty.modules.auth.dto.AuthResponse;
 import com.travinh.realty.modules.auth.dto.ForgotPasswordRequest;
 import com.travinh.realty.modules.auth.dto.LoginRequest;
+import com.travinh.realty.modules.auth.dto.LoginResponse;
 import com.travinh.realty.modules.auth.dto.ResetPasswordRequest;
+import com.travinh.realty.modules.auth.dto.VerifyLoginOtpRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,15 +26,24 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
     private final AuthService authService;
     private final PasswordResetService passwordResetService;
+    private final LoginMfaService loginMfaService;
 
-    public AuthController(AuthService authService, PasswordResetService passwordResetService) {
+    public AuthController(AuthService authService, PasswordResetService passwordResetService,
+                          LoginMfaService loginMfaService) {
         this.authService = authService;
         this.passwordResetService = passwordResetService;
+        this.loginMfaService = loginMfaService;
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Authenticate and return a JWT")
-    public AuthResponse login(@Valid @RequestBody LoginRequest request) { return authService.login(request); }
+    @Operation(summary = "Authenticate and return a JWT, or an MFA challenge for ADMIN accounts")
+    public LoginResponse login(@Valid @RequestBody LoginRequest request) { return authService.login(request); }
+
+    @PostMapping("/login/verify-otp")
+    @Operation(summary = "Verify the MFA OTP for an ADMIN login challenge and return a JWT")
+    public AuthResponse verifyLoginOtp(@Valid @RequestBody VerifyLoginOtpRequest request) {
+        return loginMfaService.verifyOtp(request);
+    }
 
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)

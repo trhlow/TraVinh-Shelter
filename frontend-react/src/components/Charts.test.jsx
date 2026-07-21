@@ -1,9 +1,10 @@
 import '@testing-library/jest-dom/vitest';
-import { afterEach, expect, test, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { afterEach, expect, test } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import {
-  buildDailySeries, buildMonthlySeries, buildWardData, Sparkline, TrendAreaChart, WardBarChart,
-  buildCategoryDensityData, CategoryBarChart, TrendBarLineChart,
+  buildDailySeries, buildMonthlySeries, buildWardData, Sparkline,
+  buildCategoryDensityData, TrendLineChart, CategoryBreakdown,
+  MiniBarSparkline, RankingList, WardCategoryMatrix,
 } from './Charts.jsx';
 
 afterEach(() => cleanup());
@@ -35,50 +36,6 @@ test('buildWardData counts items per ward and computes percentages', () => {
   expect(traVinh.pct).toBe(50);
   expect(longDuc.count).toBe(1);
   expect(longDuc.pct).toBe(25);
-});
-
-// ── WardBarChart ──────────────────────────────────────────
-
-test('WardBarChart renders a column with count, name, and percent per ward', () => {
-  const data = buildWardData([{ ward: 'phuong-hoa-thuan' }], (item) => item.ward);
-  render(<WardBarChart title="Tin đăng theo phường" data={data} />);
-
-  expect(screen.getByRole('heading', { name: 'Tin đăng theo phường' })).toBeInTheDocument();
-  expect(screen.getByText('Hòa Thuận')).toBeInTheDocument();
-  expect(screen.getByText('Trà Vinh')).toBeInTheDocument();
-  expect(screen.getByText('100')).toBeInTheDocument();
-});
-
-test('WardBarChart columns are clickable when onSelectWard is provided', () => {
-  const data = buildWardData([{ ward: 'phuong-tra-vinh' }], (item) => item.ward);
-  const onSelectWard = vi.fn();
-  render(<WardBarChart title="Theo phường" data={data} onSelectWard={onSelectWard} />);
-  fireEvent.click(screen.getByRole('button', { name: 'Phường Trà Vinh: 1 tin' }));
-  expect(onSelectWard).toHaveBeenCalledWith('phuong-tra-vinh');
-});
-
-test('WardBarChart draws both the count bar and the percent line for the same ward', () => {
-  const items = [
-    { ward: 'phuong-nguyet-hoa' },
-    { ward: 'phuong-nguyet-hoa' },
-    { ward: 'phuong-nguyet-hoa' },
-  ];
-  const data = buildWardData(items, (item) => item.ward);
-  const { container } = render(<WardBarChart title="Test" data={data} />);
-
-  const bars = Array.from(container.querySelectorAll('.combo-bar'));
-  const heights = bars.map((bar) => Number(bar.getAttribute('height')));
-  // data is always in WARDS order (Trà Vinh, Long Đức, Nguyệt Hóa, Hòa Thuận);
-  // only Nguyệt Hóa has listings (count=3=leftMax) -> its bar spans the full plot height (38-6=32)
-  expect(heights).toEqual([0, 0, 32, 0]);
-
-  const dots = Array.from(container.querySelectorAll('circle'));
-  const dotYs = dots.map((dot) => Number(dot.getAttribute('cy')));
-  // only Nguyệt Hóa has pct=100% -> its line point sits at the very top (y=6); the rest sit at
-  // the bottom (y=38, pct=0%)
-  expect(dotYs).toEqual([38, 38, 6, 38]);
-
-  expect(container.querySelectorAll('.combo-value-label')).toHaveLength(0);
 });
 
 // ── buildDailySeries ──────────────────────────────────────
@@ -147,50 +104,6 @@ test('buildMonthlySeries leaves future days in the current month at 0', () => {
   futureDays.forEach((bucket) => expect(bucket.count).toBe(0));
 });
 
-// ── TrendAreaChart ────────────────────────────────────────
-
-test('TrendAreaChart shows title and the window total', () => {
-  const series = buildDailySeries(
-    [{ createdAt: new Date().toISOString() }, { createdAt: new Date().toISOString() }],
-    (item) => item.createdAt,
-    7,
-  );
-  render(<TrendAreaChart title="Hoạt động hệ thống" series={series} unit="tin/lịch hẹn" />);
-
-  expect(screen.getByRole('heading', { name: 'Hoạt động hệ thống' })).toBeInTheDocument();
-  expect(screen.getByText('2')).toBeInTheDocument();
-  expect(screen.getByText('tin/lịch hẹn')).toBeInTheDocument();
-});
-
-test('TrendAreaChart renders a dot marker per data point', () => {
-  const series = buildMonthlySeries(
-    [{ createdAt: '2026-07-05T00:00:00' }],
-    (item) => item.createdAt,
-    new Date('2026-07-05T00:00:00'),
-  );
-  const { container } = render(<TrendAreaChart title="Test" series={series} unit="tin" />);
-  expect(container.querySelectorAll('.trend-chart-dot')).toHaveLength(series.length);
-});
-
-test('TrendAreaChart shows a tooltip with date and count on hover', () => {
-  const series = buildMonthlySeries(
-    [{ createdAt: '2026-07-05T00:00:00' }, { createdAt: '2026-07-05T12:00:00' }],
-    (item) => item.createdAt,
-    new Date('2026-07-05T00:00:00'),
-  );
-  render(<TrendAreaChart title="Test" series={series} unit="tin" />);
-  expect(screen.queryByTestId('trend-chart-tooltip')).not.toBeInTheDocument();
-
-  const dots = screen.getAllByTestId('trend-chart-dot');
-  fireEvent.mouseMove(dots[4]); // ngày 05/07 = index 4 (ngày 1..5)
-  const tooltip = screen.getByTestId('trend-chart-tooltip');
-  expect(tooltip).toHaveTextContent('05/07');
-  expect(tooltip).toHaveTextContent('2');
-
-  fireEvent.mouseLeave(dots[4]);
-  expect(screen.queryByTestId('trend-chart-tooltip')).not.toBeInTheDocument();
-});
-
 // ── Sparkline ─────────────────────────────────────────────
 
 test('Sparkline renders nothing for fewer than 2 points', () => {
@@ -203,7 +116,24 @@ test('Sparkline renders a line path for 2+ points', () => {
   expect(container.querySelector('.sparkline-line')).toBeInTheDocument();
 });
 
-// ── buildCategoryDensityData / CategoryBarChart ──────────
+// ── MiniBarSparkline ──────────────────────────────────────
+
+test('MiniBarSparkline renders one bar per value and marks the last activeCount bars active', () => {
+  const { container } = render(<MiniBarSparkline series={[1, 2, 3, 4, 5]} activeCount={2} />);
+  const bars = container.querySelectorAll('.mini-bar-sparkline-bar');
+  expect(bars).toHaveLength(5);
+  expect(Array.from(bars).filter((bar) => bar.classList.contains('is-active'))).toHaveLength(2);
+  expect(bars[3]).toHaveClass('is-active');
+  expect(bars[4]).toHaveClass('is-active');
+  expect(bars[0]).not.toHaveClass('is-active');
+});
+
+test('MiniBarSparkline renders nothing for fewer than 2 points, matching Sparkline', () => {
+  const { container } = render(<MiniBarSparkline series={[3]} />);
+  expect(container).toBeEmptyDOMElement();
+});
+
+// ── buildCategoryDensityData ─────────────────────────────
 
 test('buildCategoryDensityData returns all 3 categories with counts scoped to one ward', () => {
   const properties = [
@@ -241,162 +171,204 @@ test('buildCategoryDensityData returns all-zero counts and 0% when the ward has 
   });
 });
 
-test('CategoryBarChart renders title, category labels, and encodes both count and percent per bar', () => {
-  const data = buildCategoryDensityData([
-    { ward: 'phuong-tra-vinh', category: 'tro' },
-    { ward: 'phuong-tra-vinh', category: 'tro' },
-    { ward: 'phuong-tra-vinh', category: 'tro' },
-    { ward: 'phuong-tra-vinh', category: 'tro' },
-    { ward: 'phuong-tra-vinh', category: 'nha' },
-  ], 'phuong-tra-vinh');
-  const { container } = render(<CategoryBarChart title="Mật độ tin — Phường Trà Vinh" data={data} />);
+// ── TrendLineChart ────────────────────────────────────────
 
-  expect(screen.getByRole('heading', { name: 'Mật độ tin — Phường Trà Vinh' })).toBeInTheDocument();
-  expect(screen.getByText('Trọ')).toBeInTheDocument();
-  expect(screen.getByText('Nhà')).toBeInTheDocument();
-  expect(screen.getByText('Đất')).toBeInTheDocument();
+test('TrendLineChart renders title, subtitle, and a line ending on the last data point', () => {
+  const data = [
+    { label: '12/07', current: 2, previous: 5 },
+    { label: '13/07', current: 8, previous: 1 },
+  ];
+  render(<TrendLineChart title="Xu hướng" subtitle="Theo ngày" data={data} currentLabel="Tin đăng" previousLabel="Lịch hẹn" />);
 
-  const bars = Array.from(container.querySelectorAll('.combo-bar'));
-  const heights = bars.map((bar) => Number(bar.getAttribute('height')));
-  // data is always in CATEGORIES order (Trọ, Nhà, Đất): counts 4/1/0 of leftMax=4
-  // -> bar heights scale to 32/8/0 (plot height 38-6=32)
-  expect(heights).toEqual([32, 8, 0]);
-
-  const dots = Array.from(container.querySelectorAll('circle'));
-  const dotYs = dots.map((dot) => Number(dot.getAttribute('cy')));
-  // percents 80/20/0 map onto the fixed 0-100 right axis (top 6, bottom 38)
-  expect(dotYs[0]).toBeCloseTo(12.4);
-  expect(dotYs[1]).toBeCloseTo(31.6);
-  expect(dotYs[2]).toBe(38);
-
-  expect(container.querySelectorAll('.combo-value-label')).toHaveLength(0);
+  expect(screen.getByRole('heading', { name: 'Xu hướng' })).toBeInTheDocument();
+  expect(screen.getByText('Theo ngày')).toBeInTheDocument();
+  expect(screen.getByRole('img', { name: '12/07: Tin đăng 2, Lịch hẹn 5' })).toBeInTheDocument();
+  expect(screen.getByRole('img', { name: '13/07: Tin đăng 8, Lịch hẹn 1' })).toBeInTheDocument();
 });
 
-test('CategoryBarChart scales bar height to the real max, not a fixed range', () => {
-  const highVolume = buildCategoryDensityData(
-    Array.from({ length: 7 }, () => ({ ward: 'phuong-tra-vinh', category: 'tro' })),
-    'phuong-tra-vinh',
-  );
-  const { container } = render(<CategoryBarChart title="Test" data={highVolume} />);
-  const bars = Array.from(container.querySelectorAll('.combo-bar'));
-  const heights = bars.map((bar) => Number(bar.getAttribute('height')));
-  // max count (7, all in "tro") must render at the full plot height (bottom 38 - top 6 = 32)
-  expect(Math.max(...heights)).toBe(32);
+test('TrendLineChart shows the primary line, an area fill, and a secondary line only when previous data exists', () => {
+  const withPrevious = [
+    { label: 'T1', current: 3, previous: 1 },
+    { label: 'T2', current: 5, previous: 2 },
+  ];
+  const { container: withContainer } = render(<TrendLineChart title="A" data={withPrevious} />);
+  expect(withContainer.querySelectorAll('path')).toHaveLength(3); // area fill + primary line + secondary line
+
+  cleanup();
+
+  const noPrevious = [
+    { label: 'T1', current: 3, previous: 0 },
+    { label: 'T2', current: 5, previous: 0 },
+  ];
+  const { container: withoutContainer } = render(<TrendLineChart title="B" data={noPrevious} />);
+  expect(withoutContainer.querySelectorAll('path')).toHaveLength(2); // area fill + primary line only
+  expect(screen.queryByText('So sánh')).not.toBeInTheDocument();
 });
 
-// ── TrendBarLineChart ─────────────────────────────────────
-
-test('TrendBarLineChart renders title, subtitle, and one bar per data point scaled to the real combined max', () => {
+test('TrendLineChart tooltip lists both series at the hovered point', () => {
   const data = [
     { label: 'T1', current: 2, previous: 5 },
     { label: 'T2', current: 8, previous: 1 },
   ];
-  const { container } = render(
-    <TrendBarLineChart title="Hoạt động" subtitle="Theo tháng" data={data} currentLabel="Bài đăng" previousLabel="Lịch hẹn" />,
-  );
+  render(<TrendLineChart title="A" data={data} currentLabel="Bài đăng" previousLabel="Lịch hẹn" />);
 
-  expect(screen.getByRole('heading', { name: 'Hoạt động' })).toBeInTheDocument();
-  expect(screen.getByText('Theo tháng')).toBeInTheDocument();
+  const t1 = screen.getByRole('img', { name: 'T1: Bài đăng 2, Lịch hẹn 5' });
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
 
-  const bars = Array.from(container.querySelectorAll('.combo-bar'));
-  const heights = bars.map((bar) => Number(bar.getAttribute('height')));
-  // axisMax = max(2,5,8,1,1) = 8; plot height = 38-6 = 32
-  // T1 current=2 -> 2/8*32=8; T2 current=8 -> 8/8*32=32
-  expect(heights).toEqual([8, 32]);
+  fireEvent.mouseEnter(t1);
+  const tooltip = screen.getByRole('tooltip');
+  expect(tooltip).toHaveTextContent('Bài đăng');
+  expect(tooltip).toHaveTextContent('2');
+  expect(tooltip).toHaveTextContent('Lịch hẹn');
+  expect(tooltip).toHaveTextContent('5');
 
-  const dots = Array.from(container.querySelectorAll('circle'));
-  const dotYs = dots.map((dot) => Number(dot.getAttribute('cy')));
-  // T1 previous=5 -> y=38-5/8*32=18; T2 previous=1 -> y=38-1/8*32=34
-  expect(dotYs).toEqual([18, 34]);
-
-  expect(container.querySelector('.combo-chart-legend')).toHaveTextContent('Bài đăng');
-  expect(container.querySelector('.combo-chart-legend')).toHaveTextContent('Lịch hẹn');
+  fireEvent.mouseLeave(t1);
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
 });
 
-test('TrendBarLineChart exposes role=img with the title as its accessible name, and month labels are findable inside it', () => {
+test('TrendLineChart shows an empty state when every point is entirely zero', () => {
+  const data = [{ label: 'T1', current: 0, previous: 0 }, { label: 'T2', current: 0, previous: 0 }];
+  render(<TrendLineChart title="A" data={data} />);
+  expect(screen.getByText('Chưa có dữ liệu trong khoảng thời gian này.')).toBeInTheDocument();
+});
+
+test('TrendLineChart shows an insufficient-data state instead of a floating single point when there is only one data point', () => {
+  const data = [{ label: 'T7', current: 1, previous: 0 }];
+  const { container } = render(<TrendLineChart title="A" data={data} />);
+  expect(screen.getByText('Chưa đủ dữ liệu để thể hiện xu hướng.')).toBeInTheDocument();
+  expect(container.querySelector('.trend-line-svg')).not.toBeInTheDocument();
+});
+
+test('TrendLineChart thins date labels when there are many data points, but always keeps the last label', () => {
+  const data = Array.from({ length: 31 }, (_, index) => ({ label: `${index + 1}`, current: 1, previous: 0 }));
+  const { container } = render(<TrendLineChart title="A" data={data} />);
+  const labelTexts = Array.from(container.querySelectorAll('.trend-line-svg text')).map((node) => node.textContent);
+  expect(labelTexts.length).toBeLessThan(31);
+  expect(labelTexts).toContain('31');
+});
+
+test('TrendLineChart renders every date label when there are few data points', () => {
+  const data = Array.from({ length: 5 }, (_, index) => ({ label: `${index + 1}`, current: 1, previous: 0 }));
+  const { container } = render(<TrendLineChart title="A" data={data} />);
+  const labelTexts = Array.from(container.querySelectorAll('.trend-line-svg text')).map((node) => node.textContent);
+  expect(labelTexts).toEqual(['1', '2', '3', '4', '5']);
+});
+
+// ── CategoryBreakdown ─────────────────────────────────────
+
+test('CategoryBreakdown renders each row with its value and computed percent, plus a total line', () => {
+  const data = [{ label: 'Nhà', value: 12 }, { label: 'Đất', value: 10 }, { label: 'Trọ', value: 2 }];
+  render(<CategoryBreakdown title="Phân bổ theo danh mục" data={data} totalLabel="Tổng cộng" />);
+
+  expect(screen.getByRole('heading', { name: 'Phân bổ theo danh mục' })).toBeInTheDocument();
+  expect(screen.getByText('Nhà')).toBeInTheDocument();
+  expect(screen.getByText('12')).toBeInTheDocument();
+  expect(screen.getByText('· 50%')).toBeInTheDocument();
+  expect(screen.getByText('Đất')).toBeInTheDocument();
+  expect(screen.getByText('· 42%')).toBeInTheDocument();
+  expect(screen.getByText('Tổng cộng')).toBeInTheDocument();
+  expect(screen.getByText('24')).toBeInTheDocument();
+});
+
+test('CategoryBreakdown gives each row a distinct shade of the same primary color, not a multi-hue palette', () => {
+  const data = [{ label: 'A', value: 3 }, { label: 'B', value: 2 }, { label: 'C', value: 1 }];
+  const { container } = render(<CategoryBreakdown title="X" data={data} />);
+  const fills = Array.from(container.querySelectorAll('.category-breakdown-fill')).map((el) => el.style.backgroundColor);
+  expect(fills).toHaveLength(3);
+  expect(new Set(fills).size).toBe(3); // all distinct
+  fills.forEach((fill) => expect(fill).toContain('color-mix'));
+});
+
+test('CategoryBreakdown shows an empty state instead of a misleading full bar when every value is zero', () => {
+  const data = [{ label: 'A', value: 0 }, { label: 'B', value: 0 }];
+  render(<CategoryBreakdown title="X" data={data} />);
+  expect(screen.getByText('Chưa có dữ liệu trong khoảng thời gian này.')).toBeInTheDocument();
+  expect(screen.queryByText('A')).not.toBeInTheDocument();
+});
+
+// ── RankingList ───────────────────────────────────────────
+
+test('RankingList renders numbered rows with both stat labels, in the given order', () => {
   const data = [
-    { label: 'T5', current: 3, previous: 1 },
-    { label: 'T6', current: 4, previous: 2 },
+    { label: 'N.V.Toàn', current: 12, previous: 5 },
+    { label: 'T.M.Linh', current: 8, previous: 3 },
   ];
-  render(<TrendBarLineChart title="Hoạt động môi giới theo tháng" data={data} />);
+  render(<RankingList title="Top môi giới" data={data} primaryLabel="tin đăng" secondaryLabel="lịch hẹn xác nhận" />);
 
-  const stage = screen.getByRole('img', { name: 'Hoạt động môi giới theo tháng' });
-  expect(within(stage).getAllByText(/^T\d{1,2}$/)).toHaveLength(2);
+  expect(screen.getByRole('heading', { name: 'Top môi giới' })).toBeInTheDocument();
+  const rows = screen.getAllByRole('listitem');
+  expect(rows).toHaveLength(2);
+  expect(rows[0]).toHaveTextContent('1');
+  expect(rows[0]).toHaveTextContent('N.V.Toàn');
+  expect(rows[0]).toHaveTextContent('12 tin đăng');
+  expect(rows[0]).toHaveTextContent('5 lịch hẹn xác nhận');
+  expect(rows[1]).toHaveTextContent('2');
+  expect(rows[1]).toHaveTextContent('T.M.Linh');
 });
 
-test('TrendBarLineChart hides the line and second legend item when every previous value is 0', () => {
-  const data = [
-    { label: 'T1', current: 3, previous: 0 },
-    { label: 'T2', current: 5, previous: 0 },
+test('RankingList handles the single-row empty placeholder without crashing', () => {
+  const data = [{ label: 'Chưa có', current: 0, previous: 0 }];
+  render(<RankingList title="Top môi giới" data={data} primaryLabel="tin đăng" secondaryLabel="lịch hẹn" />);
+  expect(screen.getByText('Chưa có')).toBeInTheDocument();
+  expect(screen.getAllByRole('listitem')).toHaveLength(1);
+});
+
+// ── WardCategoryMatrix ────────────────────────────────────
+
+test('WardCategoryMatrix renders one row per ward with a column per category plus a total', () => {
+  const wards = [
+    {
+      code: 'phuong-tra-vinh',
+      label: 'Phường Trà Vinh',
+      data: [
+        { slug: 'tro', label: 'Trọ', count: 3, pct: 75 },
+        { slug: 'nha', label: 'Nhà', count: 1, pct: 25 },
+        { slug: 'dat', label: 'Đất', count: 0, pct: 0 },
+      ],
+    },
   ];
-  const { container } = render(
-    <TrendBarLineChart title="Test" data={data} currentLabel="Người dùng mới" previousLabel="Kỳ trước" />,
-  );
+  render(<WardCategoryMatrix title="Mật độ tin theo phường" wards={wards} />);
 
-  expect(container.querySelectorAll('circle')).toHaveLength(0);
-  expect(container.querySelector('path[d]')).not.toBeInTheDocument();
-
-  const legendItems = Array.from(container.querySelectorAll('.combo-chart-legend-item'));
-  expect(legendItems).toHaveLength(1);
-  expect(legendItems[0]).toHaveTextContent('Người dùng mới');
-
-  const bars = Array.from(container.querySelectorAll('.combo-bar'));
-  const heights = bars.map((bar) => Number(bar.getAttribute('height')));
-  // axisMax = max(3,0,5,0,1) = 5; plot height 32; T1: 3/5*32=19.2; T2: 5/5*32=32
-  expect(heights[0]).toBeCloseTo(19.2);
-  expect(heights[1]).toBe(32);
+  expect(screen.getByRole('heading', { name: 'Mật độ tin theo phường' })).toBeInTheDocument();
+  const row = screen.getByText('Trà Vinh').closest('tr');
+  expect(row).toHaveTextContent('Trà Vinh');
+  expect(row).toHaveTextContent('3');
+  expect(row).toHaveTextContent('1');
+  expect(row).toHaveTextContent('0');
+  expect(row).toHaveTextContent('4'); // total = 3+1+0
 });
 
-test('TrendBarLineChart renders a narrow viewBox and CSS width for a single data point (no stretched empty canvas)', () => {
-  const data = [{ label: 'T7', current: 6, previous: 0 }];
-  const { container } = render(<TrendBarLineChart title="Test" data={data} />);
-
-  const svg = container.querySelector('.trend-chart-svg');
-  // TREND_LEFT_MARGIN(10) + 1 * TREND_COLUMN_UNIT_WIDTH(6) + TREND_RIGHT_MARGIN(4) = 20
-  expect(svg.getAttribute('viewBox')).toBe('0 0 20 50');
-  // idealWidthPx = 20 * TREND_PX_PER_UNIT(7) = 140px
-  // --trend-chart-width lives on the shared .chart-panel ancestor (not the svg itself) so
-  // the sibling rotated-labels row (see the rotateLabels tests below) can inherit it too.
-  const panel = container.querySelector('.chart-panel');
-  expect(panel.style.getPropertyValue('--trend-chart-width')).toBe('140px');
-});
-
-test('TrendBarLineChart scales the viewBox and CSS width up as real data points grow', () => {
-  const data = Array.from({ length: 12 }, (_, index) => ({ label: `T${index + 1}`, current: 1, previous: 0 }));
-  const { container } = render(<TrendBarLineChart title="Test" data={data} />);
-
-  const svg = container.querySelector('.trend-chart-svg');
-  // 10 + 12*6 + 4 = 86
-  expect(svg.getAttribute('viewBox')).toBe('0 0 86 50');
-  // 86 * 7 = 602px
-  const panel = container.querySelector('.chart-panel');
-  expect(panel.style.getPropertyValue('--trend-chart-width')).toBe('602px');
-});
-
-test('TrendBarLineChart with rotateLabels renders an HTML label row instead of in-SVG text, one rotated span per data point', () => {
-  const data = [
-    { label: 'T.H.Long', current: 3, previous: 1 },
-    { label: 'N.V.Toàn', current: 5, previous: 2 },
-    { label: 'T.M.Linh', current: 2, previous: 0 },
+test('WardCategoryMatrix renders every ward as a real row even when every count is zero (honest, not misleading)', () => {
+  const wards = [
+    { code: 'w1', label: 'Phường A', data: [{ slug: 'tro', label: 'Trọ', count: 0, pct: 0 }, { slug: 'nha', label: 'Nhà', count: 0, pct: 0 }, { slug: 'dat', label: 'Đất', count: 0, pct: 0 }] },
   ];
-  const { container } = render(<TrendBarLineChart title="Top môi giới" data={data} rotateLabels />);
-
-  const stage = screen.getByRole('img', { name: 'Top môi giới' });
-  // no in-SVG text labels for the data points when rotateLabels is on
-  expect(within(stage).queryByText('T.H.Long')).not.toBeInTheDocument();
-
-  const labelsRow = container.querySelector('.trend-chart-labels-row');
-  expect(labelsRow).toBeInTheDocument();
-  const rotatedSpans = within(labelsRow).getAllByText(/^(T\.H\.Long|N\.V\.Toàn|T\.M\.Linh)$/);
-  expect(rotatedSpans).toHaveLength(3);
-  rotatedSpans.forEach((span) => expect(span).toHaveClass('trend-chart-label-rotated'));
+  render(<WardCategoryMatrix title="X" wards={wards} />);
+  const row = screen.getByText('A').closest('tr');
+  expect(row).toHaveTextContent('0');
 });
 
-test('TrendBarLineChart without rotateLabels keeps rendering in-SVG text labels (default unchanged)', () => {
-  const data = [{ label: 'T1', current: 3, previous: 1 }];
-  const { container } = render(<TrendBarLineChart title="Test" data={data} />);
-
-  expect(container.querySelector('.trend-chart-labels-row')).not.toBeInTheDocument();
-  const stage = screen.getByRole('img', { name: 'Test' });
-  expect(within(stage).getByText('T1')).toBeInTheDocument();
+test('WardCategoryMatrix gives the max-count cell a visibly stronger tint than a low-count cell, for readable contrast', () => {
+  const wards = [
+    {
+      code: 'w1',
+      label: 'Phường A',
+      data: [
+        { slug: 'tro', label: 'Trọ', count: 1, pct: 10 },
+        { slug: 'nha', label: 'Nhà', count: 10, pct: 90 },
+        { slug: 'dat', label: 'Đất', count: 0, pct: 0 },
+      ],
+    },
+  ];
+  const { container } = render(<WardCategoryMatrix title="X" wards={wards} />);
+  const cells = container.querySelectorAll('tbody td');
+  const [, troCell, nhaCell, datCell] = cells; // label, Trọ, Nhà, Đất, Tổng
+  expect(datCell.style.backgroundColor).toBe('');
+  const troOpacityMatch = troCell.style.backgroundColor.match(/transparent (\d+)%/);
+  const nhaOpacityMatch = nhaCell.style.backgroundColor.match(/transparent (\d+)%/);
+  expect(troOpacityMatch).toBeTruthy();
+  expect(nhaOpacityMatch).toBeTruthy();
+  // Lower transparent% means a stronger/more opaque tint — the max-count cell
+  // (Nhà, 10 of 10) must be visibly stronger than the low-count cell (Trọ, 1 of 10).
+  expect(Number(nhaOpacityMatch[1])).toBeLessThan(Number(troOpacityMatch[1]));
+  expect(Number(nhaOpacityMatch[1])).toBeLessThanOrEqual(15); // near-max tier reads as strongly tinted
 });

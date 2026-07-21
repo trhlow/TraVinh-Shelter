@@ -2,14 +2,49 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import BrokerDashboard, { propertyPayload } from './BrokerDashboard.jsx';
+import BrokerDashboard, { propertyPayload, extractGoogleMapsEmbedSrc } from './BrokerDashboard.jsx';
 import { fetchBrokerDashboard } from '../services/api.js';
+
+describe('extractGoogleMapsEmbedSrc', () => {
+  test('extracts src from a full Google Maps iframe embed', () => {
+    const pasted = '<iframe src="https://www.google.com/maps/embed?pb=!1m17!1m12" width="600" height="450"></iframe>';
+    expect(extractGoogleMapsEmbedSrc(pasted)).toBe('https://www.google.com/maps/embed?pb=!1m17!1m12');
+  });
+
+  test('accepts single-quoted src attribute', () => {
+    const pasted = "<iframe src='https://www.google.com/maps/embed?pb=abc'></iframe>";
+    expect(extractGoogleMapsEmbedSrc(pasted)).toBe('https://www.google.com/maps/embed?pb=abc');
+  });
+
+  test('accepts a maps.google.com subdomain', () => {
+    const pasted = '<iframe src="https://maps.google.com/maps?q=1,2&output=embed"></iframe>';
+    expect(extractGoogleMapsEmbedSrc(pasted)).toBe('https://maps.google.com/maps?q=1,2&output=embed');
+  });
+
+  test('returns null when there is no src attribute', () => {
+    expect(extractGoogleMapsEmbedSrc('<iframe width="600"></iframe>')).toBeNull();
+  });
+
+  test('returns null when src is not a google.com host', () => {
+    const pasted = '<iframe src="https://evil.example.com/embed"></iframe>';
+    expect(extractGoogleMapsEmbedSrc(pasted)).toBeNull();
+  });
+
+  test('returns null for empty or whitespace-only input', () => {
+    expect(extractGoogleMapsEmbedSrc('')).toBeNull();
+    expect(extractGoogleMapsEmbedSrc('   ')).toBeNull();
+  });
+
+  test('returns null for a malformed URL in src', () => {
+    expect(extractGoogleMapsEmbedSrc('<iframe src="not a url"></iframe>')).toBeNull();
+  });
+});
 
 describe('propertyPayload — area from length × width', () => {
   const base = {
     categorySlug: 'dat', transaction: 'sale', ward: 'phuong-tra-vinh',
     length: '5', width: '20', bedrooms: '', bathrooms: '', description: '', amenities: [],
-    lat: '', lng: '',
+    mapEmbedUrl: '',
     coverUrl: '', title: 'Lô đất test', address: 'Test', price: '1000000000',
   };
 
@@ -37,16 +72,14 @@ describe('propertyPayload — area from length × width', () => {
     expect(payload.attributes.bathrooms).toBe(2);
   });
 
-  test('stores valid map coordinates as numbers', () => {
-    const payload = propertyPayload({ ...base, lat: '9.9345', lng: '106.3456' });
-    expect(payload.attributes.lat).toBe(9.9345);
-    expect(payload.attributes.lng).toBe(106.3456);
+  test('carries mapEmbedUrl through to attributes', () => {
+    const payload = propertyPayload({ ...base, mapEmbedUrl: 'https://www.google.com/maps/embed?pb=abc' });
+    expect(payload.attributes.mapEmbedUrl).toBe('https://www.google.com/maps/embed?pb=abc');
   });
 
-  test('drops out-of-range map coordinates', () => {
-    const payload = propertyPayload({ ...base, lat: '91', lng: '106.3456' });
-    expect(payload.attributes.lat).toBeNull();
-    expect(payload.attributes.lng).toBe(106.3456);
+  test('mapEmbedUrl is null when not set', () => {
+    const payload = propertyPayload({ ...base, mapEmbedUrl: '' });
+    expect(payload.attributes.mapEmbedUrl).toBeNull();
   });
 });
 
@@ -54,7 +87,7 @@ describe('propertyPayload — rooms (dãy trọ)', () => {
   const base = {
     categorySlug: 'tro', transaction: 'rent', ward: 'phuong-tra-vinh',
     length: '', width: '', bedrooms: '', bathrooms: '', description: '', amenities: [],
-    lat: '', lng: '', coverUrl: '', title: 'Dãy trọ test', address: 'Test', price: '1500000',
+    coverUrl: '', title: 'Dãy trọ test', address: 'Test', price: '1500000',
   };
 
   test('attaches attributes.rooms when category is tro and at least one valid room', () => {
@@ -135,23 +168,78 @@ describe('Listing form — field visibility', () => {
     expect(screen.getByText('Nhà vệ sinh')).toBeInTheDocument();
   });
 
-  test('shows latitude and longitude inputs with the Maps coordinate hint', async () => {
+  test('shows the map embed paste field, no lat/lng number inputs', async () => {
     render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
-    expect(await screen.findByLabelText('Vĩ độ (lat)')).toBeInTheDocument();
-    expect(screen.getByLabelText('Kinh độ (lng)')).toBeInTheDocument();
-    expect(screen.getByText('Nhấn giữ trên ứng dụng Google Maps để lấy tọa độ.')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Mã nhúng Google Maps')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Vĩ độ (lat)')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Kinh độ (lng)')).not.toBeInTheDocument();
   });
 
-  test('category select is locked to Trọ and disabled for new listings', async () => {
+  test('a new listing starts with an empty embed field and no preview', async () => {
+    render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
+    const field = await screen.findByLabelText('Mã nhúng Google Maps');
+    expect(field).toHaveValue('');
+    expect(screen.queryByTitle('Xem trước vị trí')).not.toBeInTheDocument();
+  });
+
+  test('pasting a valid embed shows the preview iframe', async () => {
+    render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
+    const field = await screen.findByLabelText('Mã nhúng Google Maps');
+    await userEvent.type(field, '<iframe src="https://www.google.com/maps/embed?pb=abc"></iframe>');
+    const preview = await screen.findByTitle('Xem trước vị trí');
+    expect(preview).toHaveAttribute('src', 'https://www.google.com/maps/embed?pb=abc');
+  }, 15000);
+
+  test('pasting an invalid embed shows an error and no preview', async () => {
+    render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
+    const field = await screen.findByLabelText('Mã nhúng Google Maps');
+    await userEvent.type(field, 'not an iframe');
+    expect(await screen.findByText('Mã nhúng không hợp lệ — hãy dán nguyên đoạn từ Google Maps (Chia sẻ → Nhúng bản đồ).')).toBeInTheDocument();
+    expect(screen.queryByTitle('Xem trước vị trí')).not.toBeInTheDocument();
+  });
+
+  test('editing a listing with a saved embed preloads the field and preview', async () => {
+    fetchBrokerDashboard.mockResolvedValueOnce({
+      activeListings: 1,
+      totalListings: 1,
+      listings: [{
+        id: 'p-with-embed', title: 'Nhà có bản đồ', address: 'Test', image: '', statusLabel: 'Đang hiển thị',
+        rawStatus: 'AVAILABLE', priceLabel: '1 tỷ', area: 100, category: 'nha', rooms: [],
+        mapEmbedUrl: 'https://www.google.com/maps/embed?pb=xyz',
+      }],
+    });
+    render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Chỉnh sửa tin' }));
+    const preview = await screen.findByTitle('Xem trước vị trí');
+    expect(preview).toHaveAttribute('src', 'https://www.google.com/maps/embed?pb=xyz');
+  });
+
+  test('category select offers Trọ, Nhà, Đất and defaults to Trọ, enabled', async () => {
     render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
     const categoryField = (await screen.findByText('Danh mục')).closest('.auth-field');
     const select = within(categoryField).getByRole('combobox');
-    expect(select).toBeDisabled();
+    expect(select).not.toBeDisabled();
     expect(select).toHaveValue('tro');
-    expect(within(categoryField).getAllByRole('option')).toHaveLength(1);
+    expect(within(categoryField).getAllByRole('option').map((option) => option.textContent)).toEqual(['Trọ', 'Nhà', 'Đất']);
   });
 
-  test('editing a legacy Đất listing preserves its category and hides Phòng ngủ / Nhà vệ sinh', async () => {
+  test('hides Phòng ngủ / Nhà vệ sinh when category is changed to Đất', async () => {
+    render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
+    const categoryField = (await screen.findByText('Danh mục')).closest('.auth-field');
+    await userEvent.selectOptions(within(categoryField).getByRole('combobox'), 'Đất');
+    expect(screen.queryByText('Phòng ngủ')).not.toBeInTheDocument();
+    expect(screen.queryByText('Nhà vệ sinh')).not.toBeInTheDocument();
+  });
+
+  test('hides the room list (dãy trọ) when category is changed to Nhà', async () => {
+    render(<BrokerDashboard session={session} section="properties" currentPath="/broker/properties" />);
+    expect(await screen.findByText('Danh sách phòng trong dãy trọ')).toBeInTheDocument();
+    const categoryField = (await screen.findByText('Danh mục')).closest('.auth-field');
+    await userEvent.selectOptions(within(categoryField).getByRole('combobox'), 'Nhà');
+    expect(screen.queryByText('Danh sách phòng trong dãy trọ')).not.toBeInTheDocument();
+  });
+
+  test('editing an existing Đất listing loads its category and hides Phòng ngủ / Nhà vệ sinh', async () => {
     fetchBrokerDashboard.mockResolvedValueOnce({
       activeListings: 1,
       totalListings: 1,

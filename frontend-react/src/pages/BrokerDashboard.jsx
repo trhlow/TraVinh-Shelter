@@ -1,17 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
+import '../styles/dashboard.css';
 import {
-  buildDailySeries, buildWardData, ThreeDDonutChart, TrendBarLineChart, WardBarChart,
+  buildDailySeries, buildWardData, CategoryBreakdown, TrendLineChart,
 } from '../components/Charts.jsx';
 import { DashboardPanel, LoadingRows, StateBlock, StatCard, StatusBadge } from '../components/DashboardWidgets.jsx';
 import ViewingsPanel from '../components/dashboard/ViewingsPanel.jsx';
 import DateRangeFilter from '../components/dashboard/DateRangeFilter.jsx';
+import NotificationBell from '../components/dashboard/NotificationBell.jsx';
+import PageMeta from '../components/PageMeta.jsx';
+import { buildBrokerNotifications } from '../utils/brokerNotifications.js';
 import BrandLogo from '../components/BrandLogo.jsx';
 import { WARDS } from '../data/locations.js';
 import Icon from '../components/ui/Icon.jsx';
 import LoginPage from './LoginPage.jsx';
 import { isInRange, percentDelta, previousRange, resolveDateRange } from '../utils/dateRange.js';
 import { downloadCsv } from '../utils/exportCsv.js';
-import { trimLeadingEmptyMonths } from '../utils/chartSeries.js';
+import { isGoogleMapsEmbedUrl } from '../utils/googleMapsEmbed.js';
 import {
   changePassword,
   createProperty,
@@ -44,8 +48,8 @@ const EMPTY_FORM = {
   price: '',
   length: '',
   width: '',
-  lat: '',
-  lng: '',
+  mapEmbedInput: '',
+  mapEmbedUrl: '',
   bedrooms: '',
   bathrooms: '',
   houseType: 'tret',
@@ -85,6 +89,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   const [rangePreset, setRangePreset] = useState('all');
   const [rangeCustom, setRangeCustom] = useState({});
   const [quickSearch, setQuickSearch] = useState('');
+  const [mapEmbedError, setMapEmbedError] = useState('');
 
   const listings = stats.listings || [];
   const listingRange = useMemo(() => resolveDateRange(rangePreset, rangeCustom), [rangePreset, rangeCustom]);
@@ -160,6 +165,8 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
 
   const wardChart = useMemo(() => buildWardData(rangedListings, (listing) => listing.ward), [rangedListings]);
 
+  const brokerNotifications = useMemo(() => buildBrokerNotifications({ listings, viewings }), [listings, viewings]);
+
   const prevListingRange = useMemo(() => previousRange(listingRange), [listingRange]);
   const prevRangedListings = useMemo(() => (
     prevListingRange ? listings.filter((listing) => isInRange(listing.createdAt, prevListingRange)) : null
@@ -178,7 +185,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
     () => new Intl.DateTimeFormat('vi-VN', { month: 'numeric', year: 'numeric' }).format(new Date()),
     [],
   );
-  const activityChartData = useMemo(() => buildActivitySeries(listings, viewings), [listings, viewings]);
+  const activityChartData = useMemo(() => buildDailyActivitySeries(listings, viewings), [listings, viewings]);
   const confirmedViewingsThisMonth = useMemo(() => {
     const now = new Date();
     return viewings.filter((viewing) => (
@@ -204,6 +211,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
   if (session.role !== 'BROKER') {
     return (
       <div className="dashboard-shell">
+        <PageMeta routeKey="broker" />
         <BrokerSidebar currentPath={currentPath} />
         <div className="dashboard-content">
           <div className="dashboard-main">
@@ -371,8 +379,8 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
       price: String(Math.round(property.rawPrice || 0)),
       length: property.length ? String(property.length) : '',
       width: property.width ? String(property.width) : '',
-      lat: coordinateFormValue(property.lat),
-      lng: coordinateFormValue(property.lng),
+      mapEmbedInput: property.mapEmbedUrl ? `<iframe src="${property.mapEmbedUrl}"></iframe>` : '',
+      mapEmbedUrl: property.mapEmbedUrl || '',
       bedrooms: property.bedrooms ? String(property.bedrooms) : '',
       bathrooms: property.bathrooms ? String(property.bathrooms) : '',
       houseType: property.houseType || 'tret',
@@ -435,8 +443,25 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
     }));
   }
 
+  function handleMapEmbedChange(value) {
+    if (!value.trim()) {
+      setListingForm((current) => ({ ...current, mapEmbedInput: value, mapEmbedUrl: '' }));
+      setMapEmbedError('');
+      return;
+    }
+    const src = extractGoogleMapsEmbedSrc(value);
+    if (!src) {
+      setListingForm((current) => ({ ...current, mapEmbedInput: value, mapEmbedUrl: '' }));
+      setMapEmbedError('Mã nhúng không hợp lệ — hãy dán nguyên đoạn từ Google Maps (Chia sẻ → Nhúng bản đồ).');
+      return;
+    }
+    setListingForm((current) => ({ ...current, mapEmbedInput: value, mapEmbedUrl: src }));
+    setMapEmbedError('');
+  }
+
   return (
     <div className="dashboard-shell">
+      <PageMeta routeKey="broker" />
       <BrokerSidebar currentPath={currentPath} onLogout={onLogout} session={session} />
       <div className="dashboard-content">
         <div className="dashboard-topbar">
@@ -453,10 +478,7 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
             />
           </form>
           <div className="dashboard-topbar-actions">
-            <button className="dashboard-icon-btn" type="button" aria-label="Thông báo">
-              <Icon name="Bell" size={18} />
-              {(dashboardStats.pendingListings || viewings.length) > 0 && <span className="dashboard-icon-dot" />}
-            </button>
+            <NotificationBell notifications={brokerNotifications} />
             <div className="dashboard-user-chip">
               <span className="dashboard-user-avatar">{initialsFor(profile?.fullName || session.fullName || session.email)}</span>
               <span className="dashboard-user-name">{profile?.fullName || session.fullName || 'Môi giới'}</span>
@@ -518,33 +540,35 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
               </div>
 
               <div className="grid-2 dashboard-stats-row">
-                <StatCard icon="Building" title="Tin đăng đang hoạt động" value={dashboardStats.activeListings} tone="navy" trend={trendFor(activeListingsDelta)} series={activeListingsSparkline} />
+                <StatCard icon="Building" title="Tin đăng đang hoạt động" value={dashboardStats.activeListings} tone="navy" trend={trendFor(activeListingsDelta)} trendContext="so với kỳ trước" series={activeListingsSparkline} seriesCaption="7 ngày gần nhất" />
                 <StatCard icon="CalendarCheck" title="Lịch hẹn xác nhận tháng này" value={confirmedViewingsThisMonth} tone="navy" />
-              </div>
-
-              <div className="dashboard-live-row">
-                <TrendBarLineChart
-                  title="Hoạt động môi giới theo tháng"
-                  subtitle="Số bài đăng mới và lịch hẹn đã xác nhận theo từng tháng, tính từ khi có dữ liệu thực tế"
-                  data={activityChartData}
-                  currentLabel="Bài đăng"
-                  previousLabel="Lịch hẹn xác nhận"
-                />
-                <ThreeDDonutChart
-                  title="Loại hình BĐS đang quản lý"
-                  subtitle="Trọ, nhà và đất đang quản lý"
-                  data={managedTypeData}
-                  centerLabel="tin"
-                />
               </div>
 
               <div className="dashboard-charts-row">
                 <div className="dashboard-chart-span-2">
-                  <WardBarChart title="Tin đăng theo phường" data={wardChart} />
+                  <TrendLineChart
+                    title="Hoạt động môi giới theo ngày"
+                    subtitle={`Số bài đăng mới và lịch hẹn đã xác nhận theo từng ngày trong tháng ${activityMonthLabel}`}
+                    data={activityChartData}
+                    currentLabel="Bài đăng"
+                    previousLabel="Lịch hẹn xác nhận"
+                  />
                 </div>
                 <DashboardPanel title="Lịch hẹn sắp tới" count={viewingsLoading ? 'Đang tải' : `${upcomingViewings.length} lịch`}>
                   <UpcomingViewingsSummary viewings={upcomingViewings} loading={viewingsLoading} />
                 </DashboardPanel>
+              </div>
+
+              <div className="dashboard-charts-row">
+                <div className="dashboard-chart-span-2">
+                  <CategoryBreakdown title="Tin đăng theo phường" data={wardChart.map((ward) => ({ label: ward.label.replace('Phường ', ''), value: ward.count }))} totalLabel="Tổng cộng" />
+                </div>
+                <CategoryBreakdown
+                  title="Loại hình BĐS đang quản lý"
+                  subtitle="Trọ, nhà và đất đang quản lý"
+                  data={managedTypeData}
+                  totalLabel="Tổng cộng"
+                />
               </div>
 
               <div className="dashboard-panels-row">
@@ -647,12 +671,14 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                     <input className="input" value={listingForm.title} onChange={(event) => setListingValue('title', event.target.value, setListingForm)} required />
                   </FormField>
                   <FormField label="Danh mục">
-                    <select className="input" value={listingForm.categorySlug} disabled>
-                      <option value={listingForm.categorySlug}>{categoryLabel(listingForm.categorySlug)}</option>
+                    <select className="input" value={listingForm.categorySlug} onChange={(event) => {
+                      const categorySlug = event.target.value;
+                      setListingForm((current) => ({ ...current, categorySlug, transaction: categorySlug === 'tro' ? 'rent' : current.transaction }));
+                    }}>
+                      <option value="tro">Trọ</option>
+                      <option value="nha">Nhà</option>
+                      <option value="dat">Đất</option>
                     </select>
-                    <p className="form-hint">
-                      Môi giới chỉ đăng tin Phòng trọ. Tin danh mục khác (đã tạo trước đây) giữ nguyên danh mục gốc khi chỉnh sửa.
-                    </p>
                   </FormField>
                   {listingForm.categorySlug !== 'tro' && (
                     <FormField label="Nhu cầu">
@@ -681,12 +707,20 @@ export default function BrokerDashboard({ session, onLogin, onLogout, currentPat
                   <FormField label="Chiều rộng (m)">
                     <input className="input" type="number" min="0" step="0.01" value={listingForm.width} onChange={(event) => setListingValue('width', event.target.value, setListingForm)} />
                   </FormField>
-                  <FormField label="Vị trí trên Google Maps" className="dashboard-listing-span2">
-                    <div className="dashboard-coordinate-inputs">
-                      <input className="input" type="number" min="-90" max="90" step="any" value={listingForm.lat} onChange={(event) => setListingValue('lat', event.target.value, setListingForm)} placeholder="Vĩ độ (lat)" aria-label="Vĩ độ (lat)" />
-                      <input className="input" type="number" min="-180" max="180" step="any" value={listingForm.lng} onChange={(event) => setListingValue('lng', event.target.value, setListingForm)} placeholder="Kinh độ (lng)" aria-label="Kinh độ (lng)" />
-                    </div>
-                    <p className="form-hint">Nhấn giữ trên ứng dụng Google Maps để lấy tọa độ.</p>
+                  <FormField label="Mã nhúng Google Maps" className="dashboard-listing-span2">
+                    <textarea
+                      className="input"
+                      rows={3}
+                      value={listingForm.mapEmbedInput}
+                      onChange={(event) => handleMapEmbedChange(event.target.value)}
+                      placeholder='Dán nguyên đoạn <iframe src="https://www.google.com/maps/embed?...">...'
+                      aria-label="Mã nhúng Google Maps"
+                    />
+                    {mapEmbedError && <p className="form-error">{mapEmbedError}</p>}
+                    {listingForm.mapEmbedUrl && (
+                      <iframe className="location-embed-preview" src={listingForm.mapEmbedUrl} title="Xem trước vị trí" loading="lazy" />
+                    )}
+                    <p className="form-hint">Trên Google Maps: bấm Chia sẻ → Nhúng bản đồ → Sao chép HTML, dán nguyên vào đây.</p>
                   </FormField>
                   {listingForm.categorySlug === 'nha' && listingForm.transaction === 'rent' && (
                     <FormField label="Loại nhà">
@@ -1096,8 +1130,7 @@ export function propertyPayload(form) {
     ward: form.ward,
     length,
     width,
-    lat: coordinateOrNull(form.lat, -90, 90),
-    lng: coordinateOrNull(form.lng, -180, 180),
+    mapEmbedUrl: form.mapEmbedUrl || null,
     area: length != null && width != null ? Number((length * width).toFixed(2)) : null,
     description: form.description,
     amenities: form.amenities,
@@ -1136,14 +1169,11 @@ function numericOrNull(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function coordinateOrNull(value, min, max) {
-  const parsed = numericOrNull(value);
-  return parsed != null && parsed >= min && parsed <= max ? parsed : null;
-}
-
-function coordinateFormValue(value) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? String(parsed) : '';
+export function extractGoogleMapsEmbedSrc(pastedHtml) {
+  const match = String(pastedHtml || '').match(/src=["']([^"']+)["']/i);
+  if (!match) return null;
+  if (!isGoogleMapsEmbedUrl(match[1])) return null;
+  return new URL(match[1]).href;
 }
 
 function setListingValue(name, value, setListingForm) {
@@ -1164,42 +1194,36 @@ function toFormCategory(category) {
   return 'tro';
 }
 
-function buildActivitySeries(listings, viewings) {
-  const buckets = rollingMonthBuckets();
+export function buildDailyActivitySeries(listings, viewings, referenceDate = new Date()) {
+  const year = referenceDate.getFullYear();
+  const month = referenceDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const buckets = Array.from({ length: daysInMonth }, (_, index) => ({
+    day: index + 1,
+    label: String(index + 1),
+    current: 0,
+    previous: 0,
+  }));
+
+  function bucketForDate(raw) {
+    if (!raw) return null;
+    const date = new Date(raw);
+    if (Number.isNaN(date.getTime())) return null;
+    if (date.getFullYear() !== year || date.getMonth() !== month) return null;
+    return buckets[date.getDate() - 1];
+  }
+
   listings.forEach((listing) => {
-    const date = new Date(listing.createdAt || Date.now());
-    if (Number.isNaN(date.getTime())) return;
-    const bucket = buckets.find((item) => sameMonth(item.date, date));
+    const bucket = bucketForDate(listing.createdAt);
     if (bucket) bucket.current += 1;
   });
   viewings.forEach((viewing) => {
     if (viewing.status !== 'CONFIRMED') return;
-    const date = new Date(viewing.requestedAt || viewing.createdAt || Date.now());
-    if (Number.isNaN(date.getTime())) return;
-    const bucket = buckets.find((item) => sameMonth(item.date, date));
+    const bucket = bucketForDate(viewing.requestedAt || viewing.createdAt);
     if (bucket) bucket.previous += 1;
   });
-  return trimLeadingEmptyMonths(buckets.map((bucket) => ({
-    label: bucket.label,
-    current: bucket.current || 0,
-    previous: bucket.previous || 0,
-  })));
-}
 
-function rollingMonthBuckets(referenceDate = new Date(), length = 12) {
-  return Array.from({ length }, (_, index) => {
-    const date = new Date(referenceDate.getFullYear(), referenceDate.getMonth() - (length - 1 - index), 1);
-    return {
-      date,
-      label: `T${date.getMonth() + 1}`,
-      current: 0,
-      previous: 0,
-    };
-  });
-}
-
-function sameMonth(a, b) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+  return buckets.map(({ label, current, previous }) => ({ label, current, previous }));
 }
 
 function sameCalendarMonth(value, reference) {
@@ -1270,7 +1294,7 @@ function isAvailableListing(listing) {
   return listing.rawStatus === 'AVAILABLE' || String(listing.statusLabel || '').toLowerCase().includes('hiển thị');
 }
 
-function isPendingListing(listing) {
+export function isPendingListing(listing) {
   const status = String(listing.rawStatus || listing.statusLabel || '').toLowerCase();
   return status.includes('pending') || status.includes('chờ') || status.includes('duyệt');
 }

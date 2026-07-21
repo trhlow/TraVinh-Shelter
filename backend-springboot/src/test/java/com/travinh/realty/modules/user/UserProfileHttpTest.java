@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -63,7 +64,7 @@ class UserProfileHttpTest {
 
     @Test
     void currentProfileUsesAuthenticatedPrincipalAndHidesInternalFields() throws Exception {
-        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        User user = user("user@example.com", UserRole.BROKER, UserStatus.ACTIVE, "User", "0900000000");
         authenticate(user);
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
 
@@ -72,7 +73,7 @@ class UserProfileHttpTest {
                 .andExpect(jsonPath("$.id").value(user.getId().toString()))
                 .andExpect(jsonPath("$.email").value("user@example.com"))
                 .andExpect(jsonPath("$.passwordHash").doesNotExist())
-                .andExpect(jsonPath("$.role").value("USER"))
+                .andExpect(jsonPath("$.role").value("BROKER"))
                 .andExpect(jsonPath("$.status").value("ACTIVE"));
     }
 
@@ -84,7 +85,7 @@ class UserProfileHttpTest {
                 .andExpect(jsonPath("$.status").value(401))
                 .andExpect(jsonPath("$.fieldErrors").isMap());
 
-        User locked = user("locked@example.com", UserRole.USER, UserStatus.LOCKED, "Locked", "0900000000");
+        User locked = user("locked@example.com", UserRole.BROKER, UserStatus.LOCKED, "Locked", "0900000000");
         authenticate(locked);
         mockMvc.perform(get("/users/me").header("Authorization", bearer(locked)))
                 .andExpect(status().isUnauthorized())
@@ -94,7 +95,7 @@ class UserProfileHttpTest {
 
     @Test
     void profileUpdateOnlyChangesWhitelistedFields() throws Exception {
-        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "Old", "0900000000");
+        User user = user("user@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Old", "0900000000");
         authenticate(user);
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
 
@@ -105,15 +106,15 @@ class UserProfileHttpTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.fullName").value("New Name"))
                 .andExpect(jsonPath("$.phone").value("0911111111"))
-                .andExpect(jsonPath("$.role").value("USER"))
+                .andExpect(jsonPath("$.role").value("BROKER"))
                 .andExpect(jsonPath("$.status").value("ACTIVE"))
                 .andExpect(jsonPath("$.passwordHash").doesNotExist());
-        org.assertj.core.api.Assertions.assertThat(user.getRole()).isEqualTo(UserRole.USER);
+        org.assertj.core.api.Assertions.assertThat(user.getRole()).isEqualTo(UserRole.BROKER);
         org.assertj.core.api.Assertions.assertThat(user.getStatus()).isEqualTo(UserStatus.ACTIVE);
     }
 
     @Test
-    void brokerCannotRemovePhoneAndRegularUserCanClearItThroughEveryNullablePayloadForm() throws Exception {
+    void brokerCannotRemovePhoneAndAdminCanClearItThroughEveryNullablePayloadForm() throws Exception {
         User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
         authenticate(broker);
         when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
@@ -125,21 +126,21 @@ class UserProfileHttpTest {
                     .andExpect(jsonPath("$.message").value("Hồ sơ môi giới yêu cầu số điện thoại"));
         }
 
-        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
-        authenticate(user);
-        when(users.findById(user.getId())).thenReturn(Optional.of(user));
-        for (String payload : new String[]{"{\"fullName\":\"User\",\"phone\":null}", "{\"fullName\":\"User\",\"phone\":\"\"}", "{\"fullName\":\"User\",\"phone\":\"   \"}", "{\"fullName\":\"User\"}"}) {
-            mockMvc.perform(patch("/users/me").header("Authorization", bearer(user))
+        User admin = user("admin@example.com", UserRole.ADMIN, UserStatus.ACTIVE, "Admin", "0900000000");
+        authenticate(admin);
+        when(users.findById(admin.getId())).thenReturn(Optional.of(admin));
+        for (String payload : new String[]{"{\"fullName\":\"Admin\",\"phone\":null}", "{\"fullName\":\"Admin\",\"phone\":\"\"}", "{\"fullName\":\"Admin\",\"phone\":\"   \"}", "{\"fullName\":\"Admin\"}"}) {
+            mockMvc.perform(patch("/users/me").header("Authorization", bearer(admin))
                             .contentType(MediaType.APPLICATION_JSON).content(payload))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.phone").doesNotExist());
-            org.assertj.core.api.Assertions.assertThat(user.getPhone()).isNull();
+            org.assertj.core.api.Assertions.assertThat(admin.getPhone()).isNull();
         }
     }
 
     @Test
     void profileUpdateAcceptsAndReturnsSocialLinks() throws Exception {
-        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        User user = user("user@example.com", UserRole.BROKER, UserStatus.ACTIVE, "User", "0900000000");
         authenticate(user);
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
 
@@ -154,7 +155,7 @@ class UserProfileHttpTest {
 
     @Test
     void malformedJsonBodyReturnsBadRequestNotServerError() throws Exception {
-        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        User user = user("user@example.com", UserRole.BROKER, UserStatus.ACTIVE, "User", "0900000000");
         authenticate(user);
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
 
@@ -166,7 +167,7 @@ class UserProfileHttpTest {
 
     @Test
     void profileUpdateRejectsInvalidPhoneFormat() throws Exception {
-        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        User user = user("user@example.com", UserRole.BROKER, UserStatus.ACTIVE, "User", "0900000000");
         authenticate(user);
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
 
@@ -180,7 +181,7 @@ class UserProfileHttpTest {
 
     @Test
     void profileUpdateRejectsPhoneAlreadyRegisteredToAnotherUser() throws Exception {
-        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        User user = user("user@example.com", UserRole.BROKER, UserStatus.ACTIVE, "User", "0900000000");
         authenticate(user);
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
         when(users.existsByNormalizedPhoneAndIdNot("0911111111", user.getId())).thenReturn(true);
@@ -196,7 +197,7 @@ class UserProfileHttpTest {
 
     @Test
     void profileUpdateMapsDuplicatePhoneRaceToConflict() throws Exception {
-        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        User user = user("user@example.com", UserRole.BROKER, UserStatus.ACTIVE, "User", "0900000000");
         authenticate(user);
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
         when(users.existsByNormalizedPhoneAndIdNot("0911111111", user.getId())).thenReturn(false);
@@ -214,8 +215,36 @@ class UserProfileHttpTest {
     }
 
     @Test
+    void deleteCurrentUserAnonymizesAndReturnsNoContent() throws Exception {
+        User user = user("user@example.com", UserRole.BROKER, UserStatus.ACTIVE, "User", "0900000000");
+        authenticate(user);
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+
+        mockMvc.perform(delete("/users/me").header("Authorization", bearer(user)))
+                .andExpect(status().isNoContent());
+
+        org.assertj.core.api.Assertions.assertThat(user.getStatus()).isEqualTo(UserStatus.DELETED);
+        org.assertj.core.api.Assertions.assertThat(user.getFullName()).isEqualTo("Người dùng đã xoá");
+    }
+
+    @Test
+    void deletedUserJwtIssuedBeforeDeleteIsRejectedOnSubsequentAuthenticatedRequest() throws Exception {
+        User user = user("user@example.com", UserRole.BROKER, UserStatus.ACTIVE, "User", "0900000000");
+        authenticate(user);
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+        String token = bearer(user);
+
+        mockMvc.perform(delete("/users/me").header("Authorization", token))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/users/me").header("Authorization", token))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401));
+    }
+
+    @Test
     void changePasswordRejectsIncorrectCurrentPassword() throws Exception {
-        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        User user = user("user@example.com", UserRole.BROKER, UserStatus.ACTIVE, "User", "0900000000");
         authenticate(user);
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
 
@@ -300,8 +329,8 @@ class UserProfileHttpTest {
     }
 
     @Test
-    void regularUserCanClearSocialLinksThroughEveryNullablePayloadForm() throws Exception {
-        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+    void brokerCanClearSocialLinksThroughEveryNullablePayloadForm() throws Exception {
+        User user = user("user@example.com", UserRole.BROKER, UserStatus.ACTIVE, "User", "0900000000");
         ReflectionTestUtils.setField(user, "facebookUrl", "https://facebook.com/existing");
         ReflectionTestUtils.setField(user, "tiktokUrl", "https://tiktok.com/@existing");
         authenticate(user);
@@ -345,7 +374,7 @@ class UserProfileHttpTest {
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.message").value("Không tìm thấy môi giới"));
 
-        User regular = user("regular@example.com", UserRole.USER, UserStatus.ACTIVE, "Regular", "0900000000");
+        User regular = user("regular@example.com", UserRole.ADMIN, UserStatus.ACTIVE, "Regular", "0900000000");
         when(users.findById(regular.getId())).thenReturn(Optional.of(regular));
         mockMvc.perform(get("/brokers/{id}", regular.getId()))
                 .andExpect(status().isNotFound())
@@ -357,7 +386,6 @@ class UserProfileHttpTest {
 
     @Test
     void adminEndpointsEnforceRoleAndHashBrokerPassword() throws Exception {
-        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
         User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
         User admin = user("admin@example.com", UserRole.ADMIN, UserStatus.ACTIVE, "Admin", "0900000000");
         String payload = "{\"username\":\"new.broker\",\"email\":\"new@example.com\",\"password\":\"correct-horse-battery-staple\",\"fullName\":\"New Broker\",\"phone\":\"0900000000\"}";
@@ -365,10 +393,6 @@ class UserProfileHttpTest {
         mockMvc.perform(post("/admin/brokers").contentType(MediaType.APPLICATION_JSON).content(payload))
                 .andExpect(status().isUnauthorized()).andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.status").value(401));
-        authenticate(user);
-        mockMvc.perform(post("/admin/brokers").header("Authorization", bearer(user)).contentType(MediaType.APPLICATION_JSON).content(payload))
-                .andExpect(status().isForbidden()).andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.status").value(403));
         authenticate(broker);
         mockMvc.perform(post("/admin/brokers").header("Authorization", bearer(broker)).contentType(MediaType.APPLICATION_JSON).content(payload))
                 .andExpect(status().isForbidden()).andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
@@ -401,7 +425,7 @@ class UserProfileHttpTest {
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.message").value("Email hoặc tên đăng nhập đã được đăng ký"));
 
-        User target = user("target@example.com", UserRole.USER, UserStatus.ACTIVE, "Target", "0900000000");
+        User target = user("target@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Target", "0900000000");
         String targetBearer = bearer(target);
         when(users.findById(target.getId())).thenReturn(Optional.of(target));
         when(userDetailsService.loadUserByUsername(target.getEmail())).thenAnswer(invocation -> UserPrincipal.from(target));
@@ -433,8 +457,7 @@ class UserProfileHttpTest {
 
     @Test
     void adminStatusEndpointRequiresAdminRole() throws Exception {
-        User target = user("target@example.com", UserRole.USER, UserStatus.ACTIVE, "Target", "0900000000");
-        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        User target = user("target@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Target", "0900000000");
         User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
         User admin = user("admin@example.com", UserRole.ADMIN, UserStatus.ACTIVE, "Admin", "0900000000");
         String path = "/admin/users/" + target.getId() + "/status";
@@ -443,10 +466,6 @@ class UserProfileHttpTest {
         mockMvc.perform(patch(path).contentType(MediaType.APPLICATION_JSON).content(payload))
                 .andExpect(status().isUnauthorized()).andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.status").value(401));
-        authenticate(user);
-        mockMvc.perform(patch(path).header("Authorization", bearer(user)).contentType(MediaType.APPLICATION_JSON).content(payload))
-                .andExpect(status().isForbidden()).andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.status").value(403));
         authenticate(broker);
         mockMvc.perform(patch(path).header("Authorization", bearer(broker)).contentType(MediaType.APPLICATION_JSON).content(payload))
                 .andExpect(status().isForbidden()).andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))

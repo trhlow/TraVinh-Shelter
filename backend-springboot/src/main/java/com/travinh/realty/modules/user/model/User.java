@@ -52,7 +52,7 @@ public class User {
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(nullable = false, columnDefinition = "user_role")
-    private UserRole role = UserRole.USER;
+    private UserRole role = UserRole.BROKER;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
@@ -77,7 +77,7 @@ public class User {
         user.passwordHash = passwordHash;
         user.fullName = fullName;
         user.phone = phone;
-        user.role = UserRole.USER;
+        user.role = UserRole.BROKER;
         user.status = UserStatus.ACTIVE;
         user.passwordChangedAt = Instant.now();
         return user;
@@ -112,6 +112,18 @@ public class User {
 
     public void updateStatus(UserStatus status) {
         this.status = status;
+    }
+
+    public void anonymize() {
+        this.fullName = "Người dùng đã xoá";
+        this.phone = null;
+        this.avatarUrl = null;
+        this.facebookUrl = null;
+        this.tiktokUrl = null;
+        this.email = "deleted-" + id + "@congtinland.local";
+        this.username = "deleted-" + id;
+        this.status = UserStatus.DELETED;
+        this.passwordChangedAt = Instant.now();
     }
 
     public UUID getId() { return id; }

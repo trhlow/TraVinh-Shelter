@@ -13,7 +13,7 @@ test('admin rows show a protected label instead of a lock button', () => {
 
 test('non-admin active rows keep the lock button and fire onToggle', () => {
   const onToggle = vi.fn();
-  const user = { id: 2, role: 'USER', status: 'ACTIVE' };
+  const user = { id: 2, role: 'BROKER', status: 'ACTIVE' };
   render(<AccountStatusToggle user={user} saving={false} onToggle={onToggle} />);
   fireEvent.click(screen.getByRole('button', { name: 'Khóa' }));
   expect(onToggle).toHaveBeenCalledWith(user);

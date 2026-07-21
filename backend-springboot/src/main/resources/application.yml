@@ -13,8 +13,11 @@ spring:
     name: travinh-realty-backend
   datasource:
     url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    # Restricted CRUD-only role for the JPA/Hikari runtime connection — falls back to the
+    # full-privilege DB_USERNAME/DB_PASSWORD if DB_APP_USERNAME/DB_APP_PASSWORD aren't set yet,
+    # so existing deployments/.env files keep working unchanged until they opt in.
+    username: ${DB_APP_USERNAME:${DB_USERNAME}}
+    password: ${DB_APP_PASSWORD:${DB_PASSWORD}}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: ${DB_POOL_SIZE:25}
@@ -34,6 +37,15 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+    # Migrations always run as the full-privilege migrator user, never the restricted runtime
+    # role above. Defaults fall back to spring.datasource.* (e.g. Testcontainers' bootstrap
+    # superuser in tests) when DB_URL/DB_USERNAME/DB_PASSWORD aren't present as env vars.
+    url: ${DB_URL:${spring.datasource.url}}
+    user: ${DB_USERNAME:${spring.datasource.username}}
+    password: ${DB_PASSWORD:${spring.datasource.password}}
+    placeholders:
+      appRuntimePassword: ${DB_APP_PASSWORD:${DB_PASSWORD:${spring.datasource.password}}}
+      migratorUsername: ${DB_USERNAME:${spring.datasource.username}}
   servlet:
     multipart:
       max-file-size: 20MB

@@ -2,8 +2,8 @@ package com.travinh.realty.modules.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.travinh.realty.modules.auth.dto.AuthResponse;
 import com.travinh.realty.modules.auth.dto.LoginRequest;
+import com.travinh.realty.modules.auth.dto.LoginResponse;
 import com.travinh.realty.modules.user.model.User;
 import com.travinh.realty.modules.user.model.UserRole;
 import com.travinh.realty.modules.user.repository.UserRepository;
@@ -63,9 +63,9 @@ class AuthServiceRehashIntegrationTest {
         String legacyBcryptHash = new BCryptPasswordEncoder().encode(PLAINTEXT_PASSWORD);
         User user = User.register(token, email, legacyBcryptHash, "Legacy Rehash User", "0900000000");
         users.saveAndFlush(user);
-        assertThat(user.getRole()).isEqualTo(UserRole.USER);
+        assertThat(user.getRole()).isEqualTo(UserRole.BROKER);
 
-        AuthResponse response = authService.login(new LoginRequest(email, PLAINTEXT_PASSWORD));
+        LoginResponse response = authService.login(new LoginRequest(email, PLAINTEXT_PASSWORD));
 
         assertThat(response.email()).isEqualTo(email);
 

@@ -16,6 +16,8 @@ import com.travinh.realty.modules.user.repository.UserRepository;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +35,7 @@ public class UserProfileService {
     private final PasswordEncoder passwordEncoder;
     private final LocalMediaStorage storage;
     private final JwtService jwt;
+    private static final Logger log = LoggerFactory.getLogger(UserProfileService.class);
 
     public UserProfileService(UserRepository users, PasswordEncoder passwordEncoder, LocalMediaStorage storage, JwtService jwt) {
         this.users = users;
@@ -88,6 +91,13 @@ public class UserProfileService {
         }
         user.updatePasswordHash(passwordEncoder.encode(request.newPassword()));
         jwt.revoke(currentToken);
+        log.info("Password changed for userId={}", user.getId());
+    }
+
+    @Transactional
+    public void deleteCurrentUser(UserPrincipal principal) {
+        User user = findUser(principal.id());
+        user.anonymize();
     }
 
     @Transactional(readOnly = true)

@@ -3,6 +3,14 @@ services:
     image: postgres:18.4-alpine
     container_name: travinh-realty-postgres
     restart: unless-stopped
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - log_connections=on
+      - -c
+      - log_disconnections=on
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-travinh_realty}
       POSTGRES_USER: ${POSTGRES_USER:-travinh_app}
@@ -62,6 +70,8 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-travinh_realty}
       DB_USERNAME: ${POSTGRES_USER:-travinh_app}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-travinh_dev_password}
+      DB_APP_USERNAME: ${DB_APP_USERNAME:-travinh_app_runtime}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:-travinh_dev_app_runtime_password}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: ${JWT_SECRET:-travinh-dev-secret-key-change-me-32-bytes}

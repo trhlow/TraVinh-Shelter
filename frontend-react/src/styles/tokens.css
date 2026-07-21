@@ -1,0 +1,99 @@
+/* Design tokens — redesign/ui-rebuild.
+   Single source of truth for colour, type, spacing, radius, elevation.
+   Nothing outside this file may declare a raw hex. */
+
+:root {
+  /* Brand — green + gold. Ours, not borrowed. */
+  --color-primary:          #1d5a44;
+  --color-primary-hover:    #194f3b;
+  --color-primary-active:   #123f30;
+  --color-gold:             #c69a4c;
+
+  /* Canvas & surfaces */
+  --color-canvas:           #ffffff;
+  --color-surface-soft:     #f5f6f3;
+  --color-surface-strong:   #eef0ea;
+
+  /* Text */
+  --color-ink:              #16211c;
+  --color-body:             #33403a;
+  --color-muted:            #6b7671;
+  --color-on-primary:       #ffffff;
+
+  /* Lines */
+  --color-hairline:         #e8eae4;
+  --color-hairline-strong:  #d3d8cf;
+
+  /* Semantic */
+  --color-success:          #1c7a4f;
+  --color-success-bg:       #e4f2ea;
+  --color-warning:          #a9781f;
+  --color-warning-bg:       #fbeccb;
+  --color-danger:           #b3402c;
+  --color-danger-bg:        #fbe6e1;
+
+  /* Type — exactly six sizes. Emphasise with weight, never a new size. */
+  --text-display:  28px;
+  --text-title:    20px;
+  --text-body:     16px;
+  --text-sm:       14px;
+  --text-caption:  13px;
+  --text-badge:    11px;
+
+  --font-sans: 'Be Vietnam Pro', system-ui, -apple-system, sans-serif;
+
+  /* Spacing — 4px scale. No raw px for margin/padding/gap. */
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-6:   24px;
+  --space-8:   32px;
+  --space-12:  48px;
+  --space-16:  64px;
+
+  /* Radius */
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-full: 9999px;
+
+  /* One elevation tier. Most surfaces are flat. */
+  --shadow-card:
+    rgb(0 0 0 / 0.04) 0 1px 2px 0,
+    rgb(0 0 0 / 0.06) 0 4px 12px -2px;
+
+  /* Listing images: one ratio everywhere. We do not control the photos,
+     so we control the frame. */
+  --ratio-listing: 4 / 3;
+}
+
+[data-theme='dark'] {
+  --color-primary:          #3f9b76;
+  --color-primary-hover:    #4bab84;
+  --color-primary-active:   #348a67;
+  --color-gold:             #d4ab63;
+
+  --color-canvas:           #121614;
+  --color-surface-soft:     #1a201d;
+  --color-surface-strong:   #232b27;
+
+  --color-ink:              #eef2ef;
+  --color-body:             #c3ccc7;
+  --color-muted:            #8b968f;
+  --color-on-primary:       #0d1210;
+
+  --color-hairline:         #2a332e;
+  --color-hairline-strong:  #3a453f;
+
+  --color-success:          #4ec78d;
+  --color-success-bg:       #14342a;
+  --color-warning:          #dfae55;
+  --color-warning-bg:       #3a2c14;
+  --color-danger:           #e2755f;
+  --color-danger-bg:        #3a1d17;
+
+  /* Shadows read as mud on dark; a faint rim reads as elevation instead. */
+  --shadow-card:
+    rgb(255 255 255 / 0.06) 0 0 0 1px,
+    rgb(0 0 0 / 0.5) 0 4px 12px -2px;
+}

@@ -1,5 +1,5 @@
 import Icon from './ui/Icon.jsx';
-import { Sparkline } from './Charts.jsx';
+import { MiniBarSparkline } from './Charts.jsx';
 
 // tone → icon chip CSS class
 const CHIP_CLASS = {
@@ -37,13 +37,37 @@ function isTabActive(href, activePath) {
  *   meta   {string}   — optional sub-text below value
  *   tone   {'navy'|'orange'|'green'|'red'|'muted'}
  *   href   {string}   — if provided, renders as <a>
- *   trend  {{ value: string, direction: 'up'|'down' }}  — optional trend pill
- *   series {number[]}  — optional daily counts backing the trend; renders a sparkline next to the pill
+ *   trend  {{ value: string, direction: 'up'|'down' }}  — optional trend line
+ *   series {number[]}  — when present, switches to the hero bar-sparkline
+ *     layout (no icon chip, 2-line trend block, MiniBarSparkline, optional
+ *     caption) instead of the plain icon-chip layout. Cards without series
+ *     keep the exact original layout, unaffected.
+ *   trendContext  {string} — optional 2nd line under the trend value (only
+ *     used in the series/hero layout), e.g. "so với 7 ngày trước"
+ *   seriesCaption {string} — optional caption under the mini-chart (only
+ *     used in the series/hero layout), e.g. "7 ngày gần nhất"
  */
-export function StatCard({ icon, title, value, meta, tone = 'navy', href, trend, series }) {
+export function StatCard({ icon, title, value, meta, tone = 'navy', href, trend, series, trendContext, seriesCaption }) {
   const chipClass = CHIP_CLASS[tone] || CHIP_CLASS.navy;
+  const hasSeries = series && series.length > 1;
 
-  const content = (
+  const content = hasSeries ? (
+    <>
+      <p className="stat-card-label">{title}</p>
+      <p className="stat-card-number stat-card-value">{value}</p>
+      {trend && (
+        <div className="stat-card-trend-block">
+          <span className={`stat-card-trend-line ${trend.direction === 'up' ? 'is-up' : 'is-down'}`}>
+            <Icon name={trend.direction === 'up' ? 'TrendingUp' : 'TrendingDown'} size={14} strokeWidth={2.5} />
+            {trend.value}
+          </span>
+          {trendContext && <span className="stat-card-trend-context">{trendContext}</span>}
+        </div>
+      )}
+      <MiniBarSparkline series={series} />
+      {seriesCaption && <p className="stat-card-series-caption">{seriesCaption}</p>}
+    </>
+  ) : (
     <>
       <div className="stat-card-top">
         <span className={`kpi-icon-chip ${chipClass}`}>
@@ -57,11 +81,6 @@ export function StatCard({ icon, title, value, meta, tone = 'navy', href, trend,
               strokeWidth={2.5}
             />
             {trend.value}
-            {series && series.length > 1 && (
-              <span className="kpi-trend-sparkline">
-                <Sparkline series={series} />
-              </span>
-            )}
           </span>
         )}
       </div>

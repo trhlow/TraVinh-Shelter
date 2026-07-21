@@ -1,11 +1,12 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, expect, test, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 
 vi.mock('../services/api.js', () => ({
   fetchPropertyDetail: vi.fn(),
   fetchPropertyMedia: vi.fn().mockResolvedValue([]),
-  createViewing: vi.fn().mockResolvedValue({ id: 'mock-viewing-1', status: 'PENDING' }),
+  requestViewingOtp: vi.fn().mockResolvedValue({ message: 'OK', otpRequired: false }),
+  verifyViewingOtp: vi.fn().mockResolvedValue({ id: 'mock-viewing-1', status: 'PENDING' }),
 }));
 
 import { fetchPropertyDetail } from '../services/api.js';
@@ -74,18 +75,37 @@ test('renders the phone call button and no Zalo link', async () => {
   expect(within(contactCard).queryByRole('link', { name: /Chat Zalo|Zalo/i })).not.toBeInTheDocument();
 });
 
-test('renders a Google Map only when valid coordinates are available', async () => {
-  fetchPropertyDetail.mockResolvedValue({ ...baseProperty, lat: 9.9345, lng: 106.3456 });
+test('renders a Google Map only when the property has a mapEmbedUrl', async () => {
+  fetchPropertyDetail.mockResolvedValue({ ...baseProperty, mapEmbedUrl: 'https://www.google.com/maps/embed?pb=abc' });
   render(<PropertyDetailPage propertyId="p-1" />);
 
   const map = await screen.findByTitle('Bản đồ vị trí bất động sản');
-  expect(map).toHaveAttribute('src', expect.stringContaining('9.9345%2C106.3456'));
+  expect(map).toHaveAttribute('src', 'https://www.google.com/maps/embed?pb=abc');
 });
 
-test('does not render a Google Map without coordinates', async () => {
+test('does not render a Google Map without a mapEmbedUrl', async () => {
   fetchPropertyDetail.mockResolvedValue(baseProperty);
   render(<PropertyDetailPage propertyId="p-1" />);
 
   await screen.findAllByText(baseProperty.title);
   expect(screen.queryByTitle('Bản đồ vị trí bất động sản')).not.toBeInTheDocument();
+});
+
+test('titles the tab with the loaded property name once fetch succeeds', async () => {
+  fetchPropertyDetail.mockResolvedValue(baseProperty);
+  render(<PropertyDetailPage propertyId="p-1" />);
+
+  await waitFor(() => {
+    expect(document.title).toBe(`${baseProperty.title} — Công Tín Land`);
+  });
+});
+
+test('titles the tab with the generic listing title when the fetch fails', async () => {
+  fetchPropertyDetail.mockRejectedValue(new Error('network error'));
+  render(<PropertyDetailPage propertyId="p-1" />);
+
+  await waitFor(() => {
+    expect(document.title).toBe('Chi tiết bất động sản — Công Tín Land');
+  });
+  expect(document.title).not.toContain('NHÀ TRỌ THANH TRÚC');
 });

@@ -53,8 +53,10 @@ class UserProfileServiceFilterIntegrationTest {
                 "hash", "Zzuserfilter Toan Active", "0900000101"), UserStatus.ACTIVE);
         brokerLocked = save(User.createBroker(TOKEN + ".lan", TOKEN + ".lan@example.com",
                 "hash", "Zzuserfilter Lan Locked", "0900000102"), UserStatus.LOCKED);
-        plainUser = save(User.register(TOKEN + ".user", TOKEN + ".user@example.com",
-                "hash", "Zzuserfilter Plain User", "0900000103"), UserStatus.ACTIVE);
+        User nonBroker = User.register(TOKEN + ".user", TOKEN + ".user@example.com",
+                "hash", "Zzuserfilter Plain User", "0900000103");
+        ReflectionTestUtils.setField(nonBroker, "role", com.travinh.realty.modules.user.model.UserRole.ADMIN);
+        plainUser = save(nonBroker, UserStatus.ACTIVE);
     }
 
     @Test

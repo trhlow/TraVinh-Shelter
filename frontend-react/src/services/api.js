@@ -1,6 +1,6 @@
-import { detailImages, searchProperties } from '../data/templateData.js';
 import { BROKER_DASHBOARD, MOCK_PROPERTIES, MOCK_USERS, MOCK_ADMIN_BROKERS, MOCK_AUDIT_LOGS } from './mockData.js';
-import { buildAdminQuery, buildPropertyQuery, filterProperties } from './propertyFilters.js';
+import { buildAdminQuery, buildPropertyQuery, filterProperties, paginateProperties, sortProperties } from './propertyFilters.js';
+import { isGoogleMapsEmbedUrl } from '../utils/googleMapsEmbed.js';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true';
@@ -8,11 +8,29 @@ const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true';
 export async function login(email, password) {
   if (USE_MOCK_API) {
     const role = email.includes('admin') ? 'ADMIN' : 'BROKER';
-    return delay({ accessToken: 'mock-token', tokenType: 'Bearer', expiresIn: 3600, email, role, userId: role.toLowerCase() });
+    if (role === 'ADMIN') {
+      return delay({ mfaRequired: true }, 150);
+    }
+    return delay({ accessToken: 'mock-token', tokenType: 'Bearer', expiresIn: 3600, email, role, userId: role.toLowerCase(), mfaRequired: false });
   }
   return request('/auth/login', {
     method: 'POST',
     body: { email, password },
+  });
+}
+
+export async function verifyLoginOtp(email, otpCode) {
+  if (USE_MOCK_API) {
+    if (otpCode !== '123456') {
+      await delay(null, 150);
+      throw new Error('Mã OTP không hợp lệ hoặc đã hết hạn');
+    }
+    const role = 'ADMIN';
+    return delay({ accessToken: 'mock-token', tokenType: 'Bearer', expiresIn: 3600, email, role, userId: role.toLowerCase() });
+  }
+  return request('/auth/login/verify-otp', {
+    method: 'POST',
+    body: { email, otpCode },
   });
 }
 
@@ -75,30 +93,53 @@ export async function uploadCurrentUserAvatar(token, file) {
 
 export async function fetchProperties(filters) {
   if (USE_MOCK_API) {
-    return delay(filterProperties(MOCK_PROPERTIES, filters));
+    const filtered = filterProperties(MOCK_PROPERTIES, filters);
+    const sorted = filters?.sort ? sortProperties(filtered, filters.sort) : filtered;
+    const limited = filters?.size ? sorted.slice(0, filters.size) : sorted;
+    return delay(limited);
   }
   const query = buildPropertyQuery(filters);
   const response = await request(`/properties${query ? `?${query}` : ''}`);
   return normalizePagedProperties(response);
 }
 
+// Separate from fetchProperties() on purpose: that function's bare-array return shape
+// is relied on by HomePage's category rows and fetchPropertyDetail's fallback fetch.
+// Changing it would force every call site to change too. This function exists only
+// for pages that need real pagination (SearchPage), and mirrors the real backend's
+// Page<> shape (content/totalElements/totalPages/number) in both branches.
+export async function fetchPropertiesPage(filters, page = 0, size = 9, sort = 'createdAt,desc') {
+  if (USE_MOCK_API) {
+    const filtered = filterProperties(MOCK_PROPERTIES, filters);
+    const sorted = sortProperties(filtered, sort);
+    return delay(paginateProperties(sorted, page, size));
+  }
+  const query = buildPropertyQuery({ ...filters, page, size, sort });
+  const response = await request(`/properties${query ? `?${query}` : ''}`);
+  return {
+    items: (response.content || []).map(normalizeProperty),
+    totalElements: response.totalElements ?? 0,
+    totalPages: response.totalPages ?? 1,
+    page: response.number ?? page,
+  };
+}
+
 export async function fetchPropertyDetail(propertyId) {
   if (USE_MOCK_API || !propertyId) {
+    // Mirror the real backend: an unknown id is a 404, not "some other
+    // listing". The detail page owns the not-found presentation.
     const items = await fetchProperties({});
-    return items.find((item) => item.id === propertyId) ?? items[0] ?? null;
+    return items.find((item) => item.id === propertyId) ?? null;
   }
   const response = await request(`/properties/${propertyId}`);
-  return normalizeProperty(response, 0);
+  return normalizeProperty(response);
 }
 
 export async function fetchPropertyMedia(propertyId) {
   if (USE_MOCK_API || !propertyId) {
-    return delay(detailImages.map((url, index) => ({
-      id: `mock-media-${index}`,
-      mediaType: 'IMAGE',
-      url,
-      thumbnail: index === 0,
-    })), 80);
+    // No invented galleries: a listing shows its own photo(s) or an honest
+    // empty state, same as the real backend when no media was uploaded.
+    return delay([], 80);
   }
   return request(`/properties/${propertyId}/media`);
 }
@@ -129,12 +170,12 @@ export async function fetchBrokerDashboard(token) {
 
 export async function createProperty(token, payload) {
   const response = await request('/properties', { method: 'POST', token, body: payload });
-  return normalizeProperty(response, 0);
+  return normalizeProperty(response);
 }
 
 export async function updateProperty(token, propertyId, payload) {
   const response = await request(`/properties/${propertyId}`, { method: 'PATCH', token, body: payload });
-  return normalizeProperty(response, 0);
+  return normalizeProperty(response);
 }
 
 export async function uploadPropertyImage(token, propertyId, file, thumbnail = false) {
@@ -162,29 +203,37 @@ export async function updatePropertyStatus(token, propertyId, status) {
     token,
     body: { status },
   });
-  return normalizeProperty(response, 0);
+  return normalizeProperty(response);
 }
 
 export async function deleteProperty(token, propertyId) {
   return request(`/properties/${propertyId}`, { method: 'DELETE', token });
 }
 
-export async function createViewing(propertyId, payload) {
+export async function requestViewingOtp(propertyId, payload) {
+  if (USE_MOCK_API) {
+    return delay({ message: 'Xác minh OTP tạm thời không bắt buộc.', otpRequired: false }, 150);
+  }
+  return request(`/properties/${propertyId}/viewings/request-otp`, { method: 'POST', body: payload });
+}
+
+export async function verifyViewingOtp(propertyId, payload) {
+  const { booking, otpCode } = payload;
   if (USE_MOCK_API) {
     const record = {
       id: 'mock-viewing-' + Date.now(),
       status: 'PENDING',
       propertyId,
-      propertyTitle: payload.propertyTitle,
-      visitorName: payload.visitorName,
-      visitorPhone: payload.visitorPhone,
-      note: payload.note,
-      roomLabel: payload.roomLabel,
-      expectedMoveIn: payload.expectedMoveIn,
-      occupants: payload.occupants,
-      vehicles: payload.vehicles,
-      pets: payload.pets,
-      requestedAt: payload.requestedAt,
+      propertyTitle: booking.propertyTitle,
+      visitorName: booking.visitorName,
+      visitorPhone: booking.visitorPhone,
+      note: booking.note,
+      roomLabel: booking.roomLabel,
+      expectedMoveIn: booking.expectedMoveIn,
+      occupants: booking.occupants,
+      vehicles: booking.vehicles,
+      pets: booking.pets,
+      requestedAt: booking.requestedAt,
       createdAt: new Date().toISOString(),
     };
     try {
@@ -196,8 +245,11 @@ export async function createViewing(propertyId, payload) {
     }
     return delay(record, 150);
   }
-  const { propertyTitle: _title, ...backendPayload } = payload;
-  return request(`/properties/${propertyId}/viewings`, { method: 'POST', body: backendPayload });
+  const { propertyTitle: _title, ...backendBooking } = booking;
+  return request(`/properties/${propertyId}/viewings/verify-otp`, {
+    method: 'POST',
+    body: { booking: backendBooking, otpCode },
+  });
 }
 
 export async function fetchBrokerViewings(token) {
@@ -333,7 +385,7 @@ export async function updateAdminPropertyStatus(token, propertyId, status, targe
     token,
     body: { status },
   });
-  return normalizeProperty(response, 0);
+  return normalizeProperty(response);
 }
 
 async function request(path, options = {}) {
@@ -362,9 +414,8 @@ function normalizePagedProperties(response) {
   return content.map(normalizeProperty);
 }
 
-function normalizeProperty(item, index = 0) {
+function normalizeProperty(item) {
   const attributes = item.attributes || {};
-  const fallback = searchProperties[index % searchProperties.length] || {};
   const price = Number(item.price || 0);
   const categorySlug = item.category?.slug || item.category || 'nha';
   const transaction = attributes.transaction || (categorySlug === 'tro' ? 'rent' : 'sale');
@@ -387,14 +438,15 @@ function normalizeProperty(item, index = 0) {
     area: Number(attributes.area || 0),
     length: Number(attributes.length || 0),
     width: Number(attributes.width || 0),
-    lat: numericCoordinate(attributes.lat),
-    lng: numericCoordinate(attributes.lng),
+    mapEmbedUrl: isGoogleMapsEmbedUrl(attributes.mapEmbedUrl) ? attributes.mapEmbedUrl : null,
     size: attributes.size || (attributes.area ? `${attributes.area}m²` : 'Đang cập nhật'),
     bedrooms: Number(attributes.bedrooms || 0),
     bathrooms: Number(attributes.bathrooms || 0),
     direction: attributes.direction || 'Đang cập nhật',
     legal: attributes.legal || 'Đang cập nhật',
-    image: attributes.image || fallback.image || 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=80',
+    // No stock-photo stand-ins: a listing without a photo renders the card's
+    // honest "Chưa có ảnh" frame instead of somebody else's living room.
+    image: attributes.image || '',
     description: attributes.description || 'Thông tin chi tiết đang được cập nhật.',
     amenities: Array.isArray(attributes.amenities) ? attributes.amenities : [],
     costs: attributes.costs || null, // costs.*.value is a preformatted display string (e.g. '3.500đ/kWh'), not a numeric
@@ -416,11 +468,6 @@ function normalizeProperty(item, index = 0) {
       responseTime: '15 phút',
     },
   };
-}
-
-function numericCoordinate(value) {
-  const coordinate = Number(value);
-  return Number.isFinite(coordinate) ? coordinate : null;
 }
 
 function statusLabel(status) {

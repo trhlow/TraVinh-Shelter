@@ -13,6 +13,12 @@ export function validateLoginForm(values, mode = 'login') {
   if (mode === 'forgot') {
     return errors;
   }
+  if (mode === 'mfa') {
+    if (!/^\d{6}$/.test(values.otpCode || '')) {
+      errors.otpCode = 'Mã OTP phải gồm 6 chữ số.';
+    }
+    return errors;
+  }
   if (mode === 'reset') {
     if (!/^\d{6}$/.test(values.otpCode || '')) {
       errors.otpCode = 'Mã OTP phải gồm 6 chữ số.';

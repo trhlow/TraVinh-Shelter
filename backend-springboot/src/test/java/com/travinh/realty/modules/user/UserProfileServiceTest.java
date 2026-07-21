@@ -5,6 +5,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.travinh.realty.modules.auth.security.JwtService;
 import com.travinh.realty.modules.auth.security.UserPrincipal;
 import com.travinh.realty.infrastructure.storage.LocalMediaStorage;
@@ -23,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -37,7 +42,7 @@ class UserProfileServiceTest {
 
     @Test
     void updatesOwnUserProfile() {
-        User user = user(UserRole.USER, UserStatus.ACTIVE, "Old name", null);
+        User user = user(UserRole.BROKER, UserStatus.ACTIVE, "Old name", null);
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
         UserProfileService service = service();
 
@@ -50,7 +55,7 @@ class UserProfileServiceTest {
 
     @Test
     void updatesOwnUserProfileIncludingSocialLinks() {
-        User user = user(UserRole.USER, UserStatus.ACTIVE, "Old name", null);
+        User user = user(UserRole.BROKER, UserStatus.ACTIVE, "Old name", null);
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
 
         CurrentUserProfileResponse response = service().updateCurrentProfile(UserPrincipal.from(user),
@@ -63,7 +68,7 @@ class UserProfileServiceTest {
 
     @Test
     void clearingSocialLinksWithBlankOrNullStoresNull() {
-        User user = user(UserRole.USER, UserStatus.ACTIVE, "User", null);
+        User user = user(UserRole.BROKER, UserStatus.ACTIVE, "User", null);
         ReflectionTestUtils.setField(user, "facebookUrl", "https://facebook.com/existing");
         ReflectionTestUtils.setField(user, "tiktokUrl", "https://tiktok.com/@existing");
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
@@ -93,7 +98,7 @@ class UserProfileServiceTest {
 
     @Test
     void profileUpdateRejectsDuplicatePhone() {
-        User user = user(UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+        User user = user(UserRole.BROKER, UserStatus.ACTIVE, "User", "0900000000");
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
         when(users.existsByNormalizedPhoneAndIdNot("0911111111", user.getId())).thenReturn(true);
 
@@ -148,9 +153,32 @@ class UserProfileServiceTest {
     }
 
     @Test
+    void changePasswordIsLoggedAsSecurityEvent() {
+        Logger logger = (Logger) LoggerFactory.getLogger(UserProfileService.class);
+        ListAppender<ILoggingEvent> appender = new ListAppender<>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(4);
+            User user = user(UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+            ReflectionTestUtils.setField(user, "passwordHash", encoder.encode("old-password"));
+            when(users.findById(user.getId())).thenReturn(Optional.of(user));
+
+            service().changePassword(UserPrincipal.from(user),
+                    new ChangePasswordRequest("old-password", "new-password-secure"), "current-jwt-token");
+
+            assertThat(appender.list)
+                    .anyMatch(event -> event.getLevel() == Level.INFO
+                            && event.getFormattedMessage().contains(user.getId().toString()));
+        } finally {
+            logger.detachAppender(appender);
+        }
+    }
+
+    @Test
     void changePasswordRejectsWrongCurrentPassword() {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(4);
-        User user = user(UserRole.USER, UserStatus.ACTIVE, "User", null);
+        User user = user(UserRole.BROKER, UserStatus.ACTIVE, "User", null);
         ReflectionTestUtils.setField(user, "passwordHash", encoder.encode("correct-password"));
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
 
@@ -163,7 +191,7 @@ class UserProfileServiceTest {
 
     @Test
     void cannotLockAnAdminAccount() {
-        User admin = user(UserRole.USER, UserStatus.ACTIVE, "Admin", "0900000000");
+        User admin = user(UserRole.BROKER, UserStatus.ACTIVE, "Admin", "0900000000");
         ReflectionTestUtils.setField(admin, "role", UserRole.ADMIN);
         when(users.findById(admin.getId())).thenReturn(Optional.of(admin));
 
@@ -176,7 +204,7 @@ class UserProfileServiceTest {
 
     @Test
     void canUnlockAnAdminAccount() {
-        User admin = user(UserRole.USER, UserStatus.ACTIVE, "Admin", "0900000000");
+        User admin = user(UserRole.BROKER, UserStatus.ACTIVE, "Admin", "0900000000");
         ReflectionTestUtils.setField(admin, "role", UserRole.ADMIN);
         ReflectionTestUtils.setField(admin, "status", UserStatus.LOCKED);
         when(users.findById(admin.getId())).thenReturn(Optional.of(admin));
@@ -194,6 +222,51 @@ class UserProfileServiceTest {
         UserProfileResponse response = service().updateUserStatus(broker.getId(), UserStatus.LOCKED);
 
         assertThat(response.status()).isEqualTo(UserStatus.LOCKED);
+    }
+
+    @Test
+    void deleteCurrentUserAnonymizesRedactedFieldsAndPreservesIdRoleCreatedAt() {
+        User user = user(UserRole.BROKER, UserStatus.ACTIVE, "Old name", "0900000000");
+        java.time.Instant createdAt = java.time.Instant.parse("2024-01-01T00:00:00Z");
+        java.time.Instant originalPasswordChangedAt = user.getPasswordChangedAt();
+        ReflectionTestUtils.setField(user, "createdAt", createdAt);
+        ReflectionTestUtils.setField(user, "facebookUrl", "https://facebook.com/user");
+        ReflectionTestUtils.setField(user, "tiktokUrl", "https://tiktok.com/@user");
+        ReflectionTestUtils.setField(user, "avatarUrl", "https://cdn.example.com/avatar.jpg");
+        UUID id = user.getId();
+        UserRole role = user.getRole();
+        when(users.findById(id)).thenReturn(Optional.of(user));
+
+        service().deleteCurrentUser(UserPrincipal.from(user));
+
+        assertThat(user.getId()).isEqualTo(id);
+        assertThat(user.getRole()).isEqualTo(role);
+        assertThat(user.getCreatedAt()).isEqualTo(createdAt);
+        assertThat(user.getFullName()).isEqualTo("Người dùng đã xoá");
+        assertThat(user.getPhone()).isNull();
+        assertThat(user.getAvatarUrl()).isNull();
+        assertThat(user.getFacebookUrl()).isNull();
+        assertThat(user.getTiktokUrl()).isNull();
+        assertThat(user.getEmail()).isEqualTo("deleted-" + id + "@congtinland.local");
+        assertThat(user.getUsername()).isEqualTo("deleted-" + id);
+        assertThat(user.getStatus()).isEqualTo(UserStatus.DELETED);
+        assertThat(user.getPasswordChangedAt()).isAfterOrEqualTo(originalPasswordChangedAt);
+    }
+
+    @Test
+    void sequentialDeletesOfDifferentUsersProduceUniquePlaceholdersWithoutCollision() {
+        User first = user(UserRole.BROKER, UserStatus.ACTIVE, "User One", "0900000001");
+        User second = user(UserRole.BROKER, UserStatus.ACTIVE, "User Two", "0900000002");
+        when(users.findById(first.getId())).thenReturn(Optional.of(first));
+        when(users.findById(second.getId())).thenReturn(Optional.of(second));
+
+        service().deleteCurrentUser(UserPrincipal.from(first));
+        service().deleteCurrentUser(UserPrincipal.from(second));
+
+        assertThat(first.getEmail()).isNotEqualTo(second.getEmail());
+        assertThat(first.getUsername()).isNotEqualTo(second.getUsername());
+        assertThat(first.getStatus()).isEqualTo(UserStatus.DELETED);
+        assertThat(second.getStatus()).isEqualTo(UserStatus.DELETED);
     }
 
     private UserProfileService service() {

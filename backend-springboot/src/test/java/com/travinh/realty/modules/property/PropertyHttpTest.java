@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -111,8 +112,7 @@ class PropertyHttpTest {
     }
 
     @Test
-    void brokerCreatesAvailablePropertyAndUserCannotCreate() throws Exception {
-        User user = user("user@example.com", UserRole.USER, UserStatus.ACTIVE, "User", "0900000000");
+    void brokerCreatesAvailablePropertyAndNonBrokerCannotCreate() throws Exception {
         User admin = user("admin@example.com", UserRole.ADMIN, UserStatus.ACTIVE, "Admin", "0900000000");
         User lockedBroker = user("locked@example.com", UserRole.BROKER, UserStatus.LOCKED, "Locked", "0900000000");
         User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
@@ -126,12 +126,6 @@ class PropertyHttpTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.status").value(401));
-
-        authenticate(user);
-        mockMvc.perform(post("/properties").header("Authorization", bearer(user))
-                        .contentType(MediaType.APPLICATION_JSON).content(payload))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.status").value(403));
 
         authenticate(admin);
         mockMvc.perform(post("/properties").header("Authorization", bearer(admin))
@@ -277,7 +271,7 @@ class PropertyHttpTest {
     }
 
     @Test
-    void creatingPropertyWithNonScalarAttributeValueIsRejected() throws Exception {
+    void creatingPropertyWithTooDeeplyNestedAttributeValueIsRejected() throws Exception {
         User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
         Category category = category(1L, "Trọ", "tro");
         authenticate(broker);
@@ -286,13 +280,111 @@ class PropertyHttpTest {
 
         String payload = """
                 {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
-                 "attributes":{"tags":["a","b","c"]}}
+                 "attributes":{"tags":[["a","b"]]}}
                 """;
 
         mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
                         .contentType(MediaType.APPLICATION_JSON).content(payload))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Giá trị thuộc tính phải là chuỗi, số hoặc boolean cho khoá: tags"));
+    }
+
+    @Test
+    void creatingPropertyWithListOfScalarAttributeValueIsAccepted() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+        when(properties.save(any(Property.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        String payload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
+                 "attributes":{"ward":"phuong-1","amenities":["Wifi","Điều hòa"]}}
+                """;
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isCreated());
+
+        ArgumentCaptor<Property> saved = ArgumentCaptor.forClass(Property.class);
+        org.mockito.Mockito.verify(properties).save(saved.capture());
+        assertThat(saved.getValue().getAttributes()).containsEntry("amenities", List.of("Wifi", "Điều hòa"));
+    }
+
+    @Test
+    void creatingPropertyWithListOfFlatObjectAttributeValueIsAccepted() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+        when(properties.save(any(Property.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        String payload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
+                 "attributes":{"ward":"phuong-1","rooms":[{"label":"P1","price":1500000,"available":true}]}}
+                """;
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isCreated());
+
+        ArgumentCaptor<Property> saved = ArgumentCaptor.forClass(Property.class);
+        org.mockito.Mockito.verify(properties).save(saved.capture());
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> rooms = (List<Map<String, Object>>) saved.getValue().getAttributes().get("rooms");
+        assertThat(rooms).hasSize(1);
+        assertThat(rooms.get(0)).containsEntry("label", "P1").containsEntry("available", true);
+    }
+
+    @Test
+    void creatingPropertyWithFlatObjectAttributeValueIsAccepted() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+        when(properties.save(any(Property.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        String payload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
+                 "attributes":{"ward":"phuong-1","conditions":{"toilet":"Khép kín","pets":false}}}
+                """;
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isCreated());
+
+        ArgumentCaptor<Property> saved = ArgumentCaptor.forClass(Property.class);
+        org.mockito.Mockito.verify(properties).save(saved.capture());
+        @SuppressWarnings("unchecked")
+        Map<String, Object> conditions = (Map<String, Object>) saved.getValue().getAttributes().get("conditions");
+        assertThat(conditions).containsEntry("toilet", "Khép kín").containsEntry("pets", false);
+    }
+
+    @Test
+    void creatingPropertyWithOversizedAttributeListIsRejected() throws Exception {
+        User broker = user("broker@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Broker", "0900000000");
+        Category category = category(1L, "Trọ", "tro");
+        authenticate(broker);
+        when(users.findById(broker.getId())).thenReturn(Optional.of(broker));
+        when(categories.findBySlug("tro")).thenReturn(Optional.of(category));
+
+        StringBuilder items = new StringBuilder();
+        for (int i = 0; i < 101; i++) {
+            if (i > 0) items.append(",");
+            items.append("\"item").append(i).append("\"");
+        }
+        String payload = """
+                {"categorySlug":"tro","title":"Phòng trọ","address":"Trà Vinh","price":1500000,
+                 "attributes":{"amenities":[%s]}}
+                """.formatted(items);
+
+        mockMvc.perform(post("/properties").header("Authorization", bearer(broker))
+                        .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Danh sách quá dài cho khoá: amenities (tối đa 100)"));
     }
 
     @Test
@@ -408,6 +500,40 @@ class PropertyHttpTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"RENTED\"}"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Không tìm thấy bất động sản"));
+    }
+
+    @Test
+    void brokerCannotUpdateAnotherBrokerProperty() throws Exception {
+        User owner = user("owner@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Owner", "0900000000");
+        User other = user("other@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Other", "0911111111");
+        Property property = property(owner, category(1L, "Trọ", "tro"), "Tin", PropertyStatus.AVAILABLE, Map.of());
+        authenticate(other);
+        when(users.findById(other.getId())).thenReturn(Optional.of(other));
+        when(properties.findById(property.getId())).thenReturn(Optional.of(property));
+
+        mockMvc.perform(patch("/properties/{id}", property.getId()).header("Authorization", bearer(other))
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                        {"categorySlug":"tro","title":"Chiếm quyền","address":"Trà Vinh","price":1,
+                         "attributes":{"ward":"phuong-1"}}
+                        """))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Không tìm thấy bất động sản"));
+        org.mockito.Mockito.verify(properties, org.mockito.Mockito.never()).save(any(Property.class));
+    }
+
+    @Test
+    void brokerCannotDeleteAnotherBrokerProperty() throws Exception {
+        User owner = user("owner@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Owner", "0900000000");
+        User other = user("other@example.com", UserRole.BROKER, UserStatus.ACTIVE, "Other", "0911111111");
+        Property property = property(owner, category(1L, "Trọ", "tro"), "Tin", PropertyStatus.AVAILABLE, Map.of());
+        authenticate(other);
+        when(users.findById(other.getId())).thenReturn(Optional.of(other));
+        when(properties.findById(property.getId())).thenReturn(Optional.of(property));
+
+        mockMvc.perform(delete("/properties/{id}", property.getId()).header("Authorization", bearer(other)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Không tìm thấy bất động sản"));
+        org.mockito.Mockito.verify(properties, org.mockito.Mockito.never()).delete(any(Property.class));
     }
 
     @Test

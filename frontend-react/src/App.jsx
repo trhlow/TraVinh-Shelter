@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { logout as logoutRequest } from './services/api.js';
 import { clearStoredSession, loadStoredSession, saveStoredSession } from './services/session.js';
 import { resolveRoute } from './routes/index.jsx';
 import useTheme from './hooks/useTheme.js';
+import PageLoader from './components/ui/PageLoader.jsx';
 
 function readHashPath() {
   const hashPath = window.location.hash.replace(/^#/, '');
@@ -37,14 +38,16 @@ export default function App() {
   }
 
   return (
-    <Page
-      {...params}
-      currentPath={path}
-      session={session}
-      onLogin={handleLogin}
-      onLogout={handleLogout}
-      theme={theme}
-      onToggleTheme={toggleTheme}
-    />
+    <Suspense fallback={<PageLoader />}>
+      <Page
+        {...params}
+        currentPath={path}
+        session={session}
+        onLogin={handleLogin}
+        onLogout={handleLogout}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+      />
+    </Suspense>
   );
 }

@@ -1,24 +1,15 @@
 import '@testing-library/jest-dom/vitest';
-import { afterEach, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 
 vi.mock('../services/api.js', () => ({
   fetchProperties: vi.fn().mockResolvedValue([]),
 }));
 
-vi.mock('react-leaflet', () => ({
-  MapContainer: ({ children }) => <div data-testid="map-container">{children}</div>,
-  TileLayer: () => null,
-  Marker: ({ children }) => <div data-testid="map-marker">{children}</div>,
-  Popup: ({ children }) => <div data-testid="map-popup">{children}</div>,
-}));
-
-vi.mock('leaflet', () => ({
-  default: { divIcon: vi.fn(() => ({})) },
-}));
-
+import { fetchProperties } from '../services/api.js';
 import HomePage from './HomePage.jsx';
 
+beforeEach(() => { fetchProperties.mockResolvedValue([]); });
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
 test('"Khám phá theo loại hình" renders exactly 3 category cards with unique category links', async () => {
@@ -58,11 +49,20 @@ test('every category card renders a visible icon, not a blank placeholder', asyn
   });
 });
 
-test('renders the property map when a listing has valid coordinates', async () => {
-  const { fetchProperties } = await import('../services/api.js');
-  fetchProperties.mockResolvedValue([
-    { id: 'p1', title: 'Nhà phố A', lat: 9.93, lng: 106.34, image: 'a.jpg', priceLabel: '2 tỷ' },
-  ]);
+test('"Tin đăng mới nhất" carousel does not render when there is no data', async () => {
   render(<HomePage />);
-  expect(await screen.findByText('Bất động sản trên bản đồ')).toBeInTheDocument();
+  await screen.findByText('Khám phá theo loại hình'); // wait for the page to finish its initial render
+  expect(screen.queryByText('Tin đăng mới nhất')).not.toBeInTheDocument();
+});
+
+test('"Tin đăng mới nhất" carousel renders real listings fetched with sort=createdAt,desc', async () => {
+  const items = Array.from({ length: 5 }, (_, i) => ({ id: `p${i}`, title: `Tin ${i}`, priceLabel: '1 tỷ' }));
+  fetchProperties.mockResolvedValue(items);
+  render(<HomePage />);
+
+  const heading = await screen.findByText('Tin đăng mới nhất');
+  const section = heading.closest('.section');
+  expect(section.querySelectorAll('.pcard')).toHaveLength(5);
+
+  expect(fetchProperties).toHaveBeenCalledWith({ sort: 'createdAt,desc', size: 12 });
 });

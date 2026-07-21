@@ -13,11 +13,14 @@ import com.travinh.realty.common.config.SecurityConfig;
 import com.travinh.realty.common.exception.GlobalExceptionHandler;
 import com.travinh.realty.modules.auth.AuthController;
 import com.travinh.realty.modules.auth.AuthService;
+import com.travinh.realty.modules.auth.LoginMfaService;
 import com.travinh.realty.modules.auth.PasswordResetService;
 import com.travinh.realty.common.dto.MessageResponse;
+import com.travinh.realty.modules.auth.dto.AuthResponse;
 import com.travinh.realty.modules.property.PropertyController;
 import com.travinh.realty.modules.property.PropertyService;
 import com.travinh.realty.modules.user.model.User;
+import com.travinh.realty.modules.user.model.UserRole;
 import com.travinh.realty.modules.user.model.UserStatus;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -47,6 +50,7 @@ class SecurityHttpTest {
     @MockitoBean private PropertyService propertyService;
     @MockitoBean private JpaUserDetailsService userDetailsService;
     @MockitoBean private JpaMetamodelMappingContext jpaMappingContext;
+    @MockitoBean private LoginMfaService loginMfaService;
 
     @Test
     void protectedApiWithoutTokenReturnsUnauthorized() throws Exception {
@@ -58,6 +62,7 @@ class SecurityHttpTest {
     @Test
     void nonBrokerUserIsDeniedAccessToBrokerOnlyEndpoint() throws Exception {
         User user = user("user@example.com", UserStatus.ACTIVE);
+        ReflectionTestUtils.setField(user, "role", com.travinh.realty.modules.user.model.UserRole.ADMIN);
         when(userDetailsService.loadUserByUsername(user.getEmail())).thenReturn(UserPrincipal.from(user));
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/properties/mine")
@@ -192,6 +197,29 @@ class SecurityHttpTest {
         mockMvc.perform(post("/auth/reset-password").contentType("application/json")
                         .content("{\"email\":\"someone@congtinland.vn\",\"otpCode\":\"000000\",\"newPassword\":\"NewPassword123\"}"))
                 .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Mã OTP không hợp lệ hoặc đã hết hạn"));
+    }
+
+    @Test
+    void verifyLoginOtpWithValidCodeReturnsJwt() throws Exception {
+        when(loginMfaService.verifyOtp(any())).thenReturn(new AuthResponse(
+                "signed-jwt-token", "Bearer", 86_400_000L, UUID.randomUUID(), "admin@example.com", UserRole.ADMIN));
+
+        mockMvc.perform(post("/auth/login/verify-otp").contentType("application/json")
+                        .content("{\"email\":\"admin@example.com\",\"otpCode\":\"123456\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("signed-jwt-token"))
+                .andExpect(jsonPath("$.role").value("ADMIN"));
+    }
+
+    @Test
+    void verifyLoginOtpWithInvalidCodeReturnsUnauthorized() throws Exception {
+        when(loginMfaService.verifyOtp(any())).thenThrow(new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.UNAUTHORIZED, "Mã OTP không hợp lệ hoặc đã hết hạn"));
+
+        mockMvc.perform(post("/auth/login/verify-otp").contentType("application/json")
+                        .content("{\"email\":\"admin@example.com\",\"otpCode\":\"000000\"}"))
+                .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Mã OTP không hợp lệ hoặc đã hết hạn"));
     }
 

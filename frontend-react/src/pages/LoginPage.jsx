@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import BrandLogo, { BRAND_NAME } from '../components/BrandLogo.jsx';
-import { confirmPasswordReset, fetchCurrentUser, login, requestPasswordReset } from '../services/api.js';
+import PageMeta from '../components/PageMeta.jsx';
+import { confirmPasswordReset, fetchCurrentUser, login, requestPasswordReset, verifyLoginOtp } from '../services/api.js';
 import { createSession } from '../services/session.js';
 import { validateLoginForm } from '../utils/validation.js';
 
@@ -10,6 +11,12 @@ const MODE_COPY = {
     subtitle: `Tiếp tục vào ${BRAND_NAME}.`,
     button: 'Đăng nhập',
     loading: 'Đang đăng nhập',
+  },
+  mfa: {
+    title: 'Xác minh 2 bước',
+    subtitle: 'Nhập mã OTP đã gửi đến email của bạn để hoàn tất đăng nhập.',
+    button: 'Xác nhận',
+    loading: 'Đang xác minh',
   },
   forgot: {
     title: 'Quên mật khẩu?',
@@ -39,6 +46,13 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
     setServerError('');
     setSuccessMessage('');
   }, [initialMode]);
+
+  async function completeLogin(auth) {
+    const profile = await fetchCurrentUser(auth.accessToken).catch(() => ({}));
+    const nextSession = createSession(auth, profile);
+    onLogin(nextSession);
+    window.location.hash = nextSession.role === 'ADMIN' ? '#/admin' : nextSession.role === 'BROKER' ? '#/broker/dashboard' : '#/';
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -76,13 +90,27 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
       return;
     }
 
+    if (mode === 'mfa') {
+      setSubmitting(true);
+      try {
+        const auth = await verifyLoginOtp(values.email, values.otpCode);
+        await completeLogin(auth);
+      } catch (exception) {
+        setServerError(exception.message || 'Xác minh OTP thất bại.');
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
     setSubmitting(true);
     try {
       const auth = await login(values.email, values.password);
-      const profile = await fetchCurrentUser(auth.accessToken).catch(() => ({}));
-      const nextSession = createSession(auth, profile);
-      onLogin(nextSession);
-      window.location.hash = nextSession.role === 'ADMIN' ? '#/admin' : nextSession.role === 'BROKER' ? '#/broker/dashboard' : '#/';
+      if (auth.mfaRequired) {
+        setMode('mfa');
+        return;
+      }
+      await completeLogin(auth);
     } catch (exception) {
       setServerError(exception.message || 'Đăng nhập thất bại.');
     } finally {
@@ -105,20 +133,23 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
   if (session) {
     const href = session.role === 'ADMIN' ? '#/admin' : session.role === 'BROKER' ? '#/broker/dashboard' : '#/login';
     return (
-      <div className="auth-shell">
-        <div className="auth-card">
-          <div className="auth-brand-wrap">
-            <a href="#/">
-              <BrandLogo />
+      <>
+        <PageMeta routeKey="login" />
+        <div className="auth-shell">
+          <div className="auth-card">
+            <div className="auth-brand-wrap">
+              <a href="#/">
+                <BrandLogo />
+              </a>
+            </div>
+            <h1 className="auth-title">Bạn đã đăng nhập</h1>
+            <p className="auth-subtitle">{session.email}</p>
+            <a className="auth-btn" href={href}>
+              Vào trang làm việc
             </a>
           </div>
-          <h1 className="auth-title">Bạn đã đăng nhập</h1>
-          <p className="auth-subtitle">{session.email}</p>
-          <a className="auth-btn" href={href}>
-            Vào trang làm việc
-          </a>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -127,7 +158,9 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
   const copy = MODE_COPY[mode] || MODE_COPY.login;
 
   return (
-    <div className="auth-shell">
+    <>
+      <PageMeta routeKey="login" />
+      <div className="auth-shell">
       <div className="auth-card">
         <div className="auth-brand-wrap">
           <a href="#/" aria-label={BRAND_NAME}>
@@ -151,7 +184,7 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
             />
           </Field>
 
-          {!isForgot && !isReset && (
+          {!isForgot && !isReset && mode !== 'mfa' && (
             <Field error={errors.password} id="password" label="Mật khẩu">
               <input
                 className="input"
@@ -161,6 +194,21 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
                 type="password"
                 value={values.password}
                 onChange={(event) => updateValue('password', event.target.value)}
+              />
+            </Field>
+          )}
+
+          {mode === 'mfa' && (
+            <Field error={errors.otpCode} id="otpCode" label="Mã OTP">
+              <input
+                className="input"
+                id="otpCode"
+                inputMode="numeric"
+                maxLength={6}
+                name="otpCode"
+                placeholder="Nhập mã 6 số"
+                value={values.otpCode}
+                onChange={(event) => updateValue('otpCode', event.target.value)}
               />
             </Field>
           )}
@@ -206,7 +254,7 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
             </>
           )}
 
-          {!isForgot && !isReset && (
+          {!isForgot && !isReset && mode !== 'mfa' && (
             <div className="auth-row">
               <label className="auth-remember">
                 <input type="checkbox" />
@@ -233,14 +281,15 @@ export default function LoginPage({ session, onLogin, initialMode = 'login' }) {
         <div className="auth-divider" />
 
         <div className="auth-footer-links">
-          {isForgot || isReset ? (
+          {isForgot || isReset || mode === 'mfa' ? (
             <button className="auth-link" type="button" onClick={() => switchMode('login')}>
               Quay lại đăng nhập
             </button>
           ) : null}
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 

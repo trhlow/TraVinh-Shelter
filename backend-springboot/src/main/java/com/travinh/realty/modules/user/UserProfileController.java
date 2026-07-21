@@ -10,6 +10,7 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -48,6 +49,12 @@ public class UserProfileController {
                                @RequestHeader("Authorization") String authorizationHeader,
                                @Valid @RequestBody ChangePasswordRequest request) {
         profiles.changePassword(principal, request, authorizationHeader.substring(7));
+    }
+
+    @DeleteMapping("/users/me")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteCurrentUser(@AuthenticationPrincipal UserPrincipal principal) {
+        profiles.deleteCurrentUser(principal);
     }
 
     @PostMapping(path = "/users/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

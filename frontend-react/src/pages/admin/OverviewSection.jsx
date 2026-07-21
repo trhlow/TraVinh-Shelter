@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { buildDailySeries, TrendBarLineChart } from '../../components/Charts.jsx';
+import { buildDailySeries, CategoryBreakdown, TrendLineChart } from '../../components/Charts.jsx';
 import { DashboardPanel, StatCard } from '../../components/DashboardWidgets.jsx';
 import DateRangeFilter from '../../components/dashboard/DateRangeFilter.jsx';
 import { WARDS, CATEGORIES } from '../../data/locations.js';
@@ -50,26 +50,31 @@ export default function OverviewSection({ data }) {
     () => buildDailySeries(filteredProperties, (property) => property.createdAt, 7).map((bucket) => bucket.count),
     [filteredProperties],
   );
+  const listingsDelta = useMemo(
+    () => (prevProperties ? percentDelta(filteredProperties.length, prevProperties.length) : null),
+    [filteredProperties, prevProperties],
+  );
   const kpis = [
     { icon: 'Users', title: 'Tổng số người dùng', value: users.length, tone: 'navy' },
     { icon: 'IdCard', title: 'Môi giới hoạt động', value: activeBrokers, tone: 'green', href: '#/admin/brokers' },
-    {
-      icon: 'Building',
-      title: 'Tổng số tin đăng',
-      value: filteredProperties.length,
-      tone: 'navy',
-      trend: prevProperties ? percentDelta(filteredProperties.length, prevProperties.length) : null,
-      series: totalListingsSparkline,
-      href: '#/admin/properties',
-    },
     { icon: 'CalendarCheck', title: 'Lịch hẹn xác nhận tháng này', value: confirmedViewingsThisMonth, tone: 'green' },
   ];
 
   const systemActivityData = useMemo(() => buildSystemActivitySeries(properties, viewings), [properties, viewings]);
+
+  const categoryDistributionData = useMemo(
+    () => CATEGORIES.map((item) => ({
+      label: item.label,
+      value: filteredProperties.filter((property) => property.category === item.slug).length,
+    })),
+    [filteredProperties],
+  );
+
   const recentAuditItems = useMemo(() => buildAuditItems({ users, properties: filteredProperties, viewings: filteredViewings }).slice(0, 5), [users, filteredProperties, filteredViewings]);
 
   const exportOverview = () => {
-    downloadCsv('bao-cao-tong-quan.csv', kpis.map((kpi) => ({ metric: kpi.title, value: kpi.value })), [
+    const rows = [...kpis, { title: 'Tổng số tin đăng', value: filteredProperties.length }];
+    downloadCsv('bao-cao-tong-quan.csv', rows.map((kpi) => ({ metric: kpi.title, value: kpi.value })), [
       { key: 'metric', label: 'Chỉ số' },
       { key: 'value', label: 'Giá trị' },
     ]);
@@ -77,13 +82,6 @@ export default function OverviewSection({ data }) {
 
   return (
     <>
-      <div className="admin-quick-actions">
-        <a className="btn btn-primary btn-sm" href="#/admin/brokers">
-          ＋ Cấp tài khoản môi giới
-        </a>
-        <button className="btn btn-ghost btn-sm" type="button" onClick={exportOverview}>Xuất báo cáo</button>
-      </div>
-
       <div className="admin-filter-bar">
         <DateRangeFilter
           preset={preset}
@@ -98,9 +96,15 @@ export default function OverviewSection({ data }) {
           <option value="all">Tất cả danh mục</option>
           {CATEGORIES.map((item) => <option key={item.slug} value={item.slug}>{item.label}</option>)}
         </select>
+        <div className="admin-filter-bar-actions">
+          <a className="btn btn-primary btn-sm" href="#/admin/brokers">
+            ＋ Cấp tài khoản môi giới
+          </a>
+          <button className="btn btn-ghost btn-sm" type="button" onClick={exportOverview}>Xuất báo cáo</button>
+        </div>
       </div>
 
-      <div className="grid-5 dashboard-stats-row">
+      <div className="grid-3 dashboard-stats-row">
         {kpis.map((kpi) => (
           <StatCard
             key={kpi.title}
@@ -115,18 +119,35 @@ export default function OverviewSection({ data }) {
         ))}
       </div>
 
-      <div className="dashboard-live-row">
-        <TrendBarLineChart
-          title="Hoạt động hệ thống theo tháng"
-          subtitle="Tin đăng mới và lịch hẹn đã xác nhận, tính từ khi có dữ liệu thực tế"
-          data={systemActivityData}
-          currentLabel="Tin đăng"
-          previousLabel="Lịch hẹn xác nhận"
-        />
-      </div>
-
-      <div className="dashboard-panels-row">
-        <AuditTimeline items={recentAuditItems} />
+      <div className="dashboard-hero-row">
+        <div className="dashboard-hero-col-narrow">
+          <StatCard
+            icon="Building"
+            title="Tổng số tin đăng"
+            value={filteredProperties.length}
+            tone="navy"
+            href="#/admin/properties"
+            trend={listingsDelta == null ? undefined : { value: `${listingsDelta >= 0 ? '+' : '-'}${Math.abs(listingsDelta)}%`, direction: listingsDelta >= 0 ? 'up' : 'down' }}
+            trendContext="so với kỳ trước"
+            series={totalListingsSparkline}
+            seriesCaption="7 ngày gần nhất"
+          />
+          <CategoryBreakdown
+            title="Phân bổ theo danh mục"
+            data={categoryDistributionData}
+            totalLabel="Tổng cộng"
+          />
+        </div>
+        <div className="dashboard-hero-col-wide">
+          <TrendLineChart
+            title="Hoạt động hệ thống theo tháng"
+            subtitle="Tin đăng mới và lịch hẹn đã xác nhận, tính từ khi có dữ liệu thực tế"
+            data={systemActivityData}
+            currentLabel="Tin đăng"
+            previousLabel="Lịch hẹn xác nhận"
+          />
+          <AuditTimeline items={recentAuditItems} />
+        </div>
       </div>
 
       <DashboardPanel title="Tình trạng hệ thống" count={`${filteredProperties.length} tin trong bộ lọc`}>
